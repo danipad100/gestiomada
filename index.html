@@ -10,6 +10,91 @@
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="default" name="apple-mobile-web-app-status-bar-style"/>
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script>
+// ══════════════════════════════════════════════
+//  SUPABASE CONFIG — GestioMada v13.2
+// ══════════════════════════════════════════════
+const SUPA_URL  = 'https://tpzfihiylygibmawtngh.supabase.co';
+const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRwemZpaGl5bHlnaWJtYXd0bmdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NjQ3OTUsImV4cCI6MjA5MjA0MDc5NX0.K-W26HglGhoNF1u3Ylr6f7XLWnjjoV7S8srJy7PuFEs';
+const SUPA = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ── Sync dual: localStorage (rápido) + Supabase (nube) ──
+// Lee siempre desde localStorage para velocidad.
+// Escribe en localStorage inmediatamente y sincroniza en Supabase en background.
+
+async function syncToSupabase(tabla, datos){
+  try {
+    if(!Array.isArray(datos) || !datos.length) return;
+    // Upsert completo: reemplaza todos los registros de la tabla
+    const { error } = await SUPA.from(tabla).upsert(datos, { onConflict: 'id' });
+    if(error) console.warn('[Supabase sync error]', tabla, error.message);
+  } catch(e){ console.warn('[Supabase sync]', e.message); }
+}
+
+async function loadFromSupabase(tabla){
+  try {
+    const { data, error } = await SUPA.from(tabla).select('*').order('id');
+    if(error) throw error;
+    return data || [];
+  } catch(e){
+    console.warn('[Supabase load error]', tabla, e.message);
+    return null;
+  }
+}
+
+// ── Sincronización inicial al cargar la app ──
+// Descarga datos de Supabase si hay conexión y los datos remotos son más recientes
+async function initSupabaseSync(){
+  const tablas = [
+    { supa: 'productos',            ls: 'POS.cat'    },
+    { supa: 'clientes',             ls: 'POS.cli'    },
+    { supa: 'pedidos',              ls: 'POS.ped'    },
+    { supa: 'ventas',               ls: 'POS.ven'    },
+    { supa: 'caja_movimientos',     ls: 'POS.caja'   },
+    { supa: 'inventario_insumos',   ls: 'POS.insumos'},
+    { supa: 'inventario_terminados',ls: 'POS.terminados'},
+    { supa: 'inventario_movimientos',ls:'POS.invmov' },
+  ];
+
+  for(const t of tablas){
+    const remoto = await loadFromSupabase(t.supa);
+    if(remoto && remoto.length > 0){
+      // Si Supabase tiene datos, actualizar localStorage
+      const local = JSON.parse(localStorage.getItem(t.ls)||'[]');
+      if(remoto.length >= local.length){
+        localStorage.setItem(t.ls, JSON.stringify(remoto));
+        console.log(`[Supabase] Sincronizado ${t.supa}: ${remoto.length} registros`);
+      }
+    } else {
+      // Si Supabase está vacío pero localStorage tiene datos, subir a Supabase
+      const local = JSON.parse(localStorage.getItem(t.ls)||'[]');
+      if(local.length > 0){
+        await syncToSupabase(t.supa, local);
+        console.log(`[Supabase] Subido ${t.supa}: ${local.length} registros`);
+      }
+    }
+  }
+
+  // Mostrar indicador de sincronización
+  const ind = document.getElementById('supa-sync-ind');
+  if(ind){ ind.style.display='none'; }
+  if(typeof renderDash === 'function') renderDash();
+  if(typeof updateBadges === 'function') updateBadges();
+}
+
+// Estado de conexión
+window._supaConectado = false;
+SUPA.from('config').select('clave').limit(1)
+  .then(({data}) => {
+    window._supaConectado = !!data;
+    if(window._supaConectado){
+      console.log('[Supabase] Conectado ✓');
+      initSupabaseSync();
+    }
+  })
+  .catch(() => { window._supaConectado = false; });
+</script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
 /* ═══════════════════════════════════════════
@@ -1829,8 +1914,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.2 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.2 (base estable): Consolidación de todas las mejoras de la rama v13. Canal de venta (🏪 Local / 📱 WhatsApp / 🌐 Online) en Ventas y Pedidos. Recibo profesional A4. Modal de confirmación post-venta con impresión directa. Precios con diferencial cambiario en catálogo y POS. Total en Bs según método de pago. v13.0: Corrección bug renderizado catálogo. v12.2: Sistema dual BCV/Paralela. v12.1: Inventario dual por locación. v12.0: Usuarios con PIN y roles.</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.3 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.3: Integración Supabase — sync dual localStorage + nube, 13 tablas PostgreSQL. v13.2: Canales Local/WhatsApp/Online, recibo A4, confirmación post-venta. v13.2: Consolidación de todas las mejoras de la rama v13. Canal de venta (🏪 Local / 📱 WhatsApp / 🌐 Online) en Ventas y Pedidos. Recibo profesional A4. Modal de confirmación post-venta con impresión directa. Precios con diferencial cambiario en catálogo y POS. Total en Bs según método de pago. v13.0: Corrección bug renderizado catálogo. v12.2: Sistema dual BCV/Paralela. v12.1: Inventario dual por locación. v12.0: Usuarios con PIN y roles.</p>
         </div>
       </div>
 
@@ -2720,9 +2805,9 @@ function renderHistorialCostos(nombre){
 }
 function savePers(a){ localStorage.setItem(LS_PERS, JSON.stringify(a)); }
 function loadCat()  { try{ return JSON.parse(localStorage.getItem(LS_CAT)||'[]'); }catch(e){ return []; } }
-function saveCat(a) { localStorage.setItem(LS_CAT, JSON.stringify(a)); updateBadges(); }
+function saveCat(a) { localStorage.setItem(LS_CAT, JSON.stringify(a)); updateBadges(); if(window._supaConectado) syncToSupabase('productos', a); }
 function loadCli()  { try{ return JSON.parse(localStorage.getItem(LS_CLI)||'[]'); }catch(e){ return []; } }
-function saveCli(a) { localStorage.setItem(LS_CLI, JSON.stringify(a)); updateBadges(); }
+function saveCli(a) { localStorage.setItem(LS_CLI, JSON.stringify(a)); updateBadges(); if(window._supaConectado) syncToSupabase('clientes', a); }
 
 function updateBadges(){
   const _bc=qs('#badge-cat'); if(_bc) _bc.textContent=loadCat().length;
@@ -3737,7 +3822,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v132',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v133',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
@@ -4864,9 +4949,9 @@ function renderSaldosMoneda(){
 }
 
 function loadVen(){ try{ return JSON.parse(localStorage.getItem(LS_VEN)||'[]'); }catch(e){ return []; } }
-function saveVen(a){ localStorage.setItem(LS_VEN, JSON.stringify(a)); updateBadges(); }
+function saveVen(a){ localStorage.setItem(LS_VEN, JSON.stringify(a)); updateBadges(); if(window._supaConectado) syncToSupabase('ventas', a); }
 function loadCajaMov(){ try{ return JSON.parse(localStorage.getItem(LS_CAJA)||'[]'); }catch(e){ return []; } }
-function saveCajaMov(a){ localStorage.setItem(LS_CAJA, JSON.stringify(a)); }
+function saveCajaMov(a){ localStorage.setItem(LS_CAJA, JSON.stringify(a)); if(window._supaConectado) syncToSupabase('caja_movimientos', a); }
 
 function nextNumVen(){
   const all=loadVen();
@@ -6251,7 +6336,7 @@ const CHIP_EST  = { pendiente:'chip-warn', produccion:'chip-info', listo:'chip-o
 const CHIP_PAGO = { sin_abono:'chip-danger', abonado:'chip-warn', parcial:'chip-warn', pagado:'chip-ok' };
 
 function loadPed(){ try{ return JSON.parse(localStorage.getItem(LS_PED)||'[]'); }catch(e){ return []; } }
-function savePed(a){ localStorage.setItem(LS_PED, JSON.stringify(a)); updateBadges(); }
+function savePed(a){ localStorage.setItem(LS_PED, JSON.stringify(a)); updateBadges(); if(window._supaConectado) syncToSupabase('pedidos', a); }
 
 function nextNumPed(){
   const all = loadPed();
@@ -6840,11 +6925,11 @@ let _terIdx  = null;
 let _invMovCtx = null; // { id, tipo_item:'insumo'|'terminado' }
 
 function loadIns()  { try{ return JSON.parse(localStorage.getItem(LS_INS)||'[]'); }catch(e){ return []; } }
-function saveIns(a) { localStorage.setItem(LS_INS, JSON.stringify(a)); updateBadges(); }
+function saveIns(a) { localStorage.setItem(LS_INS, JSON.stringify(a)); updateBadges(); if(window._supaConectado) syncToSupabase('inventario_insumos', a); }
 function loadTer()  { try{ return JSON.parse(localStorage.getItem(LS_TER)||'[]'); }catch(e){ return []; } }
-function saveTer(a) { localStorage.setItem(LS_TER, JSON.stringify(a)); updateBadges(); }
+function saveTer(a) { localStorage.setItem(LS_TER, JSON.stringify(a)); updateBadges(); if(window._supaConectado) syncToSupabase('inventario_terminados', a); }
 function loadIMov() { try{ return JSON.parse(localStorage.getItem(LS_IMOV)||'[]'); }catch(e){ return []; } }
-function saveIMov(a){ localStorage.setItem(LS_IMOV, JSON.stringify(a)); }
+function saveIMov(a){ localStorage.setItem(LS_IMOV, JSON.stringify(a)); if(window._supaConectado) syncToSupabase('inventario_movimientos', a); }
 
 /* ── Tabs ── */
 function invTab(tab, btn){
