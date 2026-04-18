@@ -13,22 +13,87 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
 // ══════════════════════════════════════════════
-//  SUPABASE CONFIG — GestioMada v13.2
+//  SUPABASE CONFIG + REALTIME — GestioMada v13.5
 // ══════════════════════════════════════════════
-const SUPA_URL  = 'https://tpzfihiylygibmawtngh.supabase.co';
-const SUPA_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRwemZpaGl5bHlnaWJtYXd0bmdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NjQ3OTUsImV4cCI6MjA5MjA0MDc5NX0.K-W26HglGhoNF1u3Ylr6f7XLWnjjoV7S8srJy7PuFEs';
-const SUPA = supabase.createClient(SUPA_URL, SUPA_KEY);
+const SUPA_URL = 'https://tpzfihiylygibmawtngh.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRwemZpaGl5bHlnaWJtYXd0bmdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NjQ3OTUsImV4cCI6MjA5MjA0MDc5NX0.K-W26HglGhoNF1u3Ylr6f7XLWnjjoV7S8srJy7PuFEs';
+const SUPA = supabase.createClient(SUPA_URL, SUPA_KEY, {
+  realtime: { params: { eventsPerSecond: 10 } }
+});
 
-// ── Sync dual: localStorage (rápido) + Supabase (nube) ──
-// Lee siempre desde localStorage para velocidad.
-// Escribe en localStorage inmediatamente y sincroniza en Supabase en background.
+// Mapa de tablas Supabase → localStorage
+const SUPA_TABLAS = [
+  { supa: 'ventas',                  ls: 'POS.ven',         render: 'ventas'     },
+  { supa: 'pedidos',                 ls: 'POS.ped',         render: 'pedidos'    },
+  { supa: 'productos',               ls: 'POS.cat',         render: 'catalogo'   },
+  { supa: 'clientes',                ls: 'POS.cli',         render: 'clientes'   },
+  { supa: 'caja_movimientos',        ls: 'POS.caja',        render: 'caja'       },
+  { supa: 'inventario_insumos',      ls: 'POS.insumos',     render: 'inventario' },
+  { supa: 'inventario_terminados',   ls: 'POS.terminados',  render: 'inventario' },
+  { supa: 'inventario_movimientos',  ls: 'POS.invmov',      render: null         },
+];
 
+// ── Aplicar cambio recibido en tiempo real al localStorage ──
+function aplicarCambioRealtime(tabla, tipo, registro){
+  const t = SUPA_TABLAS.find(x => x.supa === tabla);
+  if(!t) return;
+  let local = [];
+  try { local = JSON.parse(localStorage.getItem(t.ls)||'[]'); } catch(e){}
+
+  if(tipo === 'INSERT' || tipo === 'UPDATE'){
+    const idx = local.findIndex(x => String(x.id) === String(registro.id));
+    if(idx >= 0){
+      // Preservar foto base64 local si el remoto no tiene foto_url
+      if(!registro.foto_url && local[idx].foto) registro.foto = local[idx].foto;
+      local[idx] = { ...local[idx], ...registro };
+    } else {
+      local.push(registro);
+    }
+  } else if(tipo === 'DELETE'){
+    local = local.filter(x => String(x.id) !== String(registro.id));
+  }
+
+  localStorage.setItem(t.ls, JSON.stringify(local));
+
+  // Re-renderizar la vista afectada si está activa
+  const renders = {
+    ventas:    ()=>{ if(typeof renderVentas==='function') renderVentas(); if(typeof renderDash==='function') renderDash(); },
+    pedidos:   ()=>{ if(typeof renderPedidos==='function') renderPedidos(); if(typeof renderDash==='function') renderDash(); },
+    catalogo:  ()=>{ if(typeof renderCatalogo==='function') renderCatalogo(); },
+    clientes:  ()=>{ if(typeof renderClientes==='function') renderClientes(); },
+    caja:      ()=>{ if(typeof renderCaja==='function') renderCaja(); },
+    inventario:()=>{ if(typeof renderInsumos==='function') renderInsumos(); },
+  };
+  if(t.render && renders[t.render]) renders[t.render]();
+  if(typeof updateBadges==='function') updateBadges();
+
+  // Toast silencioso de sync
+  console.log(`[Realtime] ${tabla} ${tipo} id:${registro.id}`);
+}
+
+// ── Activar Realtime en todas las tablas operativas ──
+function iniciarRealtime(){
+  const tablasRealtime = ['ventas','pedidos','productos','clientes','caja_movimientos','inventario_insumos'];
+  tablasRealtime.forEach(tabla => {
+    SUPA.channel('rt-' + tabla)
+      .on('postgres_changes', { event: '*', schema: 'public', table: tabla },
+        payload => {
+          const registro = payload.new || payload.old;
+          if(registro) aplicarCambioRealtime(tabla, payload.eventType, registro);
+        }
+      )
+      .subscribe(status => {
+        if(status === 'SUBSCRIBED') console.log('[Realtime] Escuchando:', tabla);
+      });
+  });
+}
+
+// ── Sync inicial al cargar la app ──
 async function syncToSupabase(tabla, datos){
   try {
     if(!Array.isArray(datos) || !datos.length) return;
-    // Upsert completo: reemplaza todos los registros de la tabla
     const { error } = await SUPA.from(tabla).upsert(datos, { onConflict: 'id' });
-    if(error) console.warn('[Supabase sync error]', tabla, error.message);
+    if(error) console.warn('[Supabase upsert error]', tabla, error.message);
   } catch(e){ console.warn('[Supabase sync]', e.message); }
 }
 
@@ -37,37 +102,29 @@ async function loadFromSupabase(tabla){
     const { data, error } = await SUPA.from(tabla).select('*').order('id');
     if(error) throw error;
     return data || [];
-  } catch(e){
-    console.warn('[Supabase load error]', tabla, e.message);
-    return null;
-  }
+  } catch(e){ return null; }
 }
 
-// ── Sincronización inicial al cargar la app ──
-// Descarga datos de Supabase si hay conexión y los datos remotos son más recientes
 async function initSupabaseSync(){
-  const tablas = [
-    { supa: 'productos',            ls: 'POS.cat'    },
-    { supa: 'clientes',             ls: 'POS.cli'    },
-    { supa: 'pedidos',              ls: 'POS.ped'    },
-    { supa: 'ventas',               ls: 'POS.ven'    },
-    { supa: 'caja_movimientos',     ls: 'POS.caja'   },
-    { supa: 'inventario_insumos',   ls: 'POS.insumos'},
-    { supa: 'inventario_terminados',ls: 'POS.terminados'},
-    { supa: 'inventario_movimientos',ls:'POS.invmov' },
-  ];
-
-  for(const t of tablas){
+  for(const t of SUPA_TABLAS){
     const remoto = await loadFromSupabase(t.supa);
     if(remoto && remoto.length > 0){
-      // Si Supabase tiene datos, actualizar localStorage
-      const local = JSON.parse(localStorage.getItem(t.ls)||'[]');
-      if(remoto.length >= local.length){
-        localStorage.setItem(t.ls, JSON.stringify(remoto));
-        console.log(`[Supabase] Sincronizado ${t.supa}: ${remoto.length} registros`);
-      }
+      const localItems = JSON.parse(localStorage.getItem(t.ls)||'[]');
+      // Merge: datos remotos + preservar foto base64 local y foto_url de Supabase
+      const mergeado = remoto.map(r => {
+        const loc = localItems.find(l => String(l.id) === String(r.id));
+        if(loc){
+          return { ...loc, ...r, foto: loc.foto || '', foto_url: r.foto_url || loc.foto_url || '' };
+        }
+        return r;
+      });
+      // Agregar locales que no están en remoto aún
+      localItems.forEach(loc => {
+        if(!mergeado.find(m => String(m.id) === String(loc.id))) mergeado.push(loc);
+      });
+      localStorage.setItem(t.ls, JSON.stringify(mergeado));
+      console.log(`[Supabase] Sync inicial ${t.supa}: ${mergeado.length} registros`);
     } else {
-      // Si Supabase está vacío pero localStorage tiene datos, subir a Supabase
       const local = JSON.parse(localStorage.getItem(t.ls)||'[]');
       if(local.length > 0){
         await syncToSupabase(t.supa, local);
@@ -75,25 +132,23 @@ async function initSupabaseSync(){
       }
     }
   }
-
-  // Mostrar indicador de sincronización
-  const ind = document.getElementById('supa-sync-ind');
-  if(ind){ ind.style.display='none'; }
-  if(typeof renderDash === 'function') renderDash();
-  if(typeof updateBadges === 'function') updateBadges();
+  if(typeof renderDash==='function') renderDash();
+  if(typeof updateBadges==='function') updateBadges();
+  // Activar Realtime después del sync inicial
+  iniciarRealtime();
 }
 
-// Estado de conexión
+// ── Conexión y arranque ──
 window._supaConectado = false;
 SUPA.from('config').select('clave').limit(1)
   .then(({data}) => {
     window._supaConectado = !!data;
     if(window._supaConectado){
-      console.log('[Supabase] Conectado ✓');
+      console.log('[Supabase] Conectado ✓ — iniciando sync + Realtime');
       initSupabaseSync();
     }
   })
-  .catch(() => { window._supaConectado = false; });
+  .catch(() => { window._supaConectado = false; console.warn('[Supabase] Sin conexión — modo offline'); });
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
@@ -1914,7 +1969,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.3 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.5 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.3: Integración Supabase — sync dual localStorage + nube, 13 tablas PostgreSQL. v13.2: Canales Local/WhatsApp/Online, recibo A4, confirmación post-venta. v13.2: Consolidación de todas las mejoras de la rama v13. Canal de venta (🏪 Local / 📱 WhatsApp / 🌐 Online) en Ventas y Pedidos. Recibo profesional A4. Modal de confirmación post-venta con impresión directa. Precios con diferencial cambiario en catálogo y POS. Total en Bs según método de pago. v13.0: Corrección bug renderizado catálogo. v12.2: Sistema dual BCV/Paralela. v12.1: Inventario dual por locación. v12.0: Usuarios con PIN y roles.</p>
         </div>
       </div>
@@ -3307,7 +3362,7 @@ function abrirProdManual(idx=null){
     qs('#mpm_notas').value=p.notas||'';
     mpmToggleReceta();
     if(p.modo_inventario==='insumos') mpmCargarReceta(p.insumos_receta||[]);
-    if(p.foto&&fImg){ fImg.src=p.foto; fImg.style.display='block'; fPh.style.display='none'; fDel.style.display='block'; }
+    const _fotoSrc=getFoto(p); if(_fotoSrc&&fImg){ fImg.src=_fotoSrc; fImg.style.display='block'; fPh.style.display='none'; fDel.style.display='block'; }
     else if(fImg){ fImg.src=''; fImg.style.display='none'; fPh.style.display='block'; if(fDel) fDel.style.display='none'; }
     mpmActualizarMargen();
   } else {
@@ -3394,7 +3449,7 @@ function renderCatalogo(){
     const ri=cat.indexOf(p); const mg=p.precio_venta&&p.costo?((p.precio_venta-p.costo)/p.precio_venta*100).toFixed(1):null;
     const card=document.createElement('div'); card.className='prod-card';
     card.innerHTML=`
-      <div class="prod-card-img" style="${p.foto?'padding:0;overflow:hidden':''}">${p.foto?`<img src="${p.foto}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" alt="${p.nombre}"/>`:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>'}<div class="status-dot ${p.estado==='inactivo'?'off':''}"></div></div>
+      <div class="prod-card-img" style="${getFoto(p)?'padding:0;overflow:hidden':''}">${getFoto(p)?`<img src="${getFoto(p)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" alt="${p.nombre}"/>`:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>'}<div class="status-dot ${p.estado==='inactivo'?'off':''}"></div></div>
       <div class="prod-card-body">
         <div class="prod-card-name" title="${p.nombre}">${p.nombre}</div>
         <div class="prod-card-meta">${p.sku?'SKU: '+p.sku+' · ':''}${p.categoria||'Sin categoría'}</div>
@@ -3438,8 +3493,8 @@ function verProd(idx){
   const utilEst=p.precio_venta&&p.costo?(p.precio_venta-p.costo):0;
 
   // Foto
-  const fotoHtml = p.foto
-    ? `<img src="${p.foto}" style="width:80px;height:80px;border-radius:12px;object-fit:cover;flex-shrink:0"/>`
+  const fotoHtml = getFoto(p)
+    ? `<img src="${getFoto(p)}" style="width:80px;height:80px;border-radius:12px;object-fit:cover;flex-shrink:0"/>`
     : `<div style="width:80px;height:80px;border-radius:12px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">${posEmoji(p.categoria)}</div>`;
 
   // Receta de insumos
@@ -3822,7 +3877,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v133',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v135',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
@@ -5031,8 +5086,8 @@ function posRenderProductos(){
   wrap.innerHTML = prods.map(p => {
     const enCarrito = _posItems.find(it => it.id_prod && String(it.id_prod) === String(p.id));
     const qty = enCarrito ? enCarrito.cant : 0;
-    const imgHtml = p.foto
-      ? `<img class="pos-prod-img" src="${p.foto}" alt="${p.nombre}" loading="lazy"/>`
+    const imgHtml = getFoto(p)
+      ? `<img class="pos-prod-img" src="${getFoto(p)}" alt="${p.nombre}" loading="lazy"/>`
       : `<div class="pos-prod-img-ph">${posEmoji(p.categoria)}</div>`;
     return `<div class="pos-prod-card" onclick="posAgregarProd('${p.id}')">
       ${qty > 0 ? `<div class="pos-qty-badge">${qty}</div>` : ''}
@@ -5753,6 +5808,9 @@ const VEN_TIPO_LABEL={ venta_rapida:'Venta rápida', pago_pedido:'Pago de pedido
 const VEN_TIPO_COLOR={ venta_rapida:'chip-ok', pago_pedido:'chip-info', abono:'chip-warn', pago_restante:'chip-info' };
 const CANALES_LABEL={ local:'🏪 Local', whatsapp:'📱 WhatsApp', online:'🌐 Online' };
 const CANALES_COLOR={ local:'background:#E1F5EE;color:#085041', whatsapp:'background:#dcfce7;color:#15803d', online:'background:#E6F1FB;color:#0C447C' };
+// ── Helper: obtiene la foto correcta (Supabase URL > base64 local) ──
+function getFoto(p){ return (p.foto_url && p.foto_url.startsWith('http')) ? p.foto_url : (p.foto || ''); }
+
 
 function renderVentas(){
   renderKpisVentas();
