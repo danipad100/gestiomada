@@ -92,9 +92,146 @@ function iniciarRealtime(){
 async function syncToSupabase(tabla, datos){
   try {
     if(!Array.isArray(datos) || !datos.length) return;
-    const { error } = await SUPA.from(tabla).upsert(datos, { onConflict: 'id' });
-    if(error) console.warn('[Supabase upsert error]', tabla, error.message);
+    // Mapear campos del localStorage al esquema de Supabase por tabla
+    const mapeados = datos.map(d => mapearParaSupa(tabla, d));
+    const { error } = await SUPA.from(tabla).upsert(mapeados, { onConflict: 'id' });
+    if(error) console.warn('[Supabase upsert error]', tabla, error.message, JSON.stringify(mapeados[0]).slice(0,200));
   } catch(e){ console.warn('[Supabase sync]', e.message); }
+}
+
+// Mapea un registro del localStorage al esquema exacto de Supabase
+// Elimina campos extra y resuelve foreign keys problemáticas
+function mapearParaSupa(tabla, d){
+  const id = d.id ? parseInt(d.id) : Date.now();
+
+  if(tabla === 'ventas') return {
+    id,
+    numero:           d.numero || '',
+    cliente_snapshot: d.cliente || null,
+    items:            d.items || [],
+    subtotal:         parseFloat(d.subtotal)||0,
+    descuento:        parseFloat(d.descuento)||0,
+    delivery_usd:     parseFloat(d.delivery_usd)||0,
+    envio_usd:        parseFloat(d.envio_usd)||0,
+    total:            parseFloat(d.total)||0,
+    recibido:         parseFloat(d.recibido)||0,
+    vuelto:           parseFloat(d.vuelto)||0,
+    costo_total:      parseFloat(d.costo_total)||0,
+    utilidad:         parseFloat(d.utilidad)||0,
+    tipo:             d.tipo || 'venta_rapida',
+    canal:            d.canal || 'local',
+    metodo:           d.metodo || 'efectivo_bs',
+    estado:           d.estado || 'completada',
+    notas:            d.notas || '',
+    usuario_nom:      d.usuario_nom || '',
+    fecha:            d.fecha || new Date().toISOString(),
+    // FK omitidas intencionalmente: cliente_id, pedido_id, usuario_id
+  };
+
+  if(tabla === 'pedidos') return {
+    id,
+    numero:           d.numero || '',
+    cliente_snapshot: d.cliente || null,
+    items:            d.items || [],
+    subtotal:         parseFloat(d.subtotal)||0,
+    descuento:        parseFloat(d.descuento)||0,
+    total:            parseFloat(d.total)||0,
+    pagos:            d.pagos || [],
+    estado:           d.estado || 'pendiente',
+    canal:            d.canal || 'local',
+    notas:            d.notas || '',
+    fecha_pedido:     d.fecha_pedido || null,
+    fecha_entrega:    d.fecha_entrega || null,
+    usuario_nom:      d.usuario_nom || '',
+    // FK omitidas: cliente_id, usuario_id
+  };
+
+  if(tabla === 'clientes') return {
+    id,
+    nombre:    d.nombre || '',
+    apellido:  d.apellido || '',
+    cedula:    d.cedula || '',
+    telefono:  d.telefono || '',
+    direccion: d.direccion || '',
+    notas:     d.notas || '',
+    // Omitidos: fecha (→ fecha_registro auto), pedidos[], ventas[]
+  };
+
+  if(tabla === 'caja_movimientos') return {
+    id,
+    tipo:      d.tipo || 'ingreso',
+    categoria: d.categoria || 'otro',
+    monto:     parseFloat(d.monto)||0,
+    moneda:    d.moneda || 'bs',
+    tasa:      parseFloat(d.tasa)||0,
+    monto_bs:  parseFloat(d.monto_bs)||0,
+    monto_usd: parseFloat(d.monto_usd)||0,
+    metodo:    d.metodo || 'efectivo_bs',
+    nota:      d.nota || '',
+    ref_tipo:  d.ref_tipo || '',
+    fecha:     d.fecha || new Date().toISOString().slice(0,10),
+    // FK omitida: sesion_id (no usamos sesiones en sync)
+  };
+
+  if(tabla === 'productos') return {
+    id,
+    nombre:          d.nombre || '',
+    sku:             d.sku || '',
+    categoria:       d.categoria || '',
+    foto_url:        d.foto_url || '',
+    costo:           parseFloat(d.costo)||0,
+    precio_venta:    parseFloat(d.precio_venta)||0,
+    precio_sugerido: parseFloat(d.precio_sugerido)||0,
+    margen_pct:      parseFloat(d.margen)||0,
+    estado:          d.estado || 'activo',
+    origen:          d.origen || 'manual',
+    modo_inventario: d.modo_inventario || 'ninguno',
+    inv_loc:         d.inv_loc || 'deposito',
+    moneda_prod:     d.moneda_prod || 'usd',
+    insumos_receta:  d.insumos_receta || [],
+    notas:           d.notas || '',
+    calculo:         d.calculo || null,
+    // Omitidos: foto (base64 pesado), fecha, margen (campo calculado)
+  };
+
+  if(tabla === 'inventario_insumos') return {
+    id,
+    nombre:    d.nombre || '',
+    sku:       d.sku || '',
+    unidad:    d.unidad || 'unidad',
+    stock:     parseFloat(d.stock)||0,
+    stock_dep: parseFloat(d.stock_dep)||0,
+    stock_min: parseFloat(d.stock_min)||0,
+    costo_ref: parseFloat(d.costo_ref)||0,
+    proveedor: d.proveedor || '',
+    notas:     d.notas || '',
+    // Omitidos: fecha, movimientos[], categoria
+  };
+
+  if(tabla === 'inventario_terminados') return {
+    id,
+    nombre:    d.nombre || '',
+    stock:     parseFloat(d.stock)||0,
+    stock_dep: parseFloat(d.stock_dep)||0,
+    stock_min: parseFloat(d.stock_min)||0,
+    unidad:    d.unidad || 'unidad',
+    // FK omitida: producto_id (puede ser null si producto fue eliminado)
+  };
+
+  if(tabla === 'inventario_movimientos') return {
+    id,
+    item_id:   parseInt(d.item_id)||0,
+    item_tipo: d.item_tipo || 'insumo',
+    tipo:      d.tipo || 'entrada',
+    cantidad:  parseFloat(d.cantidad)||0,
+    locacion:  d.locacion || 'local',
+    nota:      d.nota || '',
+    ref_tipo:  d.ref_tipo || '',
+    // Omitido: fecha → created_at auto
+  };
+
+  // Fallback: solo campos seguros
+  return { id };
 }
 
 async function loadFromSupabase(tabla){
@@ -1969,7 +2106,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.5 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.7 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.3: Integración Supabase — sync dual localStorage + nube, 13 tablas PostgreSQL. v13.2: Canales Local/WhatsApp/Online, recibo A4, confirmación post-venta. v13.2: Consolidación de todas las mejoras de la rama v13. Canal de venta (🏪 Local / 📱 WhatsApp / 🌐 Online) en Ventas y Pedidos. Recibo profesional A4. Modal de confirmación post-venta con impresión directa. Precios con diferencial cambiario en catálogo y POS. Total en Bs según método de pago. v13.0: Corrección bug renderizado catálogo. v12.2: Sistema dual BCV/Paralela. v12.1: Inventario dual por locación. v12.0: Usuarios con PIN y roles.</p>
         </div>
       </div>
@@ -3877,7 +4014,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v135',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v137',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
