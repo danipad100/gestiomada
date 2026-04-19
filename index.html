@@ -234,6 +234,15 @@ function mapearParaSupa(tabla, d){
   return { id };
 }
 
+async function deleteFromSupabase(tabla, id){
+  if(!window._supaConectado || !id) return;
+  try {
+    const { error } = await SUPA.from(tabla).delete().eq('id', id);
+    if(error) console.warn('[Supabase delete error]', tabla, id, error.message);
+    else console.log('[Supabase] Eliminado', tabla, id);
+  } catch(e){ console.warn('[Supabase delete]', e.message); }
+}
+
 async function loadFromSupabase(tabla){
   try {
     const { data, error } = await SUPA.from(tabla).select('*').order('id');
@@ -2119,7 +2128,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.14 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.15 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.3: Integración Supabase — sync dual localStorage + nube, 13 tablas PostgreSQL. v13.2: Canales Local/WhatsApp/Online, recibo A4, confirmación post-venta. v13.2: Consolidación de todas las mejoras de la rama v13. Canal de venta (🏪 Local / 📱 WhatsApp / 🌐 Online) en Ventas y Pedidos. Recibo profesional A4. Modal de confirmación post-venta con impresión directa. Precios con diferencial cambiario en catálogo y POS. Total en Bs según método de pago. v13.0: Corrección bug renderizado catálogo. v12.2: Sistema dual BCV/Paralela. v12.1: Inventario dual por locación. v12.0: Usuarios con PIN y roles.</p>
         </div>
       </div>
@@ -3883,7 +3892,7 @@ function duplicarProd(idx){
   cat.push(copia); saveCat(cat); renderCatalogo(); renderDash();
   toast('Producto duplicado: '+copia.nombre,'ok');
 }
-function eliminarProd(idx){ const cat=loadCat(); if(!confirm('¿Eliminar "'+cat[idx].nombre+'"?')) return; cat.splice(idx,1); saveCat(cat); renderCatalogo(); renderDash(); toast('Eliminado','ok'); }
+function eliminarProd(idx){ const cat=loadCat(); if(!confirm('¿Eliminar "'+cat[idx].nombre+'"?')) return; const _id=cat[idx].id; cat.splice(idx,1); saveCat(cat); deleteFromSupabase('productos',_id); renderCatalogo(); renderDash(); toast('Eliminado','ok'); }
 
 /* ════════════════════════════════════════════
    CLIENTES
@@ -3979,7 +3988,7 @@ function editarCliente(){
 }
 function editarCliente2(idx){ _cliIdx=idx; editarCliente(); }
 function eliminarCliente(){ if(_cliIdx===null) return; eliminarCliente2(_cliIdx); closeModal('m-ver-cli'); }
-function eliminarCliente2(idx){ const all=loadCli(); if(!confirm('¿Eliminar a "'+all[idx].nombre+'"?')) return; all.splice(idx,1); saveCli(all); renderClientes(); renderDash(); toast('Cliente eliminado','ok'); _cliIdx=null; }
+function eliminarCliente2(idx){ const all=loadCli(); if(!confirm('¿Eliminar a "'+all[idx].nombre+'"?')) return; const _id=all[idx].id; all.splice(idx,1); saveCli(all); deleteFromSupabase('clientes',_id); renderClientes(); renderDash(); toast('Cliente eliminado','ok'); _cliIdx=null; }
 
 function calcTotalCli(c){
   const vens=loadVen().filter(v=>v.cliente&&v.cliente.id===c.id&&v.estado!=='anulada');
@@ -4176,7 +4185,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v1314',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v1315',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
@@ -6697,7 +6706,7 @@ function eliminarMovimiento(posEnFil, _){
   const mov=fil[posEnFil]; if(!mov) return;
   if(!confirm('¿Eliminar este movimiento?')) return;
   const ri=all.findIndex(m=>m.id===mov.id);
-  if(ri>=0){ all.splice(ri,1); saveCajaMov(all); renderCaja(); renderDash(); toast('Movimiento eliminado','ok'); }
+  if(ri>=0){ const _id=all[ri].id; all.splice(ri,1); saveCajaMov(all); deleteFromSupabase('caja_movimientos',_id); renderCaja(); renderDash(); toast('Movimiento eliminado','ok'); }
 }
 
 function exportCajaCSV(){
@@ -7452,7 +7461,7 @@ function eliminarInsumo(){
   if(_insIdx===null) return;
   const all=loadIns();
   if(!confirm('¿Eliminar "'+all[_insIdx].nombre+'"?')) return;
-  all.splice(_insIdx,1); saveIns(all); closeModal('m-ver-ins'); renderInsumos(); renderDash();
+  const _insId=all[_insIdx].id; all.splice(_insIdx,1); saveIns(all); deleteFromSupabase('inventario_insumos',_insId); closeModal('m-ver-ins'); renderInsumos(); renderDash();
   toast('Insumo eliminado','ok'); _insIdx=null;
 }
 
