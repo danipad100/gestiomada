@@ -2119,7 +2119,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.11 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.12 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.3: Integración Supabase — sync dual localStorage + nube, 13 tablas PostgreSQL. v13.2: Canales Local/WhatsApp/Online, recibo A4, confirmación post-venta. v13.2: Consolidación de todas las mejoras de la rama v13. Canal de venta (🏪 Local / 📱 WhatsApp / 🌐 Online) en Ventas y Pedidos. Recibo profesional A4. Modal de confirmación post-venta con impresión directa. Precios con diferencial cambiario en catálogo y POS. Total en Bs según método de pago. v13.0: Corrección bug renderizado catálogo. v12.2: Sistema dual BCV/Paralela. v12.1: Inventario dual por locación. v12.0: Usuarios con PIN y roles.</p>
         </div>
       </div>
@@ -2889,12 +2889,46 @@ async function guardarConfigNegocio(){
       { clave: 'direccion',    valor: CFG.direccion },
       { clave: 'slogan',       valor: CFG.slogan },
       { clave: 'nota_recibo',  valor: CFG.nota_recibo },
-      { clave: 'logo',         valor: CFG.logo ? '[logo_local]' : '' }, // no subir base64 pesado
+      // Logo se sube por separado a Storage
+
     ];
 
     for(const c of campos){
       await SUPA.from('config').upsert(
         { clave: c.clave, valor: JSON.stringify(c.valor) },
+        { onConflict: 'clave' }
+      );
+    }
+
+    // Subir logo a Supabase Storage si es base64 local
+    if(CFG.logo && CFG.logo.startsWith('data:')){
+      try {
+        const b64 = CFG.logo.split(',')[1];
+        const mime = CFG.logo.split(';')[0].replace('data:','');
+        const ext = mime.includes('png') ? 'png' : 'jpg';
+        const bin = atob(b64);
+        const bytes = new Uint8Array(bin.length);
+        for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+        const { error: upErr } = await SUPA.storage
+          .from('productos-fotos')
+          .upload('negocio-logo.' + ext, bytes, { contentType: mime, upsert: true });
+        if(!upErr){
+          const { data: { publicUrl } } = SUPA.storage
+            .from('productos-fotos')
+            .getPublicUrl('negocio-logo.' + ext);
+          CFG.logo_url = publicUrl;
+          localStorage.setItem(LS_CFG, JSON.stringify(CFG));
+          await SUPA.from('config').upsert(
+            { clave: 'logo_url', valor: JSON.stringify(publicUrl) },
+            { onConflict: 'clave' }
+          );
+          console.log('[Config] Logo subido a Storage:', publicUrl);
+        }
+      } catch(eL){ console.warn('[Config] Error subiendo logo:', eL); }
+    } else if(CFG.logo_url) {
+      // Ya tiene URL en Storage, solo guardar referencia
+      await SUPA.from('config').upsert(
+        { clave: 'logo_url', valor: JSON.stringify(CFG.logo_url) },
         { onConflict: 'clave' }
       );
     }
@@ -2921,7 +2955,7 @@ async function cargarConfigNegocioDesdeNube(){
     if(error || !data) return;
 
     let changed = false;
-    const camposNegocio = ['negocio','rif','telefono','instagram','direccion','slogan','nota_recibo'];
+    const camposNegocio = ['negocio','rif','telefono','instagram','direccion','slogan','nota_recibo','logo_url'];
     data.forEach(row => {
       if(camposNegocio.includes(row.clave)){
         try {
@@ -2929,6 +2963,16 @@ async function cargarConfigNegocioDesdeNube(){
           if(val && val !== CFG[row.clave]){
             CFG[row.clave] = val;
             changed = true;
+            // Si es logo_url, actualizar también CFG.logo para que el recibo lo use
+            if(row.clave === 'logo_url'){
+              CFG.logo = val;
+              const logoImg = qs('#cfg_logo_img');
+              const logoPh  = qs('#cfg_logo_ph');
+              const logoDel = qs('#cfg_logo_del');
+              if(logoImg){ logoImg.src=val; logoImg.style.display='block'; }
+              if(logoPh)  logoPh.style.display='none';
+              if(logoDel) logoDel.style.display='block';
+            }
           }
         } catch(e){}
       }
@@ -4132,7 +4176,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v1311',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v1312',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
