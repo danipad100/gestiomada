@@ -271,6 +271,8 @@ async function initSupabaseSync(){
   }
   if(typeof renderDash==='function') renderDash();
   if(typeof updateBadges==='function') updateBadges();
+  // Cargar config del negocio desde Supabase
+  if(typeof cargarConfigNegocioDesdeNube==='function') cargarConfigNegocioDesdeNube();
   // Activar Realtime después del sync inicial
   iniciarRealtime();
 }
@@ -1957,6 +1959,13 @@ body.dark .pos-prod-img-ph{background:#23283a}
               <div class="fg"><label>Nota de pago en recibo</label><input type="text" id="cfg_nota_recibo" placeholder="Ej. No se aceptan devoluciones después de 24h"/></div>
             </div>
           </div>
+          <div style="margin-top:16px;display:flex;align-items:center;gap:10px">
+            <button class="btn btn-brand" onclick="guardarConfigNegocio()" id="btn_guardar_negocio">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:5px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Guardar datos del negocio
+            </button>
+            <span id="cfg_negocio_status" style="font-size:12px;color:var(--muted)"></span>
+          </div>
         </div>
         <div class="card">
           <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Moneda</div>
@@ -2110,7 +2119,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.10 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.11 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.3: Integración Supabase — sync dual localStorage + nube, 13 tablas PostgreSQL. v13.2: Canales Local/WhatsApp/Online, recibo A4, confirmación post-venta. v13.2: Consolidación de todas las mejoras de la rama v13. Canal de venta (🏪 Local / 📱 WhatsApp / 🌐 Online) en Ventas y Pedidos. Recibo profesional A4. Modal de confirmación post-venta con impresión directa. Precios con diferencial cambiario en catálogo y POS. Total en Bs según método de pago. v13.0: Corrección bug renderizado catálogo. v12.2: Sistema dual BCV/Paralela. v12.1: Inventario dual por locación. v12.0: Usuarios con PIN y roles.</p>
         </div>
       </div>
@@ -2841,6 +2850,103 @@ function loadCfg(){
     cat.forEach(p=>{ if(p.moneda_prod==='bs'){ p.moneda_prod='usd'; changed=true; } });
     if(changed) saveCat(cat);
   })();
+}
+
+// ── Guardar datos del negocio en Supabase ──
+async function guardarConfigNegocio(){
+  const btn = qs('#btn_guardar_negocio');
+  const status = qs('#cfg_negocio_status');
+
+  // Leer campos del formulario
+  const _li = qs('#cfg_logo_img');
+  CFG.logo        = (_li && _li.style.display !== 'none') ? _li.src : '';
+  CFG.negocio     = qs('#cfg_neg')?.value || '';
+  CFG.rif         = qs('#cfg_rif')?.value || '';
+  CFG.telefono    = qs('#cfg_tel')?.value || '';
+  CFG.instagram   = qs('#cfg_instagram')?.value || '';
+  CFG.direccion   = qs('#cfg_dir')?.value || '';
+  CFG.slogan      = qs('#cfg_slogan')?.value || '';
+  CFG.nota_recibo = qs('#cfg_nota_recibo')?.value || '';
+
+  // Guardar en localStorage
+  localStorage.setItem(LS_CFG, JSON.stringify(CFG));
+
+  if(!window._supaConectado){
+    toast('Datos del negocio guardados localmente (sin conexión a nube)', 'warn');
+    return;
+  }
+
+  if(btn){ btn.disabled = true; btn.textContent = 'Guardando…'; }
+  if(status) status.textContent = 'Sincronizando…';
+
+  try {
+    // Guardar cada campo de negocio en la tabla config de Supabase
+    const campos = [
+      { clave: 'negocio',      valor: CFG.negocio },
+      { clave: 'rif',          valor: CFG.rif },
+      { clave: 'telefono',     valor: CFG.telefono },
+      { clave: 'instagram',    valor: CFG.instagram },
+      { clave: 'direccion',    valor: CFG.direccion },
+      { clave: 'slogan',       valor: CFG.slogan },
+      { clave: 'nota_recibo',  valor: CFG.nota_recibo },
+      { clave: 'logo',         valor: CFG.logo ? '[logo_local]' : '' }, // no subir base64 pesado
+    ];
+
+    for(const c of campos){
+      await SUPA.from('config').upsert(
+        { clave: c.clave, valor: JSON.stringify(c.valor) },
+        { onConflict: 'clave' }
+      );
+    }
+
+    if(status){ status.textContent = '✅ Guardado y sincronizado'; setTimeout(()=>{ if(status) status.textContent=''; }, 3000); }
+    toast('Datos del negocio guardados en la nube ✓', 'ok');
+  } catch(e) {
+    if(status){ status.textContent = '❌ Error al sincronizar'; }
+    toast('Error al guardar en nube: ' + e.message, 'warn');
+    console.warn('[Config Supabase]', e);
+  } finally {
+    if(btn){
+      btn.disabled = false;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:5px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar datos del negocio`;
+    }
+  }
+}
+
+// ── Cargar datos del negocio desde Supabase al iniciar ──
+async function cargarConfigNegocioDesdeNube(){
+  if(!window._supaConectado) return;
+  try {
+    const { data, error } = await SUPA.from('config').select('clave, valor');
+    if(error || !data) return;
+
+    let changed = false;
+    const camposNegocio = ['negocio','rif','telefono','instagram','direccion','slogan','nota_recibo'];
+    data.forEach(row => {
+      if(camposNegocio.includes(row.clave)){
+        try {
+          const val = JSON.parse(row.valor);
+          if(val && val !== CFG[row.clave]){
+            CFG[row.clave] = val;
+            changed = true;
+          }
+        } catch(e){}
+      }
+    });
+
+    if(changed){
+      localStorage.setItem(LS_CFG, JSON.stringify(CFG));
+      // Actualizar campos en el formulario si está visible
+      if(qs('#cfg_neg')) qs('#cfg_neg').value = CFG.negocio || '';
+      if(qs('#cfg_rif')) qs('#cfg_rif').value = CFG.rif || '';
+      if(qs('#cfg_tel')) qs('#cfg_tel').value = CFG.telefono || '';
+      if(qs('#cfg_instagram')) qs('#cfg_instagram').value = CFG.instagram || '';
+      if(qs('#cfg_dir')) qs('#cfg_dir').value = CFG.direccion || '';
+      if(qs('#cfg_slogan')) qs('#cfg_slogan').value = CFG.slogan || '';
+      if(qs('#cfg_nota_recibo')) qs('#cfg_nota_recibo').value = CFG.nota_recibo || '';
+      console.log('[Config] Datos del negocio sincronizados desde Supabase');
+    }
+  } catch(e){ console.warn('[Config Supabase load]', e); }
 }
 function guardarConfig(){
   const _li=qs('#cfg_logo_img'); CFG.logo=(_li&&_li.style.display!=='none')?_li.src:'';
@@ -4026,7 +4132,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v1310',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v1311',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
