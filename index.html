@@ -2110,7 +2110,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.9 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.10 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.3: Integración Supabase — sync dual localStorage + nube, 13 tablas PostgreSQL. v13.2: Canales Local/WhatsApp/Online, recibo A4, confirmación post-venta. v13.2: Consolidación de todas las mejoras de la rama v13. Canal de venta (🏪 Local / 📱 WhatsApp / 🌐 Online) en Ventas y Pedidos. Recibo profesional A4. Modal de confirmación post-venta con impresión directa. Precios con diferencial cambiario en catálogo y POS. Total en Bs según método de pago. v13.0: Corrección bug renderizado catálogo. v12.2: Sistema dual BCV/Paralela. v12.1: Inventario dual por locación. v12.0: Usuarios con PIN y roles.</p>
         </div>
       </div>
@@ -4026,7 +4026,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v139',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v1310',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
