@@ -1949,8 +1949,12 @@ body.dark .pos-prod-img-ph{background:#23283a}
             </div>
             <div style="flex:1;min-width:180px">
               <div class="fg"><label>Nombre del negocio</label><input type="text" id="cfg_neg" placeholder="Mi Negocio"/></div>
-              <div class="fg"><label>Teléfono</label><input type="text" id="cfg_tel" placeholder="+58 414…"/></div>
+              <div class="fg"><label>RIF / RNC</label><input type="text" id="cfg_rif" placeholder="J-12345678-9"/></div>
+              <div class="fg"><label>Teléfono / WhatsApp</label><input type="text" id="cfg_tel" placeholder="+58 414…"/></div>
+              <div class="fg"><label>Instagram</label><input type="text" id="cfg_instagram" placeholder="@minegocio"/></div>
               <div class="fg"><label>Dirección / Referencia</label><input type="text" id="cfg_dir" placeholder="Ej. Av. Principal, Local 3…"/></div>
+              <div class="fg"><label>Slogan (aparece en recibo)</label><input type="text" id="cfg_slogan" placeholder="Tu satisfacción es nuestra meta"/></div>
+              <div class="fg"><label>Nota de pago en recibo</label><input type="text" id="cfg_nota_recibo" placeholder="Ej. No se aceptan devoluciones después de 24h"/></div>
             </div>
           </div>
         </div>
@@ -2106,7 +2110,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.7 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.9 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.3: Integración Supabase — sync dual localStorage + nube, 13 tablas PostgreSQL. v13.2: Canales Local/WhatsApp/Online, recibo A4, confirmación post-venta. v13.2: Consolidación de todas las mejoras de la rama v13. Canal de venta (🏪 Local / 📱 WhatsApp / 🌐 Online) en Ventas y Pedidos. Recibo profesional A4. Modal de confirmación post-venta con impresión directa. Precios con diferencial cambiario en catálogo y POS. Total en Bs según método de pago. v13.0: Corrección bug renderizado catálogo. v12.2: Sistema dual BCV/Paralela. v12.1: Inventario dual por locación. v12.0: Usuarios con PIN y roles.</p>
         </div>
       </div>
@@ -2808,8 +2812,12 @@ let CFG = { moneda:'$', negocio:'', telefono:'', tasa_global:0, tasa_bcv:0, tasa
 function loadCfg(){
   try{ CFG = Object.assign(CFG, JSON.parse(localStorage.getItem(LS_CFG)||'{}')); }catch(e){}
   qs('#cfg_neg').value = CFG.negocio||'';
+  if(qs('#cfg_rif')) qs('#cfg_rif').value = CFG.rif||'';
   qs('#cfg_tel').value = CFG.telefono||'';
+  if(qs('#cfg_instagram')) qs('#cfg_instagram').value = CFG.instagram||'';
   if(qs('#cfg_dir')) qs('#cfg_dir').value = CFG.direccion||'';
+  if(qs('#cfg_slogan')) qs('#cfg_slogan').value = CFG.slogan||'';
+  if(qs('#cfg_nota_recibo')) qs('#cfg_nota_recibo').value = CFG.nota_recibo||'';
   qs('#cfg_mon').value = CFG.moneda||'$';
   const m2el = qs('#cfg_mon2'); if(m2el) m2el.value = CFG.moneda2||'';
   const tbm=qs('#tb-mon'); if(tbm) tbm.textContent=(CFG.moneda||'$')+' Moneda';
@@ -2836,9 +2844,13 @@ function loadCfg(){
 }
 function guardarConfig(){
   const _li=qs('#cfg_logo_img'); CFG.logo=(_li&&_li.style.display!=='none')?_li.src:'';
-  CFG.negocio  = qs('#cfg_neg').value;
-  CFG.telefono = qs('#cfg_tel').value;
-  CFG.direccion = qs('#cfg_dir')?.value||'';
+  CFG.negocio    = qs('#cfg_neg').value;
+  CFG.rif        = qs('#cfg_rif')?.value||'';
+  CFG.telefono   = qs('#cfg_tel').value;
+  CFG.instagram  = qs('#cfg_instagram')?.value||'';
+  CFG.direccion  = qs('#cfg_dir')?.value||'';
+  CFG.slogan     = qs('#cfg_slogan')?.value||'';
+  CFG.nota_recibo= qs('#cfg_nota_recibo')?.value||'';
   CFG.moneda   = qs('#cfg_mon').value;
   CFG.moneda2  = qs('#cfg_mon2')?.value||'';
   CFG.imp_on   = qs('#cfg_imp_on')?.checked||false;
@@ -4014,7 +4026,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v137',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v139',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
@@ -5627,6 +5639,17 @@ function posRecalc(){
 }
 
 // ── Cobrar ──
+
+// ── Helper: moneda y monto real para caja según método de pago ──
+function cajaMonedaMonto(metodo, totalUsd, bcv, dif){
+  const esBs = ['efectivo_bs','pago_movil','transferencia'].includes(metodo);
+  const esUsd = ['efectivo_usd','zelle'].includes(metodo);
+  if(esBs && bcv > 0){
+    const montoBs = totalUsd * dif * bcv;
+    return { moneda:'bs', monto: montoBs, monto_bs: montoBs, monto_usd: totalUsd, tasa: bcv };
+  }
+  return { moneda:'usd', monto: totalUsd, monto_bs: 0, monto_usd: totalUsd, tasa: bcv };
+}
 function posCobrar(){
   if(!_posItems.length){ toast('Agrega al menos un producto','warn'); return; }
   const sub = _posItems.reduce((a,it) => a + (it.precio_unit * it.cant), 0);
@@ -5671,10 +5694,13 @@ function posCobrar(){
 
   const allVen = loadVen(); allVen.push(venta); saveVen(allVen);
 
-  // Registrar en caja
+  // Registrar en caja con moneda correcta
+  const _cajaMM = cajaMonedaMonto(venta.metodo, total, getTasaBCV(), getDiferencial());
   const mov = {
     id: Date.now()+1, tipo:'ingreso', categoria:'venta',
-    monto: total, metodo: venta.metodo,
+    monto: _cajaMM.monto, moneda: _cajaMM.moneda,
+    monto_bs: _cajaMM.monto_bs, monto_usd: _cajaMM.monto_usd, tasa: _cajaMM.tasa,
+    metodo: venta.metodo,
     nota: `Venta ${venta.numero}${_posCliSel?' — '+_posCliSel.nombre+' '+_posCliSel.apellido:''}`,
     ref_id: venta.id, ref_tipo:'venta',
     fecha: new Date().toISOString().slice(0,10)
@@ -5923,10 +5949,13 @@ function guardarVenta(){
 
   const all=loadVen(); all.push(venta); saveVen(all);
 
-  // Registrar automáticamente en caja
+  // Registrar automáticamente en caja con moneda correcta
+  const _cajaMM2 = cajaMonedaMonto(venta.metodo, total, getTasaBCV(), getDiferencial());
   const mov={
     id:Date.now()+1, tipo:'ingreso', categoria:'venta',
-    monto:total, metodo:venta.metodo,
+    monto:_cajaMM2.monto, moneda:_cajaMM2.moneda,
+    monto_bs:_cajaMM2.monto_bs, monto_usd:_cajaMM2.monto_usd, tasa:_cajaMM2.tasa,
+    metodo:venta.metodo,
     nota:`Venta ${venta.numero}${_venCliSel?' — '+_venCliSel.nombre+' '+_venCliSel.apellido:''}`,
     ref_id:venta.id, ref_tipo:'venta',
     fecha:new Date().toISOString().slice(0,10)
@@ -6074,87 +6103,144 @@ function verVenta(idx){
 function imprimirComprobante(){
   const all=loadVen(); if(_venIdx===null) return;
   const v=all[_venIdx]; if(!v) return;
-  const neg=CFG.negocio||'GestioMada';
-  const tel=CFG.telefono||'';
-  const dir=CFG.direccion||'';
-  const mon=CFG.moneda||'$';
-  const bcvRec=getTasaBCV();
-  const dif=getDiferencial();
-  const fmtMon=n=>mon+' '+Number(n||0).toFixed(2).replace('.',',');
-  const fecha=new Date(v.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
-  const metLbl=METODOS_LABEL[v.metodo]||v.metodo||'';
-  const tipoLbl={venta_rapida:'Venta rápida',pago_pedido:'Pago de pedido',abono:'Abono',pago_restante:'Pago restante'}[v.tipo]||v.tipo||'Venta';
-  const metodoBs=['efectivo_bs','pago_movil','transferencia'].includes(v.metodo);
-  const totalBs=metodoBs&&bcvRec>0?v.total*dif*bcvRec:0;
 
-  const itemsHtml=v.items.map((it,i)=>`
-    <tr style="background:${i%2===0?'#fff':'#fafafa'}">
+  // Datos del negocio
+  const neg      = CFG.negocio||'GestioMada';
+  const rif      = CFG.rif||'';
+  const tel      = CFG.telefono||'';
+  const instagram= CFG.instagram||'';
+  const dir      = CFG.direccion||'';
+  const slogan   = CFG.slogan||'';
+  const notaRec  = CFG.nota_recibo||'';
+  const mon      = CFG.moneda||'$';
+
+  // Tasas
+  const bcvRec = getTasaBCV();
+  const difRec = getDiferencial();
+
+  // Determinar si el pago fue en Bs
+  const metodoBsRec = ['efectivo_bs','pago_movil','transferencia'].includes(v.metodo);
+
+  // Montos según método
+  const totalBaseUsd  = v.total || 0;                        // $ precio base
+  const totalDifUsd   = totalBaseUsd * difRec;               // $ con diferencial
+  const totalBsReal   = totalDifUsd * bcvRec;                // Bs que pagó el cliente
+
+  const metLbl  = METODOS_LABEL[v.metodo]||v.metodo||'';
+  const tipoLbl = {venta_rapida:'Venta rápida',pago_pedido:'Pago de pedido',abono:'Abono',pago_restante:'Pago restante'}[v.tipo]||v.tipo||'Venta';
+  const fecha   = new Date(v.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+
+  const fmtUsd = n => '$ ' + Number(n||0).toFixed(2).replace('.',',');
+  const fmtBs  = n => 'Bs ' + Number(n||0).toFixed(2).replace('.',',');
+
+  // Items
+  const itemsHtml = v.items.map((it,i) => {
+    const puBase = it.precio_unit || 0;
+    const puDif  = metodoBsRec ? puBase * difRec : puBase;
+    const ptDif  = puDif * it.cant;
+    const ptBs   = ptDif * bcvRec;
+    return `<tr style="background:${i%2===0?'#fff':'#fafafa'}">
       <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">${it.nombre}</td>
       <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px">${it.cant}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px">${fmtMon(it.precio_unit)}</td>
-      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px;font-weight:600">${fmtMon(it.precio_unit*it.cant)}</td>
-    </tr>`).join('');
+      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px">
+        ${metodoBsRec && difRec > 1.001 ? `<div style="font-size:10px;color:#888;text-decoration:line-through">${fmtUsd(puBase)}</div>` : ''}
+        ${fmtUsd(puDif)}
+        ${metodoBsRec && bcvRec > 0 ? `<div style="font-size:10px;color:#555">${fmtBs(puDif * bcvRec)}</div>` : ''}
+      </td>
+      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px;font-weight:600">
+        ${fmtUsd(ptDif)}
+        ${metodoBsRec && bcvRec > 0 ? `<div style="font-size:11px;color:#444;font-weight:400">${fmtBs(ptBs)}</div>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
 
-  const logoHtml=CFG.logo
-    ?`<img src="${CFG.logo}" style="max-height:60px;max-width:140px;object-fit:contain;display:block;margin-bottom:6px"/>`
-    :`<div style="font-size:24px;font-weight:900;color:#ff7aa2;letter-spacing:-0.5px">${neg}</div>`;
+  const logoHtml = CFG.logo
+    ? `<img src="${CFG.logo}" style="max-height:60px;max-width:140px;object-fit:contain;display:block;margin-bottom:6px"/>`
+    : `<div style="font-size:24px;font-weight:900;color:#ff7aa2;letter-spacing:-0.5px">${neg}</div>`;
 
-  const bsLineTotal=totalBs>0?`<tr><td colspan="2" style="padding:6px 12px;text-align:right;font-size:11px;color:#888">Equivalente en Bs (c/dif.)</td><td style="padding:6px 12px;text-align:right;font-size:11px;color:#888">Bs ${totalBs.toFixed(2).replace('.',',')}</td></tr>`:'';
-  const bsLineSub=bcvRec>0&&!totalBs?`<tr><td colspan="2" style="padding:6px 12px;text-align:right;font-size:11px;color:#aaa">Referencia Bs</td><td style="padding:6px 12px;text-align:right;font-size:11px;color:#aaa">Bs ${Math.round(v.total*dif*bcvRec).toLocaleString('es-VE')}</td></tr>`:'';
+  // Bloque de totales según método de pago
+  const totalesHtml = metodoBsRec && bcvRec > 0 ? `
+    <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
+      <tr>
+        <td style="padding:6px 12px;color:#666;font-size:12px">Subtotal base (USD)</td>
+        <td style="padding:6px 12px;text-align:right;font-size:12px">${fmtUsd(totalBaseUsd)}</td>
+      </tr>
+      ${difRec > 1.001 ? `<tr>
+        <td style="padding:6px 12px;color:#666;font-size:12px">Diferencial cambiario (×${difRec.toFixed(3)})</td>
+        <td style="padding:6px 12px;text-align:right;font-size:12px;color:#ff7aa2;font-weight:600">${fmtUsd(totalDifUsd)}</td>
+      </tr>` : ''}
+      ${v.descuento ? `<tr>
+        <td style="padding:6px 12px;color:#c0392b;font-size:12px">Descuento</td>
+        <td style="padding:6px 12px;text-align:right;font-size:12px;color:#c0392b">−${fmtUsd(v.descuento)}</td>
+      </tr>` : ''}
+      <tr>
+        <td style="padding:6px 12px;color:#666;font-size:12px">Tasa BCV aplicada</td>
+        <td style="padding:6px 12px;text-align:right;font-size:12px">${bcvRec.toLocaleString('es-VE')} Bs/$</td>
+      </tr>
+    </table>
+    <div style="background:#111;color:#fff;border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin:8px 0">
+      <div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.6)">Total a pagar</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:2px">${fmtUsd(totalDifUsd)} × ${bcvRec.toLocaleString('es-VE')}</div>
+      </div>
+      <div style="font-size:28px;font-weight:900">Bs ${totalBsReal.toFixed(2).replace('.',',')}</div>
+    </div>
+    <div style="text-align:right;font-size:11px;color:#aaa;margin-bottom:8px">Equivale a ${fmtUsd(totalDifUsd)} al paralelo</div>
+  ` : `
+    ${v.descuento ? `<div style="text-align:right;font-size:12px;color:#c0392b;margin-bottom:4px">Descuento: −${fmtUsd(v.descuento)}</div>` : ''}
+    <div style="background:#111;color:#fff;border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin:8px 0">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.6)">Total</div>
+      <div style="font-size:28px;font-weight:900">${fmtUsd(totalBaseUsd)}</div>
+    </div>
+    ${bcvRec > 0 ? `<div style="text-align:right;font-size:11px;color:#aaa;margin-bottom:8px">Referencia Bs: ${fmtBs(totalDifUsd * bcvRec)}</div>` : ''}
+  `;
 
-  const win=window.open('','_blank','width=800,height=900,toolbar=0,scrollbars=1');
+  const win = window.open('','_blank','width=800,height=950,toolbar=0,scrollbars=1');
   if(!win){ toast('Activa las ventanas emergentes para imprimir','warn'); return; }
+
   win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
   <title>Recibo ${v.numero}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#222;background:#fff;padding:0}
-    .page{max-width:780px;margin:0 auto;padding:40px 44px}
-    .top-bar{height:8px;background:linear-gradient(90deg,#ff7aa2,#7aa2ff);margin-bottom:36px}
-    .bottom-bar{height:8px;background:linear-gradient(90deg,#ff7aa2,#7aa2ff);margin-top:40px}
-    .header-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px}
-    .neg-info{max-width:260px}
-    .neg-name{font-size:18px;font-weight:800;margin-bottom:4px;color:#111}
-    .neg-sub{font-size:12px;color:#666;line-height:1.8}
+    .page{max-width:780px;margin:0 auto;padding:36px 40px}
+    .top-bar{height:8px;background:linear-gradient(90deg,#ff7aa2,#7aa2ff);margin-bottom:32px}
+    .bottom-bar{height:8px;background:linear-gradient(90deg,#ff7aa2,#7aa2ff);margin-top:36px}
+    .header-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px}
+    .neg-name{font-size:18px;font-weight:800;color:#111;margin-bottom:2px}
+    .neg-sub{font-size:12px;color:#666;line-height:1.9}
     .recibo-title{font-size:36px;font-weight:900;color:#f0f0f0;letter-spacing:-1px;text-align:right;line-height:1}
     .recibo-num{font-size:13px;font-weight:700;color:#ff7aa2;text-align:right;margin-top:4px;letter-spacing:1px}
-    .info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:32px;padding-bottom:24px;border-bottom:1.5px solid #eee}
-    .info-col{font-size:12px}
-    .info-col .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#999;margin-bottom:6px}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:28px;padding-bottom:20px;border-bottom:1.5px solid #eee}
+    .info-col .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#999;margin-bottom:5px}
     .info-col .val{font-size:13px;color:#222;line-height:1.7}
-    .meta-table{width:100%;border-collapse:collapse;margin-bottom:28px;font-size:11px}
-    .meta-table td{padding:4px 0;color:#555;line-height:1.7}
-    .meta-table td:first-child{font-weight:700;color:#888;width:130px;text-transform:uppercase;letter-spacing:.04em;font-size:10px}
-    .total-hero{background:#111;color:#fff;border-radius:10px;padding:18px 24px;display:flex;justify-content:space-between;align-items:center;margin:20px 0 8px}
-    .total-hero-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.6)}
-    .total-hero-val{font-size:28px;font-weight:900;color:#fff}
     .items-table{width:100%;border-collapse:collapse;margin-bottom:6px}
-    .items-table thead tr{background:#f8f8f8}
-    .items-table thead td{padding:10px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#999;border-bottom:2px solid #eee}
+    .items-table thead td{padding:10px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#999;border-bottom:2px solid #eee;background:#f8f8f8}
     .items-table thead td.r{text-align:right}
-    .totals-table{width:100%;border-collapse:collapse;margin-top:4px}
-    .totals-table td{padding:7px 12px;font-size:13px}
-    .totals-table td.r{text-align:right}
-    .cobro-section{margin-top:16px;padding:14px 18px;background:#f9fafb;border-radius:8px;font-size:12px;color:#555;line-height:2}
+    .cobro-section{margin-top:14px;padding:12px 16px;background:#f9fafb;border-radius:8px;font-size:12px;color:#555;line-height:2}
     .cobro-row{display:flex;justify-content:space-between}
-    .notas-box{margin-top:18px;padding:12px 16px;border-left:3px solid #ff7aa2;background:#fff8fb;font-size:12px;color:#666;line-height:1.7}
-    .conditions{margin-top:28px;padding-top:18px;border-top:1px solid #eee;font-size:12px;color:#666;line-height:1.8}
-    .conditions .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#999;margin-bottom:6px}
-    .anulada{background:#fee2e2;color:#991b1b;text-align:center;padding:8px;font-weight:700;font-size:13px;border-radius:6px;margin-bottom:20px;letter-spacing:.05em}
-    .print-btn{display:block;width:100%;padding:12px;background:#ff7aa2;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:20px;font-family:inherit;letter-spacing:.02em}
-    @media print{.print-btn{display:none}.top-bar,.bottom-bar{-webkit-print-color-adjust:exact;print-color-adjust:exact}.total-hero{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    .conditions{margin-top:24px;padding-top:16px;border-top:1px solid #eee;font-size:12px;color:#666;line-height:1.8}
+    .conditions .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#999;margin-bottom:5px}
+    .slogan{text-align:center;font-style:italic;color:#ff7aa2;font-size:13px;margin:16px 0 6px;font-weight:600}
+    .anulada{background:#fee2e2;color:#991b1b;text-align:center;padding:8px;font-weight:700;border-radius:6px;margin-bottom:16px}
+    .print-btn{display:block;width:100%;padding:12px;background:#ff7aa2;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:18px;font-family:inherit}
+    @media print{.print-btn{display:none}.top-bar,.bottom-bar,.cobro-section div[style*="background:#111"]{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
   </style></head><body>
   <button class="print-btn" onclick="window.print()">🖨 Imprimir recibo</button>
   <div class="page">
     <div class="top-bar"></div>
     ${v.estado==='anulada'?'<div class="anulada">⚠ VENTA ANULADA</div>':''}
 
-    <!-- Encabezado -->
     <div class="header-row">
-      <div class="neg-info">
+      <div>
         ${logoHtml}
         <div class="neg-name">${neg}</div>
-        <div class="neg-sub">${dir?dir+'<br>':''}${tel?'Tel: '+tel:''}</div>
+        <div class="neg-sub">
+          ${rif?'RIF: '+rif+'<br>':''}
+          ${dir?dir+'<br>':''}
+          ${tel?'Tel/WhatsApp: '+tel+'<br>':''}
+          ${instagram?'Instagram: '+instagram:''}
+        </div>
       </div>
       <div>
         <div class="recibo-title">RECIBO</div>
@@ -6162,67 +6248,55 @@ function imprimirComprobante(){
       </div>
     </div>
 
-    <!-- Info grid -->
     <div class="info-grid">
       <div class="info-col">
         <div class="label">Cliente</div>
         <div class="val">${v.cliente?(v.cliente.nombre+' '+(v.cliente.apellido||'')):'—'}<br>
-        ${v.cliente?.cedula?v.cliente.cedula+'<br>':''}${v.cliente?.telefono?v.cliente.telefono:''}</div>
+        ${v.cliente?.cedula||''} ${v.cliente?.telefono?'<br>'+v.cliente.telefono:''}</div>
       </div>
       <div class="info-col">
         <div class="label">Fecha</div>
         <div class="val">${fecha}</div>
-        <div class="label" style="margin-top:12px">Tipo</div>
+        <div class="label" style="margin-top:10px">Tipo</div>
         <div class="val">${tipoLbl}</div>
       </div>
       <div class="info-col">
         <div class="label">N° de recibo</div>
         <div class="val" style="font-weight:700;color:#ff7aa2">${v.numero}</div>
-        <div class="label" style="margin-top:12px">Método de pago</div>
+        <div class="label" style="margin-top:10px">Método de pago</div>
         <div class="val">${metLbl}</div>
-        <div class="label" style="margin-top:12px">Canal</div>
+        <div class="label" style="margin-top:10px">Canal</div>
         <div class="val">${CANALES_LABEL[v.canal]||'🏪 Local'}</div>
-        ${v.usuario_nom?`<div class="label" style="margin-top:12px">Atendido por</div><div class="val">${v.usuario_nom}</div>`:''}
+        ${v.usuario_nom?`<div class="label" style="margin-top:10px">Atendido por</div><div class="val">${v.usuario_nom}</div>`:''}
       </div>
     </div>
 
-    <!-- Items -->
     <table class="items-table">
       <thead><tr>
-        <td>CANT.</td><td>DESCRIPCIÓN</td>
-        <td class="r">PRECIO UNITARIO</td><td class="r">IMPORTE</td>
+        <td>Cant.</td><td>Descripción</td>
+        <td class="r">P. Unitario${metodoBsRec?' ($ c/dif + Bs)':''}</td>
+        <td class="r">Importe${metodoBsRec?' ($+Bs)':''}</td>
       </tr></thead>
       <tbody>${itemsHtml}</tbody>
     </table>
 
-    <!-- Totales -->
-    <table class="totals-table">
-      ${v.descuento?`<tr><td class="r" colspan="3" style="color:#666">Descuento</td><td class="r" style="color:#c0392b">-${fmtMon(v.descuento)}</td></tr>`:''}
-      <tr><td class="r" colspan="3" style="color:#666">Subtotal</td><td class="r">${fmtMon(v.subtotal||v.total)}</td></tr>
-      ${bsLineTotal}${bsLineSub}
-    </table>
+    ${totalesHtml}
 
-    <!-- Total hero -->
-    <div class="total-hero">
-      <span class="total-hero-label">Total</span>
-      <span class="total-hero-val">${totalBs>0?'Bs '+totalBs.toFixed(2).replace('.',','):fmtMon(v.total)}</span>
-    </div>
-    ${totalBs>0?`<div style="text-align:right;font-size:11px;color:#aaa;margin-bottom:6px">Equivale a ${fmtMon(v.total)} · Tasa BCV: ${bcvRec.toLocaleString('es-VE')} · Dif: ×${dif.toFixed(3)}</div>`:
-      bcvRec>0?`<div style="text-align:right;font-size:11px;color:#aaa;margin-bottom:6px">Tasa BCV: ${bcvRec.toLocaleString('es-VE')} Bs/$</div>`:''}
-
-    <!-- Cobro -->
     <div class="cobro-section">
-      ${v.recibido?`<div class="cobro-row"><span>Monto recibido</span><strong>${metodoBs&&bcvRec>0?'Bs '+(v.recibido).toFixed(2).replace('.',','):fmtMon(v.recibido)}</strong></div>`:''}
-      ${(v.vuelto||0)>0?`<div class="cobro-row"><span>Vuelto</span><strong style="color:#16a34a">${fmtMon(v.vuelto)}</strong></div>`:''}
+      ${v.recibido?`<div class="cobro-row"><span>Monto recibido</span><strong>${metodoBsRec&&bcvRec>0?fmtBs(v.recibido):fmtUsd(v.recibido)}</strong></div>`:''}
+      ${(v.vuelto||0)>0?`<div class="cobro-row"><span>Vuelto</span><strong>${fmtUsd(v.vuelto)}</strong></div>`:''}
     </div>
 
-    ${v.notas?`<div class="notas-box"><strong>Notas:</strong> ${v.notas}</div>`:''}
+    ${v.notas?`<div style="margin-top:14px;padding:10px 14px;border-left:3px solid #ff7aa2;background:#fff8fb;font-size:12px;color:#666"><strong>Notas:</strong> ${v.notas}</div>`:''}
 
-    <!-- Condiciones -->
+    ${slogan?`<div class="slogan">${slogan}</div>`:''}
+
     <div class="conditions">
-      <div class="label">CONDICIONES Y FORMA DE PAGO</div>
-      El pago fue realizado mediante <strong>${metLbl}</strong>${totalBs>0?' en bolívares':' en dólares'}.
-      ${CFG.nota_recibo?'<br>'+CFG.nota_recibo:''}
+      <div class="label">Condiciones y forma de pago</div>
+      ${metodoBsRec && bcvRec > 0
+        ? `Pago recibido en <strong>Bolívares (Bs)</strong>. Precio en dólares con diferencial: <strong>${fmtUsd(totalDifUsd)}</strong>. Tasa BCV aplicada: <strong>${bcvRec.toLocaleString('es-VE')} Bs/$</strong>.`
+        : `Pago recibido en <strong>dólares (USD)</strong>.`}
+      ${notaRec?'<br>'+notaRec:''}
     </div>
 
     <div class="bottom-bar"></div>
@@ -6426,6 +6500,18 @@ function renderCaja(){
       </div>
       <div style="text-align:right;flex-shrink:0">
         <div style="font-weight:700;font-size:15px;color:${esIng?'var(--ok)':'var(--danger)'}">${esIng?'＋':'−'}${m.moneda==='usd'?'$ '+(m.monto||0).toLocaleString('es-ES',{minimumFractionDigits:2}):'Bs '+(m.monto||0).toLocaleString('es-ES',{minimumFractionDigits:2})}</div>
+        ${(()=>{
+          if(m.moneda==='usd') return '';
+          // Movimiento en Bs — mostrar equivalente en $ paralelo
+          const _difC=getDiferencial(), _bcvC=getTasaBCV();
+          if(!_bcvC||!_difC) return '';
+          const _usdEq=(m.monto||0)/(_difC*_bcvC);
+          const _usdBcv=(m.monto||0)/_bcvC;
+          return `<div style="font-size:10px;color:var(--muted);margin-top:1px">
+            ≈ <span style="font-weight:600;color:var(--brand)">$ ${_usdEq.toFixed(2)} paralelo</span>
+            <span style="opacity:.7"> · $ ${_usdBcv.toFixed(2)} BCV</span>
+          </div>`;
+        })()}
         ${m.tasa>0&&m.moneda==='usd'?`<div style="font-size:10px;color:var(--muted)">≈ Bs ${((m.monto||0)*m.tasa).toLocaleString('es-ES',{minimumFractionDigits:2})}</div>`:''}
       </div>
       <button class="copy-btn" style="color:var(--danger);flex-shrink:0" onclick="eliminarMovimiento(${i},${JSON.stringify(fil).length})"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
@@ -6768,9 +6854,12 @@ function guardarPedido(){
   // Si es pedido nuevo y tiene abono → registrar en Caja
   if(esNuevo && abono>0){
     const cajaAll=loadCajaMov();
+    const _metAb=qs('#mp_metodo').value;
+    const _mm2=cajaMonedaMonto(_metAb,abono,getTasaBCV(),getDiferencial());
     cajaAll.push({
       id: Date.now()+2, tipo:'ingreso', categoria:'abono',
-      monto: abono, metodo: qs('#mp_metodo').value,
+      monto:_mm2.monto, moneda:_mm2.moneda, monto_bs:_mm2.monto_bs, monto_usd:_mm2.monto_usd, tasa:_mm2.tasa,
+      metodo: _metAb,
       nota: 'Abono pedido '+ped.numero+(ped.cliente?' — '+ped.cliente.nombre+' '+(ped.cliente.apellido||''):''),
       ref_id: ped.id, ref_tipo:'pedido',
       fecha: new Date().toISOString().slice(0,10)
@@ -6967,9 +7056,10 @@ function avanzarEstado(){
     const pendienteCobrar = Math.max(0, p.total - pagado);
     if(pendienteCobrar > 0){
       const cajaAll=loadCajaMov();
+      const _mm3=cajaMonedaMonto(venta.metodo,pendienteCobrar,getTasaBCV(),getDiferencial());
       cajaAll.push({
         id: Date.now()+3, tipo:'ingreso', categoria:'venta',
-        monto: pendienteCobrar,
+        monto:_mm3.monto, moneda:_mm3.moneda, monto_bs:_mm3.monto_bs, monto_usd:_mm3.monto_usd, tasa:_mm3.tasa,
         metodo: venta.metodo,
         nota: 'Entrega pedido '+p.numero+' — pago restante'+(p.cliente?' ('+p.cliente.nombre+')':''),
         ref_id: venta.id, ref_tipo:'venta',
@@ -7031,10 +7121,12 @@ function registrarPago(){
   // Registrar en Caja
   const cajaAll=loadCajaMov();
   const epActual=estadoPago(p);
+  const _mmP=cajaMonedaMonto(metodo,monto,getTasaBCV(),getDiferencial());
   cajaAll.push({
     id: Date.now()+1, tipo:'ingreso',
     categoria: epActual==='pagado'?'venta':'abono',
-    monto, metodo,
+    monto:_mmP.monto, moneda:_mmP.moneda, monto_bs:_mmP.monto_bs, monto_usd:_mmP.monto_usd, tasa:_mmP.tasa,
+    metodo,
     nota: (nota?nota+' — ':'')+(epActual==='pagado'?'Pago completo':'Abono')+' '+p.numero+(p.cliente?' — '+p.cliente.nombre+' '+(p.cliente.apellido||''):''),
     ref_id: p.id, ref_tipo:'pedido',
     fecha: new Date().toISOString().slice(0,10)
