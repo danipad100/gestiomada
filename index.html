@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V9_1_BASE_ESTABLE">
+<html lang="es" data-app-version="GestioMada_V13_17">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -254,45 +254,42 @@ async function loadFromSupabase(tabla){
 async function initSupabaseSync(){
   for(const t of SUPA_TABLAS){
     const remoto = await loadFromSupabase(t.supa);
+
     if(remoto && remoto.length > 0){
-      const localItems = JSON.parse(localStorage.getItem(t.ls)||'[]');
-      if(localItems.length === 0){
-        // Local vacío → bajar todo de Supabase
+      // ── Supabase es la fuente de verdad ──
+      // Para caja_movimientos: Supabase manda siempre.
+      // Lo que está en Supabase ES el estado real del negocio.
+      // Nunca hacer merge que pueda restaurar registros eliminados.
+      if(t.supa === 'caja_movimientos'){
         localStorage.setItem(t.ls, JSON.stringify(remoto));
-        console.log(`[Supabase] Sync inicial ${t.supa}: ${remoto.length} registros`);
+        console.log(`[Supabase] Caja sync: ${remoto.length} movimientos (Supabase = fuente de verdad)`);
       } else {
-        // Merge inteligente: agregar remotos que no existan local (INSERT desde otro dispositivo)
-        // NO restaurar los que fueron borrados localmente
-        const mergeado = [...localItems];
-        remoto.forEach(r => {
-          const existeLocal = localItems.find(l => String(l.id) === String(r.id));
-          if(existeLocal){
-            // Preservar foto base64 local si existe
-            const merged = { ...existeLocal, ...r, foto: existeLocal.foto || '', foto_url: r.foto_url || existeLocal.foto_url || '' };
-            const idx = mergeado.findIndex(m => String(m.id) === String(r.id));
-            if(idx >= 0) mergeado[idx] = merged;
+        // Para otras tablas: preservar fotos base64 locales que Supabase no almacena
+        const localItems = JSON.parse(localStorage.getItem(t.ls)||'[]');
+        const mergeado = remoto.map(r => {
+          const local = localItems.find(l => String(l.id) === String(r.id));
+          if(local && local.foto) {
+            return { ...r, foto: local.foto, foto_url: r.foto_url || local.foto_url || '' };
           }
-          // Si NO existe local, es un INSERT desde otro dispositivo → agregar
-          // EXCEPCIÓN: si la tabla es caja_movimientos y el local ya tenía datos,
-          // no agregar automáticamente (puede ser dato viejo de antes de borrar)
-          else if(t.supa !== 'caja_movimientos'){
-            mergeado.push(r);
-          } else {
-            // Para caja: solo agregar si es más reciente que el último local
-            const lastLocal = localItems.reduce((a,b) => (b.id > a.id ? b : a), {id:0});
-            if(r.id > lastLocal.id) mergeado.push(r);
-          }
+          return r;
+        });
+        // Agregar locales que aún no subieron (tienen id temporal muy grande)
+        localItems.forEach(l => {
+          const enRemoto = remoto.find(r => String(r.id) === String(l.id));
+          if(!enRemoto) mergeado.push(l);
         });
         localStorage.setItem(t.ls, JSON.stringify(mergeado));
         console.log(`[Supabase] Sync inicial ${t.supa}: ${mergeado.length} registros`);
       }
-    } else {
+    } else if(remoto && remoto.length === 0){
+      // Supabase vacío → subir locales si existen (primer uso o tabla nueva)
       const local = JSON.parse(localStorage.getItem(t.ls)||'[]');
       if(local.length > 0){
         await syncToSupabase(t.supa, local);
         console.log(`[Supabase] Subido ${t.supa}: ${local.length} registros`);
       }
     }
+    // Si remoto===null (error de red), no tocar localStorage
   }
   if(typeof renderDash==='function') renderDash();
   if(typeof updateBadges==='function') updateBadges();
@@ -4201,7 +4198,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v1316',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v1317',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
@@ -6707,13 +6704,37 @@ function renderKpisCaja(fil, INGRESOS){
     <div class="kpi c-blue"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E6F1FB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div></div><div class="kpi-lbl">Mov. en período</div><div class="kpi-val">${fil.length}</div><div class="kpi-sub">registros</div></div>`;
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 async function eliminarMovimiento(posEnFil, _){
-  // Reconstruir índice real desde all
   const all=loadCajaMov();
   const desde=qs('#caja_desde')?.value||'';
   const hasta=qs('#caja_hasta')?.value||'';
   const fcat=qs('#caja_fcat')?.value||'';
-  const INGRESOS=['ingreso','abono','venta'];
   const fil=all.filter(m=>{
     const mf=m.fecha||'';
     const inRange=(!desde||mf>=desde)&&(!hasta||mf<=hasta);
@@ -6724,10 +6745,11 @@ async function eliminarMovimiento(posEnFil, _){
   const ri=all.findIndex(m=>m.id===mov.id);
   if(ri>=0){
     const _id=all[ri].id;
+    // 1. Supabase primero — es la fuente de verdad
+    await deleteFromSupabase('caja_movimientos', _id);
+    // 2. Actualizar localStorage sin hacer upsert (evita restaurar el registro)
     all.splice(ri,1);
-    localStorage.setItem(LS_CAJA, JSON.stringify(all)); // guardar local inmediatamente
-    await deleteFromSupabase('caja_movimientos', _id);   // esperar confirmación de Supabase
-    saveCajaMov(all);                                    // upsert del resto
+    localStorage.setItem(LS_CAJA, JSON.stringify(all));
     renderCaja(); renderDash();
     toast('Movimiento eliminado','ok');
   }
