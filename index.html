@@ -2119,7 +2119,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.13 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.14 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.3: Integración Supabase — sync dual localStorage + nube, 13 tablas PostgreSQL. v13.2: Canales Local/WhatsApp/Online, recibo A4, confirmación post-venta. v13.2: Consolidación de todas las mejoras de la rama v13. Canal de venta (🏪 Local / 📱 WhatsApp / 🌐 Online) en Ventas y Pedidos. Recibo profesional A4. Modal de confirmación post-venta con impresión directa. Precios con diferencial cambiario en catálogo y POS. Total en Bs según método de pago. v13.0: Corrección bug renderizado catálogo. v12.2: Sistema dual BCV/Paralela. v12.1: Inventario dual por locación. v12.0: Usuarios con PIN y roles.</p>
         </div>
       </div>
@@ -4176,7 +4176,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v1313',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v1314',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
@@ -5392,21 +5392,17 @@ function posRenderProductos(){
       ${qty > 0 ? `<div class="pos-qty-badge">${qty}</div>` : ''}
       ${imgHtml}
       <div class="pos-prod-name">${p.nombre}</div>
-      <div style="font-size:10px;color:var(--muted);line-height:1.6;margin-top:2px;text-align:center">${(()=>{
+      <div class="pos-prod-price">${euro(p.precio_venta||0)}</div>
+      <div style="font-size:9px;color:var(--muted);line-height:1.5">${(()=>{
         const bcv=getTasaBCV();
+        if(!bcv) return '';
         const pvUsd=p.precio_venta||0;
         const dif=getDiferencial();
+        const pvUsdDif=pvUsd*dif;
+        const pvBsDif=pvUsdDif*bcv;
         const hasDif=dif>1.001;
-        const pvFinal=hasDif ? pvUsd*dif : pvUsd;  // precio que ve el cliente
-        const pvBs=pvFinal*bcv;
-        if(hasDif){
-          // Mostrar precio con dif como precio principal
-          return `<span style="font-size:13px;font-weight:700;color:var(--brand)">$ ${pvFinal.toFixed(2)}</span>`
-               + (bcv>0 ? `<br><span style="font-weight:600;color:var(--ink)">Bs ${pvBs.toFixed(2).replace('.',',')}</span>` : '');
-        }
-        // Sin diferencial: solo el precio en $ y Bs
-        return `<span style="font-size:13px;font-weight:700;color:var(--brand)">$ ${pvUsd.toFixed(2)}</span>`
-             + (bcv>0 ? `<br><span style="font-weight:600;color:var(--ink)">Bs ${pvBs.toFixed(2).replace('.',',')}</span>` : '');
+        if(!hasDif) return `<span style="font-weight:600">Bs ${(pvUsd*bcv).toFixed(2).replace('.',',')}</span>`;
+        return `<span style="color:var(--brand);font-weight:700">$ ${pvUsdDif.toFixed(2)}</span> c/dif.<br><span style="font-weight:600">Bs ${pvBsDif.toFixed(2).replace('.',',')}</span>`;
       })()}</div>
       ${p.sku ? `<div class="pos-prod-sku">${p.sku}</div>` : ''}
     </div>`;
@@ -5467,8 +5463,18 @@ function posRenderCarrito(){
     if(totalBar) totalBar.style.display = 'none';
     return;
   }
-  const monSym = CFG.moneda || '$';
-  wrap.innerHTML = _posItems.map((it,i) => `
+  const _metodoBsCart = ['efectivo_bs','pago_movil','transferencia'].includes(_posMetodoActivo);
+  const _difCart = getDiferencial();
+  const _bcvCart = getTasaBCV();
+  wrap.innerHTML = _posItems.map((it,i) => {
+    const puBase = it.precio_unit * it.cant;
+    const puConDif = puBase * _difCart;
+    const puBs = puConDif * _bcvCart;
+    const precioLabel = _metodoBsCart && _bcvCart > 0
+      ? `<div style="font-size:12px;font-weight:700">$ ${(it.precio_unit*_difCart*it.cant).toFixed(2).replace('.',',')}</div>
+         <div style="font-size:10px;color:var(--muted)">Bs ${puBs.toFixed(2).replace('.',',')}</div>`
+      : `<div style="font-size:12px;font-weight:700">${euro(puBase)}</div>`;
+    return `
     <div class="pos-item">
       <div class="pos-item-name">${it.nombre}</div>
       <div class="pos-item-qty-ctrl">
@@ -5476,10 +5482,10 @@ function posRenderCarrito(){
         <div class="pos-item-qty">${it.cant}</div>
         <button class="pos-qty-btn" onclick="posCantItem(${i},1)">＋</button>
       </div>
-      <div class="pos-item-price">${euro(it.precio_unit*it.cant)}</div>
+      <div class="pos-item-price" style="text-align:right">${precioLabel}</div>
       <button class="pos-item-del" onclick="posQuitarItem(${i})" title="Quitar">✕</button>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
   if(totalBar) totalBar.style.display = 'flex';
 }
 
@@ -5589,6 +5595,7 @@ function posRenderMetodos(){
 function posSelMetodo(key){
   _posMetodoActivo = key;
   posRenderMetodos();
+  posRenderCarrito();
   posRecalc();
 }
 
