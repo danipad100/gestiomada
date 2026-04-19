@@ -256,20 +256,36 @@ async function initSupabaseSync(){
     const remoto = await loadFromSupabase(t.supa);
     if(remoto && remoto.length > 0){
       const localItems = JSON.parse(localStorage.getItem(t.ls)||'[]');
-      // Merge: datos remotos + preservar foto base64 local y foto_url de Supabase
-      const mergeado = remoto.map(r => {
-        const loc = localItems.find(l => String(l.id) === String(r.id));
-        if(loc){
-          return { ...loc, ...r, foto: loc.foto || '', foto_url: r.foto_url || loc.foto_url || '' };
-        }
-        return r;
-      });
-      // Agregar locales que no están en remoto aún
-      localItems.forEach(loc => {
-        if(!mergeado.find(m => String(m.id) === String(loc.id))) mergeado.push(loc);
-      });
-      localStorage.setItem(t.ls, JSON.stringify(mergeado));
-      console.log(`[Supabase] Sync inicial ${t.supa}: ${mergeado.length} registros`);
+      if(localItems.length === 0){
+        // Local vacío → bajar todo de Supabase
+        localStorage.setItem(t.ls, JSON.stringify(remoto));
+        console.log(`[Supabase] Sync inicial ${t.supa}: ${remoto.length} registros`);
+      } else {
+        // Merge inteligente: agregar remotos que no existan local (INSERT desde otro dispositivo)
+        // NO restaurar los que fueron borrados localmente
+        const mergeado = [...localItems];
+        remoto.forEach(r => {
+          const existeLocal = localItems.find(l => String(l.id) === String(r.id));
+          if(existeLocal){
+            // Preservar foto base64 local si existe
+            const merged = { ...existeLocal, ...r, foto: existeLocal.foto || '', foto_url: r.foto_url || existeLocal.foto_url || '' };
+            const idx = mergeado.findIndex(m => String(m.id) === String(r.id));
+            if(idx >= 0) mergeado[idx] = merged;
+          }
+          // Si NO existe local, es un INSERT desde otro dispositivo → agregar
+          // EXCEPCIÓN: si la tabla es caja_movimientos y el local ya tenía datos,
+          // no agregar automáticamente (puede ser dato viejo de antes de borrar)
+          else if(t.supa !== 'caja_movimientos'){
+            mergeado.push(r);
+          } else {
+            // Para caja: solo agregar si es más reciente que el último local
+            const lastLocal = localItems.reduce((a,b) => (b.id > a.id ? b : a), {id:0});
+            if(r.id > lastLocal.id) mergeado.push(r);
+          }
+        });
+        localStorage.setItem(t.ls, JSON.stringify(mergeado));
+        console.log(`[Supabase] Sync inicial ${t.supa}: ${mergeado.length} registros`);
+      }
     } else {
       const local = JSON.parse(localStorage.getItem(t.ls)||'[]');
       if(local.length > 0){
@@ -2128,8 +2144,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.15 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.3: Integración Supabase — sync dual localStorage + nube, 13 tablas PostgreSQL. v13.2: Canales Local/WhatsApp/Online, recibo A4, confirmación post-venta. v13.2: Consolidación de todas las mejoras de la rama v13. Canal de venta (🏪 Local / 📱 WhatsApp / 🌐 Online) en Ventas y Pedidos. Recibo profesional A4. Modal de confirmación post-venta con impresión directa. Precios con diferencial cambiario en catálogo y POS. Total en Bs según método de pago. v13.0: Corrección bug renderizado catálogo. v12.2: Sistema dual BCV/Paralela. v12.1: Inventario dual por locación. v12.0: Usuarios con PIN y roles.</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.16 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -3892,7 +3908,7 @@ function duplicarProd(idx){
   cat.push(copia); saveCat(cat); renderCatalogo(); renderDash();
   toast('Producto duplicado: '+copia.nombre,'ok');
 }
-function eliminarProd(idx){ const cat=loadCat(); if(!confirm('¿Eliminar "'+cat[idx].nombre+'"?')) return; const _id=cat[idx].id; cat.splice(idx,1); saveCat(cat); deleteFromSupabase('productos',_id); renderCatalogo(); renderDash(); toast('Eliminado','ok'); }
+async function eliminarProd(idx){ const cat=loadCat(); if(!confirm('¿Eliminar "'+cat[idx].nombre+'"?')) return; const _id=cat[idx].id; cat.splice(idx,1); localStorage.setItem(LS_CAT,JSON.stringify(cat)); await deleteFromSupabase('productos',_id); saveCat(cat); renderCatalogo(); renderDash(); toast('Eliminado','ok'); }
 
 /* ════════════════════════════════════════════
    CLIENTES
@@ -3988,7 +4004,7 @@ function editarCliente(){
 }
 function editarCliente2(idx){ _cliIdx=idx; editarCliente(); }
 function eliminarCliente(){ if(_cliIdx===null) return; eliminarCliente2(_cliIdx); closeModal('m-ver-cli'); }
-function eliminarCliente2(idx){ const all=loadCli(); if(!confirm('¿Eliminar a "'+all[idx].nombre+'"?')) return; const _id=all[idx].id; all.splice(idx,1); saveCli(all); deleteFromSupabase('clientes',_id); renderClientes(); renderDash(); toast('Cliente eliminado','ok'); _cliIdx=null; }
+async function eliminarCliente2(idx){ const all=loadCli(); if(!confirm('¿Eliminar a "'+all[idx].nombre+'"?')) return; const _id=all[idx].id; all.splice(idx,1); localStorage.setItem(LS_CLI,JSON.stringify(all)); await deleteFromSupabase('clientes',_id); saveCli(all); renderClientes(); renderDash(); toast('Cliente eliminado','ok'); _cliIdx=null; }
 
 function calcTotalCli(c){
   const vens=loadVen().filter(v=>v.cliente&&v.cliente.id===c.id&&v.estado!=='anulada');
@@ -4185,7 +4201,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v1315',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v1316',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
@@ -6691,7 +6707,7 @@ function renderKpisCaja(fil, INGRESOS){
     <div class="kpi c-blue"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E6F1FB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div></div><div class="kpi-lbl">Mov. en período</div><div class="kpi-val">${fil.length}</div><div class="kpi-sub">registros</div></div>`;
 }
 
-function eliminarMovimiento(posEnFil, _){
+async function eliminarMovimiento(posEnFil, _){
   // Reconstruir índice real desde all
   const all=loadCajaMov();
   const desde=qs('#caja_desde')?.value||'';
@@ -6706,7 +6722,15 @@ function eliminarMovimiento(posEnFil, _){
   const mov=fil[posEnFil]; if(!mov) return;
   if(!confirm('¿Eliminar este movimiento?')) return;
   const ri=all.findIndex(m=>m.id===mov.id);
-  if(ri>=0){ const _id=all[ri].id; all.splice(ri,1); saveCajaMov(all); deleteFromSupabase('caja_movimientos',_id); renderCaja(); renderDash(); toast('Movimiento eliminado','ok'); }
+  if(ri>=0){
+    const _id=all[ri].id;
+    all.splice(ri,1);
+    localStorage.setItem(LS_CAJA, JSON.stringify(all)); // guardar local inmediatamente
+    await deleteFromSupabase('caja_movimientos', _id);   // esperar confirmación de Supabase
+    saveCajaMov(all);                                    // upsert del resto
+    renderCaja(); renderDash();
+    toast('Movimiento eliminado','ok');
+  }
 }
 
 function exportCajaCSV(){
@@ -7457,11 +7481,11 @@ function editarInsumo(){
   openModal('m-insumo');
 }
 
-function eliminarInsumo(){
+async function eliminarInsumo(){
   if(_insIdx===null) return;
   const all=loadIns();
   if(!confirm('¿Eliminar "'+all[_insIdx].nombre+'"?')) return;
-  const _insId=all[_insIdx].id; all.splice(_insIdx,1); saveIns(all); deleteFromSupabase('inventario_insumos',_insId); closeModal('m-ver-ins'); renderInsumos(); renderDash();
+  const _insId=all[_insIdx].id; all.splice(_insIdx,1); localStorage.setItem(LS_INS,JSON.stringify(all)); await deleteFromSupabase('inventario_insumos',_insId); saveIns(all); closeModal('m-ver-ins'); renderInsumos(); renderDash();
   toast('Insumo eliminado','ok'); _insIdx=null;
 }
 
@@ -8877,7 +8901,7 @@ window.addEventListener('popstate',e=>{
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
 
-  const PWA_VER = 'v13_2';
+  const PWA_VER = 'v13_16';
   try{
     window.addEventListener('load', function(){
       if(hasSW()) navigator.serviceWorker.register('./sw.js?v='+encodeURIComponent(PWA_VER)).catch(function(){});
