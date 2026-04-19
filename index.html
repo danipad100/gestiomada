@@ -6104,7 +6104,6 @@ function imprimirComprobante(){
   const all=loadVen(); if(_venIdx===null) return;
   const v=all[_venIdx]; if(!v) return;
 
-  // Datos del negocio
   const neg      = CFG.negocio||'GestioMada';
   const rif      = CFG.rif||'';
   const tel      = CFG.telefono||'';
@@ -6112,19 +6111,15 @@ function imprimirComprobante(){
   const dir      = CFG.direccion||'';
   const slogan   = CFG.slogan||'';
   const notaRec  = CFG.nota_recibo||'';
-  const mon      = CFG.moneda||'$';
 
-  // Tasas
-  const bcvRec = getTasaBCV();
-  const difRec = getDiferencial();
+  const bcvRec     = getTasaBCV();
+  const difRec     = getDiferencial();
+  const metodoBsRec= ['efectivo_bs','pago_movil','transferencia'].includes(v.metodo);
 
-  // Determinar si el pago fue en Bs
-  const metodoBsRec = ['efectivo_bs','pago_movil','transferencia'].includes(v.metodo);
-
-  // Montos según método
-  const totalBaseUsd  = v.total || 0;                        // $ precio base
-  const totalDifUsd   = totalBaseUsd * difRec;               // $ con diferencial
-  const totalBsReal   = totalDifUsd * bcvRec;                // Bs que pagó el cliente
+  // Precio que ve el cliente: base × diferencial si paga en Bs, base si paga en USD
+  const factorPrecio = metodoBsRec ? difRec : 1;
+  const totalClienteUsd = v.total * factorPrecio;
+  const totalBs         = totalClienteUsd * bcvRec;
 
   const metLbl  = METODOS_LABEL[v.metodo]||v.metodo||'';
   const tipoLbl = {venta_rapida:'Venta rápida',pago_pedido:'Pago de pedido',abono:'Abono',pago_restante:'Pago restante'}[v.tipo]||v.tipo||'Venta';
@@ -6133,23 +6128,21 @@ function imprimirComprobante(){
   const fmtUsd = n => '$ ' + Number(n||0).toFixed(2).replace('.',',');
   const fmtBs  = n => 'Bs ' + Number(n||0).toFixed(2).replace('.',',');
 
-  // Items
+  // Items — solo muestra precio al cliente (con dif incluido si es Bs)
   const itemsHtml = v.items.map((it,i) => {
-    const puBase = it.precio_unit || 0;
-    const puDif  = metodoBsRec ? puBase * difRec : puBase;
-    const ptDif  = puDif * it.cant;
-    const ptBs   = ptDif * bcvRec;
+    const puCliente = (it.precio_unit||0) * factorPrecio;
+    const ptCliente = puCliente * it.cant;
+    const ptBs      = ptCliente * bcvRec;
     return `<tr style="background:${i%2===0?'#fff':'#fafafa'}">
       <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">${it.nombre}</td>
       <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px">${it.cant}</td>
       <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px">
-        ${metodoBsRec && difRec > 1.001 ? `<div style="font-size:10px;color:#888;text-decoration:line-through">${fmtUsd(puBase)}</div>` : ''}
-        ${fmtUsd(puDif)}
-        ${metodoBsRec && bcvRec > 0 ? `<div style="font-size:10px;color:#555">${fmtBs(puDif * bcvRec)}</div>` : ''}
+        <div style="font-weight:600">${fmtUsd(puCliente)}</div>
+        ${metodoBsRec && bcvRec>0 ? `<div style="font-size:11px;color:#555">${fmtBs(puCliente*bcvRec)}</div>` : ''}
       </td>
       <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px;font-weight:600">
-        ${fmtUsd(ptDif)}
-        ${metodoBsRec && bcvRec > 0 ? `<div style="font-size:11px;color:#444;font-weight:400">${fmtBs(ptBs)}</div>` : ''}
+        <div>${fmtUsd(ptCliente)}</div>
+        ${metodoBsRec && bcvRec>0 ? `<div style="font-size:11px;color:#555;font-weight:400">${fmtBs(ptBs)}</div>` : ''}
       </td>
     </tr>`;
   }).join('');
@@ -6158,41 +6151,32 @@ function imprimirComprobante(){
     ? `<img src="${CFG.logo}" style="max-height:60px;max-width:140px;object-fit:contain;display:block;margin-bottom:6px"/>`
     : `<div style="font-size:24px;font-weight:900;color:#ff7aa2;letter-spacing:-0.5px">${neg}</div>`;
 
-  // Bloque de totales según método de pago
+  // Bloque de total — limpio, sin mencionar diferencial
   const totalesHtml = metodoBsRec && bcvRec > 0 ? `
     <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
-      <tr>
-        <td style="padding:6px 12px;color:#666;font-size:12px">Subtotal base (USD)</td>
-        <td style="padding:6px 12px;text-align:right;font-size:12px">${fmtUsd(totalBaseUsd)}</td>
-      </tr>
-      ${difRec > 1.001 ? `<tr>
-        <td style="padding:6px 12px;color:#666;font-size:12px">Diferencial cambiario (×${difRec.toFixed(3)})</td>
-        <td style="padding:6px 12px;text-align:right;font-size:12px;color:#ff7aa2;font-weight:600">${fmtUsd(totalDifUsd)}</td>
-      </tr>` : ''}
       ${v.descuento ? `<tr>
-        <td style="padding:6px 12px;color:#c0392b;font-size:12px">Descuento</td>
-        <td style="padding:6px 12px;text-align:right;font-size:12px;color:#c0392b">−${fmtUsd(v.descuento)}</td>
+        <td style="padding:5px 12px;color:#c0392b;font-size:12px">Descuento</td>
+        <td style="padding:5px 12px;text-align:right;font-size:12px;color:#c0392b">−${fmtUsd(v.descuento*factorPrecio)}</td>
       </tr>` : ''}
       <tr>
-        <td style="padding:6px 12px;color:#666;font-size:12px">Tasa BCV aplicada</td>
-        <td style="padding:6px 12px;text-align:right;font-size:12px">${bcvRec.toLocaleString('es-VE')} Bs/$</td>
+        <td style="padding:5px 12px;color:#666;font-size:12px">Tasa BCV aplicada</td>
+        <td style="padding:5px 12px;text-align:right;font-size:12px">${bcvRec.toLocaleString('es-VE')} Bs/$</td>
       </tr>
     </table>
     <div style="background:#111;color:#fff;border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin:8px 0">
       <div>
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.6)">Total a pagar</div>
-        <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:2px">${fmtUsd(totalDifUsd)} × ${bcvRec.toLocaleString('es-VE')}</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:2px">${fmtUsd(totalClienteUsd)} × ${bcvRec.toLocaleString('es-VE')}</div>
       </div>
-      <div style="font-size:28px;font-weight:900">Bs ${totalBsReal.toFixed(2).replace('.',',')}</div>
+      <div style="font-size:28px;font-weight:900">Bs ${totalBs.toFixed(2).replace('.',',')}</div>
     </div>
-    <div style="text-align:right;font-size:11px;color:#aaa;margin-bottom:8px">Equivale a ${fmtUsd(totalDifUsd)} al paralelo</div>
   ` : `
     ${v.descuento ? `<div style="text-align:right;font-size:12px;color:#c0392b;margin-bottom:4px">Descuento: −${fmtUsd(v.descuento)}</div>` : ''}
     <div style="background:#111;color:#fff;border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin:8px 0">
       <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.6)">Total</div>
-      <div style="font-size:28px;font-weight:900">${fmtUsd(totalBaseUsd)}</div>
+      <div style="font-size:28px;font-weight:900">${fmtUsd(v.total)}</div>
     </div>
-    ${bcvRec > 0 ? `<div style="text-align:right;font-size:11px;color:#aaa;margin-bottom:8px">Referencia Bs: ${fmtBs(totalDifUsd * bcvRec)}</div>` : ''}
+    ${bcvRec > 0 ? `<div style="text-align:right;font-size:11px;color:#aaa;margin-bottom:8px">Referencia Bs: ${fmtBs(v.total*bcvRec)}</div>` : ''}
   `;
 
   const win = window.open('','_blank','width=800,height=950,toolbar=0,scrollbars=1');
@@ -6224,7 +6208,7 @@ function imprimirComprobante(){
     .slogan{text-align:center;font-style:italic;color:#ff7aa2;font-size:13px;margin:16px 0 6px;font-weight:600}
     .anulada{background:#fee2e2;color:#991b1b;text-align:center;padding:8px;font-weight:700;border-radius:6px;margin-bottom:16px}
     .print-btn{display:block;width:100%;padding:12px;background:#ff7aa2;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:18px;font-family:inherit}
-    @media print{.print-btn{display:none}.top-bar,.bottom-bar,.cobro-section div[style*="background:#111"]{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
+    @media print{.print-btn{display:none}}
   </style></head><body>
   <button class="print-btn" onclick="window.print()">🖨 Imprimir recibo</button>
   <div class="page">
@@ -6273,9 +6257,10 @@ function imprimirComprobante(){
 
     <table class="items-table">
       <thead><tr>
-        <td>Cant.</td><td>Descripción</td>
-        <td class="r">P. Unitario${metodoBsRec?' ($ c/dif + Bs)':''}</td>
-        <td class="r">Importe${metodoBsRec?' ($+Bs)':''}</td>
+        <td>Cant.</td>
+        <td>Descripción</td>
+        <td class="r">Precio unitario</td>
+        <td class="r">Importe</td>
       </tr></thead>
       <tbody>${itemsHtml}</tbody>
     </table>
@@ -6284,18 +6269,17 @@ function imprimirComprobante(){
 
     <div class="cobro-section">
       ${v.recibido?`<div class="cobro-row"><span>Monto recibido</span><strong>${metodoBsRec&&bcvRec>0?fmtBs(v.recibido):fmtUsd(v.recibido)}</strong></div>`:''}
-      ${(v.vuelto||0)>0?`<div class="cobro-row"><span>Vuelto</span><strong>${fmtUsd(v.vuelto)}</strong></div>`:''}
+      ${(v.vuelto||0)>0?`<div class="cobro-row"><span>Vuelto</span><strong>${metodoBsRec&&bcvRec>0?fmtBs(v.vuelto*factorPrecio*bcvRec):fmtUsd(v.vuelto)}</strong></div>`:''}
     </div>
 
     ${v.notas?`<div style="margin-top:14px;padding:10px 14px;border-left:3px solid #ff7aa2;background:#fff8fb;font-size:12px;color:#666"><strong>Notas:</strong> ${v.notas}</div>`:''}
-
     ${slogan?`<div class="slogan">${slogan}</div>`:''}
 
     <div class="conditions">
       <div class="label">Condiciones y forma de pago</div>
       ${metodoBsRec && bcvRec > 0
-        ? `Pago recibido en <strong>Bolívares (Bs)</strong>. Precio en dólares con diferencial: <strong>${fmtUsd(totalDifUsd)}</strong>. Tasa BCV aplicada: <strong>${bcvRec.toLocaleString('es-VE')} Bs/$</strong>.`
-        : `Pago recibido en <strong>dólares (USD)</strong>.`}
+        ? `Pago en <strong>Bolívares (Bs)</strong> a tasa BCV: <strong>${bcvRec.toLocaleString('es-VE')} Bs/$</strong>.`
+        : `Pago en <strong>dólares (USD)</strong>.`}
       ${notaRec?'<br>'+notaRec:''}
     </div>
 
