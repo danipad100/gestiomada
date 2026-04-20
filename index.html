@@ -9195,7 +9195,7 @@ window.addEventListener('popstate',e=>{
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
 
-  const PWA_VER = 'v13_16';
+  const PWA_VER = 'v13_20';
   try{
     window.addEventListener('load', function(){
       if(hasSW()) navigator.serviceWorker.register('./sw.js?v='+encodeURIComponent(PWA_VER)).catch(function(){});
