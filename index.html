@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_28">
+<html lang="es" data-app-version="GestioMada_V13_29">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -42,6 +42,10 @@ function aplicarCambioRealtime(tabla, tipo, registro){
   try { local = JSON.parse(localStorage.getItem(t.ls)||'[]'); } catch(e){}
 
   if(tipo === 'INSERT' || tipo === 'UPDATE'){
+    // Normalizar cliente_snapshot → cliente (pedidos y ventas en Supabase usan cliente_snapshot)
+    if(registro.cliente_snapshot !== undefined && registro.cliente === undefined){
+      registro = { ...registro, cliente: registro.cliente_snapshot };
+    }
     const idx = local.findIndex(x => String(x.id) === String(registro.id));
     if(idx >= 0){
       // Preservar foto base64 local si el remoto no tiene foto_url
@@ -300,12 +304,19 @@ async function initSupabaseSync(){
       // (pueden ser creados en este dispositivo y aún no sincronizados)
       const mergeado = [...localItems];
       remoto.forEach(r => {
+        // Normalizar cliente_snapshot → cliente (pedidos y ventas en Supabase usan cliente_snapshot)
+        if(r.cliente_snapshot !== undefined && r.cliente === undefined){
+          r = { ...r, cliente: r.cliente_snapshot };
+        }
         const idx = mergeado.findIndex(l => String(l.id) === String(r.id));
         if(idx >= 0){
           // Preservar foto base64 local si Supabase no tiene foto_url
           const fotoLocal = mergeado[idx].foto || '';
+          // Preservar cliente local si Supabase no trae uno (por si acaso)
+          const cliLocal  = mergeado[idx].cliente || null;
           mergeado[idx] = { ...mergeado[idx], ...r };
           if(!r.foto_url && fotoLocal) mergeado[idx].foto = fotoLocal;
+          if(!mergeado[idx].cliente && cliLocal) mergeado[idx].cliente = cliLocal;
         } else {
           // Nuevo desde otro dispositivo → agregar
           mergeado.push(r);
@@ -2189,8 +2200,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.28 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.29 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.29: Pedidos — botón WhatsApp con número del cliente de acceso rápido. Método de pago USD muestra montos en dólares; Bs muestra equivalente en bolívares. Clientes guardados correctamente con validación de nombre. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -2823,7 +2834,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="fg"><label>Descuento ($)</label><input type="text" id="mp_descuento" value="0,00" oninput="recalcPedido()"/></div>
         <div class="fg"><label>Abono inicial ($)</label><input type="text" id="mp_abono" value="0,00" oninput="recalcPedido()"/></div>
         <div class="fg"><label>Método pago abono</label>
-          <select id="mp_metodo" class="metodo-pago-sel">
+          <select id="mp_metodo" class="metodo-pago-sel" onchange="recalcPedido()">
             <option value="efectivo_bs">Efectivo Bs</option>
             <option value="efectivo_usd">Efectivo USD</option>
             <option value="pago_movil">Pago Móvil</option>
@@ -2837,9 +2848,10 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="fg"><label>Fecha de entrega</label><input type="date" id="mp_fecha_entrega"/></div>
       </div>
       <div class="sep"></div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;align-items:center">
         <div class="pill">Abonado <strong id="mp_pill_abonado">$ 0,00</strong></div>
         <div class="pill" style="background:#ffe3ee">Restante <strong id="mp_pill_restante" style="color:var(--danger)">$ 0,00</strong></div>
+        <div id="mp_ref_bs" style="display:none;font-size:10px;color:var(--muted);width:100%;text-align:right;margin-top:-4px"></div>
       </div>
     </div>
     <div class="frow" style="margin-bottom:12px">
@@ -7430,10 +7442,34 @@ function recalcPedido(){
   const total = Math.max(0, sub-desc);
   const abono = parseEU(qs('#mp_abono')?.value||'0,00');
   const restante = Math.max(0, total-abono);
+  const metodo = qs('#mp_metodo')?.value || 'efectivo_bs';
+  const esUsd = ['efectivo_usd','zelle'].includes(metodo);
+  const bcv = getTasaBCV();
+  const dif = getDiferencial();
+  // Formato según moneda
+  const fmtMon = n => {
+    if(esUsd) return '$ '+n.toFixed(2).replace('.',',');
+    if(bcv>0) return 'Bs '+Math.round(n*(dif>0?dif:bcv)).toLocaleString('es-VE');
+    return euro(n);
+  };
+  // Labels de los pills
+  const labelAbono  = qs('#mp_lbl_abono');
+  const labelRestante = qs('#mp_lbl_restante');
+  if(labelAbono)   labelAbono.textContent   = esUsd ? 'Abono inicial ($)' : (bcv>0 ? 'Abono inicial (Bs)' : 'Abono inicial ($)');
+  if(labelRestante) labelRestante.textContent = esUsd ? 'Restante ($)' : (bcv>0 ? 'Restante (Bs)' : 'Restante ($)');
   if(qs('#mp_subtotal')) qs('#mp_subtotal').textContent=euro(sub);
   if(qs('#mp_total')) qs('#mp_total').textContent=euro(total);
-  if(qs('#mp_pill_abonado')) qs('#mp_pill_abonado').textContent=euro(abono);
-  if(qs('#mp_pill_restante')) qs('#mp_pill_restante').textContent=euro(restante);
+  if(qs('#mp_pill_abonado')) qs('#mp_pill_abonado').textContent=fmtMon(abono);
+  if(qs('#mp_pill_restante')) qs('#mp_pill_restante').textContent=fmtMon(restante);
+  // Referencia en Bs bajo el total si se usa efectivo_bs
+  const refBs = qs('#mp_ref_bs');
+  if(refBs){
+    if(!esUsd && bcv>0 && total>0){
+      const tasa = dif>0?dif:bcv;
+      refBs.textContent='≈ Bs '+Math.round(total*tasa).toLocaleString('es-VE')+' (tasa '+tasa.toLocaleString('es-VE')+')';
+      refBs.style.display='';
+    } else { refBs.style.display='none'; }
+  }
 }
 
 // ── Guardar pedido ──
@@ -7595,6 +7631,35 @@ function verPedido(idx){
       <div style="font-weight:700;color:var(--ok)">${euro(pg.monto)}</div>
     </div>`).join('');
 
+  // Formatear número de teléfono para WhatsApp (quitar guiones, espacios, agregar 58 si es venezolano)
+  const _fmtWA = tel => {
+    if(!tel) return '';
+    let t = tel.replace(/[\s\-\(\)]/g,'');
+    if(t.startsWith('04')) t = '58' + t.slice(1);
+    else if(t.startsWith('+')) t = t.slice(1);
+    return t;
+  };
+  const _cliTel   = p.cliente?.telefono||'';
+  const _cliNom   = p.cliente ? (p.cliente.nombre+' '+(p.cliente.apellido||'')).trim() : '';
+  const _waNum    = _fmtWA(_cliTel);
+  const _waMsg    = encodeURIComponent('Hola '+p.cliente?.nombre+', le contactamos por su pedido '+p.numero+' 😊');
+  const _clienteCard = p.cliente ? `
+    <div class="card" style="padding:12px;margin-bottom:10px;background:var(--bg);border:1.5px solid var(--border)">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:38px;height:38px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0">${(p.cliente.nombre[0]||'?').toUpperCase()}</div>
+          <div>
+            <div style="font-weight:700;font-size:14px">${_cliNom}</div>
+            <div style="font-size:12px;color:var(--muted)">${p.cliente.cedula?p.cliente.cedula+' · ':''} ${_cliTel||'Sin teléfono'}</div>
+          </div>
+        </div>
+        ${_waNum?`<a href="https://wa.me/${_waNum}?text=${_waMsg}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;border-radius:20px;padding:7px 14px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap">
+          <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.557 4.116 1.533 5.846L.057 23.486a.5.5 0 0 0 .614.614l5.64-1.476A11.934 11.934 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.693-.519-5.222-1.422l-.374-.223-3.875 1.015 1.015-3.875-.223-.374A9.953 9.953 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
+          WhatsApp ${_cliTel}
+        </a>`:`<span style="font-size:12px;color:var(--muted)">Sin número registrado</span>`}
+      </div>
+    </div>` : '';
+
   qs('#mvped-body').innerHTML=`
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
       <span class="chip ${CHIP_EST[p.estado]||'chip-warn'}">${PED_ESTADOS[p.estado]}</span>
@@ -7604,6 +7669,7 @@ function verPedido(idx){
       ${p.fecha_pedido?`<span class="chip" style="background:#f3f4f6">Pedido: ${fmtFecha(p.fecha_pedido)}</span>`:''}
       ${p.usuario_nom?`<span class="chip" style="background:#f0f4ff;color:#3b5bdb;font-weight:600">👤 ${p.usuario_nom}</span>`:''}
     </div>
+    ${_clienteCard}
     <div class="card" style="padding:12px;margin-bottom:10px">
       <div style="font-weight:700;font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Productos</div>
       ${itemsHtml||'<p class="muted" style="font-size:12px">Sin items</p>'}
@@ -9357,7 +9423,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_28';
+  const APP_VERSION = 'v13_29';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
