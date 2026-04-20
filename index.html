@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_19">
+<html lang="es" data-app-version="GestioMada_V13_20">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -31,6 +31,7 @@ const SUPA_TABLAS = [
   { supa: 'inventario_insumos',      ls: 'POS.insumos',     render: 'inventario' },
   { supa: 'inventario_terminados',   ls: 'POS.terminados',  render: 'inventario' },
   { supa: 'inventario_movimientos',  ls: 'POS.invmov',      render: null         },
+  { supa: 'productos_pers',          ls: 'POS.pers',        render: 'editor'     },
 ];
 
 // ── Aplicar cambio recibido en tiempo real al localStorage ──
@@ -63,6 +64,7 @@ function aplicarCambioRealtime(tabla, tipo, registro){
     clientes:  ()=>{ if(typeof renderClientes==='function') renderClientes(); },
     caja:      ()=>{ if(typeof renderCaja==='function') renderCaja(); },
     inventario:()=>{ if(typeof renderInsumos==='function') renderInsumos(); },
+    editor:    ()=>{ if(typeof persRefreshLoader==='function') persRefreshLoader(); },
   };
   if(t.render && renders[t.render]) renders[t.render]();
   if(typeof updateBadges==='function') updateBadges();
@@ -73,7 +75,7 @@ function aplicarCambioRealtime(tabla, tipo, registro){
 
 // ── Activar Realtime en todas las tablas operativas ──
 function iniciarRealtime(){
-  const tablasRealtime = ['ventas','pedidos','productos','clientes','caja_movimientos','inventario_insumos'];
+  const tablasRealtime = ['ventas','pedidos','productos','clientes','caja_movimientos','inventario_insumos','productos_pers'];
   tablasRealtime.forEach(tabla => {
     SUPA.channel('rt-' + tabla)
       .on('postgres_changes', { event: '*', schema: 'public', table: tabla },
@@ -230,6 +232,24 @@ function mapearParaSupa(tabla, d){
     // Omitido: fecha → created_at auto
   };
 
+  if(tabla === 'productos_pers') return {
+    id:             d.id || Date.now(),
+    name:           d.name || '',
+    sku:            d.sku || '',
+    categoria:      d.categoria || '',
+    estado:         d.estado || 'activo',
+    precio_manual:  d.precio_manual || '',
+    notas_int:      d.notas_int || '',
+    foto_url:       d.foto_url || '',
+    directos:       d.directos || [],
+    materiales_area:d.materiales_area || [],
+    depreciacion:   d.depreciacion || [],
+    indirectos:     d.indirectos || {},
+    mo:             d.mo || {},
+    gi:             d.gi || {},
+    // Omitida: foto base64 (muy pesada para Supabase)
+  };
+
   // Fallback: solo campos seguros
   return { id };
 }
@@ -254,27 +274,45 @@ async function loadFromSupabase(tabla){
 async function initSupabaseSync(){
   for(const t of SUPA_TABLAS){
     const remoto = await loadFromSupabase(t.supa);
-    if(remoto && remoto.length > 0){
-      // ── Supabase es la fuente de verdad ──
-      if(t.supa === 'caja_movimientos'){
-        localStorage.setItem(t.ls, JSON.stringify(remoto));
-        console.log(`[Supabase] Caja sync: ${remoto.length} movimientos (fuente de verdad)`);
-      } else {
-        const localItems = JSON.parse(localStorage.getItem(t.ls)||'[]');
-        const mergeado = remoto.map(r => {
-          const local = localItems.find(l => String(l.id) === String(r.id));
-          if(local && local.foto) return { ...r, foto: local.foto, foto_url: r.foto_url || local.foto_url || '' };
-          return r;
-        });
-        localItems.forEach(l => {
-          if(!remoto.find(r => String(r.id) === String(l.id))) mergeado.push(l);
-        });
-        localStorage.setItem(t.ls, JSON.stringify(mergeado));
-        console.log(`[Supabase] Sync inicial ${t.supa}: ${mergeado.length} registros`);
-      }
-    } else if(remoto && remoto.length === 0){
-      const local = JSON.parse(localStorage.getItem(t.ls)||'[]');
-      if(local.length > 0){ await syncToSupabase(t.supa, local); }
+
+    // Error de red → remoto es null → no tocar localStorage bajo ninguna circunstancia
+    if(remoto === null) continue;
+
+    const localItems = JSON.parse(localStorage.getItem(t.ls)||'[]');
+
+    if(remoto.length === 0 && localItems.length > 0){
+      // Supabase vacío pero hay datos locales → subir (primer uso / tabla recién creada)
+      await syncToSupabase(t.supa, localItems);
+      console.log(`[Supabase] Subido ${t.supa}: ${localItems.length} registros`);
+      continue;
+    }
+
+    if(remoto.length === 0) continue; // ambos vacíos, nada que hacer
+
+    // ── Supabase tiene datos ──
+    if(t.supa === 'caja_movimientos'){
+      // Caja: Supabase es fuente de verdad absoluta (eliminaciones deben propagarse)
+      localStorage.setItem(t.ls, JSON.stringify(remoto));
+      console.log(`[Supabase] Caja sync: ${remoto.length} movimientos`);
+    } else {
+      // Resto de tablas: merge seguro
+      // NUNCA eliminar registros locales que no estén en Supabase
+      // (pueden ser creados en este dispositivo y aún no sincronizados)
+      const mergeado = [...localItems];
+      remoto.forEach(r => {
+        const idx = mergeado.findIndex(l => String(l.id) === String(r.id));
+        if(idx >= 0){
+          // Preservar foto base64 local si Supabase no tiene foto_url
+          const fotoLocal = mergeado[idx].foto || '';
+          mergeado[idx] = { ...mergeado[idx], ...r };
+          if(!r.foto_url && fotoLocal) mergeado[idx].foto = fotoLocal;
+        } else {
+          // Nuevo desde otro dispositivo → agregar
+          mergeado.push(r);
+        }
+      });
+      localStorage.setItem(t.ls, JSON.stringify(mergeado));
+      console.log(`[Supabase] Sync ${t.supa}: ${mergeado.length} registros`);
     }
   }
   if(typeof renderDash==='function') renderDash();
@@ -282,6 +320,7 @@ async function initSupabaseSync(){
   if(typeof cargarConfigNegocioDesdeNube==='function') cargarConfigNegocioDesdeNube();
   iniciarRealtime();
 }
+
 
 // ── Conexión y arranque ──
 window._supaConectado = false;
@@ -2125,8 +2164,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.19 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.20 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -3177,7 +3216,10 @@ function renderHistorialCostos(nombre){
       ${i===0?'<span style="font-size:10px;background:#EAF3DE;color:#3B6D11;padding:2px 6px;border-radius:5px">Actual</span>':'<span></span>'}
     </div>`).join('');
 }
-function savePers(a){ localStorage.setItem(LS_PERS, JSON.stringify(a)); }
+function savePers(a){
+  localStorage.setItem(LS_PERS, JSON.stringify(a));
+  if(window._supaConectado) syncToSupabase('productos_pers', a);
+}
 function loadCat()  { try{ return JSON.parse(localStorage.getItem(LS_CAT)||'[]'); }catch(e){ return []; } }
 function saveCat(a) { localStorage.setItem(LS_CAT, JSON.stringify(a)); updateBadges(); if(window._supaConectado) syncToSupabase('productos', a); }
 function loadCli()  { try{ return JSON.parse(localStorage.getItem(LS_CLI)||'[]'); }catch(e){ return []; } }
@@ -3521,7 +3563,12 @@ function persDel(){
   const all=loadPers(), idx=all.findIndex(p=>(p.name||'').toLowerCase()===name.toLowerCase());
   if(idx<0){ toast('No existe guardado con ese nombre','warn'); return; }
   if(!confirm('¿Borrar "'+name+'"?')) return;
-  all.splice(idx,1); savePers(all); persRefreshLoader(); toast('Borrado','ok');
+  const deletedId = all[idx].id;
+  all.splice(idx,1);
+  localStorage.setItem(LS_PERS, JSON.stringify(all));
+  if(window._supaConectado) deleteFromSupabase('productos_pers', deletedId);
+  if(window._supaConectado) syncToSupabase('productos_pers', all);
+  persRefreshLoader(); toast('Borrado','ok');
 }
 function persReset(){
   if(!confirm('¿Resetear el editor?')) return;
@@ -3551,7 +3598,42 @@ function persExportCSV(){ const d=persToJSON(); const rows=[['Tipo','Desc','Cant
 function persExportCatJSON(){ dl(JSON.stringify(loadPers(),null,2),'application/json','catalogo-pers.json'); }
 function persExportCatCSV(){ const all=loadPers(); const lines=[['name','directos','depreciacion','indirectos','mo','gi'].join(';')]; all.forEach(p=>{ lines.push([p.name,JSON.stringify(p.directos||[]),JSON.stringify(p.depreciacion||[]),JSON.stringify(p.indirectos||{}),JSON.stringify(p.mo||{}),JSON.stringify(p.gi||{})].map(x=>{ const s=String(x==null?'':x); return /[";]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(';')); }); dl(lines.join('\n'),'text/csv','catalogo-pers.csv'); }
 function persImport(e){ const f=e.target.files[0]; if(!f) return; const reader=new FileReader(); reader.onload=ev=>{ try{ persFill(JSON.parse(ev.target.result)); toast('Producto importado','ok'); }catch(err){ toast('Error al importar','err'); } }; reader.readAsText(f); e.target.value=''; }
-function persImportCat(e){ const f=e.target.files[0]; if(!f) return; const mode=pImportMode?.value||'merge'; const reader=new FileReader(); reader.onload=ev=>{ try{ const arr=JSON.parse(ev.target.result); const list=Array.isArray(arr)?arr:[arr]; const cur=mode==='replace'?[]:loadPers(); list.forEach(p=>{ if(!p||!p.name) return; const i=cur.findIndex(x=>(x.name||'').toLowerCase()===(p.name||'').toLowerCase()); if(i>=0) cur[i]=p; else cur.push(p); }); savePers(cur); persRefreshLoader(); toast('Catálogo importado ('+list.length+')','ok'); }catch(err){ toast('Error','err'); } }; reader.readAsText(f); e.target.value=''; }
+function persImportCat(e){
+  const f=e.target.files[0]; if(!f) return;
+  const mode=pImportMode?.value||'merge';
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    try{
+      const arr=JSON.parse(ev.target.result);
+      const list=Array.isArray(arr)?arr:[arr];
+      const cur=mode==='replace'?[]:loadPers();
+      list.forEach(p=>{
+        if(!p||!p.name) return;
+        // Asegurar que cada producto tenga un id único y estable
+        if(!p.id) p.id = Date.now() + Math.floor(Math.random()*10000);
+        const i=cur.findIndex(x=>(x.name||'').toLowerCase()===(p.name||'').toLowerCase());
+        if(i>=0){
+          // Preservar el id existente para no crear duplicados en Supabase
+          p.id = cur[i].id || p.id;
+          cur[i]=p;
+        } else {
+          cur.push(p);
+        }
+      });
+      // Guardar en localStorage primero
+      localStorage.setItem(LS_PERS, JSON.stringify(cur));
+      // Sync a Supabase con ids estables
+      if(window._supaConectado) syncToSupabase('productos_pers', cur);
+      persRefreshLoader();
+      toast('Catálogo importado ('+list.length+')','ok');
+    }catch(err){
+      console.error(err);
+      toast('Error al importar: '+err.message,'err');
+    }
+  };
+  reader.readAsText(f);
+  e.target.value='';
+}
 function dl(content,type,name){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([content],{type})); a.download=name; a.click(); URL.revokeObjectURL(a.href); }
 
 /* ════════════════════════════════════════════
@@ -4196,7 +4278,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v1319',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v1320',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
