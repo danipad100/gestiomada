@@ -1,4 +1,4 @@
-const VERSION = 'v13_17';
+const VERSION = 'v13_18';
 const CACHE_NAME = 'gestiomada-' + VERSION;
 
 const URLS_TO_CACHE = [
@@ -29,12 +29,7 @@ self.addEventListener('activate', event => {
 self.addEventListener('message', event => {
   const data = event && event.data ? event.data : null;
   if (!data) return;
-
-  if (data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-    return;
-  }
-
+  if (data.type === 'SKIP_WAITING') { self.skipWaiting(); return; }
   if (data.type === 'GET_VERSION') {
     try {
       if (event.ports && event.ports[0]) {
@@ -47,8 +42,6 @@ self.addEventListener('message', event => {
 self.addEventListener('fetch', event => {
   const request = event.request;
   if (request.method !== 'GET') return;
-
-  // Peticiones a Supabase y APIs de tasas: siempre red, nunca caché
   const url = new URL(request.url);
   if (
     url.hostname.includes('supabase.co') ||
@@ -59,8 +52,6 @@ self.addEventListener('fetch', event => {
     event.respondWith(fetch(request));
     return;
   }
-
-  // Cache First para el resto (app shell)
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached;

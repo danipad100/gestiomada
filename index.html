@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_17">
+<html lang="es" data-app-version="GestioMada_V13_18">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -258,8 +258,6 @@ async function initSupabaseSync(){
     if(remoto && remoto.length > 0){
       // ── Supabase es la fuente de verdad ──
       // Para caja_movimientos: Supabase manda siempre.
-      // Lo que está en Supabase ES el estado real del negocio.
-      // Nunca hacer merge que pueda restaurar registros eliminados.
       if(t.supa === 'caja_movimientos'){
         localStorage.setItem(t.ls, JSON.stringify(remoto));
         console.log(`[Supabase] Caja sync: ${remoto.length} movimientos (Supabase = fuente de verdad)`);
@@ -282,7 +280,6 @@ async function initSupabaseSync(){
         console.log(`[Supabase] Sync inicial ${t.supa}: ${mergeado.length} registros`);
       }
     } else if(remoto && remoto.length === 0){
-      // Supabase vacío → subir locales si existen (primer uso o tabla nueva)
       const local = JSON.parse(localStorage.getItem(t.ls)||'[]');
       if(local.length > 0){
         await syncToSupabase(t.supa, local);
@@ -293,9 +290,7 @@ async function initSupabaseSync(){
   }
   if(typeof renderDash==='function') renderDash();
   if(typeof updateBadges==='function') updateBadges();
-  // Cargar config del negocio desde Supabase
   if(typeof cargarConfigNegocioDesdeNube==='function') cargarConfigNegocioDesdeNube();
-  // Activar Realtime después del sync inicial
   iniciarRealtime();
 }
 
@@ -4198,7 +4193,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v1317',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v1318',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
@@ -6693,48 +6688,32 @@ function renderKpisCaja(fil, INGRESOS){
   const all=loadCajaMov();
   const hoy=new Date().toISOString().slice(0,10);
   const hoyMov=all.filter(m=>m.fecha===hoy);
-  const ingHoy=hoyMov.filter(m=>INGRESOS.includes(m.categoria)||INGRESOS.includes(m.tipo)).reduce((a,m)=>a+m.monto,0);
-  const gasHoy=hoyMov.filter(m=>!INGRESOS.includes(m.categoria)&&!INGRESOS.includes(m.tipo)).reduce((a,m)=>a+m.monto,0);
+  // Separar ingresos y egresos por moneda
+  const ingMovHoy=hoyMov.filter(m=>INGRESOS.includes(m.categoria)||INGRESOS.includes(m.tipo));
+  const gasMovHoy=hoyMov.filter(m=>!INGRESOS.includes(m.categoria)&&!INGRESOS.includes(m.tipo));
+  const ingBs =ingMovHoy.filter(m=>!m.moneda||m.moneda==='bs').reduce((a,m)=>a+m.monto,0);
+  const ingUsd=ingMovHoy.filter(m=>m.moneda==='usd').reduce((a,m)=>a+m.monto,0);
+  const gasBs =gasMovHoy.filter(m=>!m.moneda||m.moneda==='bs').reduce((a,m)=>a+m.monto,0);
+  const gasUsd=gasMovHoy.filter(m=>m.moneda==='usd').reduce((a,m)=>a+m.monto,0);
   const venHoy=loadVen().filter(v=>v.fecha.slice(0,10)===hoy&&v.estado!=='anulada');
   const utilHoy=venHoy.reduce((a,v)=>a+(v.utilidad||0),0);
+  const fmt=n=>Number(n||0).toFixed(2).replace('.',',');
+  // Sub-línea de moneda: muestra la segunda moneda solo si tiene valor
+  const ingSub = ingUsd>0 ? `Bs ${fmt(ingBs)} · $ ${fmt(ingUsd)}` : `Bs ${fmt(ingBs)}`;
+  const gasSub = gasUsd>0 ? `Bs ${fmt(gasBs)} · $ ${fmt(gasUsd)}` : `Bs ${fmt(gasBs)}`;
   wrap.innerHTML=`
-    <div class="kpi green"><div class="kpi-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></div><div class="kpi-lbl">Ingresos hoy</div><div class="kpi-val" style="">${euro(ingHoy)}</div><div class="kpi-sub">entradas del día</div></div>
-    <div class="kpi c-red"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div></div><div class="kpi-lbl">Egresos hoy</div><div class="kpi-val" style="">${euro(gasHoy)}</div><div class="kpi-sub">salidas del día</div></div>
+    <div class="kpi green"><div class="kpi-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></div><div class="kpi-lbl">Ingresos hoy</div><div class="kpi-val" style="">Bs ${fmt(ingBs)}</div><div class="kpi-sub">${ingUsd>0?'$ '+fmt(ingUsd)+' USD':'entradas del día'}</div></div>
+    <div class="kpi c-red"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div></div><div class="kpi-lbl">Egresos hoy</div><div class="kpi-val" style="">Bs ${fmt(gasBs)}</div><div class="kpi-sub">${gasUsd>0?'$ '+fmt(gasUsd)+' USD':'salidas del día'}</div></div>
     <div class="kpi c-purple"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EEEDFE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#534AB7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="18" x2="15" y2="18"/><line x1="10" y1="22" x2="14" y2="22"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg></div></div><div class="kpi-lbl">Utilidad ventas</div><div class="kpi-val" style="">${euro(utilHoy)}</div><div class="kpi-sub">ganancia neta hoy</div></div>
     <div class="kpi c-blue"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E6F1FB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div></div><div class="kpi-lbl">Mov. en período</div><div class="kpi-val">${fil.length}</div><div class="kpi-sub">registros</div></div>`;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 async function eliminarMovimiento(posEnFil, _){
   const all=loadCajaMov();
   const desde=qs('#caja_desde')?.value||'';
   const hasta=qs('#caja_hasta')?.value||'';
   const fcat=qs('#caja_fcat')?.value||'';
+  const INGRESOS=['ingreso','abono','venta'];
   const fil=all.filter(m=>{
     const mf=m.fecha||'';
     const inRange=(!desde||mf>=desde)&&(!hasta||mf<=hasta);
