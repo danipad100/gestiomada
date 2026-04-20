@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_22">
+<html lang="es" data-app-version="GestioMada_V13_23">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -925,6 +925,7 @@ label.btn{cursor:pointer}
   padding:12px 14px;border-radius:14px;
   background:var(--card);box-shadow:var(--shadow);
   margin-bottom:8px;transition:box-shadow .15s;
+  flex-wrap:wrap;
 }
 .list-item:hover{box-shadow:0 10px 24px rgba(0,0,0,.09)}
 .li-ico{
@@ -938,6 +939,15 @@ label.btn{cursor:pointer}
 .li-right{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
 .li-val{font-size:15px;font-weight:700}
 .li-actions{display:flex;gap:6px}
+/* Botones de inventario: bajan a segunda fila en móvil */
+@media(max-width:520px){
+  .inv-item-btns{
+    width:100%;display:flex;gap:6px;padding-top:2px;
+    border-top:1px solid var(--border);margin-top:2px;
+  }
+  .inv-item-btns .btn{ flex:1; justify-content:center; }
+  .inv-item-stock{ min-width:0 !important; text-align:left !important; }
+}
 
 /* ═══════════════ SEARCH BAR ═══════════════ */
 .search-bar{
@@ -2164,8 +2174,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.22 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.23 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -4309,7 +4319,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v1322',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v1323',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
@@ -7916,15 +7926,15 @@ function renderInsumos(){
         <div class="li-name">${item.nombre}${item.sku?` <span style="font-size:11px;color:var(--muted);font-weight:400">${item.sku}</span>`:''}</div>
         <div class="li-meta">${item.categoria||'Sin cat.'} · ${item.unidad}${item.proveedor?' · '+item.proveedor:''}</div>
       </div>
-      <div style="text-align:right;flex-shrink:0;min-width:130px">
+      <div class="inv-item-stock" style="text-align:right;flex-shrink:0;min-width:90px">
         <div style="font-weight:700;font-size:15px;color:${alerta?'var(--danger)':'var(--ok)'}"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:3px;flex-shrink:0"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>${item.stock} <span style="font-size:11px;font-weight:400">${item.unidad}</span></div>
         <div style="font-size:12px;color:var(--muted)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:3px;flex-shrink:0"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>${item.stock_dep||0} ${item.unidad}</div>
         <div style="font-size:10px;color:var(--muted)">Mín local: ${item.stock_min||0}</div>
       </div>
-      <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap" onclick="event.stopPropagation()">
-        <button class="btn btn-ok btn-sm" onclick="_quickMov(${ri},'insumo','entrada')" title="Entrada">＋</button>
-        <button class="btn btn-sm" onclick="_quickMov(${ri},'insumo','salida')" title="Salida">−</button>
-        <button class="btn btn-sm" style="background:#e8efff;color:#1e40af" onclick="abrirTraslado(${ri},'insumo')" title="Trasladar entre locaciones">⇄</button>
+      <div class="inv-item-btns" onclick="event.stopPropagation()">
+        <button class="btn btn-ok btn-sm" onclick="_quickMov(${ri},'insumo','entrada')" title="Entrada">＋ Entrada</button>
+        <button class="btn btn-sm" onclick="_quickMov(${ri},'insumo','salida')" title="Salida">− Salida</button>
+        <button class="btn btn-sm" style="background:#e8efff;color:#1e40af" onclick="abrirTraslado(${ri},'insumo')" title="Trasladar">⇄</button>
         <button class="btn btn-brand btn-sm" onclick="verInsumo(${ri})">Ver</button>
       </div>`;
     c.appendChild(el);
@@ -7999,15 +8009,15 @@ function renderTerminados(){
           · Mín: ${item.stock_min||0} uds${item.notas?' · '+item.notas:''}
         </div>
       </div>
-      <div style="text-align:right;flex-shrink:0;min-width:130px">
+      <div class="inv-item-stock" style="text-align:right;flex-shrink:0;min-width:90px">
         <div style="font-weight:700;font-size:15px;color:${alerta?'var(--danger)':'#1e40af'}"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:3px;flex-shrink:0"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>${item.stock||0} <span style="font-size:11px;font-weight:400">uds</span></div>
         <div style="font-size:12px;color:var(--muted)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:3px;flex-shrink:0"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>${item.stock_dep||0} uds</div>
         ${alerta?'<div style="font-size:11px;color:var(--danger);font-weight:600">Stock local bajo</div>':''}
       </div>
-      <div style="display:flex;gap:6px;flex-shrink:0;flex-wrap:wrap">
-        <button class="btn btn-ok btn-sm" onclick="_quickMovTer(${ri},'entrada')" title="Entrada">＋</button>
-        <button class="btn btn-sm" onclick="_quickMovTer(${ri},'salida')" title="Salida">−</button>
-        <button class="btn btn-sm" style="background:#e8efff;color:#1e40af" onclick="abrirTraslado(${ri},'terminado')" title="Trasladar entre locaciones">⇄</button>
+      <div class="inv-item-btns">
+        <button class="btn btn-ok btn-sm" onclick="_quickMovTer(${ri},'entrada')" title="Entrada">＋ Entrada</button>
+        <button class="btn btn-sm" onclick="_quickMovTer(${ri},'salida')" title="Salida">− Salida</button>
+        <button class="btn btn-sm" style="background:#e8efff;color:#1e40af" onclick="abrirTraslado(${ri},'terminado')" title="Trasladar">⇄</button>
         <button class="btn btn-brand btn-sm" onclick="editarTerminado(${ri})"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
       </div>`;
     c.appendChild(el);
@@ -9268,7 +9278,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_22';
+  const APP_VERSION = 'v13_23';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
