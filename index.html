@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_21">
+<html lang="es" data-app-version="GestioMada_V13_22">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -180,7 +180,7 @@ function mapearParaSupa(tabla, d){
     nombre:          d.nombre || '',
     sku:             d.sku || '',
     categoria:       d.categoria || '',
-    foto_url:        d.foto_url || '',
+    foto_url:        d.foto_url || '',  // URL de Storage (la subida la hace subirFotoStorage)
     costo:           parseFloat(d.costo)||0,
     precio_venta:    parseFloat(d.precio_venta)||0,
     precio_sugerido: parseFloat(d.precio_sugerido)||0,
@@ -193,7 +193,7 @@ function mapearParaSupa(tabla, d){
     insumos_receta:  d.insumos_receta || [],
     notas:           d.notas || '',
     calculo:         d.calculo || null,
-    // Omitidos: foto (base64 pesado), fecha, margen (campo calculado)
+    // foto base64 omitida — se sube a Storage y se guarda en foto_url
   };
 
   if(tabla === 'inventario_insumos') return {
@@ -2164,8 +2164,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.21 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.22 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -3721,10 +3721,23 @@ function confirmarCatalogo(){
       toast('SKU "'+skuNuevo+'" ya existe en "'+skuExiste.nombre+'"','err'); return;
     }
   }
-  const nuevo={ id:Date.now(), nombre:nom, sku:skuNuevo, categoria:qs('#mc_cat').value, foto:_foto3, costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, modo_inventario:modoInv, inv_loc:invLoc, moneda_prod:monedaProd, insumos_receta:receta, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
+  const prodId = Date.now();
+  const nuevo={ id:prodId, nombre:nom, sku:skuNuevo, categoria:qs('#mc_cat').value, foto:_foto3, foto_url:'', costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, modo_inventario:modoInv, inv_loc:invLoc, moneda_prod:monedaProd, insumos_receta:receta, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
   const ei=cat.findIndex(p=>p.nombre.toLowerCase()===nom.toLowerCase());
   if(ei>=0){ if(!confirm('Ya existe "'+nom+'". ¿Actualizar?')) return; cat[ei]={...cat[ei],...nuevo}; }else{ cat.push(nuevo); }
   saveCat(cat); closeModal('m-catalogo'); toast('Agregado: '+nom,'ok'); renderDash();
+  // Subir foto a Storage en background (no bloquea UI)
+  if(_foto3 && _foto3.startsWith('data:') && window._supaConectado){
+    const idxFinal = cat.findIndex(p=>p.id===prodId);
+    subirFotoStorage(_foto3, 'prod_'+prodId).then(url=>{
+      if(url && idxFinal>=0){
+        const catActual=loadCat();
+        const i=catActual.findIndex(p=>p.id===prodId);
+        if(i>=0){ catActual[i].foto_url=url; saveCat(catActual); }
+        console.log('[Storage] Foto subida:', url);
+      }
+    });
+  }
   // Limpiar receta para próxima apertura
   const rw=qs('#mc_receta_lines'); if(rw) rw.innerHTML='';
   const mcInv=qs('#mc_modo_inv'); if(mcInv){ mcInv.value='ninguno'; mcToggleReceta(); }
@@ -3829,16 +3842,34 @@ function guardarProdManual(){
     const skuExiste=cat.find((p,i)=>p.sku&&p.sku.toLowerCase()===skuNuevo.toLowerCase()&&i!==_mpmIdx);
     if(skuExiste){ toast('SKU "'+skuNuevo+'" ya existe en "'+skuExiste.nombre+'"','err'); return; }
   }
+  const cat=loadCat();
+  const esModoEdit = _mpmIdx!==null;
+  const prodId = esModoEdit ? cat[_mpmIdx].id : Date.now();
+  // Preservar foto_url existente si no cambia la foto
+  const fotoUrlExistente = esModoEdit ? (cat[_mpmIdx].foto_url||'') : '';
+  const fotoBase64Cambio = foto && foto.startsWith('data:') && foto !== (esModoEdit ? cat[_mpmIdx].foto : '');
   const obj={ nombre:nom, sku:skuNuevo, categoria:qs('#mpm_cat').value, foto,
+    foto_url: fotoBase64Cambio ? '' : fotoUrlExistente,
     costo:parseEU(qs('#mpm_costo')?.value||'0'), precio_venta:pv,
     estado:qs('#mpm_estado').value, modo_inventario:modoInv, inv_loc:mpmLoc, moneda_prod:mpmMoneda,
     insumos_receta:receta,
     notas:qs('#mpm_notas').value.trim(), origen:'manual' };
-  const cat=loadCat();
-  if(_mpmIdx!==null){ cat[_mpmIdx]={...cat[_mpmIdx],...obj}; }
-  else { obj.id=Date.now(); obj.fecha=new Date().toISOString(); cat.push(obj); }
+  if(esModoEdit){ cat[_mpmIdx]={...cat[_mpmIdx],...obj}; }
+  else { obj.id=prodId; obj.fecha=new Date().toISOString(); cat.push(obj); }
   saveCat(cat); closeModal('m-prod-manual'); renderCatalogo(); renderDash();
-  toast((_mpmIdx!==null?'Producto actualizado: ':'Producto creado: ')+nom,'ok'); _mpmIdx=null;
+  toast((esModoEdit?'Producto actualizado: ':'Producto creado: ')+nom,'ok');
+  // Subir foto a Storage en background si cambió
+  if(foto && foto.startsWith('data:') && fotoBase64Cambio && window._supaConectado){
+    subirFotoStorage(foto, 'prod_'+prodId).then(url=>{
+      if(url){
+        const catActual=loadCat();
+        const i=catActual.findIndex(p=>p.id===prodId);
+        if(i>=0){ catActual[i].foto_url=url; saveCat(catActual); }
+        console.log('[Storage] Foto subida:', url);
+      }
+    });
+  }
+  _mpmIdx=null;
 }
 function renderCatalogo(){
   const cat=loadCat(), q=(qs('#cat_q')?.value||'').toLowerCase(), fc=qs('#cat_fcat')?.value||'', fe=qs('#cat_fest')?.value||'';
@@ -3985,7 +4016,7 @@ function duplicarProd(idx){
   cat.push(copia); saveCat(cat); renderCatalogo(); renderDash();
   toast('Producto duplicado: '+copia.nombre,'ok');
 }
-async function eliminarProd(idx){ const cat=loadCat(); if(!confirm('¿Eliminar "'+cat[idx].nombre+'"?')) return; const _id=cat[idx].id; cat.splice(idx,1); localStorage.setItem(LS_CAT,JSON.stringify(cat)); await deleteFromSupabase('productos',_id); saveCat(cat); renderCatalogo(); renderDash(); toast('Eliminado','ok'); }
+async function eliminarProd(idx){ const cat=loadCat(); if(!confirm('¿Eliminar "'+cat[idx].nombre+'"?')) return; const _id=cat[idx].id; const _fotoUrl=cat[idx].foto_url||''; cat.splice(idx,1); localStorage.setItem(LS_CAT,JSON.stringify(cat)); await deleteFromSupabase('productos',_id); if(_fotoUrl) eliminarFotoStorage(_fotoUrl); saveCat(cat); renderCatalogo(); renderDash(); toast('Eliminado','ok'); }
 
 /* ════════════════════════════════════════════
    CLIENTES
@@ -4278,7 +4309,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v1321',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v1322',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
@@ -4333,6 +4364,52 @@ const ROLES = {
 /* ── Compresión de imagen via Canvas ──
    maxW/maxH: dimensión máxima (px). quality: 0–1 para JPEG.
    Devuelve una Promise<string> con el dataURL comprimido. */
+/* ══════════════════════════════════════════
+   SUPABASE STORAGE — Fotos de productos
+   Sube base64 al bucket 'productos-fotos'
+   Devuelve la URL pública o '' si falla
+══════════════════════════════════════════ */
+async function subirFotoStorage(base64DataUrl, nombreArchivo){
+  if(!window._supaConectado || !base64DataUrl || !base64DataUrl.startsWith('data:')) return '';
+  try{
+    // Convertir base64 a Blob
+    const arr = base64DataUrl.split(',');
+    const mime = arr[0].match(/:(.*?);/)[1];
+    const ext  = mime === 'image/png' ? 'png' : 'jpg';
+    const bstr = atob(arr[1]);
+    const u8   = new Uint8Array(bstr.length);
+    for(let i=0;i<bstr.length;i++) u8[i]=bstr.charCodeAt(i);
+    const blob = new Blob([u8], {type: mime});
+
+    const path = `productos/${nombreArchivo}.${ext}`;
+    const { data, error } = await SUPA.storage
+      .from('productos-fotos')
+      .upload(path, blob, { upsert: true, contentType: mime });
+
+    if(error){ console.warn('[Storage] Error subiendo foto:', error.message); return ''; }
+
+    const { data: urlData } = SUPA.storage
+      .from('productos-fotos')
+      .getPublicUrl(path);
+
+    return urlData?.publicUrl || '';
+  } catch(e){
+    console.warn('[Storage] subirFotoStorage error:', e.message);
+    return '';
+  }
+}
+
+/* Elimina la foto de Storage cuando se borra un producto */
+async function eliminarFotoStorage(foto_url){
+  if(!window._supaConectado || !foto_url || !foto_url.includes('productos-fotos')) return;
+  try{
+    const parts = foto_url.split('/productos-fotos/');
+    if(parts.length < 2) return;
+    const path = decodeURIComponent(parts[1]);
+    await SUPA.storage.from('productos-fotos').remove([path]);
+  } catch(e){ console.warn('[Storage] eliminarFotoStorage error:', e.message); }
+}
+
 function comprimirImagen(file, maxW=800, maxH=800, quality=0.75){
   return new Promise((resolve, reject)=>{
     const reader = new FileReader();
@@ -9191,7 +9268,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_21';
+  const APP_VERSION = 'v13_22';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
