@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_25">
+<html lang="es" data-app-version="GestioMada_V13_26">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -903,11 +903,17 @@ label.btn{cursor:pointer}
 }
 .prod-card:hover{box-shadow:0 14px 30px rgba(255,122,162,.13);transform:translateY(-2px)}
 .prod-card-img{
-  width:100%;height:120px;
+  width:100%;height:140px;
   background:linear-gradient(135deg,#ffe3ee 0%,#e8efff 100%);
   display:flex;align-items:center;justify-content:center;
   font-size:38px;position:relative;
   border-bottom:1px solid #f3f3f8;
+}
+@media(max-width:480px){
+  .prod-grid{ grid-template-columns:1fr !important; }
+  .prod-card-img{ height:200px; }
+  .prod-card-body{ padding:14px; }
+  .prod-card-pv{ font-size:22px !important; }
 }
 .prod-card-body{padding:12px}
 .prod-card-name{font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px}
@@ -1103,7 +1109,7 @@ label.btn{cursor:pointer}
   line-height:1.3;max-height:2.6em;overflow:hidden;
 }
 .pos-prod-price{
-  font-size:12px;font-weight:700;color:var(--brand);
+  font-size:12px;font-weight:700;color:var(--ink);
 }
 .pos-prod-sku{
   font-size:10px;color:var(--muted);
@@ -2174,8 +2180,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.25 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.26 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -4323,7 +4329,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v1325',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v1326',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
@@ -5742,7 +5748,7 @@ function posRenderProductos(){
         const pvBsDif=pvUsdDif*bcv;
         const hasDif=dif>1.001;
         if(!hasDif) return `<span style="font-weight:600">Bs ${(pvUsd*bcv).toFixed(2).replace('.',',')}</span>`;
-        return `<span style="color:var(--brand);font-weight:700">$ ${pvUsdDif.toFixed(2)}</span> c/dif.<br><span style="font-weight:600">Bs ${pvBsDif.toFixed(2).replace('.',',')}</span>`;
+        return `<span style="color:var(--brand);font-weight:700">$ ${pvUsdDif.toFixed(2)}</span> c/dif.<br><span style="color:var(--ink);font-weight:600">Bs ${pvBsDif.toFixed(2).replace('.',',')}</span>`;
       })()}</div>
       ${p.sku ? `<div class="pos-prod-sku">${p.sku}</div>` : ''}
     </div>`;
@@ -9282,7 +9288,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_25';
+  const APP_VERSION = 'v13_26';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
