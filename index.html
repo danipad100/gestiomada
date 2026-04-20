@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_18">
+<html lang="es" data-app-version="GestioMada_V13_19">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -254,39 +254,28 @@ async function loadFromSupabase(tabla){
 async function initSupabaseSync(){
   for(const t of SUPA_TABLAS){
     const remoto = await loadFromSupabase(t.supa);
-
     if(remoto && remoto.length > 0){
       // ── Supabase es la fuente de verdad ──
-      // Para caja_movimientos: Supabase manda siempre.
       if(t.supa === 'caja_movimientos'){
         localStorage.setItem(t.ls, JSON.stringify(remoto));
-        console.log(`[Supabase] Caja sync: ${remoto.length} movimientos (Supabase = fuente de verdad)`);
+        console.log(`[Supabase] Caja sync: ${remoto.length} movimientos (fuente de verdad)`);
       } else {
-        // Para otras tablas: preservar fotos base64 locales que Supabase no almacena
         const localItems = JSON.parse(localStorage.getItem(t.ls)||'[]');
         const mergeado = remoto.map(r => {
           const local = localItems.find(l => String(l.id) === String(r.id));
-          if(local && local.foto) {
-            return { ...r, foto: local.foto, foto_url: r.foto_url || local.foto_url || '' };
-          }
+          if(local && local.foto) return { ...r, foto: local.foto, foto_url: r.foto_url || local.foto_url || '' };
           return r;
         });
-        // Agregar locales que aún no subieron (tienen id temporal muy grande)
         localItems.forEach(l => {
-          const enRemoto = remoto.find(r => String(r.id) === String(l.id));
-          if(!enRemoto) mergeado.push(l);
+          if(!remoto.find(r => String(r.id) === String(l.id))) mergeado.push(l);
         });
         localStorage.setItem(t.ls, JSON.stringify(mergeado));
         console.log(`[Supabase] Sync inicial ${t.supa}: ${mergeado.length} registros`);
       }
     } else if(remoto && remoto.length === 0){
       const local = JSON.parse(localStorage.getItem(t.ls)||'[]');
-      if(local.length > 0){
-        await syncToSupabase(t.supa, local);
-        console.log(`[Supabase] Subido ${t.supa}: ${local.length} registros`);
-      }
+      if(local.length > 0){ await syncToSupabase(t.supa, local); }
     }
-    // Si remoto===null (error de red), no tocar localStorage
   }
   if(typeof renderDash==='function') renderDash();
   if(typeof updateBadges==='function') updateBadges();
@@ -2136,8 +2125,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.16 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.19 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -2282,7 +2271,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
                     </div>
                     <div style="flex:1">
                       <label>Tipo de venta</label>
-                      <select id="pos_tipo">
+                      <select id="pos_tipo" onchange="posTipoChange()">
                         <option value="venta_rapida">Venta rápida</option>
                         <option value="pago_pedido">Pago de pedido</option>
                         <option value="abono">Abono</option>
@@ -2300,6 +2289,20 @@ body.dark .pos-prod-img-ph{background:#23283a}
                   </div>
 
                   <!-- Métodos de pago -->
+                  <!-- Panel de pedido vinculado (visible solo para pago_pedido / abono / pago_restante) -->
+                  <div id="pos_pedido_panel" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:4px">
+                    <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px">PEDIDO A COBRAR</div>
+                    <select id="pos_pedido_sel" onchange="posSeleccionarPedido()" style="width:100%;margin-bottom:6px">
+                      <option value="">— Seleccionar pedido pendiente —</option>
+                    </select>
+                    <div id="pos_pedido_info" style="display:none;font-size:12px;padding:8px;background:var(--card);border-radius:8px;border:1px solid var(--border)">
+                      <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px">
+                        <span style="color:var(--muted)">Total pedido:</span><strong id="pos_ped_total">—</strong>
+                        <span style="color:var(--muted)">Pagado:</span><strong id="pos_ped_pagado" style="color:var(--ok)">—</strong>
+                        <span style="color:var(--muted)">Saldo:</span><strong id="pos_ped_saldo" style="color:var(--warn)">—</strong>
+                      </div>
+                    </div>
+                  </div>
                   <div>
                     <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px">MÉTODO DE PAGO</div>
                     <div class="pos-cobro-row" id="pos_metodos_row"></div>
@@ -4193,7 +4196,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v1318',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v1319',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
@@ -5339,6 +5342,153 @@ let _posItems = [];       // carrito POS
 let _posCliSel = null;    // cliente seleccionado en POS
 let _posMetodoActivo = 'efectivo_bs'; // método de pago activo
 let _posCatActiva = '';   // categoría filtrada
+/* ═══════════════════════════════════════════════════════
+   TIPOS DE VENTA — lógica diferenciada por tipo
+   venta_rapida : libre, sin pedido vinculado
+   pago_pedido  : paga el total restante de un pedido
+   abono        : pago parcial de un pedido
+   pago_restante: igual que pago_pedido (alias semántico)
+═══════════════════════════════════════════════════════ */
+
+// Variable que almacena el pedido vinculado en la venta activa (POS o modal)
+let _posPedidoVinculado = null;
+let _mvPedidoVinculado  = null;
+
+/* Devuelve pedidos con saldo pendiente > 0 y estado != cancelado */
+function getPedidosPendientes(){
+  return loadPed().filter(p => {
+    if(p.estado === 'cancelado') return false;
+    const pagado = (p.pagos||[]).reduce((a,pg)=>a+pg.monto,0);
+    return pagado < (p.total||0);
+  });
+}
+
+/* Pobla un <select> con los pedidos pendientes */
+function poblarSelectPedidos(selId){
+  const sel = qs('#'+selId); if(!sel) return;
+  const peds = getPedidosPendientes();
+  sel.innerHTML = '<option value="">— Seleccionar pedido pendiente —</option>';
+  if(!peds.length){
+    sel.innerHTML += '<option value="" disabled>Sin pedidos con saldo pendiente</option>';
+    return;
+  }
+  peds.forEach(p => {
+    const pagado = (p.pagos||[]).reduce((a,pg)=>a+pg.monto,0);
+    const saldo  = Math.max(0, p.total - pagado);
+    const cli    = p.cliente ? ` — ${p.cliente.nombre}${p.cliente.apellido?' '+p.cliente.apellido:''}` : '';
+    sel.innerHTML += `<option value="${p.id}">${p.numero}${cli} · Saldo: ${euro(saldo)}</option>`;
+  });
+}
+
+/* Muestra/oculta el panel de pedido en el POS según el tipo seleccionado */
+function posTipoChange(){
+  const tipo  = qs('#pos_tipo')?.value || 'venta_rapida';
+  const panel = qs('#pos_pedido_panel');
+  if(!panel) return;
+  const necesitaPedido = ['pago_pedido','abono','pago_restante'].includes(tipo);
+  panel.style.display = necesitaPedido ? '' : 'none';
+  if(necesitaPedido){
+    poblarSelectPedidos('pos_pedido_sel');
+    qs('#pos_pedido_info').style.display = 'none';
+  }
+  _posPedidoVinculado = null;
+}
+
+/* Muestra/oculta el panel de pedido en el modal de venta */
+function mvTipoChange(){
+  const tipo  = qs('#mv_tipo')?.value || 'venta_rapida';
+  const panel = qs('#mv_pedido_panel');
+  if(!panel) return;
+  const necesitaPedido = ['pago_pedido','abono','pago_restante'].includes(tipo);
+  panel.style.display = necesitaPedido ? '' : 'none';
+  if(necesitaPedido){
+    poblarSelectPedidos('mv_pedido_sel');
+    qs('#mv_pedido_info').style.display = 'none';
+  }
+  _mvPedidoVinculado = null;
+}
+
+/* Al seleccionar un pedido en el POS: muestra info y pre-rellena monto */
+function posSeleccionarPedido(){
+  const selId = qs('#pos_pedido_sel')?.value;
+  const tipo  = qs('#pos_tipo')?.value || '';
+  if(!selId){ _posPedidoVinculado = null; qs('#pos_pedido_info').style.display='none'; return; }
+  const ped = loadPed().find(p => String(p.id) === String(selId));
+  if(!ped){ _posPedidoVinculado = null; return; }
+  _posPedidoVinculado = ped;
+  const pagado = (ped.pagos||[]).reduce((a,pg)=>a+pg.monto,0);
+  const saldo  = Math.max(0, ped.total - pagado);
+  const fmt = n => Number(n||0).toFixed(2).replace('.',',');
+  qs('#pos_ped_total').textContent  = euro(ped.total);
+  qs('#pos_ped_pagado').textContent = euro(pagado);
+  qs('#pos_ped_saldo').textContent  = euro(saldo);
+  qs('#pos_pedido_info').style.display = '';
+  // Pre-llenar cliente si el pedido tiene uno
+  if(ped.cliente && !_posCliSel){
+    _posCliSel = ped.cliente;
+    const cn = qs('#pos_cli_nombre');
+    if(cn) cn.textContent = ped.cliente.nombre + (ped.cliente.apellido?' '+ped.cliente.apellido:'');
+    const cw = qs('#pos_cli_wrap'); if(cw) cw.style.display='';
+    const cb = qs('#pos_cli_buscar'); if(cb) cb.style.display='none';
+  }
+  // Pre-llenar monto recibido con el saldo (para pago_pedido y pago_restante)
+  if(tipo === 'pago_pedido' || tipo === 'pago_restante'){
+    const recEl = qs('#pos_recibido'); if(recEl) recEl.value = fmt(saldo);
+    posRecalc();
+  }
+}
+
+/* Al seleccionar un pedido en el modal de venta */
+function mvSeleccionarPedido(){
+  const selId = qs('#mv_pedido_sel')?.value;
+  const tipo  = qs('#mv_tipo')?.value || '';
+  if(!selId){ _mvPedidoVinculado = null; qs('#mv_pedido_info').style.display='none'; return; }
+  const ped = loadPed().find(p => String(p.id) === String(selId));
+  if(!ped){ _mvPedidoVinculado = null; return; }
+  _mvPedidoVinculado = ped;
+  const pagado = (ped.pagos||[]).reduce((a,pg)=>a+pg.monto,0);
+  const saldo  = Math.max(0, ped.total - pagado);
+  const fmt = n => Number(n||0).toFixed(2).replace('.',',');
+  qs('#mv_ped_total').textContent  = euro(ped.total);
+  qs('#mv_ped_pagado').textContent = euro(pagado);
+  qs('#mv_ped_saldo').textContent  = euro(saldo);
+  qs('#mv_pedido_info').style.display = '';
+  // Pre-llenar cliente
+  if(ped.cliente && !_venCliSel){
+    _venCliSel = ped.cliente;
+    const csel = qs('#mv_cli_sel');
+    if(csel){
+      csel.style.display = '';
+      const cn = csel.querySelector('.cli-nombre');
+      if(cn) cn.textContent = ped.cliente.nombre + (ped.cliente.apellido?' '+ped.cliente.apellido:'');
+    }
+  }
+  // Pre-llenar monto para pago_pedido y pago_restante
+  if(tipo === 'pago_pedido' || tipo === 'pago_restante'){
+    const recEl = qs('#mv_recibido'); if(recEl) recEl.value = fmt(saldo);
+    recalcVenta();
+  }
+}
+
+/* Registrar pago en el pedido vinculado al guardar una venta */
+function registrarPagoEnPedidoVinculado(ped, monto, metodo, notaExtra, marcarPagado){
+  const allPed = loadPed();
+  const idx = allPed.findIndex(p => String(p.id) === String(ped.id));
+  if(idx < 0) return;
+  allPed[idx].pagos = allPed[idx].pagos || [];
+  allPed[idx].pagos.push({
+    id: Date.now(), monto, metodo,
+    nota: notaExtra || '',
+    fecha: new Date().toISOString()
+  });
+  if(marcarPagado){
+    const totalPag = allPed[idx].pagos.reduce((a,p)=>a+p.monto,0);
+    if(totalPag >= allPed[idx].total) allPed[idx].estado = 'entregado';
+  }
+  savePed(allPed);
+  if(window._supaConectado) syncToSupabase('pedidos', allPed);
+}
+
 let _posTabActual = 'pos'; // tab actual: 'pos' | 'hist'
 
 function posSwitchTab(tab){
@@ -5831,97 +5981,114 @@ function cajaMonedaMonto(metodo, totalUsd, bcv, dif){
   return { moneda:'usd', monto: totalUsd, monto_bs: 0, monto_usd: totalUsd, tasa: bcv };
 }
 function posCobrar(){
-  if(!_posItems.length){ toast('Agrega al menos un producto','warn'); return; }
+  const tipo = qs('#pos_tipo')?.value || 'venta_rapida';
+
+  // Validación por tipo
+  if(['pago_pedido','abono','pago_restante'].includes(tipo)){
+    if(!_posPedidoVinculado){ toast('Selecciona un pedido pendiente','warn'); return; }
+  } else {
+    if(!_posItems.length){ toast('Agrega al menos un producto','warn'); return; }
+  }
+
   const sub = _posItems.reduce((a,it) => a + (it.precio_unit * it.cant), 0);
   const desc = parseEU(qs('#pos_descuento')?.value || '0');
   const deliveryUsd = (qs('#pos_delivery_chk')?.checked ? parseFloat(qs('#pos_delivery_monto')?.value||0) : 0);
   const envioUsd    = (qs('#pos_envio_chk')?.checked    ? parseFloat(qs('#pos_envio_monto')?.value||0)    : 0);
-  const bcvC = getTasaBCV();
   const extrasVal = deliveryUsd + envioUsd;
-  const total = Math.max(0, sub - desc + extrasVal);
+
+  let total;
+  if(['pago_pedido','abono','pago_restante'].includes(tipo)){
+    const rec0 = parseEU(qs('#pos_recibido')?.value || '0');
+    if(rec0 <= 0){ toast('Ingresa el monto a cobrar','warn'); return; }
+    const ped0 = _posPedidoVinculado;
+    const pagado0 = (ped0.pagos||[]).reduce((a,p)=>a+p.monto,0);
+    const saldo0  = Math.max(0, ped0.total - pagado0);
+    if(rec0 > saldo0 + 0.01){ toast('El monto supera el saldo: '+euro(saldo0),'warn'); return; }
+    total = rec0;
+  } else {
+    total = Math.max(0, sub - desc + extrasVal);
+  }
+
   const rec = parseEU(qs('#pos_recibido')?.value || '0');
   const costo_total = _posItems.reduce((a,it) => a + (it.costo_unit * it.cant), 0);
-  // Nota con extras
+  const clienteVenta = _posCliSel || (_posPedidoVinculado?.cliente || null);
   const notaExtras = [
     deliveryUsd>0?`Delivery: $${deliveryUsd.toFixed(2)}`:'',
-    envioUsd>0?`Envío: $${envioUsd.toFixed(2)}`:''
+    envioUsd>0?`Envio: $${envioUsd.toFixed(2)}`:'',
+    _posPedidoVinculado?`Pedido: ${_posPedidoVinculado.numero}`:''
   ].filter(Boolean).join(' | ');
   const notaBase = (qs('#pos_notas')?.value || '').trim();
 
   const venta = {
     id: Date.now(),
     numero: nextNumVen(),
-    cliente: _posCliSel,
+    cliente: clienteVenta,
     items: JSON.parse(JSON.stringify(_posItems)),
-    subtotal: sub,
-    descuento: desc,
-    delivery_usd: deliveryUsd,
-    envio_usd: envioUsd,
-    total,
-    recibido: rec,
-    vuelto: Math.max(0, rec - total),
-    costo_total,
-    utilidad: total - costo_total,
-    tipo: qs('#pos_tipo')?.value || 'venta_rapida',
-    canal: qs('#pos_canal')?.value || 'local',
+    subtotal: sub, descuento: desc,
+    delivery_usd: deliveryUsd, envio_usd: envioUsd,
+    total, recibido: rec, vuelto: Math.max(0, rec - total),
+    costo_total, utilidad: total - costo_total,
+    tipo, canal: qs('#pos_canal')?.value || 'local',
     metodo: _posMetodoActivo,
     notas: [notaBase, notaExtras].filter(Boolean).join(' | '),
-    fecha: new Date().toISOString(),
-    estado: 'completada',
-    usuario_id:  CURRENT_USR_ID || null,
-    usuario_nom: CURRENT_USR_NOM || null
+    fecha: new Date().toISOString(), estado: 'completada',
+    pedido_ref: _posPedidoVinculado?.id || null,
+    usuario_id: CURRENT_USR_ID || null, usuario_nom: CURRENT_USR_NOM || null
   };
 
   const allVen = loadVen(); allVen.push(venta); saveVen(allVen);
 
-  // Registrar en caja con moneda correcta
+  // Registrar en caja
   const _cajaMM = cajaMonedaMonto(venta.metodo, total, getTasaBCV(), getDiferencial());
+  const catCaja = tipo === 'abono' ? 'abono' : 'venta';
+  const cliNom = clienteVenta ? ' — ' + (clienteVenta.nombre||'') : '';
   const mov = {
-    id: Date.now()+1, tipo:'ingreso', categoria:'venta',
+    id: Date.now()+1, tipo:'ingreso', categoria: catCaja,
     monto: _cajaMM.monto, moneda: _cajaMM.moneda,
     monto_bs: _cajaMM.monto_bs, monto_usd: _cajaMM.monto_usd, tasa: _cajaMM.tasa,
     metodo: venta.metodo,
-    nota: `Venta ${venta.numero}${_posCliSel?' — '+_posCliSel.nombre+' '+_posCliSel.apellido:''}`,
+    nota: `${VEN_TIPO_LABEL[tipo]||tipo} ${venta.numero}${cliNom}`,
     ref_id: venta.id, ref_tipo:'venta',
     fecha: new Date().toISOString().slice(0,10)
   };
   const cajaAll = loadCajaMov(); cajaAll.push(mov); saveCajaMov(cajaAll);
 
-  // Descontar inventario
-  descontarInventarioDeItems(venta.items, 'Venta '+venta.numero);
+  // Registrar pago en el pedido vinculado
+  if(_posPedidoVinculado){
+    const marcar = tipo === 'pago_pedido' || tipo === 'pago_restante';
+    registrarPagoEnPedidoVinculado(_posPedidoVinculado, total, _posMetodoActivo, notaBase, marcar);
+  }
 
-  // Limpiar POS para siguiente venta
-  _posItems = [];
-  _posCliSel = null;
+  // Descontar inventario solo en venta rápida
+  if(tipo === 'venta_rapida') descontarInventarioDeItems(venta.items, 'Venta '+venta.numero);
+
+  // Limpiar POS
+  _posItems = []; _posCliSel = null; _posPedidoVinculado = null;
   posQuitarCliente();
   qs('#pos_descuento').value = '0,00';
   qs('#pos_recibido').value = '';
   qs('#pos_notas').value = '';
+  qs('#pos_tipo').value = 'venta_rapida';
+  const pp = qs('#pos_pedido_panel'); if(pp) pp.style.display='none';
   const delChk=qs('#pos_delivery_chk'); if(delChk){ delChk.checked=false; const m=qs('#pos_delivery_monto'); if(m) m.disabled=true; }
   const envChk=qs('#pos_envio_chk');    if(envChk){ envChk.checked=false; const m=qs('#pos_envio_monto');    if(m) m.disabled=true; }
   const wb=qs('#pos_wa_body'); if(wb) wb.classList.add('collapsed');
   const wc=qs('#pos_wa_chev'); if(wc) wc.classList.remove('open');
-  posRenderProductos();
-  posRenderCarrito();
-  posRecalc();
-  renderDash();
+  posRenderProductos(); posRenderCarrito(); posRecalc(); renderDash();
 
-  // Modal de confirmación con opción de imprimir
+  // Modal confirmación
   _ventaConfirmada = venta;
-  const bcvConf = getTasaBCV();
-  const difConf = getDiferencial();
+  const bcvConf = getTasaBCV(); const difConf = getDiferencial();
   const metodoBsConf = ['efectivo_bs','pago_movil','transferencia'].includes(venta.metodo);
   const totalBsConf = metodoBsConf && bcvConf > 0 ? venta.total * difConf * bcvConf : 0;
-  const totalFmt = totalBsConf > 0
-    ? 'Bs ' + totalBsConf.toFixed(2).replace('.',',')
-    : euro(venta.total);
+  const totalFmt = totalBsConf > 0 ? 'Bs ' + totalBsConf.toFixed(2).replace('.',',') : euro(venta.total);
   const metLblConf = METODOS_LABEL[venta.metodo] || venta.metodo || '';
-  const itemsResumen = venta.items.map(it =>
+  const itemsResumen = venta.items.length ? venta.items.map(it =>
     `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f3f3f8;font-size:13px">
-      <span>${it.cant}× ${it.nombre}</span>
+      <span>${it.cant}\u00d7 ${it.nombre}</span>
       <span style="font-weight:600">${euro(it.precio_unit*it.cant)}</span>
-    </div>`).join('');
-  const canalLblConf = CANALES_LABEL[venta.canal]||'🏪 Local';
+    </div>`).join('') : `<div style="font-size:13px;color:var(--muted);padding:6px 0">Cobro de ${VEN_TIPO_LABEL[tipo]||tipo}: ${euro(total)}</div>`;
+  const canalLblConf = CANALES_LABEL[venta.canal]||'\ud83c\udffb Local';
   const canalStyleConf = CANALES_COLOR[venta.canal]||CANALES_COLOR.local;
   const confEl = qs('#m-venta-confirmada');
   if(confEl){
@@ -5995,7 +6162,7 @@ function crearClienteRapidoVenta(){
 }
 let _crearCliDesdeVenta=false;
 function abrirNuevaVenta(){
-  _venIdx=null; _venItems=[]; _venCliSel=null;
+  _venIdx=null; _venItems=[]; _venCliSel=null; _mvPedidoVinculado=null;
   qs('#mv-title').textContent='Nueva Venta';
   qs('#mv_cli_q').value=''; qs('#mv_cli_results').innerHTML='';
   qs('#mv_cli_sel').style.display='none';
@@ -6005,6 +6172,7 @@ function abrirNuevaVenta(){
   qs('#mv_notas').value='';
   qs('#mv_metodo').value='efectivo_bs';
   const mvTipo=qs('#mv_tipo'); if(mvTipo) mvTipo.value='venta_rapida';
+  const mp=qs('#mv_pedido_panel'); if(mp) mp.style.display='none';
   poblarSelectCatalogoVenta();
   recalcVenta();
   openModal('m-venta');
@@ -6104,46 +6272,81 @@ function recalcVenta(){
 
 // ── Guardar venta ──
 function guardarVenta(){
-  if(!_venItems.length){ toast('Agrega al menos un producto','warn'); return; }
-  const sub=_venItems.reduce((a,it)=>a+(it.precio_unit*it.cant),0);
-  const desc=parseEU(qs('#mv_descuento').value||'0,00');
-  const total=Math.max(0,sub-desc);
-  const rec=parseEU(qs('#mv_recibido').value||'0');
-  const costo_total=_venItems.reduce((a,it)=>a+(it.costo_unit*it.cant),0);
+  const tipo = qs('#mv_tipo')?.value || 'venta_rapida';
 
-  const venta={
+  // Validación por tipo
+  if(['pago_pedido','abono','pago_restante'].includes(tipo)){
+    if(!_mvPedidoVinculado){ toast('Selecciona un pedido pendiente','warn'); return; }
+  } else {
+    if(!_venItems.length){ toast('Agrega al menos un producto','warn'); return; }
+  }
+
+  const sub = _venItems.reduce((a,it)=>a+(it.precio_unit*it.cant),0);
+  const desc = parseEU(qs('#mv_descuento').value||'0,00');
+  const costo_total = _venItems.reduce((a,it)=>a+(it.costo_unit*it.cant),0);
+
+  let total;
+  if(['pago_pedido','abono','pago_restante'].includes(tipo)){
+    const rec0 = parseEU(qs('#mv_recibido').value||'0');
+    if(rec0 <= 0){ toast('Ingresa el monto a cobrar','warn'); return; }
+    const ped0 = _mvPedidoVinculado;
+    const pagado0 = (ped0.pagos||[]).reduce((a,p)=>a+p.monto,0);
+    const saldo0  = Math.max(0, ped0.total - pagado0);
+    if(rec0 > saldo0 + 0.01){ toast('El monto supera el saldo: '+euro(saldo0),'warn'); return; }
+    total = rec0;
+  } else {
+    total = Math.max(0, sub - desc);
+  }
+
+  const rec = parseEU(qs('#mv_recibido').value||'0');
+  const clienteVenta = _venCliSel || (_mvPedidoVinculado?.cliente || null);
+  const notaPedido = _mvPedidoVinculado ? 'Pedido: '+_mvPedidoVinculado.numero : '';
+  const notaBase = qs('#mv_notas').value.trim();
+
+  const venta = {
     id:Date.now(), numero:nextNumVen(),
-    cliente:_venCliSel,
-    items:JSON.parse(JSON.stringify(_venItems)),
+    cliente: clienteVenta,
+    items: JSON.parse(JSON.stringify(_venItems)),
     subtotal:sub, descuento:desc, total,
     recibido:rec, vuelto:Math.max(0,rec-total),
     costo_total, utilidad:total-costo_total,
-    tipo:qs('#mv_tipo')?.value||'venta_rapida',
-    metodo:qs('#mv_metodo').value,
-    notas:qs('#mv_notas').value.trim(),
-    fecha:new Date().toISOString(),
-    estado:'completada',
-    usuario_id:  CURRENT_USR_ID || null,
+    tipo, metodo:qs('#mv_metodo').value,
+    notas:[notaBase, notaPedido].filter(Boolean).join(' | '),
+    fecha:new Date().toISOString(), estado:'completada',
+    pedido_ref: _mvPedidoVinculado?.id || null,
+    usuario_id: CURRENT_USR_ID || null,
     usuario_nom: CURRENT_USR_NOM || null
   };
 
   const all=loadVen(); all.push(venta); saveVen(all);
 
-  // Registrar automáticamente en caja con moneda correcta
+  // Registrar en caja con moneda correcta
   const _cajaMM2 = cajaMonedaMonto(venta.metodo, total, getTasaBCV(), getDiferencial());
+  const catCaja2 = tipo === 'abono' ? 'abono' : 'venta';
+  const cliNom2 = clienteVenta ? ' — '+(clienteVenta.nombre||'') : '';
   const mov={
-    id:Date.now()+1, tipo:'ingreso', categoria:'venta',
+    id:Date.now()+1, tipo:'ingreso', categoria: catCaja2,
     monto:_cajaMM2.monto, moneda:_cajaMM2.moneda,
     monto_bs:_cajaMM2.monto_bs, monto_usd:_cajaMM2.monto_usd, tasa:_cajaMM2.tasa,
     metodo:venta.metodo,
-    nota:`Venta ${venta.numero}${_venCliSel?' — '+_venCliSel.nombre+' '+_venCliSel.apellido:''}`,
+    nota:`${VEN_TIPO_LABEL[tipo]||tipo} ${venta.numero}${cliNom2}`,
     ref_id:venta.id, ref_tipo:'venta',
     fecha:new Date().toISOString().slice(0,10)
   };
   const cajaAll=loadCajaMov(); cajaAll.push(mov); saveCajaMov(cajaAll);
 
-  // Descontar inventario automáticamente
-  descontarInventarioDeItems(venta.items, 'Venta '+venta.numero);
+  // Registrar pago en el pedido vinculado
+  if(_mvPedidoVinculado){
+    const marcar = tipo === 'pago_pedido' || tipo === 'pago_restante';
+    registrarPagoEnPedidoVinculado(_mvPedidoVinculado, total, venta.metodo, notaBase, marcar);
+  }
+
+  // Descontar inventario solo en venta rápida
+  if(tipo === 'venta_rapida') descontarInventarioDeItems(venta.items, 'Venta '+venta.numero);
+
+  // Reset pedido vinculado
+  _mvPedidoVinculado = null;
+  const mp = qs('#mv_pedido_panel'); if(mp) mp.style.display='none';
 
   closeModal('m-venta'); renderVentas(); renderDash();
   toast('Venta registrada: '+venta.numero,'ok');
@@ -6688,7 +6891,6 @@ function renderKpisCaja(fil, INGRESOS){
   const all=loadCajaMov();
   const hoy=new Date().toISOString().slice(0,10);
   const hoyMov=all.filter(m=>m.fecha===hoy);
-  // Separar ingresos y egresos por moneda
   const ingMovHoy=hoyMov.filter(m=>INGRESOS.includes(m.categoria)||INGRESOS.includes(m.tipo));
   const gasMovHoy=hoyMov.filter(m=>!INGRESOS.includes(m.categoria)&&!INGRESOS.includes(m.tipo));
   const ingBs =ingMovHoy.filter(m=>!m.moneda||m.moneda==='bs').reduce((a,m)=>a+m.monto,0);
@@ -6698,9 +6900,6 @@ function renderKpisCaja(fil, INGRESOS){
   const venHoy=loadVen().filter(v=>v.fecha.slice(0,10)===hoy&&v.estado!=='anulada');
   const utilHoy=venHoy.reduce((a,v)=>a+(v.utilidad||0),0);
   const fmt=n=>Number(n||0).toFixed(2).replace('.',',');
-  // Sub-línea de moneda: muestra la segunda moneda solo si tiene valor
-  const ingSub = ingUsd>0 ? `Bs ${fmt(ingBs)} · $ ${fmt(ingUsd)}` : `Bs ${fmt(ingBs)}`;
-  const gasSub = gasUsd>0 ? `Bs ${fmt(gasBs)} · $ ${fmt(gasUsd)}` : `Bs ${fmt(gasBs)}`;
   wrap.innerHTML=`
     <div class="kpi green"><div class="kpi-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></div><div class="kpi-lbl">Ingresos hoy</div><div class="kpi-val" style="">Bs ${fmt(ingBs)}</div><div class="kpi-sub">${ingUsd>0?'$ '+fmt(ingUsd)+' USD':'entradas del día'}</div></div>
     <div class="kpi c-red"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div></div><div class="kpi-lbl">Egresos hoy</div><div class="kpi-val" style="">Bs ${fmt(gasBs)}</div><div class="kpi-sub">${gasUsd>0?'$ '+fmt(gasUsd)+' USD':'salidas del día'}</div></div>
@@ -6724,9 +6923,9 @@ async function eliminarMovimiento(posEnFil, _){
   const ri=all.findIndex(m=>m.id===mov.id);
   if(ri>=0){
     const _id=all[ri].id;
-    // 1. Supabase primero — es la fuente de verdad
+    // Supabase primero — es la fuente de verdad
     await deleteFromSupabase('caja_movimientos', _id);
-    // 2. Actualizar localStorage sin hacer upsert (evita restaurar el registro)
+    // Actualizar localStorage sin hacer upsert (evita restaurar el registro)
     all.splice(ri,1);
     localStorage.setItem(LS_CAJA, JSON.stringify(all));
     renderCaja(); renderDash();
@@ -8604,7 +8803,7 @@ function exportReportesCSV(){
       <div class="card-title" style="margin-bottom:10px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Cobro</div>
       <div class="frow">
         <div class="fg"><label>Tipo de venta</label>
-          <select id="mv_tipo">
+          <select id="mv_tipo" onchange="mvTipoChange()">
             <option value="venta_rapida">Venta rápida</option>
             <option value="pago_pedido">Pago de pedido</option>
             <option value="abono">Abono</option>
@@ -8622,6 +8821,18 @@ function exportReportesCSV(){
           </select>
         </div>
         <div class="fg"><label>Monto recibido ($)</label><input type="text" id="mv_recibido" placeholder="0,00" oninput="recalcVenta()"/></div>
+      </div>
+      <!-- Panel pedido vinculado en modal -->
+      <div id="mv_pedido_panel" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;margin-top:8px">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px">PEDIDO A COBRAR</div>
+        <select id="mv_pedido_sel" onchange="mvSeleccionarPedido()" style="width:100%;margin-bottom:6px"><option value="">— Seleccionar pedido pendiente —</option></select>
+        <div id="mv_pedido_info" style="display:none;font-size:12px;padding:8px;background:var(--card);border-radius:8px;border:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px">
+            <span style="color:var(--muted)">Total pedido:</span><strong id="mv_ped_total">—</strong>
+            <span style="color:var(--muted)">Pagado:</span><strong id="mv_ped_pagado" style="color:var(--ok)">—</strong>
+            <span style="color:var(--muted)">Saldo:</span><strong id="mv_ped_saldo" style="color:var(--warn)">—</strong>
+          </div>
+        </div>
       </div>
       <div class="sep"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;align-items:center">
