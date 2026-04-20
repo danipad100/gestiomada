@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_26">
+<html lang="es" data-app-version="GestioMada_V13_27">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -1227,9 +1227,18 @@ body.dark .pos-prod-img-ph{background:#23283a}
 }
 @media(max-width:640px){
   .pos-wrap{gap:8px}
-  .pos-prod-grid{grid-template-columns:repeat(auto-fill,minmax(90px,1fr))}
-  .pos-prod-card{padding:8px 4px}
-  .pos-prod-img,.pos-prod-img-ph{width:48px;height:48px}
+  /* En móvil: lista de 2 columnas más anchas para mostrar todos los precios */
+  .pos-prod-grid{grid-template-columns:repeat(2,1fr);gap:6px}
+  .pos-prod-card{
+    padding:8px 6px;
+    flex-direction:row;
+    align-items:center;
+    text-align:left;
+    gap:8px;
+  }
+  .pos-prod-img,.pos-prod-img-ph{width:44px;height:44px;flex-shrink:0}
+  .pos-prod-info{display:flex;flex-direction:column;gap:1px;min-width:0;flex:1}
+  .pos-prod-name{font-size:11px;white-space:normal;max-height:none}
 }
 
 /* Coming soon modules */
@@ -2180,8 +2189,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.26 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.27 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -3911,16 +3920,17 @@ function renderCatalogo(){
             const hasDif=dif>1.001;
             const pvUsdDif=pvUsd*dif;
             const pvBsDif=pvUsdDif*bcv;
-            // Precio base USD
+            // 1. Precio base USD — siempre negro
             let html=`<div class="prod-card-pv">${euro(pvUsd)}</div>`;
             if(bcv>0){
               if(hasDif){
-                // Con diferencial: mostrar $ c/dif y Bs
-                html+=`<div style="font-size:12px;color:var(--brand);font-weight:600">$ ${pvUsdDif.toFixed(2)} <span style="font-size:10px;font-weight:400;color:var(--muted)">c/dif.</span></div>`;
-                html+=`<div style="font-size:12px;font-weight:600">Bs ${pvBsDif.toFixed(2).replace('.',',')} <span style="font-size:10px;font-weight:400;color:var(--muted)">@ BCV</span></div>`;
+                // 2. Con diferencial (rosado) — sin texto extra
+                html+=`<div style="font-size:13px;color:var(--brand);font-weight:700">$ ${pvUsdDif.toFixed(2)}</div>`;
+                // 3. En Bs (negro)
+                html+=`<div style="font-size:13px;font-weight:700;color:var(--ink)">Bs ${pvBsDif.toFixed(2).replace('.',',')}</div>`;
               } else {
-                // Sin diferencial: solo Bs @ BCV
-                html+=`<div style="font-size:12px;font-weight:600">Bs ${(pvUsd*bcv).toFixed(2).replace('.',',')} <span style="font-size:10px;font-weight:400;color:var(--muted)">@ BCV</span></div>`;
+                // Sin diferencial: solo Bs
+                html+=`<div style="font-size:13px;font-weight:700;color:var(--ink)">Bs ${(pvUsd*bcv).toFixed(2).replace('.',',')}</div>`;
               }
             }
             return html;
@@ -4329,7 +4339,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v1326',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v1327',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
@@ -5737,20 +5747,22 @@ function posRenderProductos(){
     return `<div class="pos-prod-card" onclick="posAgregarProd('${p.id}')">
       ${qty > 0 ? `<div class="pos-qty-badge">${qty}</div>` : ''}
       ${imgHtml}
-      <div class="pos-prod-name">${p.nombre}</div>
-      <div class="pos-prod-price">${euro(p.precio_venta||0)}</div>
-      <div style="font-size:9px;color:var(--muted);line-height:1.5">${(()=>{
-        const bcv=getTasaBCV();
-        if(!bcv) return '';
-        const pvUsd=p.precio_venta||0;
-        const dif=getDiferencial();
-        const pvUsdDif=pvUsd*dif;
-        const pvBsDif=pvUsdDif*bcv;
-        const hasDif=dif>1.001;
-        if(!hasDif) return `<span style="font-weight:600">Bs ${(pvUsd*bcv).toFixed(2).replace('.',',')}</span>`;
-        return `<span style="color:var(--brand);font-weight:700">$ ${pvUsdDif.toFixed(2)}</span> c/dif.<br><span style="color:var(--ink);font-weight:600">Bs ${pvBsDif.toFixed(2).replace('.',',')}</span>`;
-      })()}</div>
-      ${p.sku ? `<div class="pos-prod-sku">${p.sku}</div>` : ''}
+      <div class="pos-prod-info">
+        <div class="pos-prod-name">${p.nombre}</div>
+        ${p.sku ? `<div class="pos-prod-sku">${p.sku}</div>` : ''}
+        <div class="pos-prod-price">${euro(p.precio_venta||0)}</div>
+        ${(()=>{
+          const bcv=getTasaBCV();
+          if(!bcv) return '';
+          const pvUsd=p.precio_venta||0;
+          const dif=getDiferencial();
+          const pvUsdDif=pvUsd*dif;
+          const pvBsDif=pvUsdDif*bcv;
+          const hasDif=dif>1.001;
+          if(!hasDif) return `<div style="font-size:10px;font-weight:700;color:var(--ink)">Bs ${(pvUsd*bcv).toFixed(2).replace('.',',')}</div>`;
+          return `<div style="font-size:10px;font-weight:700;color:var(--brand)">$ ${pvUsdDif.toFixed(2)}</div><div style="font-size:10px;font-weight:700;color:var(--ink)">Bs ${pvBsDif.toFixed(2).replace('.',',')}</div>`;
+        })()}
+      </div>
     </div>`;
   }).join('');
 }
@@ -9288,7 +9300,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_26';
+  const APP_VERSION = 'v13_27';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
