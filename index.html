@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_23">
+<html lang="es" data-app-version="GestioMada_V13_24">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -2174,8 +2174,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.23 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.24 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -4319,7 +4319,7 @@ function renderDash(){
    BACKUP / RESTORE
 ════════════════════════════════════════════ */
 function exportRespaldo(){
-  const data={version:'GestioMada_v1323',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
+  const data={version:'GestioMada_v1324',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
   dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
   toast('Respaldo exportado','ok');
 }
@@ -9278,7 +9278,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_23';
+  const APP_VERSION = 'v13_24';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -9344,25 +9344,42 @@ window.addEventListener('popstate',e=>{
     listenControllerChange();
     setStatus('Buscando actualizaciones…');
 
-    // Verificar versión actual del SW activo
+    // 1. Versión del SW actualmente instalado en este dispositivo
     const vActual = await getSWVersion(reg.active);
-    if(vActual && vActual === APP_VERSION){
-      setStatus('Ya estás en la última versión (' + APP_VERSION + ').');
+
+    // 2. Descargar el sw.js del servidor con cache-busting para leer su versión real
+    let vServidor = null;
+    try{
+      const res = await fetch('./sw.js?_cb=' + Date.now(), { cache: 'no-store' });
+      const txt = await res.text();
+      const m = txt.match(/const VERSION\s*=\s*['"]([^'"]+)['"]/);
+      if(m) vServidor = m[1];
+    } catch(e){ console.warn('[PWA] No se pudo leer sw.js del servidor'); }
+
+    console.log('[PWA] vActual:', vActual, '| vServidor:', vServidor, '| APP_VERSION:', APP_VERSION);
+
+    // 3. Si el servidor tiene la misma versión que el SW activo → ya está al día
+    if(vServidor && vActual && vServidor === vActual){
+      setStatus('Ya estás en la última versión (' + vActual + ').');
       showApply(false);
       return;
     }
 
-    // Forzar descarga del SW ignorando caché
-    try{ await reg.update(); }catch(e){ setStatus('No se pudo buscar actualizaciones.'); return; }
+    // 4. Hay diferencia → forzar actualización del SW
+    if(vServidor && vActual && vServidor !== vActual){
+      setStatus('Actualización disponible: ' + vActual + ' → ' + vServidor + '. Instalando…');
+    }
 
-    // Esperar hasta 4 segundos a que aparezca el SW en espera
+    try{ await reg.update(); }catch(e){ setStatus('No se pudo descargar la actualización.'); return; }
+
+    // 5. Esperar hasta 5 segundos a que el nuevo SW quede instalado
     await new Promise(function(resolve){
       if(reg.waiting){ resolve(); return; }
       if(reg.installing){
         reg.installing.addEventListener('statechange', function(e){
           if(e.target.state === 'installed') resolve();
         });
-        setTimeout(resolve, 4000);
+        setTimeout(resolve, 5000);
         return;
       }
       reg.addEventListener('updatefound', function(){
@@ -9371,28 +9388,25 @@ window.addEventListener('popstate',e=>{
           if(nw.state === 'installed') resolve();
         });
       });
-      setTimeout(resolve, 4000);
+      setTimeout(resolve, 5000);
     });
 
     if(reg.waiting){
       const vW = await getSWVersion(reg.waiting);
-      if(vActual && vW && vActual === vW){
-        setStatus('Ya estás en la última versión (' + APP_VERSION + ').');
-        showApply(false);
-      } else {
-        setStatus('¡Actualización disponible' + (vW ? ' ('+vW+')' : '') + '! Toca "Aplicar" para instalar.');
-        showApply(true);
-      }
+      setStatus('¡Actualización lista' + (vW ? ' ('+vW+')' : '') + '! Toca "Aplicar" para instalar.');
+      showApply(true);
     } else {
-      // No hay SW en espera — comparar versión para dar feedback claro
-      if(vActual === APP_VERSION){
-        setStatus('Ya estás en la última versión (' + APP_VERSION + ').');
-      } else if(vActual) {
-        setStatus('Versión instalada: ' + vActual + '. Versión actual: ' + APP_VERSION + '. Limpia el caché del navegador para actualizar.');
+      // SW ya se activó automáticamente (primera instalación o skipWaiting inmediato)
+      const vNueva = await getSWVersion(reg.active);
+      if(vNueva && vActual && vNueva !== vActual){
+        setStatus('Actualizado a ' + vNueva + '. Recargando…');
+        setTimeout(()=>window.location.reload(), 1000);
       } else {
-        setStatus('Ya estás en la última versión.');
+        setStatus(vServidor
+          ? 'Ya estás en la última versión (' + (vNueva||vServidor) + ').'
+          : 'Ya estás en la última versión.');
+        showApply(false);
       }
-      showApply(false);
     }
   }
 
