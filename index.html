@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_29">
+<html lang="es" data-app-version="GestioMada_V13_30">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -310,15 +310,12 @@ async function initSupabaseSync(){
         }
         const idx = mergeado.findIndex(l => String(l.id) === String(r.id));
         if(idx >= 0){
-          // Preservar foto base64 local si Supabase no tiene foto_url
           const fotoLocal = mergeado[idx].foto || '';
-          // Preservar cliente local si Supabase no trae uno (por si acaso)
           const cliLocal  = mergeado[idx].cliente || null;
           mergeado[idx] = { ...mergeado[idx], ...r };
           if(!r.foto_url && fotoLocal) mergeado[idx].foto = fotoLocal;
           if(!mergeado[idx].cliente && cliLocal) mergeado[idx].cliente = cliLocal;
         } else {
-          // Nuevo desde otro dispositivo → agregar
           mergeado.push(r);
         }
       });
@@ -2200,8 +2197,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.29 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.29: Pedidos — botón WhatsApp con número del cliente de acceso rápido. Método de pago USD muestra montos en dólares; Bs muestra equivalente en bolívares. Clientes guardados correctamente con validación de nombre. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.30 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.30: Fix sintaxis JS. Pedidos: botón WhatsApp, montos USD/Bs, restante congelado, eliminar pedido. Fix caja moneda. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -2851,7 +2848,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
       <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;align-items:center">
         <div class="pill">Abonado <strong id="mp_pill_abonado">$ 0,00</strong></div>
         <div class="pill" style="background:#ffe3ee">Restante <strong id="mp_pill_restante" style="color:var(--danger)">$ 0,00</strong></div>
-        <div id="mp_ref_bs" style="display:none;font-size:10px;color:var(--muted);width:100%;text-align:right;margin-top:-4px"></div>
+        <div id="mp_ref_bs" style="display:none;font-size:10px;color:var(--muted);width:100%;text-align:right;margin-top:-2px"></div>
+        <div id="mp_ref_restante" style="display:none;font-size:10px;width:100%;text-align:right;margin-top:-4px;padding:4px 8px;background:#fff8f0;border-radius:6px;border:1px solid #fde8c8"></div>
       </div>
     </div>
     <div class="frow" style="margin-bottom:12px">
@@ -2907,7 +2905,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
       <button class="btn btn-brand btn-sm" onclick="editarPedidoDesdeModal()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar</button>
       <button class="btn btn-sm" onclick="cobrarPedidoDesdeModal()" id="btn-cobrar-pedido" style="display:none"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Cobrar restante</button>
       <button class="btn btn-sm" id="mvped-avanzar" onclick="avanzarEstado()"></button>
-      <button class="btn btn-danger btn-sm" onclick="cancelarPedido()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Cancelar pedido</button>
+      <button class="btn btn-danger btn-sm" onclick="cancelarPedido()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Cancelar</button>
+      <button class="btn btn-sm" style="background:#fff0f0;color:#c0392b;border:1px solid #f5c6c6" onclick="eliminarPedido()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Eliminar</button>
       <button class="btn btn-sm" onclick="closeModal('m-ver-ped')">Cerrar</button>
     </div>
   </div>
@@ -6191,11 +6190,12 @@ function posRecalc(){
 
 // ── Helper: moneda y monto real para caja según método de pago ──
 function cajaMonedaMonto(metodo, totalUsd, bcv, dif){
+  // dif = ratio paralela/bcv. tasaParalela = bcv * dif
   const esBs = ['efectivo_bs','pago_movil','transferencia'].includes(metodo);
-  const esUsd = ['efectivo_usd','zelle'].includes(metodo);
   if(esBs && bcv > 0){
-    const montoBs = totalUsd * dif * bcv;
-    return { moneda:'bs', monto: montoBs, monto_bs: montoBs, monto_usd: totalUsd, tasa: bcv };
+    const tasaPar = bcv * (dif > 0 ? dif : 1);
+    const montoBs = totalUsd * tasaPar;
+    return { moneda:'bs', monto: montoBs, monto_bs: montoBs, monto_usd: totalUsd, tasa: bcv, tasa_paralela: tasaPar };
   }
   return { moneda:'usd', monto: totalUsd, monto_bs: 0, monto_usd: totalUsd, tasa: bcv };
 }
@@ -7446,30 +7446,50 @@ function recalcPedido(){
   const esUsd = ['efectivo_usd','zelle'].includes(metodo);
   const bcv = getTasaBCV();
   const dif = getDiferencial();
-  // Formato según moneda
-  const fmtMon = n => {
-    if(esUsd) return '$ '+n.toFixed(2).replace('.',',');
-    if(bcv>0) return 'Bs '+Math.round(n*(dif>0?dif:bcv)).toLocaleString('es-VE');
-    return euro(n);
-  };
-  // Labels de los pills
-  const labelAbono  = qs('#mp_lbl_abono');
-  const labelRestante = qs('#mp_lbl_restante');
-  if(labelAbono)   labelAbono.textContent   = esUsd ? 'Abono inicial ($)' : (bcv>0 ? 'Abono inicial (Bs)' : 'Abono inicial ($)');
-  if(labelRestante) labelRestante.textContent = esUsd ? 'Restante ($)' : (bcv>0 ? 'Restante (Bs)' : 'Restante ($)');
-  if(qs('#mp_subtotal')) qs('#mp_subtotal').textContent=euro(sub);
-  if(qs('#mp_total')) qs('#mp_total').textContent=euro(total);
-  if(qs('#mp_pill_abonado')) qs('#mp_pill_abonado').textContent=fmtMon(abono);
-  if(qs('#mp_pill_restante')) qs('#mp_pill_restante').textContent=fmtMon(restante);
-  // Referencia en Bs bajo el total si se usa efectivo_bs
-  const refBs = qs('#mp_ref_bs');
-  if(refBs){
-    if(!esUsd && bcv>0 && total>0){
-      const tasa = dif>0?dif:bcv;
-      refBs.textContent='≈ Bs '+Math.round(total*tasa).toLocaleString('es-VE')+' (tasa '+tasa.toLocaleString('es-VE')+')';
-      refBs.style.display='';
-    } else { refBs.style.display='none'; }
+  const par = bcv * (dif>0?dif:1);
+
+  // Total: si es Bs mostrar c/dif como valor principal; si USD mostrar USD base
+  if(qs('#mp_subtotal')) qs('#mp_subtotal').textContent = euro(sub);
+  if(qs('#mp_total')){
+    if(!esUsd && dif>1){
+      qs('#mp_total').textContent = '$ '+(total*dif).toFixed(2).replace('.',',');
+    } else {
+      qs('#mp_total').textContent = euro(total);
+    }
   }
+
+  // Panel de precios detallado
+  const refPanel = qs('#mp_ref_bs');
+  if(refPanel && bcv>0 && total>0){
+    const totalCDif = total * (dif>0?dif:1);
+    const totalBs   = total * par;
+    if(esUsd){
+      refPanel.innerHTML = '<span style="color:var(--muted)">c/dif: </span><strong style="color:var(--brand)">$'+totalCDif.toFixed(2).replace('.',',')+'</strong>';
+      refPanel.style.display='';
+    } else {
+      refPanel.innerHTML =
+        '<span style="color:var(--muted)">c/dif: </span><strong style="color:#e07ab0">$'+totalCDif.toFixed(2).replace('.',',')+'</strong>' +
+        '<span style="color:var(--muted);margin-left:10px">Bs: </span><strong style="color:var(--ok)">Bs '+Math.round(totalBs).toLocaleString('es-VE')+'</strong>' +
+        '<span style="color:var(--muted);margin-left:10px;font-size:9px">(BCV '+bcv.toLocaleString('es-VE')+' · par '+Math.round(par).toLocaleString('es-VE')+')</span>';
+      refPanel.style.display='';
+    }
+  } else if(refPanel){ refPanel.style.display='none'; }
+
+  // Pills: siempre en USD (restante queda congelado en USD)
+  if(qs('#mp_pill_abonado')) qs('#mp_pill_abonado').textContent = euro(abono);
+  if(qs('#mp_pill_restante')) qs('#mp_pill_restante').textContent = euro(restante);
+
+  // Referencia del restante en Bs
+  const refRestante = qs('#mp_ref_restante');
+  if(refRestante && bcv>0 && restante>0 && !esUsd){
+    const restCDif = restante * (dif>0?dif:1);
+    const restBs   = restante * par;
+    refRestante.innerHTML =
+      '<span style="color:var(--muted)">Restante c/dif: </span><strong style="color:#e07ab0">$'+restCDif.toFixed(2).replace('.',',')+'</strong>' +
+      '<span style="color:var(--muted);margin-left:8px">≈ </span><strong style="color:var(--danger)">Bs '+Math.round(restBs).toLocaleString('es-VE')+'</strong>' +
+      '<span style="color:var(--muted);margin-left:6px;font-size:9px">(se cobrará a BCV del día)</span>';
+    refRestante.style.display='';
+  } else if(refRestante){ refRestante.style.display='none'; }
 }
 
 // ── Guardar pedido ──
@@ -7507,6 +7527,8 @@ function guardarPedido(){
     fecha_pedido:qs('#mp_fecha_pedido').value,
     fecha_entrega:qs('#mp_fecha_entrega').value,
     fecha_creado: _pedIdx!==null ? (all[_pedIdx].fecha_creado||new Date().toISOString()) : new Date().toISOString(),
+    tasa_bcv_creacion: _pedIdx!==null ? (all[_pedIdx].tasa_bcv_creacion||getTasaBCV()||0) : (getTasaBCV()||0),
+    tasa_par_creacion: _pedIdx!==null ? (all[_pedIdx].tasa_par_creacion||getTasaParalela()||0) : (getTasaParalela()||0),
     usuario_id:  _pedIdx!==null ? (all[_pedIdx].usuario_id||CURRENT_USR_ID||null) : (CURRENT_USR_ID||null),
     usuario_nom: _pedIdx!==null ? (all[_pedIdx].usuario_nom||CURRENT_USR_NOM||null) : (CURRENT_USR_NOM||null)
   };
@@ -7616,49 +7638,39 @@ function verPedido(idx){
   qs('#mvped-title').textContent=p.numero+(p.cliente?' — '+p.cliente.nombre+' '+p.cliente.apellido:'');
 
   const _pedBcv = getTasaBCV();
-  const _pedFmtMon = (n)=>euro(n);
+  const _pedDif = getDiferencial();
+  const _pedPar = _pedBcv * (_pedDif>0?_pedDif:1);
+  const _fmtUsd  = n => euro(n);
+  const _pedFmtMon = n => euro(n);
   const _pedFmtTotal = n => euro(n);
-  const _pedRef = n => _pedBcv>0?'≈ Bs '+Math.round(n*_pedBcv).toLocaleString('es-VE'):'';
   const itemsHtml=p.items.map(it=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f3f3f8">
       <div><div style="font-weight:600;font-size:13px">${it.nombre}</div><div style="font-size:11px;color:var(--muted)">×${it.cant} · ${_pedFmtMon(it.precio_unit)}</div></div>
       <div style="font-weight:700">${_pedFmtMon(it.precio_unit*it.cant)}</div>
     </div>`).join('');
 
-  const pagosHtml=(p.pagos||[]).map(pg=>`
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px">
-      <div>${fmtFecha(pg.fecha.slice(0,10))} · <span class="chip chip-info" style="font-size:10px">${METODOS[pg.metodo]||pg.metodo}</span> ${pg.nota?'· '+pg.nota:''}</div>
-      <div style="font-weight:700;color:var(--ok)">${euro(pg.monto)}</div>
-    </div>`).join('');
-
-  // Formatear número de teléfono para WhatsApp (quitar guiones, espacios, agregar 58 si es venezolano)
-  const _fmtWA = tel => {
-    if(!tel) return '';
-    let t = tel.replace(/[\s\-\(\)]/g,'');
-    if(t.startsWith('04')) t = '58' + t.slice(1);
-    else if(t.startsWith('+')) t = t.slice(1);
-    return t;
-  };
-  const _cliTel   = p.cliente?.telefono||'';
-  const _cliNom   = p.cliente ? (p.cliente.nombre+' '+(p.cliente.apellido||'')).trim() : '';
-  const _waNum    = _fmtWA(_cliTel);
-  const _waMsg    = encodeURIComponent('Hola '+p.cliente?.nombre+', le contactamos por su pedido '+p.numero+' 😊');
-  const _clienteCard = p.cliente ? `
-    <div class="card" style="padding:12px;margin-bottom:10px;background:var(--bg);border:1.5px solid var(--border)">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:38px;height:38px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0">${(p.cliente.nombre[0]||'?').toUpperCase()}</div>
-          <div>
-            <div style="font-weight:700;font-size:14px">${_cliNom}</div>
-            <div style="font-size:12px;color:var(--muted)">${p.cliente.cedula?p.cliente.cedula+' · ':''} ${_cliTel||'Sin teléfono'}</div>
-          </div>
+  const pagosHtml=(p.pagos||[]).map(pg=>{
+    const esPagoBs = ['efectivo_bs','pago_movil','transferencia'].includes(pg.metodo);
+    const tasaPgBcv = pg.tasa_bcv_pago||0;
+    const tasaPgPar = pg.tasa_par_pago||(tasaPgBcv>0?tasaPgBcv*getDiferencial():0);
+    const montoBsPago = esPagoBs&&tasaPgPar>0 ? Math.round(pg.monto*tasaPgPar).toLocaleString('es-VE') : null;
+    return `<div style="padding:5px 0;border-bottom:1px solid #f3f3f8;font-size:12px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>${fmtFecha(pg.fecha.slice(0,10))} · <span class="chip chip-info" style="font-size:10px">${METODOS[pg.metodo]||pg.metodo}</span> ${pg.nota?'· '+pg.nota:''}</div>
+        <div style="text-align:right;flex-shrink:0;margin-left:8px">
+          <div style="font-weight:700;color:var(--ok)">${euro(pg.monto)}</div>
+          ${montoBsPago?`<div style="font-size:10px;color:var(--muted)">Bs ${montoBsPago}${tasaPgBcv>0?' (BCV '+tasaPgBcv.toLocaleString('es-VE')+')':''}</div>`:''}
         </div>
-        ${_waNum?`<a href="https://wa.me/${_waNum}?text=${_waMsg}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;border-radius:20px;padding:7px 14px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap">
-          <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.557 4.116 1.533 5.846L.057 23.486a.5.5 0 0 0 .614.614l5.64-1.476A11.934 11.934 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.693-.519-5.222-1.422l-.374-.223-3.875 1.015 1.015-3.875-.223-.374A9.953 9.953 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg>
-          WhatsApp ${_cliTel}
-        </a>`:`<span style="font-size:12px;color:var(--muted)">Sin número registrado</span>`}
       </div>
-    </div>` : '';
+    </div>`;
+  }).join('');
+
+  // WhatsApp
+  const _fmtWA = tel => { if(!tel) return ''; let t=tel.replace(/[\s\-\(\)]/g,''); if(t.startsWith('04')) t='58'+t.slice(1); else if(t.startsWith('+')) t=t.slice(1); return t; };
+  const _cliTel = p.cliente?.telefono||'';
+  const _waNum  = _fmtWA(_cliTel);
+  const _waMsg  = encodeURIComponent('Hola '+(p.cliente?.nombre||'')+', le contactamos por su pedido '+p.numero+' \uD83D\uDE0A');
+  const _clienteCard = p.cliente ? ('<div class="card" style="padding:12px;margin-bottom:10px;background:var(--bg);border:1.5px solid var(--border)"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div style="display:flex;align-items:center;gap:10px"><div style="width:38px;height:38px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0">'+(p.cliente.nombre[0]||'?').toUpperCase()+'</div><div><div style="font-weight:700;font-size:14px">'+(p.cliente.nombre+' '+(p.cliente.apellido||'')).trim()+'</div><div style="font-size:12px;color:var(--muted)">'+(p.cliente.cedula?p.cliente.cedula+' · ':'')+(_cliTel||'Sin teléfono')+'</div></div></div>'+(_waNum?'<a href="https://wa.me/'+_waNum+'?text='+_waMsg+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;border-radius:20px;padding:7px 14px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.557 4.116 1.533 5.846L.057 23.486a.5.5 0 0 0 .614.614l5.64-1.476A11.934 11.934 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.693-.519-5.222-1.422l-.374-.223-3.875 1.015 1.015-3.875-.223-.374A9.953 9.953 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg> WhatsApp '+_cliTel+'</a>':'<span style="font-size:12px;color:var(--muted)">Sin número</span>')+'</div></div>') : '';
 
   qs('#mvped-body').innerHTML=`
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
@@ -7674,22 +7686,36 @@ function verPedido(idx){
       <div style="font-weight:700;font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Productos</div>
       ${itemsHtml||'<p class="muted" style="font-size:12px">Sin items</p>'}
       <div class="sep"></div>
-      <div style="display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap">
+      <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;align-items:flex-start">
         ${p.descuento?`<div class="pill">Descuento <strong style="color:var(--danger)">-${euro(p.descuento)}</strong></div>`:''}
-        <div class="pill" style="background:#ffe3ee">
-          Total <strong style="color:var(--brand)">${_pedFmtTotal(p.total)}</strong>
-          ${_pedRef(p.total)?`<span style="font-size:10px;color:var(--muted);margin-left:4px">${_pedRef(p.total)}</span>`:''}
-        </div>
+        <div style="text-align:right">${(()=>{
+          const _metPed = (p.pagos&&p.pagos.length)?p.pagos[0].metodo:'efectivo_bs';
+          const _esBsPed = ['efectivo_bs','pago_movil','transferencia'].includes(_metPed);
+          if(_esBsPed && _pedDif>1 && _pedPar>0){
+            const tcd=(p.total*_pedDif).toFixed(2).replace('.',',');
+            const tbs=Math.round(p.total*_pedPar).toLocaleString('es-VE');
+            return '<div class="pill" style="background:#ffe3ee;margin-bottom:4px">Total <strong style="color:var(--brand)">$'+tcd+'</strong> <span style="font-size:9px;color:var(--muted)">c/dif</span></div><div style="font-size:11px;color:var(--ok);text-align:right">Bs '+tbs+'</div>';
+          }
+          return '<div class="pill" style="background:#ffe3ee">Total <strong style="color:var(--brand)">'+_fmtUsd(p.total)+'</strong></div>';
+        })()}</div>
       </div>
     </div>
     <div class="card" style="padding:12px;margin-bottom:10px">
       <div style="font-weight:700;font-size:12px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Historial de pagos</div>
       ${pagosHtml||'<p class="muted" style="font-size:12px">Sin pagos registrados</p>'}
       <div class="sep"></div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start">
         <div class="pill ok">Pagado <strong>${_pedFmtTotal(pag)}</strong></div>
-        ${rest>0?`<div class="pill" style="background:#ffe3ee">Restante <strong style="color:var(--danger)">${_pedFmtTotal(rest)}</strong></div>`:'<div class="pill ok">✓ Saldo completo</div>'}
-        ${_pedBcv>0&&rest>0?`<div style="font-size:10px;color:var(--muted)">${_pedRef(rest)}</div>`:''}
+        ${rest>0?`<div style="text-align:right">${(()=>{
+          const _metPedR = (p.pagos&&p.pagos.length)?p.pagos[0].metodo:'efectivo_bs';
+          const _esBsPedR = ['efectivo_bs','pago_movil','transferencia'].includes(_metPedR);
+          if(_esBsPedR && _pedDif>1 && _pedBcv>0){
+            const rcd=(rest*_pedDif).toFixed(2).replace('.',',');
+            const rbs=Math.round(rest*_pedBcv).toLocaleString('es-VE');
+            return '<div class="pill" style="background:#ffe3ee;margin-bottom:4px">Restante <strong style="color:var(--danger)">$'+rcd+'</strong> <span style="font-size:9px;color:var(--muted)">c/dif</span></div><div style="font-size:10px;color:var(--muted)">A BCV del día: <strong style="color:var(--danger)">Bs '+rbs+'</strong></div>';
+          }
+          return '<div class="pill" style="background:#ffe3ee">Restante <strong style="color:var(--danger)">'+_pedFmtTotal(rest)+'</strong></div>';
+        })()}</div>`:'<div class="pill ok">✓ Saldo completo</div>'}
       </div>
     </div>
     ${p.notas?`<div class="card" style="padding:12px"><div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Notas</div><p style="font-size:13px">${p.notas}</p></div>`:''}`;
@@ -7800,6 +7826,23 @@ function cancelarPedido(){
   toast('Pedido cancelado','ok');
 }
 
+async function eliminarPedido(){
+  if(_pedIdx===null) return;
+  const all=loadPed(), p=all[_pedIdx];
+  if(!confirm('¿Eliminar definitivamente el pedido '+p.numero+'?\n\nEsta acción no se puede deshacer.')) return;
+  const _id = p.id;
+  all.splice(_pedIdx, 1);
+  localStorage.setItem('POS.ped', JSON.stringify(all));
+  if(window._supaConectado){
+    try { await SUPA.from('pedidos').delete().eq('id', _id); }
+    catch(e){ console.warn('[Supabase] Error eliminando pedido', e.message); }
+  }
+  closeModal('m-ver-ped');
+  renderPedidos(); renderDash();
+  toast('Pedido eliminado: ' + p.numero, 'ok');
+  _pedIdx = null;
+}
+
 function editarPedidoDesdeModal(){ closeModal('m-ver-ped'); abrirEditarPedido(_pedIdx); }
 
 function registrarPago(){
@@ -7809,13 +7852,16 @@ function registrarPago(){
   p.pagos=p.pagos||[];
   const metodo=qs('#mvped_metodo').value;
   const nota=qs('#mvped_nota').value.trim();
-  p.pagos.push({ id:Date.now(), monto, metodo, nota, fecha:new Date().toISOString() });
+  const bcvHoy=getTasaBCV();
+  const difHoy=getDiferencial();
+  p.pagos.push({ id:Date.now(), monto, metodo, nota, fecha:new Date().toISOString(),
+    tasa_bcv_pago: bcvHoy, tasa_par_pago: getTasaParalela() });
   savePed(all);
 
-  // Registrar en Caja
+  // Registrar en Caja con BCV del día
   const cajaAll=loadCajaMov();
   const epActual=estadoPago(p);
-  const _mmP=cajaMonedaMonto(metodo,monto,getTasaBCV(),getDiferencial());
+  const _mmP=cajaMonedaMonto(metodo,monto,bcvHoy,difHoy);
   cajaAll.push({
     id: Date.now()+1, tipo:'ingreso',
     categoria: epActual==='pagado'?'venta':'abono',
@@ -9423,7 +9469,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_29';
+  const APP_VERSION = 'v13_30';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
