@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_34">
+<html lang="es" data-app-version="GestioMada_V13_36">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -2272,7 +2272,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.34 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.36 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
@@ -2473,9 +2473,9 @@ body.dark .pos-prod-img-ph{background:#23283a}
                     <input type="text" id="pos_notas" placeholder="Referencia, observación…"/>
                   </div>
 
-                  <!-- Delivery / Envío -->
+                  <!-- Delivery / Envío / Diseño / Extras -->
                   <div style="display:flex;gap:8px;flex-wrap:wrap">
-                    <div style="flex:1;min-width:110px">
+                    <div style="flex:1;min-width:100px">
                       <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px">
                         <input type="checkbox" id="pos_delivery_chk" onchange="posToggleExtra('delivery')"/> Delivery
                       </label>
@@ -2484,12 +2484,30 @@ body.dark .pos-prod-img-ph{background:#23283a}
                         <span style="font-size:10px;color:var(--muted)">USD</span>
                       </div>
                     </div>
-                    <div style="flex:1;min-width:110px">
+                    <div style="flex:1;min-width:100px">
                       <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px">
                         <input type="checkbox" id="pos_envio_chk" onchange="posToggleExtra('envio')"/> Envío
                       </label>
                       <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
                         <input type="number" id="pos_envio_monto" value="2" min="0" step="0.01" disabled oninput="posRecalc();posWaActualizar()" style="text-align:right;font-size:12px"/>
+                        <span style="font-size:10px;color:var(--muted)">USD</span>
+                      </div>
+                    </div>
+                    <div style="flex:1;min-width:100px">
+                      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px">
+                        <input type="checkbox" id="pos_diseno_chk" onchange="posToggleExtra('diseno')"/> Diseño
+                      </label>
+                      <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
+                        <input type="number" id="pos_diseno_monto" value="5" min="0" step="0.01" disabled oninput="posRecalc();posWaActualizar()" style="text-align:right;font-size:12px"/>
+                        <span style="font-size:10px;color:var(--muted)">USD</span>
+                      </div>
+                    </div>
+                    <div style="flex:1;min-width:100px">
+                      <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px">
+                        <input type="checkbox" id="pos_extras_chk" onchange="posToggleExtra('extras')"/> Extras
+                      </label>
+                      <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
+                        <input type="number" id="pos_extras_monto" value="0" min="0" step="0.01" disabled oninput="posRecalc();posWaActualizar()" style="text-align:right;font-size:12px"/>
                         <span style="font-size:10px;color:var(--muted)">USD</span>
                       </div>
                     </div>
@@ -6169,11 +6187,13 @@ function posSelMetodo(key){
 }
 
 // ── Recalc ──
-/* ── Extras toggle (delivery / envío) ── */
+/* ── Extras toggle (delivery / envío / diseño / extras) ── */
 function posToggleExtra(tipo){
-  const chk = qs(tipo==='delivery'?'#pos_delivery_chk':'#pos_envio_chk');
-  const inp = qs(tipo==='delivery'?'#pos_delivery_monto':'#pos_envio_monto');
-  if(inp) inp.disabled = !chk?.checked;
+  const ids = { delivery:'#pos_delivery_chk', envio:'#pos_envio_chk', diseno:'#pos_diseno_chk', extras:'#pos_extras_chk' };
+  const montos = { delivery:'#pos_delivery_monto', envio:'#pos_envio_monto', diseno:'#pos_diseno_monto', extras:'#pos_extras_monto' };
+  const chk = qs(ids[tipo]);
+  const inp = qs(montos[tipo]);
+  if(inp){ inp.disabled = !chk?.checked; if(chk?.checked) inp.focus(); }
   posRecalc();
   posWaActualizar();
 }
@@ -6214,10 +6234,12 @@ function posWaActualizar(){
     }
   }
 
-  // Delivery / envío
+  // Delivery / envío / diseño / extras
   const deliveryUsd = (qs('#pos_delivery_chk')?.checked ? parseFloat(qs('#pos_delivery_monto')?.value||0) : 0);
   const envioUsd    = (qs('#pos_envio_chk')?.checked    ? parseFloat(qs('#pos_envio_monto')?.value||0)    : 0);
-  const hayExtras   = envioUsd>0;
+  const disenoUsd   = (qs('#pos_diseno_chk')?.checked   ? parseFloat(qs('#pos_diseno_monto')?.value||0)   : 0);
+  const extrasUsd   = (qs('#pos_extras_chk')?.checked   ? parseFloat(qs('#pos_extras_monto')?.value||0)   : 0);
+  const hayExtras   = (envioUsd+disenoUsd+extrasUsd)>0;
 
   // Calcular por ítem
   const itemsCot = _posItems.map(it=>{
@@ -6231,15 +6253,19 @@ function posWaActualizar(){
     }
   });
 
-  // Totales
+  // Totales — extras (delivery/envío/diseño/extras) van a precio fijo USD sin diferencial
+  const totalExtrasUsd = deliveryUsd + envioUsd + disenoUsd + extrasUsd;
   let totalAnclaUsd, totalBs, totalUsdDirecto;
   if(modo==='bs' && bcv>0){
-    totalBs = itemsCot.reduce((a,it)=>a+it.pvCotBs*it.cant, 0);
-    totalBs += (deliveryUsd + envioUsd) * bcv;
-    totalAnclaUsd = totalBs / bcv;
+    const totalBsProductos = itemsCot.reduce((a,it)=>a+it.pvCotBs*it.cant, 0);
+    const totalBsExtras    = totalExtrasUsd * bcv; // extras: solo BCV, sin diferencial
+    totalBs = totalBsProductos + totalBsExtras;
+    // Para el anclaje USD: productos con dif + extras sin dif
+    const totalUsdProductos = itemsCot.reduce((a,it)=>a+it.pvAnclaUsd*it.cant, 0);
+    totalAnclaUsd = totalUsdProductos + totalExtrasUsd;
   } else {
     totalUsdDirecto = itemsCot.reduce((a,it)=>a+it.pvCotUsd*it.cant, 0);
-    totalUsdDirecto += (deliveryUsd + envioUsd);
+    totalUsdDirecto += totalExtrasUsd;
   }
 
   const abonoUsd = modo==='bs' ? totalAnclaUsd*(aboPct/100) : totalUsdDirecto*(aboPct/100);
@@ -6260,7 +6286,9 @@ function posWaActualizar(){
       return `• ${it.cant}x ${it.nombre}\n  $${it.pvAnclaUsd.toFixed(2)}/u → Bs ${pvBsStr}/u = Bs ${totBsStr}`;
     }).join('\n');
     if(deliveryUsd>0){ const dBs=(deliveryUsd*bcv).toFixed(2).replace('.',','); txt+=`\nDelivery: Bs ${dBs} ($${deliveryUsd.toFixed(2)})`; }
-    if(envioUsd>0){    const eBs=(envioUsd*bcv).toFixed(2).replace('.',',');    txt+=`\nEnvío:    Bs ${eBs} ($${envioUsd.toFixed(2)})`; }
+    if(envioUsd>0){    const eBs=(envioUsd*bcv).toFixed(2).replace('.',',');    txt+=`\nEnvío: Bs ${eBs} ($${envioUsd.toFixed(2)})`; }
+    if(disenoUsd>0){   const nBs=(disenoUsd*bcv).toFixed(2).replace('.',',');  txt+=`\nDiseño: Bs ${nBs} ($${disenoUsd.toFixed(2)})`; }
+    if(extrasUsd>0){   const xBs=(extrasUsd*bcv).toFixed(2).replace('.',',');  txt+=`\nExtras: Bs ${xBs} ($${extrasUsd.toFixed(2)})`; }
     txt+=`\n\n*Total: Bs ${totalBs.toFixed(2).replace('.',',')}*`;
     txt+=`\n*$${totalAnclaUsd.toFixed(2)} (BCV ${bcv.toLocaleString('es-VE')})*`;
     if(!hayExtras && !sinAbono){
@@ -6273,7 +6301,9 @@ function posWaActualizar(){
       return `• ${it.cant}x ${it.nombre}\n  $${it.pvCotUsd.toFixed(2)}/u → $${totU}`;
     }).join('\n');
     if(deliveryUsd>0) txt+=`\nDelivery: $${deliveryUsd.toFixed(2)}`;
-    if(envioUsd>0)    txt+=`\nEnvío:    $${envioUsd.toFixed(2)}`;
+    if(envioUsd>0)    txt+=`\nEnvío: $${envioUsd.toFixed(2)}`;
+    if(disenoUsd>0)   txt+=`\nDiseño: $${disenoUsd.toFixed(2)}`;
+    if(extrasUsd>0)   txt+=`\nExtras: $${extrasUsd.toFixed(2)}`;
     txt+=`\n\n*Total: $${totalUsdDirecto.toFixed(2)}*`;
     if(!hayExtras && !sinAbono){
       txt+=`\n\n📌 *Abono ${aboPct}%:* $${abonoUsd.toFixed(2)}`;
@@ -6300,13 +6330,19 @@ function posRecalc(){
   const difPos   = getDiferencial();
   const deliveryUsd = (qs('#pos_delivery_chk')?.checked ? parseFloat(qs('#pos_delivery_monto')?.value||0) : 0);
   const envioUsd    = (qs('#pos_envio_chk')?.checked    ? parseFloat(qs('#pos_envio_monto')?.value||0)    : 0);
-  const extrasVal = deliveryUsd + envioUsd;
+  const disenoUsd   = (qs('#pos_diseno_chk')?.checked   ? parseFloat(qs('#pos_diseno_monto')?.value||0)   : 0);
+  const extrasUsd   = (qs('#pos_extras_chk')?.checked   ? parseFloat(qs('#pos_extras_monto')?.value||0)   : 0);
+  const extrasVal = deliveryUsd + envioUsd + disenoUsd + extrasUsd;
   const total = Math.max(0, sub - desc + extrasVal);
   const rec = parseEU(qs('#pos_recibido')?.value || '0');
 
   // Detectar si el método activo es bolivariano
   const metodoBs = ['efectivo_bs','pago_movil','transferencia'].includes(_posMetodoActivo);
-  const totalBs = (metodoBs && bcvPos > 0) ? total * difPos * bcvPos : 0;
+  // Bs: productos con diferencial + extras solo BCV (sin diferencial)
+  const subProductos = Math.max(0, sub - desc);
+  const totalBs = (metodoBs && bcvPos > 0)
+    ? (subProductos * difPos * bcvPos) + (extrasVal * bcvPos)
+    : 0;
 
   // Actualizar labels según moneda
   const recLbl = qs('#pos_recibido_lbl');
@@ -6332,8 +6368,8 @@ function posRecalc(){
     refEl.style.cssText = 'font-size:11px;color:rgba(255,255,255,.75);margin-top:2px';
     qs('#pos_total_bar')?.appendChild(refEl);
   }
-  // totalConDif = lo que cobra al cliente en $
-  const totalConDif = total * difPos;
+  // totalConDif = lo que cobra al cliente en $ (productos con dif, extras sin dif)
+  const totalConDif = (subProductos * difPos) + extrasVal;
   if(metodoBs && bcvPos > 0){
     // Barra muestra Bs — referencia muestra $ con dif
     refEl.textContent = '≈ $ ' + totalConDif.toFixed(2).replace('.',',');
@@ -6397,7 +6433,9 @@ function posCobrar(){
   const desc = parseEU(qs('#pos_descuento')?.value || '0');
   const deliveryUsd = (qs('#pos_delivery_chk')?.checked ? parseFloat(qs('#pos_delivery_monto')?.value||0) : 0);
   const envioUsd    = (qs('#pos_envio_chk')?.checked    ? parseFloat(qs('#pos_envio_monto')?.value||0)    : 0);
-  const extrasVal = deliveryUsd + envioUsd;
+  const disenoUsd   = (qs('#pos_diseno_chk')?.checked   ? parseFloat(qs('#pos_diseno_monto')?.value||0)   : 0);
+  const extrasUsd   = (qs('#pos_extras_chk')?.checked   ? parseFloat(qs('#pos_extras_monto')?.value||0)   : 0);
+  const extrasVal = deliveryUsd + envioUsd + disenoUsd + extrasUsd;
 
   let total;
   if(['pago_pedido','abono','pago_restante'].includes(tipo)){
@@ -6418,6 +6456,8 @@ function posCobrar(){
   const notaExtras = [
     deliveryUsd>0?`Delivery: $${deliveryUsd.toFixed(2)}`:'',
     envioUsd>0?`Envio: $${envioUsd.toFixed(2)}`:'',
+    disenoUsd>0?`Diseño: $${disenoUsd.toFixed(2)}`:'',
+    extrasUsd>0?`Extras: $${extrasUsd.toFixed(2)}`:'',
     _posPedidoVinculado?`Pedido: ${_posPedidoVinculado.numero}`:''
   ].filter(Boolean).join(' | ');
   const notaBase = (qs('#pos_notas')?.value || '').trim();
@@ -6428,7 +6468,7 @@ function posCobrar(){
     cliente: clienteVenta,
     items: JSON.parse(JSON.stringify(_posItems)),
     subtotal: sub, descuento: desc,
-    delivery_usd: deliveryUsd, envio_usd: envioUsd,
+    delivery_usd: deliveryUsd, envio_usd: envioUsd, diseno_usd: disenoUsd, extras_usd: extrasUsd,
     total, recibido: rec, vuelto: Math.max(0, rec - total),
     costo_total, utilidad: total - costo_total,
     tipo, canal: qs('#pos_canal')?.value || 'local',
@@ -6475,6 +6515,8 @@ function posCobrar(){
   const pp = qs('#pos_pedido_panel'); if(pp) pp.style.display='none';
   const delChk=qs('#pos_delivery_chk'); if(delChk){ delChk.checked=false; const m=qs('#pos_delivery_monto'); if(m) m.disabled=true; }
   const envChk=qs('#pos_envio_chk');    if(envChk){ envChk.checked=false; const m=qs('#pos_envio_monto');    if(m) m.disabled=true; }
+  const disChk=qs('#pos_diseno_chk');   if(disChk){ disChk.checked=false; const m=qs('#pos_diseno_monto');  if(m) m.disabled=true; }
+  const extChk=qs('#pos_extras_chk');   if(extChk){ extChk.checked=false; const m=qs('#pos_extras_monto');  if(m) m.disabled=true; }
   const wb=qs('#pos_wa_body'); if(wb) wb.classList.add('collapsed');
   const wc=qs('#pos_wa_chev'); if(wc) wc.classList.remove('open');
   posRenderProductos(); posRenderCarrito(); posRecalc(); renderDash();
@@ -9489,7 +9531,7 @@ function exportReportesCSV(){
   </button>
   <button class="bn-item" data-bnv="catalogo" onclick="bnNav('catalogo',this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
-    Productos
+    Catálogo
   </button>
   <button class="bn-item" data-bnv="__mas" onclick="bnMas(this)">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg>
@@ -9656,7 +9698,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_34';
+  const APP_VERSION = 'v13_36';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
