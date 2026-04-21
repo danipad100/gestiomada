@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_33">
+<html lang="es" data-app-version="GestioMada_V13_34">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -2169,7 +2169,16 @@ body.dark .pos-prod-img-ph{background:#23283a}
             <div class="fg" style="min-width:120px;flex:1">
               <label>Diferencial cambiario</label>
               <div id="cfg_diferencial" style="padding:8px 12px;background:var(--bg);border-radius:10px;font-size:18px;font-weight:700;color:var(--brand);text-align:center">—</div>
-              <div style="font-size:10px;color:var(--muted);margin-top:3px">Paralela ÷ BCV (automático)</div>
+              <!-- Input editable del diferencial congelado (solo visible cuando está bloqueado) -->
+              <div id="dif_edit_wrap" style="display:none;margin-top:6px">
+                <label style="font-size:10px;color:#e67e22;font-weight:600;display:block;margin-bottom:2px">[=] Diferencial congelado (editable)</label>
+                <div style="display:flex;align-items:center;gap:6px">
+                  <span style="font-size:14px;font-weight:700;color:#e67e22">×</span>
+                  <input type="text" id="cfg_dif_manual" placeholder="1.3161" style="flex:1;font-size:14px;font-weight:700;color:#e67e22;border:1.5px solid #e67e22;border-radius:8px;padding:5px 8px;background:#fff8f0" oninput="editarDifCongelado(this.value)"/>
+                </div>
+                <div style="font-size:9px;color:var(--muted);margin-top:2px">Cambia aquí y se sincroniza en todos los dispositivos</div>
+              </div>
+              <div style="font-size:10px;color:var(--muted);margin-top:3px" id="dif_libre_lbl">Paralela ÷ BCV (automático)</div>
               <div style="margin-top:8px;display:flex;align-items:center;gap:8px;cursor:pointer" onclick="toggleCongelarDif()">
                 <div id="dif_lock_track" style="width:40px;height:22px;border-radius:11px;background:#ccc;position:relative;transition:background .2s;flex-shrink:0"><div id="dif_lock_thumb" style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)"></div></div>
                 <span id="dif_lock_lbl" style="font-size:11px;font-weight:600;color:var(--muted)">Diferencial libre</span>
@@ -2263,7 +2272,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.33 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.34 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
@@ -3133,7 +3142,7 @@ async function cargarConfigNegocioDesdeNube(){
     if(error || !data) return;
 
     let changed = false;
-    const camposNegocio = ['negocio','rif','telefono','instagram','direccion','slogan','nota_recibo','logo_url'];
+    const camposNegocio = ['negocio','rif','telefono','instagram','direccion','slogan','nota_recibo','logo_url','dif_bloqueado','dif_congelado'];
     data.forEach(row => {
       if(camposNegocio.includes(row.clave)){
         try {
@@ -3166,7 +3175,12 @@ async function cargarConfigNegocioDesdeNube(){
       if(qs('#cfg_dir')) qs('#cfg_dir').value = CFG.direccion || '';
       if(qs('#cfg_slogan')) qs('#cfg_slogan').value = CFG.slogan || '';
       if(qs('#cfg_nota_recibo')) qs('#cfg_nota_recibo').value = CFG.nota_recibo || '';
-      console.log('[Config] Datos del negocio sincronizados desde Supabase');
+      // Aplicar diferencial congelado si cambió desde otro dispositivo
+      if(typeof _aplicarEstiloDifLock === 'function'){
+        _aplicarEstiloDifLock(CFG.dif_bloqueado||false);
+        _actualizarDiferencial();
+      }
+      console.log('[Config] Datos sincronizados desde Supabase. Dif:', CFG.dif_bloqueado?'congelado ×'+CFG.dif_congelado:'libre');
     }
   } catch(e){ console.warn('[Config Supabase load]', e); }
 }
@@ -5184,7 +5198,16 @@ function _aplicarEstiloDifLock(bloqueado){
   const track=qs('#dif_lock_track'), thumb=qs('#dif_lock_thumb'), lbl=qs('#dif_lock_lbl');
   if(track) track.style.background=bloqueado?'#e67e22':'#ccc';
   if(thumb) thumb.style.left=bloqueado?'21px':'3px';
-  if(lbl){ lbl.textContent=bloqueado?('[=] Congelado ×'+(CFG.dif_congelado>0?CFG.dif_congelado.toFixed(4):'')):'Diferencial libre'; lbl.style.color=bloqueado?'#e67e22':'var(--muted)'; }
+  if(lbl){ lbl.textContent=bloqueado?'[=] Congelado (activo)':'Diferencial libre'; lbl.style.color=bloqueado?'#e67e22':'var(--muted)'; }
+  // Mostrar/ocultar el input editable del diferencial
+  const editWrap=qs('#dif_edit_wrap');
+  const libreLbl=qs('#dif_libre_lbl');
+  if(editWrap) editWrap.style.display=bloqueado?'block':'none';
+  if(libreLbl) libreLbl.style.display=bloqueado?'none':'block';
+  // Actualizar el input con el valor actual
+  const difInp=qs('#cfg_dif_manual');
+  if(difInp && bloqueado && CFG.dif_congelado>0) difInp.value=CFG.dif_congelado.toFixed(4).replace('.',',');
+  // Paralela: bloqueada cuando está congelado
   const pEl=qs('#cfg_tasa_paralela');
   if(pEl){ pEl.readOnly=bloqueado; pEl.style.opacity=bloqueado?'0.6':''; pEl.style.background=bloqueado?'var(--bg)':''; pEl.title=bloqueado?'Congelado — se recalcula con BCV del día':''; }
 }
@@ -5194,7 +5217,7 @@ function toggleCongelarDif(){
   const par=parseEU(qs('#cfg_tasa_paralela')?.value||'0');
   if(!CFG.dif_bloqueado){
     if(bcv<=0||par<=0){ toast('Ingresa BCV y Paralela antes de congelar','warn'); return; }
-    CFG.dif_congelado=par/bcv;
+    CFG.dif_congelado=parseFloat((par/bcv).toFixed(6));
     CFG.dif_bloqueado=true;
     toast('[=] Diferencial congelado en ×'+CFG.dif_congelado.toFixed(4),'ok');
   } else {
@@ -5204,6 +5227,35 @@ function toggleCongelarDif(){
   localStorage.setItem(LS_CFG,JSON.stringify(CFG));
   _aplicarEstiloDifLock(CFG.dif_bloqueado);
   _actualizarDiferencial();
+  // Sincronizar estado del diferencial en Supabase para todos los dispositivos
+  _sincDiferencialSupa();
+}
+
+// Editar el diferencial manualmente mientras está congelado
+function editarDifCongelado(val){
+  const n=parseEU(val);
+  if(n<=0 || n>10) return; // rango razonable 0-10
+  CFG.dif_congelado=n;
+  localStorage.setItem(LS_CFG,JSON.stringify(CFG));
+  _actualizarDiferencial();
+  // Debounce: sincronizar a Supabase 1 segundo después del último cambio
+  clearTimeout(window._difEditTimer);
+  window._difEditTimer=setTimeout(()=>{
+    _sincDiferencialSupa();
+    toast('[=] Diferencial actualizado ×'+n.toFixed(4)+' — sincronizando...','ok');
+  }, 1000);
+}
+
+// Guardar estado del diferencial en Supabase y propagar a todos los dispositivos
+async function _sincDiferencialSupa(){
+  if(!window._supaConectado) return;
+  try {
+    await SUPA.from('config').upsert([
+      { clave:'dif_bloqueado', valor: JSON.stringify(CFG.dif_bloqueado) },
+      { clave:'dif_congelado', valor: JSON.stringify(CFG.dif_congelado) }
+    ], { onConflict:'clave' });
+    console.log('[Config] Diferencial sincronizado a Supabase: bloqueado='+CFG.dif_bloqueado+' val='+CFG.dif_congelado);
+  } catch(e){ console.warn('[Config] Error sincronizando diferencial:', e.message); }
 }
 
 /* ══════════ AUTO-FETCH DE TASAS (BCV + Binance P2P) ══════════ */
@@ -9604,7 +9656,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_33';
+  const APP_VERSION = 'v13_34';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
