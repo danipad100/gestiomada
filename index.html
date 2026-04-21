@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_32">
+<html lang="es" data-app-version="GestioMada_V13_33">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -110,14 +110,46 @@ async function syncToSupabase(tabla, datos){
 }
 
 // Sync inmediato de UN solo producto — propaga el cambio al instante a todos los dispositivos
-async function syncProductoAhora(prod){
-  if(!window._supaConectado || !prod) return;
+async function syncProductoAhora(prod, reintentos=3){
+  if(!prod) return;
+  // Si no hay conexión, reintentar cuando se restablezca
+  if(!window._supaConectado){
+    console.warn('[Supabase] Sin conexión — producto en cola:', prod.nombre);
+    _encolarSyncProd(prod);
+    return;
+  }
   try {
     const mapeado = mapearParaSupa('productos', prod);
     const { error } = await SUPA.from('productos').upsert([mapeado], { onConflict: 'id' });
-    if(error) console.warn('[Supabase prod sync]', error.message);
-    else console.log('[Supabase] Producto sincronizado:', prod.nombre, 'id:', prod.id);
-  } catch(e){ console.warn('[Supabase syncProductoAhora]', e.message); }
+    if(error){
+      console.warn('[Supabase prod sync] Error:', error.message, '| Producto:', prod.nombre);
+      if(reintentos > 0){
+        setTimeout(() => syncProductoAhora(prod, reintentos-1), 3000);
+      }
+    } else {
+      console.log('[Supabase] ✓ Producto sincronizado:', prod.nombre, '| id:', prod.id);
+      _procesarColaSyncProd(); // Procesar cola si había pendientes
+    }
+  } catch(e){
+    console.warn('[Supabase syncProductoAhora]', e.message);
+    if(reintentos > 0) setTimeout(() => syncProductoAhora(prod, reintentos-1), 3000);
+  }
+}
+
+// Cola de productos pendientes de sync (cuando no hay conexión)
+let _colaSyncProd = [];
+function _encolarSyncProd(prod){
+  const existe = _colaSyncProd.findIndex(p => String(p.id) === String(prod.id));
+  if(existe >= 0) _colaSyncProd[existe] = prod; // Actualizar si ya está
+  else _colaSyncProd.push(prod);
+}
+async function _procesarColaSyncProd(){
+  if(!window._supaConectado || !_colaSyncProd.length) return;
+  const pendientes = [..._colaSyncProd];
+  _colaSyncProd = [];
+  for(const prod of pendientes){
+    await syncProductoAhora(prod, 1);
+  }
 }
 
 // Mapea un registro del localStorage al esquema exacto de Supabase
@@ -358,15 +390,19 @@ async function initSupabaseSync(){
 
 // ── Conexión y arranque ──
 window._supaConectado = false;
-SUPA.from('config').select('clave').limit(1)
-  .then(({data}) => {
-    window._supaConectado = !!data;
+// Verificar conexión con la tabla 'productos' — más confiable que 'config'
+SUPA.from('productos').select('id').limit(1)
+  .then(({data, error}) => {
+    // data puede ser [] (vacío) o tener registros — ambos son conexión válida
+    window._supaConectado = !error;
     if(window._supaConectado){
       console.log('[Supabase] Conectado ✓ — iniciando sync + Realtime');
-      initSupabaseSync();
+      initSupabaseSync().then(() => _procesarColaSyncProd());
+    } else {
+      console.warn('[Supabase] Error de conexión:', error?.message);
     }
   })
-  .catch(() => { window._supaConectado = false; console.warn('[Supabase] Sin conexión — modo offline'); });
+  .catch((e) => { window._supaConectado = false; console.warn('[Supabase] Sin conexión — modo offline', e.message); });
 </script>
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet"/>
 <style>
@@ -2227,7 +2263,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.32 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.33 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
@@ -3307,8 +3343,8 @@ function loadCat()  { try{ return JSON.parse(localStorage.getItem(LS_CAT)||'[]')
 function saveCat(a) {
   localStorage.setItem(LS_CAT, JSON.stringify(a));
   updateBadges();
-  // El sync individual por registro se hace con syncProductoAhora() en cada operación
-  // saveCat NO hace upsert masivo para evitar sobrescribir con datos obsoletos
+  // Sync individual se hace con syncProductoAhora() en cada operación de guardado
+  // saveCat solo actualiza local; el sync a Supabase lo dispara la operación específica
 }
 function loadCli()  { try{ return JSON.parse(localStorage.getItem(LS_CLI)||'[]'); }catch(e){ return []; } }
 function saveCli(a) { localStorage.setItem(LS_CLI, JSON.stringify(a)); updateBadges(); if(window._supaConectado) syncToSupabase('clientes', a); }
@@ -3814,10 +3850,10 @@ function confirmarCatalogo(){
   const nuevo={ id:prodId, nombre:nom, sku:skuFinal, categoria:qs('#mc_cat').value, foto:_foto3, foto_url:'', costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, modo_inventario:modoInv, inv_loc:invLoc, moneda_prod:monedaProd, insumos_receta:receta, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
   const ei=cat.findIndex(p=>p.nombre.toLowerCase()===nom.toLowerCase());
   let _prodSyncEd;
-  if(ei>=0){ if(!confirm('Ya existe "'+nom+'". ¿Actualizar?')) return; cat[ei]={...cat[ei],...nuevo}; _prodSyncEd=cat[ei]; }
+  if(ei>=0){ if(!confirm('Ya existe "'+nom+'". ¿Actualizar?')) return; cat[ei]={...cat[ei],...nuevo,id:cat[ei].id}; _prodSyncEd=cat[ei]; }
   else{ cat.push(nuevo); _prodSyncEd=nuevo; }
   saveCat(cat);
-  syncProductoAhora(_prodSyncEd); // Sync inmediato
+  syncProductoAhora(_prodSyncEd); // Sync inmediato a Supabase → Realtime propaga a otros dispositivos
   closeModal('m-catalogo'); toast('Agregado: '+nom,'ok'); renderDash();
   // Subir foto a Storage en background (no bloquea UI)
   if(_foto3 && _foto3.startsWith('data:') && window._supaConectado){
@@ -9568,7 +9604,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_32';
+  const APP_VERSION = 'v13_33';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
