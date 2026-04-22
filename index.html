@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_38">
+<html lang="es" data-app-version="GestioMada_V13_39">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -2272,7 +2272,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.38 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.39 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
@@ -2900,10 +2900,17 @@ body.dark .pos-prod-img-ph{background:#23283a}
     </div>
     <div class="card" style="margin-bottom:12px;padding:14px">
       <div class="card-title" style="margin-bottom:10px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Productos del pedido</div>
-      <div class="frow" style="margin-bottom:8px">
-        <div class="fg" style="flex:2"><label>Agregar desde catálogo</label>
-          <select id="mp_prod_sel"><option value="">— Seleccionar producto —</option></select></div>
-        <div style="flex:0 0 auto;padding-top:20px"><button class="btn btn-ok btn-sm" onclick="agregarProductoPedido()">＋ Agregar</button></div>
+      <div style="margin-bottom:8px">
+        <label>Buscar en catálogo (nombre o SKU)</label>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <div style="flex:1;position:relative">
+            <input type="text" id="mp_prod_q" placeholder="Ej. Taza, TAZA-001…" oninput="mpBuscarProducto()" autocomplete="off" style="width:100%"/>
+            <div id="mp_prod_results" style="position:absolute;left:0;right:0;top:100%;z-index:99;background:var(--card);border:1px solid var(--border);border-radius:10px;max-height:200px;overflow-y:auto;display:none;box-shadow:0 4px 16px rgba(0,0,0,.1)"></div>
+          </div>
+          <input type="hidden" id="mp_prod_sel" value=""/>
+          <button class="btn btn-ok btn-sm" onclick="agregarProductoPedido()" style="flex-shrink:0;margin-top:2px">＋</button>
+        </div>
+        <div id="mp_prod_sel_nombre" style="display:none;font-size:11px;color:var(--brand);margin-top:4px;padding:3px 8px;background:#f0f9ff;border-radius:6px"></div>
       </div>
       <div class="frow" style="margin-bottom:8px">
         <div class="fg" style="flex:2"><label>O ítem manual</label><input type="text" id="mp_item_desc" placeholder="Descripción del producto / servicio"/></div>
@@ -2923,6 +2930,48 @@ body.dark .pos-prod-img-ph{background:#23283a}
     </div>
     <div class="card" style="margin-bottom:12px;padding:14px">
       <div class="card-title" style="margin-bottom:10px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg> Pagos y entrega</div>
+      <!-- Extras de cobro (Delivery, Envío, Diseño, Extras) -->
+      <div style="margin-bottom:10px">
+        <label style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Cargos adicionales</label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
+          <div style="flex:1;min-width:100px">
+            <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px">
+              <input type="checkbox" id="mp_delivery_chk" onchange="mpToggleExtra('delivery')"/> Delivery
+            </label>
+            <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
+              <input type="number" id="mp_delivery_monto" value="3" min="0" step="0.01" disabled oninput="recalcPedido()" style="text-align:right;font-size:12px;flex:1"/>
+              <span style="font-size:10px;color:var(--muted)">USD</span>
+            </div>
+          </div>
+          <div style="flex:1;min-width:100px">
+            <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px">
+              <input type="checkbox" id="mp_envio_chk" onchange="mpToggleExtra('envio')"/> Envío
+            </label>
+            <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
+              <input type="number" id="mp_envio_monto" value="2" min="0" step="0.01" disabled oninput="recalcPedido()" style="text-align:right;font-size:12px;flex:1"/>
+              <span style="font-size:10px;color:var(--muted)">USD</span>
+            </div>
+          </div>
+          <div style="flex:1;min-width:100px">
+            <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px">
+              <input type="checkbox" id="mp_diseno_chk" onchange="mpToggleExtra('diseno')"/> Diseño
+            </label>
+            <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
+              <input type="number" id="mp_diseno_monto" value="5" min="0" step="0.01" disabled oninput="recalcPedido()" style="text-align:right;font-size:12px;flex:1"/>
+              <span style="font-size:10px;color:var(--muted)">USD</span>
+            </div>
+          </div>
+          <div style="flex:1;min-width:100px">
+            <label style="display:flex;align-items:center;gap:5px;cursor:pointer;font-size:12px">
+              <input type="checkbox" id="mp_extras_chk" onchange="mpToggleExtra('extras')"/> Extras
+            </label>
+            <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
+              <input type="number" id="mp_extras_monto" value="0" min="0" step="0.01" disabled oninput="recalcPedido()" style="text-align:right;font-size:12px;flex:1"/>
+              <span style="font-size:10px;color:var(--muted)">USD</span>
+            </div>
+          </div>
+        </div>
+      </div>
       <div class="frow">
         <div class="fg"><label>Descuento ($)</label><input type="text" id="mp_descuento" value="0,00" oninput="recalcPedido()"/></div>
         <div class="fg"><label id="mp_abono_lbl">Abono inicial ($)</label><input type="text" id="mp_abono" value="0,00" oninput="recalcPedido()" placeholder="0,00"/></div>
@@ -7489,6 +7538,15 @@ function abrirNuevoPedido(){
   qs('#mp_fecha_pedido').value = hoy;
   qs('#mp_fecha_entrega').value = '';
   poblarSelectCatalogo();
+  // Limpiar buscador
+  const _qEl=qs('#mp_prod_q'); if(_qEl) _qEl.value='';
+  const _nomEl=qs('#mp_prod_sel_nombre'); if(_nomEl) _nomEl.style.display='none';
+  const _selEl=qs('#mp_prod_sel'); if(_selEl) _selEl.value='';
+  // Resetear extras
+  ['delivery','envio','diseno','extras'].forEach(t=>{
+    const chk=qs('#mp_'+t+'_chk'); if(chk) chk.checked=false;
+    const inp=qs('#mp_'+t+'_monto'); if(inp) inp.disabled=true;
+  });
   recalcPedido();
   openModal('m-pedido');
 }
@@ -7521,8 +7579,63 @@ function abrirEditarPedido(idx){
   qs('#mp_fecha_pedido').value = p.fecha_pedido||'';
   qs('#mp_fecha_entrega').value = p.fecha_entrega||'';
   poblarSelectCatalogo();
+  // Limpiar buscador al editar
+  const _qElE=qs('#mp_prod_q'); if(_qElE) _qElE.value='';
+  const _nomElE=qs('#mp_prod_sel_nombre'); if(_nomElE) _nomElE.style.display='none';
+  const _selElE=qs('#mp_prod_sel'); if(_selElE) _selElE.value='';
+  // Restaurar extras si el pedido los tenía
+  const _extMap={delivery:p.delivery_usd||0,envio:p.envio_usd||0,diseno:p.diseno_usd||0,extras:p.extras_usd||0};
+  ['delivery','envio','diseno','extras'].forEach(t=>{
+    const chk=qs('#mp_'+t+'_chk'),inp=qs('#mp_'+t+'_monto');
+    if(chk&&inp){const v=_extMap[t];chk.checked=v>0;inp.disabled=!v;if(v>0)inp.value=v;}
+  });
   recalcPedido();
   openModal('m-pedido');
+}
+
+// ── Buscador de catálogo en pedido ──
+function mpBuscarProducto(){
+  const q = (qs('#mp_prod_q')?.value||'').toLowerCase().trim();
+  const res = qs('#mp_prod_results');
+  if(!res) return;
+  if(!q){ res.style.display='none'; qs('#mp_prod_sel').value=''; qs('#mp_prod_sel_nombre').style.display='none'; return; }
+  const cat = loadCat().filter(p=>p.estado==='activo');
+  const fil = cat.filter(p=>
+    p.nombre.toLowerCase().includes(q)||(p.sku||'').toLowerCase().includes(q)
+  ).slice(0,8);
+  if(!fil.length){ res.innerHTML='<div style="padding:8px 12px;font-size:12px;color:var(--muted)">Sin resultados</div>'; res.style.display='block'; return; }
+  res.innerHTML = fil.map(p=>`
+    <div onclick="mpSelProducto('${p.id}')" style="padding:8px 12px;cursor:pointer;font-size:13px;border-bottom:1px solid var(--border)"
+      onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background=''">
+      <div style="font-weight:600">${p.nombre}</div>
+      <div style="font-size:11px;color:var(--muted)">SKU: ${p.sku||'—'} · ${euro(p.precio_venta)}</div>
+    </div>`).join('');
+  res.style.display='block';
+}
+function mpSelProducto(id){
+  const prod = loadCat().find(p=>String(p.id)===String(id));
+  if(!prod) return;
+  qs('#mp_prod_sel').value = id;
+  qs('#mp_prod_q').value = prod.nombre;
+  qs('#mp_prod_results').style.display='none';
+  const nom = qs('#mp_prod_sel_nombre');
+  if(nom){ nom.textContent = prod.nombre+' · SKU: '+(prod.sku||'—')+' · '+euro(prod.precio_venta); nom.style.display='block'; }
+}
+// Cerrar resultados al hacer clic fuera
+document.addEventListener('click', e=>{
+  if(!e.target.closest('#mp_prod_q')&&!e.target.closest('#mp_prod_results')){
+    const r=qs('#mp_prod_results'); if(r) r.style.display='none';
+  }
+});
+
+// ── Toggle extras en pedido ──
+function mpToggleExtra(tipo){
+  const ids = { delivery:'#mp_delivery_chk', envio:'#mp_envio_chk', diseno:'#mp_diseno_chk', extras:'#mp_extras_chk' };
+  const montos = { delivery:'#mp_delivery_monto', envio:'#mp_envio_monto', diseno:'#mp_diseno_monto', extras:'#mp_extras_monto' };
+  const chk = qs(ids[tipo]);
+  const inp = qs(montos[tipo]);
+  if(inp){ inp.disabled = !chk?.checked; if(chk?.checked) inp.focus(); }
+  recalcPedido();
 }
 
 function poblarSelectCatalogo(){
@@ -7615,11 +7728,14 @@ function abrirNuevoClienteDesde(){
 // ── Items ──
 function agregarProductoPedido(){
   const sel = qs('#mp_prod_sel');
-  if(!sel || sel.value === '') { toast('Selecciona un producto del catálogo','warn'); return; }
-  const prodId = sel.value;
+  const prodId = sel?.value||'';
+  if(!prodId){ toast('Busca y selecciona un producto del catálogo','warn'); return; }
   const prod = loadCat().find(p=>String(p.id)===String(prodId));
   if(!prod){ toast('Producto no encontrado en catálogo','warn'); return; }
-  // Verificar si ya está en la lista — si sí, sumar cantidad
+  // Limpiar buscador tras agregar
+  const qEl=qs('#mp_prod_q'); if(qEl) qEl.value='';
+  const nomEl=qs('#mp_prod_sel_nombre'); if(nomEl) nomEl.style.display='none';
+  if(sel) sel.value='';
   const existe = _pedItems.findIndex(it=>it.id_prod && String(it.id_prod)===String(prodId));
   if(existe>=0){
     _pedItems[existe].cant++;
@@ -7670,7 +7786,13 @@ function quitarItem(i){ _pedItems.splice(i,1); renderItemsFormulario(); recalcPe
 function recalcPedido(){
   const sub = _pedItems.reduce((a,it)=>a+(it.precio_unit*it.cant),0);
   const desc = parseEU(qs('#mp_descuento')?.value||'0,00');
-  const total = Math.max(0, sub-desc);           // total en USD base
+  // Extras en pedido (misma lógica que POS — sin diferencial)
+  const _mpDel = (qs('#mp_delivery_chk')?.checked ? parseFloat(qs('#mp_delivery_monto')?.value||0) : 0);
+  const _mpEnv = (qs('#mp_envio_chk')?.checked    ? parseFloat(qs('#mp_envio_monto')?.value||0)    : 0);
+  const _mpDis = (qs('#mp_diseno_chk')?.checked   ? parseFloat(qs('#mp_diseno_monto')?.value||0)   : 0);
+  const _mpExt = (qs('#mp_extras_chk')?.checked   ? parseFloat(qs('#mp_extras_monto')?.value||0)   : 0);
+  const _mpExtrasTotal = _mpDel + _mpEnv + _mpDis + _mpExt;
+  const total = Math.max(0, sub - desc + _mpExtrasTotal); // total en USD base (extras sin dif)
   const metodo = qs('#mp_metodo')?.value || 'efectivo_bs';
   const esUsd = ['efectivo_usd','zelle'].includes(metodo);
   const esBs  = !esUsd;
@@ -7755,7 +7877,12 @@ function guardarPedido(){
   if(!_pedItems.length){ toast('Agrega al menos un producto','warn'); return; }
   const sub = _pedItems.reduce((a,it)=>a+(it.precio_unit*it.cant),0);
   const desc = parseEU(qs('#mp_descuento').value||'0,00');
-  const total = Math.max(0,sub-desc);
+  const _gDel = (qs('#mp_delivery_chk')?.checked ? parseFloat(qs('#mp_delivery_monto')?.value||0) : 0);
+  const _gEnv = (qs('#mp_envio_chk')?.checked    ? parseFloat(qs('#mp_envio_monto')?.value||0)    : 0);
+  const _gDis = (qs('#mp_diseno_chk')?.checked   ? parseFloat(qs('#mp_diseno_monto')?.value||0)   : 0);
+  const _gExt = (qs('#mp_extras_chk')?.checked   ? parseFloat(qs('#mp_extras_monto')?.value||0)   : 0);
+  const _gExtrasTotal = _gDel + _gEnv + _gDis + _gExt;
+  const total = Math.max(0, sub - desc + _gExtrasTotal);
   // Si método es Bs el usuario ingresa Bs — usar la conversión calculada en recalcPedido
   const _metodoAb = qs('#mp_metodo')?.value||'efectivo_bs';
   const _esBsAb = !['efectivo_usd','zelle'].includes(_metodoAb);
@@ -7775,6 +7902,12 @@ function guardarPedido(){
     }
   }
 
+  const _notaExtras = [
+    _gDel>0?'Delivery: $'+_gDel.toFixed(2):'',
+    _gEnv>0?'Envío: $'+_gEnv.toFixed(2):'',
+    _gDis>0?'Diseño: $'+_gDis.toFixed(2):'',
+    _gExt>0?'Extras: $'+_gExt.toFixed(2):''
+  ].filter(Boolean).join(' | ');
   const ped = {
     id:          _pedIdx!==null ? all[_pedIdx].id : Date.now(),
     numero:      _pedIdx!==null ? all[_pedIdx].numero : nextNumPed(),
@@ -7782,11 +7915,12 @@ function guardarPedido(){
     items:       JSON.parse(JSON.stringify(_pedItems)),
     subtotal:    sub,
     descuento:   desc,
+    delivery_usd: _gDel, envio_usd: _gEnv, diseno_usd: _gDis, extras_usd: _gExt,
     total,
     pagos,
     estado:      qs('#mp_estado').value,
     canal:       qs('#mp_canal')?.value || 'local',
-    notas:       qs('#mp_notas').value.trim(),
+    notas:       [qs('#mp_notas').value.trim(), _notaExtras].filter(Boolean).join(' | '),
     fecha_pedido:qs('#mp_fecha_pedido').value,
     fecha_entrega:qs('#mp_fecha_entrega').value,
     fecha_creado: _pedIdx!==null ? (all[_pedIdx].fecha_creado||new Date().toISOString()) : new Date().toISOString(),
@@ -9743,7 +9877,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_38';
+  const APP_VERSION = 'v13_39';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
