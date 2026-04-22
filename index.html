@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_36">
+<html lang="es" data-app-version="GestioMada_V13_37">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -2272,7 +2272,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.36 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.37 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
@@ -2922,7 +2922,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
       <div class="card-title" style="margin-bottom:10px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg> Pagos y entrega</div>
       <div class="frow">
         <div class="fg"><label>Descuento ($)</label><input type="text" id="mp_descuento" value="0,00" oninput="recalcPedido()"/></div>
-        <div class="fg"><label>Abono inicial ($)</label><input type="text" id="mp_abono" value="0,00" oninput="recalcPedido()"/></div>
+        <div class="fg"><label id="mp_abono_lbl">Abono inicial ($)</label><input type="text" id="mp_abono" value="0,00" oninput="recalcPedido()" placeholder="0,00"/></div>
         <div class="fg"><label>Método pago abono</label>
           <select id="mp_metodo" class="metodo-pago-sel" onchange="recalcPedido()">
             <option value="efectivo_bs">Efectivo Bs</option>
@@ -7304,29 +7304,31 @@ function renderCaja(){
     const esIng=INGRESOS.includes(m.categoria)||INGRESOS.includes(m.tipo);
     const ICONS={ingreso:'↑',gasto:'↓',compra:'C',abono:'A',retiro:'R',venta:'V',otro:'·'};
     const ico=ICONS[m.categoria]||ICONS[m.tipo]||'·';
-    return `<div class="list-item" style="margin-bottom:8px">
-      <div class="li-ico" style="background:${esIng?'#dcfce7':'#fee2e2'};font-size:16px">${ico}</div>
-      <div class="li-body">
-        <div class="li-name">${m.nota||m.categoria||m.tipo}</div>
-        <div class="li-meta">${m.fecha} · <span class="chip chip-info" style="font-size:10px">${METODOS_LABEL[m.metodo]||m.metodo}</span> · <span class="chip" style="font-size:10px;background:#f3f4f6">${m.categoria||m.tipo}</span></div>
+    // Calcular equivalencias para mostrar
+    const _difC=getDiferencial(), _bcvC=getTasaBCV(), _parC=_bcvC*_difC;
+    const montoFmt = m.moneda==='usd'
+      ? '$ '+(m.monto||0).toFixed(2).replace('.',',')
+      : 'Bs '+(m.monto||0).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2});
+    const subFmt = m.moneda==='usd'
+      ? (_bcvC>0?'≈ Bs '+((m.monto||0)*_bcvC).toLocaleString('es-VE',{minimumFractionDigits:0,maximumFractionDigits:0}):'')
+      : (_parC>0?'≈ $ '+((m.monto||0)/_parC).toFixed(2)+' paralelo · $ '+(_bcvC>0?((m.monto||0)/_bcvC).toFixed(2):'-')+' BCV':'');
+    return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--card);border-radius:12px;margin-bottom:8px;border:1px solid var(--border)">
+      <div style="width:34px;height:34px;border-radius:50%;background:${esIng?'#dcfce7':'#fee2e2'};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;color:${esIng?'#15803d':'#b91c1c'}">${ico}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${m.nota||m.categoria||m.tipo}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${m.fecha}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px">
+          <span class="chip chip-info" style="font-size:10px">${METODOS_LABEL[m.metodo]||m.metodo}</span>
+          <span class="chip" style="font-size:10px;background:#f3f4f6">${m.categoria||m.tipo}</span>
+        </div>
+        ${subFmt?`<div style="font-size:10px;color:var(--muted);margin-top:3px">${subFmt}</div>`:''}
       </div>
-      <div style="text-align:right;flex-shrink:0">
-        <div style="font-weight:700;font-size:15px;color:${esIng?'var(--ok)':'var(--danger)'}">${esIng?'＋':'−'}${m.moneda==='usd'?'$ '+(m.monto||0).toLocaleString('es-ES',{minimumFractionDigits:2}):'Bs '+(m.monto||0).toLocaleString('es-ES',{minimumFractionDigits:2})}</div>
-        ${(()=>{
-          if(m.moneda==='usd') return '';
-          // Movimiento en Bs — mostrar equivalente en $ paralelo
-          const _difC=getDiferencial(), _bcvC=getTasaBCV();
-          if(!_bcvC||!_difC) return '';
-          const _usdEq=(m.monto||0)/(_difC*_bcvC);
-          const _usdBcv=(m.monto||0)/_bcvC;
-          return `<div style="font-size:10px;color:var(--muted);margin-top:1px">
-            ≈ <span style="font-weight:600;color:var(--brand)">$ ${_usdEq.toFixed(2)} paralelo</span>
-            <span style="opacity:.7"> · $ ${_usdBcv.toFixed(2)} BCV</span>
-          </div>`;
-        })()}
-        ${m.tasa>0&&m.moneda==='usd'?`<div style="font-size:10px;color:var(--muted)">≈ Bs ${((m.monto||0)*m.tasa).toLocaleString('es-ES',{minimumFractionDigits:2})}</div>`:''}
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+        <div style="text-align:right">
+          <div style="font-weight:700;font-size:14px;color:${esIng?'var(--ok)':'var(--danger)'}">${esIng?'＋':'−'}${montoFmt}</div>
+        </div>
+        <button style="background:none;border:none;cursor:pointer;color:var(--danger);padding:4px;flex-shrink:0" onclick="eliminarMovimiento(${i},${JSON.stringify(fil).length})"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
       </div>
-      <button class="copy-btn" style="color:var(--danger);flex-shrink:0" onclick="eliminarMovimiento(${i},${JSON.stringify(fil).length})"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
     </div>`;
   }).join('');
 }
@@ -7665,30 +7667,39 @@ function quitarItem(i){ _pedItems.splice(i,1); renderItemsFormulario(); recalcPe
 function recalcPedido(){
   const sub = _pedItems.reduce((a,it)=>a+(it.precio_unit*it.cant),0);
   const desc = parseEU(qs('#mp_descuento')?.value||'0,00');
-  const total = Math.max(0, sub-desc);
-  const abono = parseEU(qs('#mp_abono')?.value||'0,00');
-  const restante = Math.max(0, total-abono);
+  const total = Math.max(0, sub-desc);           // total en USD base
   const metodo = qs('#mp_metodo')?.value || 'efectivo_bs';
   const esUsd = ['efectivo_usd','zelle'].includes(metodo);
+  const esBs  = !esUsd;
   const bcv = getTasaBCV();
   const dif = getDiferencial();
-  const par = bcv * (dif>0?dif:1);
+  const par = bcv * (dif>0?dif:1);              // tasa paralela
+  const totalCDif = total * (dif>0?dif:1);      // lo que cobra al cliente c/diferencial
+  const totalBs   = total * par;                 // equivalente en Bs
 
-  // Total: si es Bs mostrar c/dif como valor principal; si USD mostrar USD base
+  // Actualizar label del abono según método
+  const abonoLbl = qs('#mp_abono_lbl');
+  if(abonoLbl) abonoLbl.textContent = esBs && bcv>0 ? 'Abono inicial (Bs)' : 'Abono inicial ($)';
+
+  // Leer el abono ingresado y convertir a USD para el cálculo interno
+  const abonoRaw = parseEU(qs('#mp_abono')?.value||'0,00');
+  // Si paga en Bs el usuario ingresa Bs → convertir a USD base para guardar
+  const abonoUsd = (esBs && par>0) ? abonoRaw / par : abonoRaw;
+  const restanteUsd = Math.max(0, total - abonoUsd);
+
+  // Total del pedido: mostrar c/dif como precio principal (lo que cobra al cliente)
   if(qs('#mp_subtotal')) qs('#mp_subtotal').textContent = euro(sub);
   if(qs('#mp_total')){
-    if(!esUsd && dif>1){
-      qs('#mp_total').textContent = '$ '+(total*dif).toFixed(2).replace('.',',');
+    if(esBs && dif>1){
+      qs('#mp_total').textContent = '$ '+totalCDif.toFixed(2).replace('.',',');
     } else {
       qs('#mp_total').textContent = euro(total);
     }
   }
 
-  // Panel de precios detallado
+  // Panel de precios detallado bajo el total
   const refPanel = qs('#mp_ref_bs');
   if(refPanel && bcv>0 && total>0){
-    const totalCDif = total * (dif>0?dif:1);
-    const totalBs   = total * par;
     if(esUsd){
       refPanel.innerHTML = '<span style="color:var(--muted)">c/dif: </span><strong style="color:var(--brand)">$'+totalCDif.toFixed(2).replace('.',',')+'</strong>';
       refPanel.style.display='';
@@ -7701,21 +7712,34 @@ function recalcPedido(){
     }
   } else if(refPanel){ refPanel.style.display='none'; }
 
-  // Pills: siempre en USD (restante queda congelado en USD)
-  if(qs('#mp_pill_abonado')) qs('#mp_pill_abonado').textContent = euro(abono);
-  if(qs('#mp_pill_restante')) qs('#mp_pill_restante').textContent = euro(restante);
+  // Pills abonado/restante
+  const abonoEl = qs('#mp_pill_abonado');
+  const restEl  = qs('#mp_pill_restante');
+  if(esBs && par>0){
+    // Mostrar en Bs lo que el cliente abonó
+    if(abonoEl) abonoEl.textContent = 'Bs '+Math.round(abonoRaw).toLocaleString('es-VE');
+    // Restante en USD base (congelado)
+    if(restEl)  restEl.textContent  = euro(restanteUsd);
+  } else {
+    if(abonoEl) abonoEl.textContent = euro(abonoRaw);
+    if(restEl)  restEl.textContent  = euro(restanteUsd);
+  }
 
   // Referencia del restante en Bs
   const refRestante = qs('#mp_ref_restante');
-  if(refRestante && bcv>0 && restante>0 && !esUsd){
-    const restCDif = restante * (dif>0?dif:1);
-    const restBs   = restante * par;
+  if(refRestante && bcv>0 && restanteUsd>0 && esBs){
+    const restCDif = restanteUsd * (dif>0?dif:1);
+    const restBs   = restanteUsd * par;
     refRestante.innerHTML =
       '<span style="color:var(--muted)">Restante c/dif: </span><strong style="color:#e07ab0">$'+restCDif.toFixed(2).replace('.',',')+'</strong>' +
       '<span style="color:var(--muted);margin-left:8px">≈ </span><strong style="color:var(--danger)">Bs '+Math.round(restBs).toLocaleString('es-VE')+'</strong>' +
       '<span style="color:var(--muted);margin-left:6px;font-size:9px">(se cobrará a BCV del día)</span>';
     refRestante.style.display='';
   } else if(refRestante){ refRestante.style.display='none'; }
+
+  // Guardar abonoUsd en dataset para que guardarPedido lo lea correctamente
+  const mpAbono = qs('#mp_abono');
+  if(mpAbono) mpAbono.dataset.abonoUsd = abonoUsd.toFixed(4);
 }
 
 // ── Guardar pedido ──
@@ -7724,7 +7748,12 @@ function guardarPedido(){
   const sub = _pedItems.reduce((a,it)=>a+(it.precio_unit*it.cant),0);
   const desc = parseEU(qs('#mp_descuento').value||'0,00');
   const total = Math.max(0,sub-desc);
-  const abono = parseEU(qs('#mp_abono').value||'0,00');
+  // Si método es Bs el usuario ingresa Bs — usar la conversión calculada en recalcPedido
+  const _metodoAb = qs('#mp_metodo')?.value||'efectivo_bs';
+  const _esBsAb = !['efectivo_usd','zelle'].includes(_metodoAb);
+  const _parAb = getTasaBCV()*(getDiferencial()>0?getDiferencial():1);
+  const _abonoRaw = parseEU(qs('#mp_abono')?.value||'0,00');
+  const abono = (_esBsAb && _parAb>0) ? _abonoRaw/_parAb : _abonoRaw; // siempre en USD
 
   const all = loadPed();
   let pagos = [];
@@ -9698,7 +9727,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_36';
+  const APP_VERSION = 'v13_37';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
