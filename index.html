@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_41">
+<html lang="es" data-app-version="GestioMada_V13_42">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -2272,7 +2272,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         </div>
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
-          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.41 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
@@ -7895,7 +7895,13 @@ function guardarPedido(){
   const _gDis = (qs('#mp_diseno_chk')?.checked   ? (parseFloat(qs('#mp_diseno_monto')?.value)||0)   : 0);
   const _gExt = (qs('#mp_extras_chk')?.checked   ? (parseFloat(qs('#mp_extras_monto')?.value)||0)   : 0);
   const _gExtrasTotal = _gDel + _gEnv + _gDis + _gExt;
-  const total = Math.max(0, sub - desc + _gExtrasTotal);
+  const subNetaG = Math.max(0, sub - desc);
+  const total = subNetaG + _gExtrasTotal;           // USD base interno
+  // total_cdif: lo que cobra al cliente (productos×dif + extras sin dif)
+  const _gDifG = getDiferencial();
+  const _gBcvG = getTasaBCV();
+  const total_cdif = parseFloat(((subNetaG * (_gDifG>0?_gDifG:1)) + _gExtrasTotal).toFixed(4));
+  const total_bs   = _gBcvG>0 ? parseFloat((subNetaG*_gBcvG*(_gDifG>0?_gDifG:1) + _gExtrasTotal*_gBcvG).toFixed(2)) : 0;
   // Si método es Bs el usuario ingresa Bs — usar la conversión calculada en recalcPedido
   const _metodoAb = qs('#mp_metodo')?.value||'efectivo_bs';
   const _esBsAb = !['efectivo_usd','zelle'].includes(_metodoAb);
@@ -7929,7 +7935,9 @@ function guardarPedido(){
     subtotal:    sub,
     descuento:   desc,
     delivery_usd: _gDel, envio_usd: _gEnv, diseno_usd: _gDis, extras_usd: _gExt,
-    total,
+    total,          // USD base (interno)
+    total_cdif,     // lo que cobra al cliente (c/dif, sin dif en extras)
+    total_bs,
     pagos,
     estado:      qs('#mp_estado').value,
     canal:       qs('#mp_canal')?.value || 'local',
@@ -8014,11 +8022,14 @@ function renderPedidos(){
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:120px">
         ${(()=>{
           const _bcvL=getTasaBCV(), _difL=getDiferencial(), _parL=_bcvL*_difL;
-          const totalCDif = p.total*(_difL>1?_difL:1);
-          const totalBs   = _parL>0 ? Math.round(p.total*_parL) : 0;
-          const restCDif  = rest*(_difL>1?_difL:1);
+          // Usar total_cdif guardado si existe, sino recalcular (compatibilidad con pedidos viejos)
+          const totalCDif = p.total_cdif || (p.total*(_difL>1?_difL:1));
+          const totalBs   = p.total_bs   || (_parL>0 ? Math.round(p.total*_parL) : 0);
+          // Pagado en c/dif: usar total_cdif como base
+          const pagadoCDif = (p.pagos||[]).reduce((a,pg)=>a+pg.monto,0) * (_difL>1?_difL:1);
+          const restCDif  = Math.max(0, totalCDif - pagadoCDif);
           return `<div style="font-weight:700;font-size:15px;color:var(--brand)">$${totalCDif.toFixed(2).replace('.',',')}</div>`+
-            (totalBs>0?`<div style="font-size:13px;font-weight:600;color:var(--ok)">Bs ${totalBs.toLocaleString('es-VE')}</div>`:'') +
+            (totalBs>0?`<div style="font-size:13px;font-weight:600;color:var(--ok)">Bs ${Math.round(totalBs).toLocaleString('es-VE')}</div>`:'') +
             (rest>0?`<div style="font-size:11px;color:var(--danger);font-weight:600">Restante: $${restCDif.toFixed(2).replace('.',',')}</div>`:`<div style="font-size:11px;color:var(--ok);font-weight:600">✓ Pagado</div>`);
         })()}
         ${p.fecha_entrega?`<div style="font-size:11px;color:var(--muted)">Entrega: ${fmtFecha(p.fecha_entrega)}</div>`:''}
@@ -8110,8 +8121,8 @@ function verPedido(idx){
           const _metPed = (p.pagos&&p.pagos.length)?p.pagos[0].metodo:'efectivo_bs';
           const _esBsPed = ['efectivo_bs','pago_movil','transferencia'].includes(_metPed);
           if(_esBsPed && _pedDif>1 && _pedPar>0){
-            const tcd=(p.total*_pedDif).toFixed(2).replace('.',',');
-            const tbs=Math.round(p.total*_pedPar).toLocaleString('es-VE');
+            const tcd=((p.total_cdif||p.total*_pedDif)).toFixed(2).replace('.',',');
+            const tbs=Math.round(p.total_bs||p.total*_pedPar).toLocaleString('es-VE');
             return '<div class="pill" style="background:#ffe3ee;margin-bottom:4px">Total <strong style="color:var(--brand)">$'+tcd+'</strong> <span style="font-size:9px;color:var(--muted)">c/dif</span></div><div style="font-size:11px;color:var(--ok);text-align:right">Bs '+tbs+'</div>';
           }
           return '<div class="pill" style="background:#ffe3ee">Total <strong style="color:var(--brand)">'+_fmtUsd(p.total)+'</strong></div>';
@@ -9890,7 +9901,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_41';
+  const APP_VERSION = 'v13_42';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
