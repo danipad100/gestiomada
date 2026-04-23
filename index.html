@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_44">
+<html lang="es" data-app-version="GestioMada_V13_47">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -34,7 +34,24 @@ const SUPA_TABLAS = [
   { supa: 'productos_pers',          ls: 'POS.pers',        render: 'editor'     },
 ];
 
-// ── Aplicar cambio recibido en tiempo real al localStorage ──
+// ── Lista negra de registros eliminados (evita restauración por Realtime o upsert) ──
+const LS_BORRADOS = 'POS._borrados'; // { pedidos: [id,...], caja_movimientos: [id,...], ... }
+function _getBorrados(tabla){
+  try { return JSON.parse(localStorage.getItem(LS_BORRADOS)||'{}')[tabla] || []; } catch(e){ return []; }
+}
+function _addBorrado(tabla, id){
+  try {
+    const all = JSON.parse(localStorage.getItem(LS_BORRADOS)||'{}');
+    if(!all[tabla]) all[tabla] = [];
+    const sid = String(id);
+    if(!all[tabla].includes(sid)) all[tabla].push(sid);
+    // Limitar a los últimos 200 por tabla para no crecer indefinidamente
+    if(all[tabla].length > 200) all[tabla] = all[tabla].slice(-200);
+    localStorage.setItem(LS_BORRADOS, JSON.stringify(all));
+  } catch(e){}
+}
+function _esBorrado(tabla, id){ return _getBorrados(tabla).includes(String(id)); }
+
 function aplicarCambioRealtime(tabla, tipo, registro){
   const t = SUPA_TABLAS.find(x => x.supa === tabla);
   if(!t) return;
@@ -42,6 +59,11 @@ function aplicarCambioRealtime(tabla, tipo, registro){
   try { local = JSON.parse(localStorage.getItem(t.ls)||'[]'); } catch(e){}
 
   if(tipo === 'INSERT' || tipo === 'UPDATE'){
+    // Si el registro está en la lista negra de borrados → ignorar, no restaurar
+    if(_esBorrado(tabla, registro.id)){
+      console.log(`[Realtime] Ignorado ${tabla} ${tipo} id:${registro.id} (en lista negra)`);
+      return;
+    }
     // Normalizar cliente_snapshot → cliente (pedidos y ventas en Supabase usan cliente_snapshot)
     if(registro.cliente_snapshot !== undefined && registro.cliente === undefined){
       registro = { ...registro, cliente: registro.cliente_snapshot };
@@ -53,19 +75,19 @@ function aplicarCambioRealtime(tabla, tipo, registro){
     }
     const idx = local.findIndex(x => String(x.id) === String(registro.id));
     if(idx >= 0){
-      // Preservar foto base64 local si el remoto no tiene foto_url
       if(!registro.foto_url && local[idx].foto) registro.foto = local[idx].foto;
       local[idx] = { ...local[idx], ...registro };
     } else {
       local.push(registro);
     }
   } else if(tipo === 'DELETE'){
+    // Registrar en lista negra para que no se restaure por upsert posterior
+    _addBorrado(tabla, registro.id);
     local = local.filter(x => String(x.id) !== String(registro.id));
   }
 
   localStorage.setItem(t.ls, JSON.stringify(local));
 
-  // Re-renderizar la vista afectada si está activa
   const renders = {
     ventas:    ()=>{ if(typeof renderVentas==='function') renderVentas(); if(typeof renderDash==='function') renderDash(); },
     pedidos:   ()=>{ if(typeof renderPedidos==='function') renderPedidos(); if(typeof renderDash==='function') renderDash(); },
@@ -77,8 +99,6 @@ function aplicarCambioRealtime(tabla, tipo, registro){
   };
   if(t.render && renders[t.render]) renders[t.render]();
   if(typeof updateBadges==='function') updateBadges();
-
-  // Toast silencioso de sync
   console.log(`[Realtime] ${tabla} ${tipo} id:${registro.id}`);
 }
 
@@ -103,11 +123,33 @@ function iniciarRealtime(){
 async function syncToSupabase(tabla, datos){
   try {
     if(!Array.isArray(datos) || !datos.length) return;
-    const mapeados = datos.map(d => mapearParaSupa(tabla, d));
+    // Filtrar registros que fueron borrados localmente — no restaurarlos en Supabase
+    const filtrados = datos.filter(d => !_esBorrado(tabla, d.id));
+    if(!filtrados.length) return;
+    const mapeados = filtrados.map(d => mapearParaSupa(tabla, d));
     const { error } = await SUPA.from(tabla).upsert(mapeados, { onConflict: 'id' });
     if(error) console.warn('[Supabase upsert error]', tabla, error.message, JSON.stringify(mapeados[0]).slice(0,200));
   } catch(e){ console.warn('[Supabase sync]', e.message); }
 }
+
+// ── Upsert por fila — solo sube el registro que cambió, nunca el array completo ──
+async function upsertFila(tabla, registro){
+  if(!window._supaConectado || !registro) return;
+  if(_esBorrado(tabla, registro.id)) return; // no restaurar borrados
+  try {
+    const mapeado = mapearParaSupa(tabla, registro);
+    const { error } = await SUPA.from(tabla).upsert([mapeado], { onConflict: 'id' });
+    if(error) console.warn('[upsert fila]', tabla, error.message);
+    else console.log('[upsert fila] ✓', tabla, registro.id);
+  } catch(e){ console.warn('[upsert fila]', tabla, e.message); }
+}
+// Alias semánticos por módulo
+const upsertPedido  = r => upsertFila('pedidos', r);
+const upsertCliente = r => upsertFila('clientes', r);
+const upsertVenta   = r => upsertFila('ventas', r);
+const upsertCajaMov = r => upsertFila('caja_movimientos', r);
+const upsertInsumo  = r => upsertFila('inventario_insumos', r);
+const upsertTerminado = r => upsertFila('inventario_terminados', r);
 
 // Sync inmediato de UN solo producto — propaga el cambio al instante a todos los dispositivos
 async function syncProductoAhora(prod, reintentos=3){
@@ -347,7 +389,7 @@ async function initSupabaseSync(){
       const normalizado = t.supa === 'pedidos' ? remoto.map(r => {
         if(r.cliente_snapshot !== undefined && r.cliente === undefined) r = { ...r, cliente: r.cliente_snapshot };
         return r;
-      }) : t.supa === 'productos' ? remoto.map(r => {
+      }).filter(r => !_esBorrado(t.supa, r.id)) : t.supa === 'productos' ? remoto.map(r => {
         // Preservar foto base64 local si Supabase no tiene foto_url
         const localItems2 = JSON.parse(localStorage.getItem(t.ls)||'[]');
         const local = localItems2.find(l => String(l.id) === String(r.id));
@@ -3431,7 +3473,7 @@ function saveCat(a) {
   // saveCat solo actualiza local; el sync a Supabase lo dispara la operación específica
 }
 function loadCli()  { try{ return JSON.parse(localStorage.getItem(LS_CLI)||'[]'); }catch(e){ return []; } }
-function saveCli(a) { localStorage.setItem(LS_CLI, JSON.stringify(a)); updateBadges(); if(window._supaConectado) syncToSupabase('clientes', a); }
+function saveCli(a) { localStorage.setItem(LS_CLI, JSON.stringify(a)); updateBadges(); }
 
 function updateBadges(){
   const _bc=qs('#badge-cat'); if(_bc) _bc.textContent=loadCat().length;
@@ -4263,7 +4305,9 @@ function guardarCliente(){
   const all=loadCli();
   const nuevo={ id:_cliIdx===null?Date.now():all[_cliIdx].id, nombre:nom, apellido:qs('#cli_apellido').value.trim(), cedula:qs('#cli_cedula').value.trim(), telefono:qs('#cli_telefono').value.trim(), direccion:qs('#cli_direccion').value.trim(), notas:qs('#cli_notas').value.trim(), fecha:new Date().toISOString(), pedidos:[], ventas:[] };
   if(_cliIdx===null){ all.push(nuevo); } else { all[_cliIdx]={...all[_cliIdx],...nuevo}; }
-  saveCli(all); closeModal('m-cliente'); renderClientes(); renderDash(); toast((_cliIdx===null?'Cliente creado: ':'Cliente actualizado: ')+nom,'ok');
+  saveCli(all);
+  upsertCliente(nuevo); // ← solo este cliente
+  closeModal('m-cliente'); renderClientes(); renderDash(); toast((_cliIdx===null?'Cliente creado: ':'Cliente actualizado: ')+nom,'ok');
   if(_crearCliDesdeVenta&&_cliIdx===null){
     _crearCliDesdeVenta=false;
     const nc=all[all.length-1];
@@ -5793,9 +5837,9 @@ function renderSaldosMoneda(){
 }
 
 function loadVen(){ try{ return JSON.parse(localStorage.getItem(LS_VEN)||'[]'); }catch(e){ return []; } }
-function saveVen(a){ localStorage.setItem(LS_VEN, JSON.stringify(a)); updateBadges(); if(window._supaConectado) syncToSupabase('ventas', a); }
+function saveVen(a){ localStorage.setItem(LS_VEN, JSON.stringify(a)); updateBadges(); }
 function loadCajaMov(){ try{ return JSON.parse(localStorage.getItem(LS_CAJA)||'[]'); }catch(e){ return []; } }
-function saveCajaMov(a){ localStorage.setItem(LS_CAJA, JSON.stringify(a)); if(window._supaConectado) syncToSupabase('caja_movimientos', a); }
+function saveCajaMov(a){ localStorage.setItem(LS_CAJA, JSON.stringify(a)); }
 
 function nextNumVen(){
   const all=loadVen();
@@ -5949,14 +5993,16 @@ function registrarPagoEnPedidoVinculado(ped, monto, metodo, notaExtra, marcarPag
   allPed[idx].pagos.push({
     id: Date.now(), monto, metodo,
     nota: notaExtra || '',
-    fecha: new Date().toISOString()
+    fecha: new Date().toISOString(),
+    tasa_bcv_pago: getTasaBCV(),
+    tasa_par_pago: getTasaParalela()
   });
   if(marcarPagado){
     const totalPag = allPed[idx].pagos.reduce((a,p)=>a+p.monto,0);
     if(totalPag >= allPed[idx].total) allPed[idx].estado = 'entregado';
   }
   savePed(allPed);
-  if(window._supaConectado) syncToSupabase('pedidos', allPed);
+  upsertPedido(allPed[idx]); // ← solo este pedido
 }
 
 let _posTabActual = 'pos'; // tab actual: 'pos' | 'hist'
@@ -6291,7 +6337,7 @@ function posWaActualizar(){
   const envioUsd    = (qs('#pos_envio_chk')?.checked    ? parseFloat(qs('#pos_envio_monto')?.value||0)    : 0);
   const disenoUsd   = (qs('#pos_diseno_chk')?.checked   ? parseFloat(qs('#pos_diseno_monto')?.value||0)   : 0);
   const extrasUsd   = (qs('#pos_extras_chk')?.checked   ? parseFloat(qs('#pos_extras_monto')?.value||0)   : 0);
-  const hayExtras   = (envioUsd+disenoUsd+extrasUsd)>0;
+  const hayEnvio    = envioUsd > 0; // Solo envío desactiva el abono en la cotización
 
   // Calcular por ítem
   const itemsCot = _posItems.map(it=>{
@@ -6343,7 +6389,7 @@ function posWaActualizar(){
     if(extrasUsd>0){   const xBs=(extrasUsd*bcv).toFixed(2).replace('.',',');  txt+=`\nExtras: Bs ${xBs} ($${extrasUsd.toFixed(2)})`; }
     txt+=`\n\n*Total: Bs ${totalBs.toFixed(2).replace('.',',')}*`;
     txt+=`\n*$${totalAnclaUsd.toFixed(2)} (BCV ${bcv.toLocaleString('es-VE')})*`;
-    if(!hayExtras && !sinAbono){
+    if(!hayEnvio && !sinAbono){
       txt+=`\n\n📌 *Abono ${aboPct}%:*\n  $${abonoUsd.toFixed(2)} ó Bs ${(abonoUsd*bcv).toFixed(2).replace('.',',')} (BCV hoy)`;
       txt+=`\n📌 *Restante al retirar:*\n  $${restUsd.toFixed(2)} al BCV del día de entrega`;
     }
@@ -6357,7 +6403,7 @@ function posWaActualizar(){
     if(disenoUsd>0)   txt+=`\nDiseño: $${disenoUsd.toFixed(2)}`;
     if(extrasUsd>0)   txt+=`\nExtras: $${extrasUsd.toFixed(2)}`;
     txt+=`\n\n*Total: $${totalUsdDirecto.toFixed(2)}*`;
-    if(!hayExtras && !sinAbono){
+    if(!hayEnvio && !sinAbono){
       txt+=`\n\n📌 *Abono ${aboPct}%:* $${abonoUsd.toFixed(2)}`;
       txt+=`\n📌 *Restante al retirar:* $${restUsd.toFixed(2)}`;
     }
@@ -6532,6 +6578,7 @@ function posCobrar(){
   };
 
   const allVen = loadVen(); allVen.push(venta); saveVen(allVen);
+  upsertVenta(venta); // ← solo esta venta
 
   // Registrar en caja
   const _cajaMM = cajaMonedaMonto(venta.metodo, total, getTasaBCV(), getDiferencial());
@@ -6547,6 +6594,7 @@ function posCobrar(){
     fecha: new Date().toISOString().slice(0,10)
   };
   const cajaAll = loadCajaMov(); cajaAll.push(mov); saveCajaMov(cajaAll);
+  upsertCajaMov(mov); // ← solo este movimiento
 
   // Registrar pago en el pedido vinculado
   if(_posPedidoVinculado){
@@ -6816,6 +6864,7 @@ function guardarVenta(){
   };
 
   const all=loadVen(); all.push(venta); saveVen(all);
+  upsertVenta(venta); // ← solo esta venta
 
   // Registrar en caja con moneda correcta
   const _cajaMM2 = cajaMonedaMonto(venta.metodo, total, getTasaBCV(), getDiferencial());
@@ -6831,6 +6880,7 @@ function guardarVenta(){
     fecha:new Date().toISOString().slice(0,10)
   };
   const cajaAll=loadCajaMov(); cajaAll.push(mov); saveCajaMov(cajaAll);
+  upsertCajaMov(mov); // ← solo este movimiento
 
   // Registrar pago en el pedido vinculado
   if(_mvPedidoVinculado){
@@ -7175,7 +7225,7 @@ function anularVenta(){
 function anularVenta2(idx){
   const all=loadVen();
   if(!confirm('¿Anular la venta "'+all[idx].numero+'"? No se puede deshacer.')) return;
-  all[idx].estado='anulada'; saveVen(all); renderVentas(); renderDash();
+  all[idx].estado='anulada'; saveVen(all); upsertVenta(all[idx]); renderVentas(); renderDash();
   toast('Venta anulada','warn');
 }
 
@@ -7217,6 +7267,7 @@ function guardarMovimiento(){
     signo
   };
   const all=loadCajaMov(); all.push(mov); saveCajaMov(all);
+  upsertCajaMov(mov); // ← solo este movimiento
   closeModal('m-movimiento'); renderCaja(); renderSaldosMoneda(); renderDash();
   toast('Movimiento registrado: '+euro(monto),'ok');
 }
@@ -7496,7 +7547,7 @@ const CHIP_EST  = { pendiente:'chip-warn', produccion:'chip-info', listo:'chip-o
 const CHIP_PAGO = { sin_abono:'chip-danger', abonado:'chip-warn', parcial:'chip-warn', pagado:'chip-ok' };
 
 function loadPed(){ try{ return JSON.parse(localStorage.getItem(LS_PED)||'[]'); }catch(e){ return []; } }
-function savePed(a){ localStorage.setItem(LS_PED, JSON.stringify(a)); updateBadges(); if(window._supaConectado) syncToSupabase('pedidos', a); }
+function savePed(a){ localStorage.setItem(LS_PED, JSON.stringify(a)); updateBadges(); }
 
 function nextNumPed(){
   const all = loadPed();
@@ -7739,6 +7790,7 @@ function mpGuardarNuevoCli(){
     direccion:'', notas:'', fecha_registro: new Date().toISOString()
   };
   const all = loadCli(); all.push(nuevo); saveCli(all);
+  upsertCliente(nuevo); // ← solo este cliente
   // Seleccionar automáticamente el cliente recién creado
   _pedCliSel = nuevo;
   const ini = (nombre[0]||'?').toUpperCase();
@@ -7989,21 +8041,24 @@ function guardarPedido(){
   const esNuevo = _pedIdx===null;
   if(!esNuevo){ all[_pedIdx]=ped; } else { all.push(ped); }
   savePed(all);
+  upsertPedido(ped); // ← upsert solo este pedido
 
   // Si es pedido nuevo y tiene abono → registrar en Caja
   if(esNuevo && abono>0){
     const cajaAll=loadCajaMov();
     const _metAb=qs('#mp_metodo').value;
     const _mm2=cajaMonedaMonto(_metAb,abono,getTasaBCV(),getDiferencial());
-    cajaAll.push({
+    const _movAb={
       id: Date.now()+2, tipo:'ingreso', categoria:'abono',
       monto:_mm2.monto, moneda:_mm2.moneda, monto_bs:_mm2.monto_bs, monto_usd:_mm2.monto_usd, tasa:_mm2.tasa,
       metodo: _metAb,
       nota: 'Abono pedido '+ped.numero+(ped.cliente?' — '+ped.cliente.nombre+' '+(ped.cliente.apellido||''):''),
       ref_id: ped.id, ref_tipo:'pedido',
       fecha: new Date().toISOString().slice(0,10)
-    });
+    };
+    cajaAll.push(_movAb);
     saveCajaMov(cajaAll);
+    upsertCajaMov(_movAb); // ← solo este movimiento
   }
 
   closeModal('m-pedido'); renderPedidos(); renderDash();
@@ -8233,6 +8288,7 @@ function avanzarEstado(){
   const nuevoEstado = NEXT[p.estado];
   all[_pedIdx].estado = nuevoEstado;
   savePed(all);
+  upsertPedido(all[_pedIdx]); // ← solo este pedido
 
   // Al marcar ENTREGADO → crear Venta en el módulo Ventas
   if(nuevoEstado==='entregado'){
@@ -8261,21 +8317,24 @@ function avanzarEstado(){
       usuario_nom: CURRENT_USR_NOM || null
     };
     venAll.push(venta); saveVen(venAll);
+    upsertVenta(venta); // ← solo esta venta
 
     // Registrar el total en Caja (descontando lo ya abonado)
     const pendienteCobrar = Math.max(0, p.total - pagado);
     if(pendienteCobrar > 0){
       const cajaAll=loadCajaMov();
       const _mm3=cajaMonedaMonto(venta.metodo,pendienteCobrar,getTasaBCV(),getDiferencial());
-      cajaAll.push({
+      const _movEnt={
         id: Date.now()+3, tipo:'ingreso', categoria:'venta',
         monto:_mm3.monto, moneda:_mm3.moneda, monto_bs:_mm3.monto_bs, monto_usd:_mm3.monto_usd, tasa:_mm3.tasa,
         metodo: venta.metodo,
         nota: 'Entrega pedido '+p.numero+' — pago restante'+(p.cliente?' ('+p.cliente.nombre+')':''),
         ref_id: venta.id, ref_tipo:'venta',
         fecha: new Date().toISOString().slice(0,10)
-      });
+      };
+      cajaAll.push(_movEnt);
       saveCajaMov(cajaAll);
+      upsertCajaMov(_movEnt); // ← solo este movimiento
     }
     // Descontar inventario al entregar
     descontarInventarioDeItems(p.items||[], 'Entrega pedido '+p.numero);
@@ -8312,7 +8371,8 @@ function cancelarPedido(){
   if(_pedIdx===null) return;
   if(!confirm('¿Cancelar este pedido?')) return;
   const all=loadPed(); all[_pedIdx].estado='cancelado';
-  savePed(all); closeModal('m-ver-ped'); renderPedidos(); renderDash();
+  savePed(all); upsertPedido(all[_pedIdx]);
+  closeModal('m-ver-ped'); renderPedidos(); renderDash();
   toast('Pedido cancelado','ok');
 }
 
@@ -8322,9 +8382,11 @@ async function eliminarPedido(){
   if(!confirm('¿Eliminar definitivamente el pedido '+p.numero+'?\n\nEsta acción no se puede deshacer.')) return;
   const _id = p.id;
   const numPed = p.numero;
-  // Supabase primero — es la fuente de verdad para pedidos (igual que caja)
+  // Registrar en lista negra ANTES de eliminar — evita restauración por Realtime o upsert posterior
+  _addBorrado('pedidos', _id);
+  // Eliminar de Supabase (fuente de verdad)
   await deleteFromSupabase('pedidos', _id);
-  // Actualizar localStorage sin hacer upsert (evita restaurar el registro eliminado)
+  // Eliminar del localStorage
   const idx = all.findIndex(x => String(x.id) === String(_id));
   if(idx >= 0){
     all.splice(idx, 1);
@@ -8361,12 +8423,13 @@ function registrarPago(){
   p.pagos.push({ id:Date.now(), monto:montoUsd, monto_bs_ingresado: esBsPago ? Math.round(montoRaw) : null, metodo, nota, fecha:new Date().toISOString(),
     tasa_bcv_pago: bcvHoy, tasa_par_pago: parHoy });
   savePed(all);
+  upsertPedido(p); // ← solo este pedido
 
   // Registrar en Caja con BCV del día
   const cajaAll=loadCajaMov();
   const epActual=estadoPago(p);
   const _mmP=cajaMonedaMonto(metodo,montoUsd,bcvHoy,difHoy);
-  cajaAll.push({
+  const _movP={
     id: Date.now()+1, tipo:'ingreso',
     categoria: epActual==='pagado'?'venta':'abono',
     monto:_mmP.monto, moneda:_mmP.moneda, monto_bs:_mmP.monto_bs, monto_usd:_mmP.monto_usd, tasa:_mmP.tasa,
@@ -8374,8 +8437,10 @@ function registrarPago(){
     nota: (nota?nota+' — ':'')+(epActual==='pagado'?'Pago completo':'Abono')+' '+p.numero+(p.cliente?' — '+p.cliente.nombre+' '+(p.cliente.apellido||''):''),
     ref_id: p.id, ref_tipo:'pedido',
     fecha: new Date().toISOString().slice(0,10)
-  });
+  };
+  cajaAll.push(_movP);
   saveCajaMov(cajaAll);
+  upsertCajaMov(_movP); // ← solo este movimiento
 
   toast('Pago registrado','ok');
   closeModal('m-ver-ped'); renderPedidos(); renderDash(); verPedido(_pedIdx);
@@ -8456,11 +8521,11 @@ let _terIdx  = null;
 let _invMovCtx = null; // { id, tipo_item:'insumo'|'terminado' }
 
 function loadIns()  { try{ return JSON.parse(localStorage.getItem(LS_INS)||'[]'); }catch(e){ return []; } }
-function saveIns(a) { localStorage.setItem(LS_INS, JSON.stringify(a)); updateBadges(); if(window._supaConectado) syncToSupabase('inventario_insumos', a); }
+function saveIns(a) { localStorage.setItem(LS_INS, JSON.stringify(a)); updateBadges(); }
 function loadTer()  { try{ return JSON.parse(localStorage.getItem(LS_TER)||'[]'); }catch(e){ return []; } }
-function saveTer(a) { localStorage.setItem(LS_TER, JSON.stringify(a)); updateBadges(); if(window._supaConectado) syncToSupabase('inventario_terminados', a); }
+function saveTer(a) { localStorage.setItem(LS_TER, JSON.stringify(a)); updateBadges(); }
 function loadIMov() { try{ return JSON.parse(localStorage.getItem(LS_IMOV)||'[]'); }catch(e){ return []; } }
-function saveIMov(a){ localStorage.setItem(LS_IMOV, JSON.stringify(a)); if(window._supaConectado) syncToSupabase('inventario_movimientos', a); }
+function saveIMov(a){ localStorage.setItem(LS_IMOV, JSON.stringify(a)); }
 
 /* ── Tabs ── */
 function invTab(tab, btn){
@@ -8520,10 +8585,10 @@ function guardarInsumo(){
   };
   if(_insIdx!==null){ all[_insIdx]=item; } else {
     all.push(item);
-    // Registrar movimiento inicial si stock > 0
     if(item.stock>0) _registrarMovInv(item.id,'insumo','entrada',item.stock,item.costo_ref,'Stock inicial');
   }
-  saveIns(all); closeModal('m-insumo'); renderInsumos(); renderDash();
+  saveIns(all); upsertInsumo(item); // ← solo este insumo
+  closeModal('m-insumo'); renderInsumos(); renderDash();
   toast((_insIdx===null?'Insumo creado: ':'Actualizado: ')+nom,'ok'); _insIdx=null;
 }
 
@@ -8676,7 +8741,8 @@ function guardarTerminado(){
     fecha:      new Date().toISOString()
   };
   if(existe>=0){ all[existe]=item; } else { all.push(item); }
-  saveTer(all); closeModal('m-terminado'); renderTerminados(); renderDash();
+  saveTer(all); upsertTerminado(item); // ← solo este terminado
+  closeModal('m-terminado'); renderTerminados(); renderDash();
   toast('Stock actualizado: '+prod.nombre,'ok');
 }
 
@@ -8774,6 +8840,9 @@ function descontarInventarioDeItems(items, nota){
 
   if(cambioTer) saveTer(ter);
   if(cambioIns) saveIns(ins);
+  // Upsert por fila solo los modificados
+  if(cambioTer) ter.forEach(t=>{ if(t._modificado){ upsertTerminado(t); delete t._modificado; } });
+  if(cambioIns) ins.forEach(i=>{ if(i._modificado){ upsertInsumo(i); delete i._modificado; } });
 }
 
 /* ══════════ MOVIMIENTOS ══════════ */
@@ -8812,6 +8881,7 @@ function _registrarMovInv(item_id, tipo_item, tipo, cant, costo, nota, loc='loca
       else if(tipo==='salida') ins[idx][campo]=Math.max(0,(parseFloat(ins[idx][campo])||0)-mov.cant);
       else if(tipo==='ajuste') ins[idx][campo]=mov.cant;
       saveIns(ins);
+      upsertInsumo(ins[idx]); // ← solo este insumo
     }
   } else if(tipo_item==='terminado'){
     const ter=loadTer(), idx=ter.findIndex(t=>t.id===item_id);
@@ -8821,6 +8891,7 @@ function _registrarMovInv(item_id, tipo_item, tipo, cant, costo, nota, loc='loca
       else if(tipo==='salida') ter[idx][campo]=Math.max(0,(parseFloat(ter[idx][campo])||0)-mov.cant);
       else if(tipo==='ajuste') ter[idx][campo]=mov.cant;
       saveTer(ter);
+      upsertTerminado(ter[idx]); // ← solo este terminado
     }
   }
 }
@@ -8958,7 +9029,8 @@ function ejecutarTraslado(){
   // Suma al destino
   if(destino === 'local') item.stock = (item.stock||0) + cant;
   else item.stock_dep = (item.stock_dep||0) + cant;
-  if(tipo_item === 'insumo') saveIns(all); else saveTer(all);
+  if(tipo_item === 'insumo'){ saveIns(all); upsertInsumo(item); }
+  else { saveTer(all); upsertTerminado(item); }
   // Solo registrar el log — sin volver a modificar el stock (ya está guardado arriba)
   _soloLogMovInv(item.id, tipo_item, 'salida',  cant, 0, nota+' → '+(destino==='local'?'Local':'Depósito'), origen);
   _soloLogMovInv(item.id, tipo_item, 'entrada', cant, 0, nota+' ← '+(origen==='local'?'Local':'Depósito'), destino);
@@ -9973,7 +10045,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_44';
+  const APP_VERSION = 'v13_47';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
