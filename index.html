@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_43">
+<html lang="es" data-app-version="GestioMada_V13_44">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -3032,9 +3032,9 @@ body.dark .pos-prod-img-ph{background:#23283a}
     <div class="card" style="margin-top:14px;padding:14px" id="mvped-pago-card">
       <div class="card-title" style="margin-bottom:10px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Registrar pago</div>
       <div class="frow">
-        <div class="fg"><label>Monto ($)</label><input type="text" id="mvped_monto" placeholder="0,00"/></div>
+        <div class="fg"><label id="mvped_monto_lbl">Monto ($)</label><input type="text" id="mvped_monto" placeholder="0,00"/></div>
         <div class="fg"><label>Método</label>
-          <select id="mvped_metodo" class="metodo-pago-sel">
+          <select id="mvped_metodo" class="metodo-pago-sel" onchange="mvpedActualizarLabel()">
             <option value="efectivo_bs">Efectivo Bs</option>
             <option value="efectivo_usd">Efectivo USD</option>
             <option value="pago_movil">Pago Móvil</option>
@@ -7577,9 +7577,19 @@ function abrirEditarPedido(idx){
     const _bcvEd  = getTasaBCV();
     const _difEd  = getDiferencial();
     const _parEd  = _bcvEd * (_difEd>0?_difEd:1);
-    // Si el abono fue en Bs, el monto guardado es en USD → reconvertir a Bs para mostrar
+    // Usar tasa de creación si existe, si no usar la actual
     const _parEd2 = (p.tasa_par_creacion && p.tasa_par_creacion>0) ? p.tasa_par_creacion : _parEd;
-    const abonoMostrar = (_esBsPrimer && _parEd2>0) ? primerPago.monto * _parEd2 : primerPago.monto;
+    let abonoMostrar;
+    if(_esBsPrimer){
+      // El monto guardado es en USD → reconvertir a Bs para que el campo muestre lo que pagó
+      if(primerPago.monto_bs_ingresado && primerPago.monto_bs_ingresado>0){
+        abonoMostrar = primerPago.monto_bs_ingresado;
+      } else {
+        abonoMostrar = _parEd2>0 ? primerPago.monto * _parEd2 : primerPago.monto;
+      }
+    } else {
+      abonoMostrar = primerPago.monto;
+    }
     qs('#mp_abono').value = abonoMostrar.toFixed(2).replace('.',',');
     qs('#mp_metodo').value = _metPrimer;
   } else {
@@ -7776,44 +7786,25 @@ function agregarItemManual(){
 
 function renderItemsFormulario(){
   const wrap = qs('#mp_items_list');
-  if(!_pedItems.length){ wrap.innerHTML='<p class="muted" style="font-size:12px;padding:6px 0">Sin productos. Agrega desde el catálogo o manualmente.</p>'; recalcPedido(); return; }
+  if(!_pedItems.length){ wrap.innerHTML='<p class="muted" style="font-size:12px;padding:6px 0">Sin productos. Agrega desde el catálogo o manualmente.</p>'; return; }
   const _metRif = qs('#mp_metodo')?.value || 'efectivo_bs';
   const _esBsRif = !['efectivo_usd','zelle'].includes(_metRif);
   const _difRif  = getDiferencial();
-  const _bcvRif  = getTasaBCV();
-  const _parRif  = _bcvRif * (_difRif>0?_difRif:1);
   wrap.innerHTML = _pedItems.map((it,i)=>{
-    const precioUsd   = it.precio_unit;
-    const precioCDif  = precioUsd * (_difRif>0?_difRif:1);
-    const totalUsd    = precioUsd * it.cant;
-    const totalCDif   = precioCDif * it.cant;
-    // Línea de precio por unidad: si es Bs, mostrar c/dif en rosado
-    let precioUnitHtml = '';
-    if(_esBsRif && _difRif>1){
-      precioUnitHtml = `<span style="font-size:11px;color:var(--muted)">$ ${precioUsd.toFixed(2).replace('.',',')} · </span><span style="font-size:11px;font-weight:700;color:#e07ab0">c/dif: $${precioCDif.toFixed(2).replace('.',',')}</span>`;
-    } else {
-      precioUnitHtml = `<span style="font-size:11px;color:var(--muted)">${euro(precioUsd)} c/u</span>`;
-    }
-    // Total de la línea
-    let totalHtml = '';
-    if(_esBsRif && _difRif>1){
-      totalHtml = `<div style="text-align:right">
-        <div style="font-weight:700;font-size:13px">${euro(totalUsd)}</div>
-        <div style="font-weight:700;font-size:12px;color:#e07ab0">$${totalCDif.toFixed(2).replace('.',',')}</div>
-      </div>`;
-    } else {
-      totalHtml = `<div style="min-width:70px;text-align:right;font-weight:700;font-size:13px">${euro(totalUsd)}</div>`;
-    }
+    const precioUsd  = it.precio_unit;
+    const precioCDif = precioUsd * (_difRif>0?_difRif:1);
+    const totalUsd   = precioUsd * it.cant;
+    const totalCDif  = precioCDif * it.cant;
+    const mostrarDif = _esBsRif && _difRif>1;
     return `
     <div style="padding:8px 0;border-bottom:1px solid #f3f3f8">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
         <div style="flex:1;min-width:0">
           <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${it.nombre}</div>
-          <div style="font-size:11px;color:var(--muted)">${it.tipo==='catalogo'?'Catálogo':'Manual'}</div>
+          <div style="font-size:11px;color:var(--muted)">${it.tipo==='catalogo'?'Catálogo':'Manual'}${mostrarDif ? ` · <span style="color:#e07ab0;font-weight:600">c/dif: $${precioCDif.toFixed(2).replace('.',',')} c/u</span>` : ` · ${euro(precioUsd)} c/u`}</div>
         </div>
         <button class="copy-btn" onclick="quitarItem(${i})" style="color:var(--danger);flex-shrink:0">✕</button>
       </div>
-      <div style="font-size:11px;margin-bottom:4px">${precioUnitHtml}</div>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:4px">
           <button class="copy-btn" onclick="cambiarCant(${i},-1)" style="padding:3px 10px">−</button>
@@ -7822,7 +7813,10 @@ function renderItemsFormulario(){
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex:1;justify-content:flex-end">
           <input type="text" value="${precioUsd.toFixed(2).replace('.',',')}" onchange="cambiarPrecio(${i},this.value)" style="width:90px;text-align:right;padding:4px 8px;font-size:13px;border-radius:8px;border:1px solid #e5e7eb"/>
-          ${totalHtml}
+          <div style="text-align:right;min-width:70px">
+            <div style="font-weight:700;font-size:13px">${euro(totalUsd)}</div>
+            ${mostrarDif ? `<div style="font-weight:700;font-size:12px;color:#e07ab0">$${totalCDif.toFixed(2).replace('.',',')} c/dif</div>` : ''}
+          </div>
         </div>
       </div>
     </div>`;
@@ -7836,54 +7830,52 @@ function quitarItem(i){ _pedItems.splice(i,1); renderItemsFormulario(); recalcPe
 function recalcPedido(){
   const sub = _pedItems.reduce((a,it)=>a+(it.precio_unit*it.cant),0);
   const desc = parseEU(qs('#mp_descuento')?.value||'0,00');
-  // Extras en pedido (misma lógica que POS — sin diferencial)
   const _mpDel = (qs('#mp_delivery_chk')?.checked ? (parseFloat(qs('#mp_delivery_monto')?.value)||0) : 0);
   const _mpEnv = (qs('#mp_envio_chk')?.checked    ? (parseFloat(qs('#mp_envio_monto')?.value)||0)    : 0);
   const _mpDis = (qs('#mp_diseno_chk')?.checked   ? (parseFloat(qs('#mp_diseno_monto')?.value)||0)   : 0);
   const _mpExt = (qs('#mp_extras_chk')?.checked   ? (parseFloat(qs('#mp_extras_monto')?.value)||0)   : 0);
   const _mpExtrasTotal = _mpDel + _mpEnv + _mpDis + _mpExt;
-  const subNetaUsd = Math.max(0, sub - desc);         // productos sin extras, en USD base
-  const total = subNetaUsd + _mpExtrasTotal;           // total USD base (se guarda internamente)
+  const subNetaUsd = Math.max(0, sub - desc);
+  const total = subNetaUsd + _mpExtrasTotal;
   const metodo = qs('#mp_metodo')?.value || 'efectivo_bs';
   const esUsd = ['efectivo_usd','zelle'].includes(metodo);
   const esBs  = !esUsd;
   const bcv = getTasaBCV();
   const dif = getDiferencial();
-  const par = bcv * (dif>0?dif:1);                    // tasa paralela
-  // Extras NO llevan diferencial — solo se multiplican por BCV
-  const subNetaCDif = subNetaUsd * (dif>0?dif:1);     // productos c/dif
-  const totalCDif   = subNetaCDif + _mpExtrasTotal;   // total que cobra al cliente
-  const totalBs     = subNetaUsd*par + _mpExtrasTotal*bcv; // Bs: productos con par, extras solo BCV
+  const par = bcv * (dif>0?dif:1);
+  const subNetaCDif = subNetaUsd * (dif>0?dif:1);
+  const totalCDif   = subNetaCDif + _mpExtrasTotal;
+  const totalBs     = subNetaUsd*par + _mpExtrasTotal*bcv;
 
-  // Actualizar label del abono según método
+  // Re-renderizar ítems si cambió el método (para actualizar colores c/dif)
+  const _mpEl = qs('#mp_metodo');
+  if(_mpEl && _mpEl.dataset.lastMetodo !== metodo){
+    _mpEl.dataset.lastMetodo = metodo;
+    renderItemsFormulario();
+  }
+
+  // Label del abono
   const abonoLbl = qs('#mp_abono_lbl');
   if(abonoLbl) abonoLbl.textContent = esBs && bcv>0 ? 'Abono inicial (Bs)' : 'Abono inicial ($)';
 
-  // Leer el abono ingresado y convertir a USD base para cálculo interno
   const abonoRaw = parseEU(qs('#mp_abono')?.value||'0,00');
-  // Si paga en Bs el usuario ingresa Bs → convertir usando tasa paralela
   const abonoUsd = (esBs && par>0) ? abonoRaw / par : abonoRaw;
-  // Restante en USD c/dif (lo que queda por pagar al cliente)
-  const abonoEnCDif = (esBs && par>0) ? abonoRaw / bcv : abonoRaw; // abono expresado en c/dif
-  const restanteCDif = Math.max(0, totalCDif - (esBs && bcv>0 ? abonoRaw/bcv : abonoRaw));
-  const restanteUsd  = Math.max(0, total - abonoUsd); // USD base para guardar
+  const abonoEnCDif = (esBs && bcv>0) ? abonoRaw / bcv : abonoRaw;
+  const restanteCDif = Math.max(0, totalCDif - abonoEnCDif);
+  const restanteUsd  = Math.max(0, total - abonoUsd);
 
-  // Total del pedido: mostrar c/dif como precio principal (lo que cobra al cliente)
+  // Total
   if(qs('#mp_subtotal')) qs('#mp_subtotal').textContent = euro(sub);
   if(qs('#mp_total')){
-    // Siempre mostrar c/dif como el precio real del pedido
     qs('#mp_total').textContent = dif>1 ? '$ '+totalCDif.toFixed(2).replace('.',',') : euro(total);
   }
-  // Bs prominente debajo del total
   const totalBsEl = qs('#mp_total_bs');
   if(totalBsEl){
-    if(par>0 && total>0){
-      totalBsEl.textContent = 'Bs '+Math.round(totalBs).toLocaleString('es-VE');
-      totalBsEl.style.display='';
-    } else { totalBsEl.style.display='none'; }
+    if(par>0 && total>0){ totalBsEl.textContent = 'Bs '+Math.round(totalBs).toLocaleString('es-VE'); totalBsEl.style.display=''; }
+    else { totalBsEl.style.display='none'; }
   }
 
-  // Panel de precios detallado bajo el total
+  // Panel de referencia de tasas
   const refPanel = qs('#mp_ref_bs');
   if(refPanel && bcv>0 && total>0){
     if(esUsd){
@@ -7902,16 +7894,14 @@ function recalcPedido(){
   const abonoEl = qs('#mp_pill_abonado');
   const restEl  = qs('#mp_pill_restante');
   if(esBs && par>0){
-    // Abono: mostrar en Bs lo que ingresó el cliente
     if(abonoEl) abonoEl.textContent = 'Bs '+Math.round(abonoRaw).toLocaleString('es-VE');
-    // Restante: mostrar en c/dif (lo que aún debe el cliente, sin diferencial en extras)
     if(restEl)  restEl.textContent  = '$ '+restanteCDif.toFixed(2).replace('.',',');
   } else {
     if(abonoEl) abonoEl.textContent = euro(abonoRaw);
     if(restEl)  restEl.textContent  = '$ '+restanteCDif.toFixed(2).replace('.',',');
   }
 
-  // Referencia del restante en Bs
+  // Referencia Bs del restante
   const refRestante = qs('#mp_ref_restante');
   if(refRestante && bcv>0 && restanteCDif>0 && esBs){
     const restBs = Math.round(restanteCDif * bcv);
@@ -7922,7 +7912,6 @@ function recalcPedido(){
     refRestante.style.display='';
   } else if(refRestante){ refRestante.style.display='none'; }
 
-  // Guardar abonoUsd en dataset para que guardarPedido lo lea correctamente
   const mpAbono = qs('#mp_abono');
   if(mpAbono) mpAbono.dataset.abonoUsd = abonoUsd.toFixed(4);
 }
@@ -7955,11 +7944,15 @@ function guardarPedido(){
   let pagos = [];
   if(_pedIdx!==null){
     pagos = all[_pedIdx].pagos||[];
-    if(pagos.length>0 && abono>0) pagos[0].monto=abono;
-    else if(pagos.length===0 && abono>0) pagos=[{ id:Date.now(), monto:abono, metodo:qs('#mp_metodo').value, nota:'Abono inicial', fecha:new Date().toISOString() }];
+    if(pagos.length>0 && abono>0){
+      pagos[0].monto=abono;
+      if(_esBsAb) pagos[0].monto_bs_ingresado = Math.round(_abonoRaw);
+    } else if(pagos.length===0 && abono>0){
+      pagos=[{ id:Date.now(), monto:abono, monto_bs_ingresado:_esBsAb?Math.round(_abonoRaw):null, metodo:qs('#mp_metodo').value, nota:'Abono inicial', fecha:new Date().toISOString(), tasa_bcv_pago:getTasaBCV(), tasa_par_pago:_parAb }];
+    }
   } else {
     if(abono>0){
-      pagos=[{ id:Date.now(), monto:abono, metodo:qs('#mp_metodo').value, nota:'Abono inicial', fecha:new Date().toISOString() }];
+      pagos=[{ id:Date.now(), monto:abono, monto_bs_ingresado:_esBsAb?Math.round(_abonoRaw):null, metodo:qs('#mp_metodo').value, nota:'Abono inicial', fecha:new Date().toISOString(), tasa_bcv_pago:getTasaBCV(), tasa_par_pago:_parAb }];
     }
   }
 
@@ -8105,7 +8098,10 @@ function renderKpisPedidos(){
 function verPedido(idx){
   const all=loadPed(), p=all[idx]; if(!p) return;
   _pedIdx=idx;
-  const ep=estadoPago(p), pag=totalPagado(p), rest=Math.max(0,p.total-pag);
+  const ep=estadoPago(p), pag=totalPagado(p), rest=Math.max(0,(p.total_cdif||p.total)-((p.total_cdif||p.total)*(pag/p.total)));
+  // rest en c/dif para mostrar, pag en USD base internamente
+  const pagCDif = p.total>0 ? (p.total_cdif||p.total)*(pag/p.total) : 0;
+  const restCDif = Math.max(0,(p.total_cdif||p.total) - pagCDif);
   qs('#mvped-title').textContent=p.numero+(p.cliente?' — '+p.cliente.nombre+' '+p.cliente.apellido:'');
 
   const _pedBcv = getTasaBCV();
@@ -8122,15 +8118,25 @@ function verPedido(idx){
 
   const pagosHtml=(p.pagos||[]).map(pg=>{
     const esPagoBs = ['efectivo_bs','pago_movil','transferencia'].includes(pg.metodo);
-    const tasaPgBcv = pg.tasa_bcv_pago||0;
-    const tasaPgPar = pg.tasa_par_pago||(tasaPgBcv>0?tasaPgBcv*getDiferencial():0);
-    const montoBsPago = esPagoBs&&tasaPgPar>0 ? Math.round(pg.monto*tasaPgPar).toLocaleString('es-VE') : null;
+    // Preferir monto_bs_ingresado si existe (nuevo campo), sino reconstruir con tasa_par_pago
+    let montoBsPago = null;
+    if(esPagoBs){
+      if(pg.monto_bs_ingresado && pg.monto_bs_ingresado>0){
+        montoBsPago = Math.round(pg.monto_bs_ingresado).toLocaleString('es-VE');
+      } else {
+        const tasaPgPar = pg.tasa_par_pago||(pg.tasa_bcv_pago>0?pg.tasa_bcv_pago*(_pedDif>0?_pedDif:1):_pedPar);
+        if(tasaPgPar>0) montoBsPago = Math.round(pg.monto*tasaPgPar).toLocaleString('es-VE');
+      }
+    }
+    // Mostrar monto en c/dif (USD para el cliente)
+    const montoCDif = esPagoBs && _pedDif>1 ? (pg.monto*(_pedDif>0?_pedDif:1)).toFixed(2).replace('.',',') : null;
     return `<div style="padding:5px 0;border-bottom:1px solid #f3f3f8;font-size:12px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
         <div>${fmtFecha(pg.fecha.slice(0,10))} · <span class="chip chip-info" style="font-size:10px">${METODOS[pg.metodo]||pg.metodo}</span> ${pg.nota?'· '+pg.nota:''}</div>
         <div style="text-align:right;flex-shrink:0;margin-left:8px">
-          <div style="font-weight:700;color:var(--ok)">${euro(pg.monto)}</div>
-          ${montoBsPago?`<div style="font-size:10px;color:var(--muted)">Bs ${montoBsPago}${tasaPgBcv>0?' (BCV '+tasaPgBcv.toLocaleString('es-VE')+')':''}</div>`:''}
+          ${montoBsPago ? `<div style="font-weight:700;color:var(--ok)">Bs ${montoBsPago}</div>` : ''}
+          ${montoCDif ? `<div style="font-size:11px;color:#e07ab0;font-weight:600">$ ${montoCDif} c/dif</div>` : `<div style="font-weight:700;color:var(--ok)">${euro(pg.monto)}</div>`}
+          ${pg.tasa_bcv_pago>0?`<div style="font-size:10px;color:var(--muted)">(BCV ${pg.tasa_bcv_pago.toLocaleString('es-VE')})</div>`:''}
         </div>
       </div>
     </div>`;
@@ -8176,16 +8182,29 @@ function verPedido(idx){
       ${pagosHtml||'<p class="muted" style="font-size:12px">Sin pagos registrados</p>'}
       <div class="sep"></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;align-items:flex-start">
-        <div class="pill ok">Pagado <strong>${_pedFmtTotal(pag)}</strong></div>
-        ${rest>0?`<div style="text-align:right">${(()=>{
+        <div class="pill ok">Pagado <strong>${(()=>{
+          const _metPagBs = (p.pagos&&p.pagos.length) ? ['efectivo_bs','pago_movil','transferencia'].includes(p.pagos[0].metodo) : false;
+          if(_metPagBs && _pedDif>1){
+            // Sumar Bs ingresados de todos los pagos
+            const totalBsPagado = (p.pagos||[]).reduce((acc,pg)=>{
+              const esBsPg = ['efectivo_bs','pago_movil','transferencia'].includes(pg.metodo);
+              if(!esBsPg) return acc + (pg.monto*(_pedDif>0?_pedDif:1)); // en c/dif si USD
+              if(pg.monto_bs_ingresado) return acc + pg.monto_bs_ingresado;
+              const tpar = pg.tasa_par_pago||(pg.tasa_bcv_pago>0?pg.tasa_bcv_pago*(_pedDif>0?_pedDif:1):_pedPar);
+              return acc + (tpar>0 ? pg.monto*tpar : 0);
+            },0);
+            return 'Bs '+Math.round(totalBsPagado).toLocaleString('es-VE');
+          }
+          return euro(pag);
+        })()}</strong></div>
+        ${restCDif>0.005?`<div style="text-align:right">${(()=>{
           const _metPedR = (p.pagos&&p.pagos.length)?p.pagos[0].metodo:'efectivo_bs';
           const _esBsPedR = ['efectivo_bs','pago_movil','transferencia'].includes(_metPedR);
           if(_esBsPedR && _pedDif>1 && _pedBcv>0){
-            const rcd=(rest*_pedDif).toFixed(2).replace('.',',');
-            const rbs=Math.round(rest*_pedBcv).toLocaleString('es-VE');
-            return '<div class="pill" style="background:#ffe3ee;margin-bottom:4px">Restante <strong style="color:var(--danger)">$'+rcd+'</strong> <span style="font-size:9px;color:var(--muted)">c/dif</span></div><div style="font-size:10px;color:var(--muted)">A BCV del día: <strong style="color:var(--danger)">Bs '+rbs+'</strong></div>';
+            const rbs=Math.round(restCDif*_pedBcv).toLocaleString('es-VE');
+            return '<div class="pill" style="background:#ffe3ee;margin-bottom:4px">Restante <strong style="color:var(--danger)">$'+restCDif.toFixed(2).replace('.',',')+'</strong> <span style="font-size:9px;color:var(--muted)">c/dif</span></div><div style="font-size:10px;color:var(--muted)">A BCV del día: <strong style="color:var(--danger)">Bs '+rbs+'</strong></div>';
           }
-          return '<div class="pill" style="background:#ffe3ee">Restante <strong style="color:var(--danger)">'+_pedFmtTotal(rest)+'</strong></div>';
+          return '<div class="pill" style="background:#ffe3ee">Restante <strong style="color:var(--danger)">'+euro(restCDif)+'</strong></div>';
         })()}</div>`:'<div class="pill ok">✓ Saldo completo</div>'}
       </div>
     </div>
@@ -8319,23 +8338,34 @@ async function eliminarPedido(){
 
 function editarPedidoDesdeModal(){ closeModal('m-ver-ped'); abrirEditarPedido(_pedIdx); }
 
+function mvpedActualizarLabel(){
+  const metodo = qs('#mvped_metodo')?.value||'efectivo_bs';
+  const esBs = !['efectivo_usd','zelle'].includes(metodo);
+  const lbl = qs('#mvped_monto_lbl');
+  if(lbl) lbl.textContent = esBs ? 'Monto (Bs)' : 'Monto ($)';
+}
+
 function registrarPago(){
   if(_pedIdx===null) return;
-  const monto=parseEU(qs('#mvped_monto').value); if(monto<=0){ toast('Ingresa un monto válido','warn'); return; }
+  const montoRaw=parseEU(qs('#mvped_monto').value); if(montoRaw<=0){ toast('Ingresa un monto válido','warn'); return; }
   const all=loadPed(), p=all[_pedIdx];
   p.pagos=p.pagos||[];
   const metodo=qs('#mvped_metodo').value;
   const nota=qs('#mvped_nota').value.trim();
   const bcvHoy=getTasaBCV();
   const difHoy=getDiferencial();
-  p.pagos.push({ id:Date.now(), monto, metodo, nota, fecha:new Date().toISOString(),
-    tasa_bcv_pago: bcvHoy, tasa_par_pago: getTasaParalela() });
+  const parHoy=bcvHoy*(difHoy>0?difHoy:1);
+  const esBsPago = !['efectivo_usd','zelle'].includes(metodo);
+  // Si el pago es en Bs, el usuario ingresó Bs → convertir a USD base para guardar internamente
+  const montoUsd = (esBsPago && parHoy>0) ? montoRaw / parHoy : montoRaw;
+  p.pagos.push({ id:Date.now(), monto:montoUsd, monto_bs_ingresado: esBsPago ? Math.round(montoRaw) : null, metodo, nota, fecha:new Date().toISOString(),
+    tasa_bcv_pago: bcvHoy, tasa_par_pago: parHoy });
   savePed(all);
 
   // Registrar en Caja con BCV del día
   const cajaAll=loadCajaMov();
   const epActual=estadoPago(p);
-  const _mmP=cajaMonedaMonto(metodo,monto,bcvHoy,difHoy);
+  const _mmP=cajaMonedaMonto(metodo,montoUsd,bcvHoy,difHoy);
   cajaAll.push({
     id: Date.now()+1, tipo:'ingreso',
     categoria: epActual==='pagado'?'venta':'abono',
@@ -8347,7 +8377,7 @@ function registrarPago(){
   });
   saveCajaMov(cajaAll);
 
-  toast('Pago registrado: '+euro(monto),'ok');
+  toast('Pago registrado','ok');
   closeModal('m-ver-ped'); renderPedidos(); renderDash(); verPedido(_pedIdx);
 }
 
@@ -9943,7 +9973,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_43';
+  const APP_VERSION = 'v13_44';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
