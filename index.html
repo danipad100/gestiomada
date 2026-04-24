@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_51">
+<html lang="es" data-app-version="GestioMada_V13_52">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -8229,12 +8229,12 @@ function renderPedidos(){
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:120px">
         ${(()=>{
           const _bcvL=getTasaBCV(), _difL=getDiferencial(), _parL=_bcvL*_difL;
-          // Usar total_cdif guardado si existe, sino recalcular (compatibilidad con pedidos viejos)
           const totalCDif = p.total_cdif || (p.total*(_difL>1?_difL:1));
           const totalBs   = p.total_bs   || (_parL>0 ? Math.round(p.total*_parL) : 0);
-          // Pagado en c/dif: usar total_cdif como base
-          const pagadoCDif = (p.pagos||[]).reduce((a,pg)=>a+pg.monto,0) * (_difL>1?_difL:1);
-          const restCDif  = Math.max(0, totalCDif - pagadoCDif);
+          // Restante en USD base, luego convertir a c/dif
+          const pagadoUsd = (p.pagos||[]).reduce((a,pg)=>a+pg.monto,0);
+          const restUsdL  = Math.max(0, p.total - pagadoUsd);
+          const restCDif  = restUsdL * (_difL>1?_difL:1);
           return `<div style="font-weight:700;font-size:15px;color:var(--brand)">$${totalCDif.toFixed(2).replace('.',',')}</div>`+
             (totalBs>0?`<div style="font-size:13px;font-weight:600;color:var(--ok)">Bs ${Math.round(totalBs).toLocaleString('es-VE')}</div>`:'') +
             (rest>0?`<div style="font-size:11px;color:var(--danger);font-weight:600">Restante: $${restCDif.toFixed(2).replace('.',',')}</div>`:`<div style="font-size:11px;color:var(--ok);font-weight:600">✓ Pagado</div>`);
@@ -8270,15 +8270,15 @@ function renderKpisPedidos(){
 function verPedido(idx){
   const all=loadPed(), p=all[idx]; if(!p) return;
   _pedIdx=idx;
-  const ep=estadoPago(p), pag=totalPagado(p), rest=Math.max(0,(p.total_cdif||p.total)-((p.total_cdif||p.total)*(pag/p.total)));
-  // rest en c/dif para mostrar, pag en USD base internamente
-  const pagCDif = p.total>0 ? (p.total_cdif||p.total)*(pag/p.total) : 0;
-  const restCDif = Math.max(0,(p.total_cdif||p.total) - pagCDif);
-  qs('#mvped-title').textContent=p.numero+(p.cliente?' — '+p.cliente.nombre+' '+p.cliente.apellido:'');
-
+  const ep=estadoPago(p), pag=totalPagado(p);
+  // Restante en USD base — simple resta, sin mezclar con total_cdif
+  const restUsd   = Math.max(0, p.total - pag);
+  // Restante en c/dif — lo que debe el cliente en la moneda de cobro
   const _pedBcv = getTasaBCV();
   const _pedDif = getDiferencial();
   const _pedPar = _pedBcv * (_pedDif>0?_pedDif:1);
+  const restCDif  = restUsd * (_pedDif>0?_pedDif:1);
+  qs('#mvped-title').textContent=p.numero+(p.cliente?' — '+p.cliente.nombre+' '+p.cliente.apellido:'');
   const _fmtUsd  = n => euro(n);
   const _pedFmtMon = n => euro(n);
   const _pedFmtTotal = n => euro(n);
@@ -10170,7 +10170,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_51';
+  const APP_VERSION = 'v13_52';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
