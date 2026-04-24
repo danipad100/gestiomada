@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_57">
+<html lang="es" data-app-version="GestioMada_V13_58">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -52,6 +52,55 @@ function _addBorrado(tabla, id){
 }
 function _esBorrado(tabla, id){ return _getBorrados(tabla).includes(String(id)); }
 
+
+// ── Normalización de pedidos recibidos desde Supabase ──
+// Supabase puede recibir pedidos sin los campos locales de cargos adicionales
+// (delivery_usd/envio_usd/diseno_usd/extras_usd/total_cdif). Para que todos los
+// dispositivos muestren el mismo monto, reconstruimos esos campos desde notas y
+// calculamos el total c/dif aplicando diferencial SOLO a los productos.
+function _numPedido(v){ const n = parseFloat(String(v ?? 0).replace(',', '.')); return Number.isFinite(n) ? n : 0; }
+function _extraPedidoDesdeNotas(notas, etiqueta){
+  try{
+    const re = new RegExp('(?:^|\\s\\|\\s)'+etiqueta+'\\s*:\\s*\\$?\\s*([0-9]+(?:[\\.,][0-9]+)?)', 'i');
+    const m = String(notas||'').match(re);
+    return m ? _numPedido(m[1]) : 0;
+  }catch(e){ return 0; }
+}
+function normalizarPedidoImportado(r){
+  if(!r) return r;
+  let p = { ...r };
+  if(p.cliente_snapshot !== undefined && p.cliente === undefined) p.cliente = p.cliente_snapshot;
+  const del = _numPedido(p.delivery_usd) || _extraPedidoDesdeNotas(p.notas, 'Delivery');
+  const env = _numPedido(p.envio_usd)    || _extraPedidoDesdeNotas(p.notas, 'Envío');
+  const dis = _numPedido(p.diseno_usd)   || _extraPedidoDesdeNotas(p.notas, 'Diseño');
+  const ext = _numPedido(p.extras_usd)   || _extraPedidoDesdeNotas(p.notas, 'Extras');
+  p.delivery_usd = del;
+  p.envio_usd = env;
+  p.diseno_usd = dis;
+  p.extras_usd = ext;
+  const subtotal = _numPedido(p.subtotal);
+  const descuento = _numPedido(p.descuento);
+  const productosNetos = Math.max(0, subtotal - descuento);
+  const extrasTotal = del + env + dis + ext;
+  if(!_numPedido(p.total)) p.total = parseFloat((productosNetos + extrasTotal).toFixed(4));
+  const dif = (typeof getDiferencial === 'function') ? getDiferencial() : 1;
+  const bcv = (typeof getTasaBCV === 'function') ? getTasaBCV() : 0;
+  if(!_numPedido(p.total_cdif)) p.total_cdif = parseFloat((productosNetos * (dif>0?dif:1) + extrasTotal).toFixed(4));
+  if(!_numPedido(p.total_bs) && bcv>0) p.total_bs = parseFloat((p.total_cdif * bcv).toFixed(2));
+  return p;
+}
+function pedidoExtrasTotal(p){
+  p = p || {};
+  return _numPedido(p.delivery_usd) + _numPedido(p.envio_usd) + _numPedido(p.diseno_usd) + _numPedido(p.extras_usd);
+}
+function pedidoTotalCDifCalc(p, dif){
+  p = normalizarPedidoImportado(p || {});
+  const guardado = _numPedido(p.total_cdif);
+  if(guardado>0) return guardado;
+  const productosNetos = Math.max(0, _numPedido(p.subtotal) - _numPedido(p.descuento));
+  return parseFloat((productosNetos * (dif>0?dif:1) + pedidoExtrasTotal(p)).toFixed(4));
+}
+
 function aplicarCambioRealtime(tabla, tipo, registro){
   const t = SUPA_TABLAS.find(x => x.supa === tabla);
   if(!t) return;
@@ -68,6 +117,8 @@ function aplicarCambioRealtime(tabla, tipo, registro){
     if(registro.cliente_snapshot !== undefined && registro.cliente === undefined){
       registro = { ...registro, cliente: registro.cliente_snapshot };
     }
+    // Pedidos: reconstruir cargos adicionales y total c/dif al llegar desde Supabase
+    if(tabla === 'pedidos') registro = normalizarPedidoImportado(registro);
     // Para productos: preservar foto base64 local si Supabase no tiene foto_url
     if(tabla === 'productos'){
       const localExist = local.find(x => String(x.id) === String(registro.id));
@@ -386,10 +437,7 @@ async function initSupabaseSync(){
     if(t.supa === 'caja_movimientos' || t.supa === 'pedidos' || t.supa === 'productos'){
       // Caja, Pedidos y Productos: Supabase es fuente de verdad absoluta
       // Las eliminaciones y cambios se propagan — no se restauran registros borrados
-      const normalizado = t.supa === 'pedidos' ? remoto.map(r => {
-        if(r.cliente_snapshot !== undefined && r.cliente === undefined) r = { ...r, cliente: r.cliente_snapshot };
-        return r;
-      }).filter(r => !_esBorrado(t.supa, r.id)) : t.supa === 'productos' ? remoto.map(r => {
+      const normalizado = t.supa === 'pedidos' ? remoto.map(r => normalizarPedidoImportado(r)).filter(r => !_esBorrado(t.supa, r.id)) : t.supa === 'productos' ? remoto.map(r => {
         // Preservar foto base64 local si Supabase no tiene foto_url
         const localItems2 = JSON.parse(localStorage.getItem(t.ls)||'[]');
         const local = localItems2.find(l => String(l.id) === String(r.id));
@@ -7652,7 +7700,7 @@ const METODOS     = { efectivo_bs:'Bs Efectivo', efectivo_usd:'USD Efectivo', pa
 const CHIP_EST  = { pendiente:'chip-warn', produccion:'chip-info', listo:'chip-ok', entregado:'chip-ok', cancelado:'chip-danger' };
 const CHIP_PAGO = { sin_abono:'chip-danger', abonado:'chip-warn', parcial:'chip-warn', pagado:'chip-ok' };
 
-function loadPed(){ try{ return JSON.parse(localStorage.getItem(LS_PED)||'[]'); }catch(e){ return []; } }
+function loadPed(){ try{ return JSON.parse(localStorage.getItem(LS_PED)||'[]').map(p=>typeof normalizarPedidoImportado==='function'?normalizarPedidoImportado(p):p); }catch(e){ return []; } }
 function savePed(a){ localStorage.setItem(LS_PED, JSON.stringify(a)); updateBadges(); }
 
 function nextNumPed(){
@@ -7669,7 +7717,7 @@ function estadoPago(ped){
   // Comparar en dólar BCV (total_cdif) si está guardado, para evitar errores de redondeo
   // cuando el cliente pagó en Bs y el monto_usd tiene decimales imprecisos
   const dif = typeof getDiferencial==='function' ? getDiferencial() : 1;
-  const totalCDif  = ped.total_cdif || totalUsd*(dif>1?dif:1);
+  const totalCDif  = (typeof pedidoTotalCDifCalc==='function') ? pedidoTotalCDifCalc(ped, dif) : (ped.total_cdif || totalUsd*(dif>1?dif:1));
   const pagadoCDif = pagadoUsd*(dif>1?dif:1);
   // Margen de tolerancia: 0,02 BCV para cubrir redondeos
   if(pagadoCDif >= totalCDif - 0.02) return 'pagado';
@@ -8238,8 +8286,8 @@ function renderPedidos(){
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:120px">
         ${(()=>{
           const _bcvL=getTasaBCV(), _difL=getDiferencial(), _parL=_bcvL*_difL;
-          const totalCDif = p.total_cdif || (p.total*(_difL>1?_difL:1));
-          const totalBs   = p.total_bs   || (_parL>0 ? Math.round(p.total*_parL) : 0);
+          const totalCDif = (typeof pedidoTotalCDifCalc==='function') ? pedidoTotalCDifCalc(p,_difL) : (p.total_cdif || (p.total*(_difL>1?_difL:1)));
+          const totalBs   = p.total_bs   || (_bcvL>0 ? Math.round(totalCDif*_bcvL) : 0);
           // Restante = total BCV - pagado BCV
           // Cada pago en USD paralelo se convierte a BCV multiplicando por diferencial
           const pagadoCDif = (p.pagos||[]).reduce((a,pg)=>a + pg.monto*(_difL>1?_difL:1), 0);
@@ -8284,7 +8332,7 @@ function verPedido(idx){
   const _pedDif = getDiferencial();
   const _pedPar = _pedBcv * (_pedDif>0?_pedDif:1);
   // Restante BCV = total BCV - pagado BCV (cada pago USD paralelo × diferencial)
-  const _totalCDifV  = p.total_cdif || (p.total*(_pedDif>0?_pedDif:1));
+  const _totalCDifV  = (typeof pedidoTotalCDifCalc==='function') ? pedidoTotalCDifCalc(p,_pedDif) : (p.total_cdif || (p.total*(_pedDif>0?_pedDif:1)));
   const _pagadoCDifV = (p.pagos||[]).reduce((a,pg)=>a + pg.monto*(_pedDif>0?_pedDif:1), 0);
   const restCDif     = Math.max(0, _totalCDifV - _pagadoCDifV);
   const restUsd      = Math.max(0, p.total - pag);
