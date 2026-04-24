@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_64">
+<html lang="es" data-app-version="GestioMada_V13_68">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -59,6 +59,16 @@ function _esBorrado(tabla, id){ return _getBorrados(tabla).includes(String(id));
 // dispositivos muestren el mismo monto, reconstruimos esos campos desde notas y
 // calculamos el total c/dif aplicando diferencial SOLO a los productos.
 function _numPedido(v){ const n = parseFloat(String(v ?? 0).replace(',', '.')); return Number.isFinite(n) ? n : 0; }
+
+// Normalización global de canales para sync inicial, reportes y guardado local.
+function normalizarCanalVenta(c){
+  const raw = String(c||'local').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  if(!raw) return 'local';
+  if(raw.includes('whats') || raw.includes('whta') || raw === 'wa' || raw === 'wsp' || raw === 'ws') return 'whatsapp';
+  if(raw.includes('online') || raw.includes('web') || raw.includes('instagram') || raw.includes('ig')) return 'online';
+  if(raw.includes('local') || raw.includes('tienda') || raw.includes('fisic')) return 'local';
+  return raw;
+}
 function _extraPedidoDesdeNotas(notas, etiqueta){
   try{
     const re = new RegExp('(?:^|\\s\\|\\s)'+etiqueta+'\\s*:\\s*\\$?\\s*([0-9]+(?:[\\.,][0-9]+)?)', 'i');
@@ -69,6 +79,7 @@ function _extraPedidoDesdeNotas(notas, etiqueta){
 function normalizarPedidoImportado(r){
   if(!r) return r;
   let p = { ...r };
+  p.canal = normalizarCanalVenta(p.canal);
   if(p.cliente_snapshot !== undefined && p.cliente === undefined) p.cliente = p.cliente_snapshot;
   const del = _numPedido(p.delivery_usd) || _extraPedidoDesdeNotas(p.notas, 'Delivery');
   const env = _numPedido(p.envio_usd)    || _extraPedidoDesdeNotas(p.notas, 'Envío');
@@ -265,7 +276,7 @@ function mapearParaSupa(tabla, d){
     costo_total:      parseFloat(d.costo_total)||0,
     utilidad:         parseFloat(d.utilidad)||0,
     tipo:             d.tipo || 'venta_rapida',
-    canal:            d.canal || 'local',
+    canal:            normalizarCanalVenta(d.canal),
     metodo:           d.metodo || 'efectivo_bs',
     estado:           d.estado || 'completada',
     notas:            d.notas || '',
@@ -284,7 +295,7 @@ function mapearParaSupa(tabla, d){
     total:            parseFloat(d.total)||0,
     pagos:            d.pagos || [],
     estado:           d.estado || 'pendiente',
-    canal:            d.canal || 'local',
+    canal:            normalizarCanalVenta(d.canal),
     notas:            d.notas || '',
     fecha_pedido:     d.fecha_pedido || null,
     fecha_entrega:    d.fecha_entrega || null,
@@ -1123,6 +1134,90 @@ label.btn{cursor:pointer}
 }
 .search-bar input{flex:1;min-width:180px}
 .search-bar select{flex:0 0 auto;min-width:150px}
+
+/* ═══════════════ GM-SELECT (custom select con iconos SVG) ═══════════════ */
+/* Mantiene el <select> nativo oculto para no romper lógica y renderiza una UI
+   custom encima. Al elegir una opción se actualiza el select real y se dispara
+   'change', así los filtros (Reportes/Pedidos/Ventas) siguen funcionando igual. */
+.gm-select{position:relative;display:inline-block;min-width:150px;flex:0 0 auto}
+.gm-select.gm-inline{display:block;width:100%}
+.gm-select > select.gm-native{
+  position:absolute;opacity:0;pointer-events:none;width:100%;height:100%;
+  top:0;left:0;margin:0;
+}
+.gm-select-trigger{
+  width:100%;min-height:38px;
+  display:flex;align-items:center;gap:8px;
+  padding:9px 36px 9px 12px;
+  background:#fff;border:1px solid #e5e7eb;border-radius:12px;
+  font-size:13px;font-family:inherit;font-weight:500;color:var(--ink);
+  cursor:pointer;text-align:left;
+  transition:border .15s,box-shadow .15s;
+  position:relative;
+}
+.gm-select-trigger:hover{border-color:#ffd1e1}
+.gm-select.open .gm-select-trigger,
+.gm-select-trigger:focus{
+  outline:none;border-color:#ffd1e1;
+  box-shadow:0 0 0 3px rgba(255,122,162,.18);
+}
+.gm-select-trigger::after{
+  content:"";position:absolute;right:12px;top:50%;
+  width:8px;height:8px;
+  border-right:2px solid var(--muted);
+  border-bottom:2px solid var(--muted);
+  transform:translateY(-70%) rotate(45deg);
+  transition:transform .2s;
+  pointer-events:none;
+}
+.gm-select.open .gm-select-trigger::after{
+  transform:translateY(-30%) rotate(-135deg);
+}
+.gm-select-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:18px;height:18px;flex-shrink:0;
+  color:var(--muted);
+}
+.gm-select-icon svg{width:16px;height:16px;display:block}
+.gm-select-text{
+  flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.gm-select-menu{
+  display:none;position:absolute;z-index:100;
+  top:calc(100% + 6px);left:0;min-width:100%;max-width:320px;
+  background:#fff;border:1px solid #e5e7eb;border-radius:12px;
+  box-shadow:var(--shadow);
+  overflow:hidden;padding:4px;
+  max-height:320px;overflow-y:auto;
+}
+.gm-select.open .gm-select-menu{display:block}
+.gm-select-menu button{
+  width:100%;display:flex;align-items:center;gap:10px;
+  padding:9px 10px;border:0;background:transparent;
+  color:var(--ink);font-family:inherit;font-size:13px;font-weight:500;
+  text-align:left;cursor:pointer;border-radius:8px;
+  transition:background .12s;
+}
+.gm-select-menu button:hover,
+.gm-select-menu button.focused{
+  background:linear-gradient(120deg,#ffe8ee,#eef2ff);
+}
+.gm-select-menu button.selected{
+  background:linear-gradient(120deg,#ffd1e1,#c7d4ff);
+  font-weight:600;
+}
+.gm-select-menu button .gm-select-icon{width:20px;height:20px;color:var(--brand)}
+.gm-select-menu button .gm-select-icon svg{width:18px;height:18px}
+/* Dark mode */
+body.dark .gm-select-trigger{background:#0f1115;border-color:#2a3147;color:#e5e7eb}
+body.dark .gm-select-trigger:hover,
+body.dark .gm-select.open .gm-select-trigger,
+body.dark .gm-select-trigger:focus{border-color:#ffd1e1}
+body.dark .gm-select-menu{background:#151924;border-color:#2a3147;box-shadow:0 8px 20px rgba(0,0,0,.4)}
+body.dark .gm-select-menu button{color:#e5e7eb}
+body.dark .gm-select-menu button:hover,
+body.dark .gm-select-menu button.focused{background:linear-gradient(120deg,#3a2330,#1f2645)}
+body.dark .gm-select-menu button.selected{background:linear-gradient(120deg,#5b2a3f,#2b3663);color:#fff}
 
 /* ═══════════════ MODAL ═══════════════ */
 .modal-bg{
@@ -2363,7 +2458,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.64: Corrección error SyntaxError byEst/ins duplicados en Reportes. v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.68: Acciones rápidas de Caja — (1) "Abono recibido" ahora ofrece vincular opcionalmente a un pedido pendiente (híbrido): si se vincula, el pago se registra automáticamente en el pedido reduciendo su saldo, y el movimiento de caja queda referenciado con ref_tipo='pedido'. Si es en Bs, se preserva monto_bs_ingresado usando tasa paralela (bcv×dif) para que cuadre con el saldo del pedido. (2) Nuevo campo "Nombre / Referencia" en todos los movimientos (Ingreso/Gasto/Compra/Abono/Retiro) — etiqueta contextual según el tipo (proveedor, cliente, quien retira, etc.). Al seleccionar pedido en abono, autocompleta el nombre del cliente. (3) La moneda del monto ahora se bloquea automáticamente cuando el método la determina (Bs efectivo/PM/transferencia → Bs; USD efectivo/Zelle → USD). Solo "Otro" permite elegir moneda libre. v13.67: Selects de Canal (Local/WhatsApp/Online) y Envío (Delivery/Envío/Sin envío) rediseñados con componente gm-select custom — SVG minimalistas reales en lugar de emoji, consistentes con el estilo de GestioMada, soporte dark mode, accesibilidad (teclado/Esc) y click-outside. El &lt;select&gt; nativo se mantiene oculto: toda la lógica de filtros sigue intacta. v13.66: Pedidos/Caja/Reportes — al editar un pedido y agregar/cambiar cliente, se actualizan los movimientos vinculados en Caja; canales normalizados para Reportes (Local/WhatsApp/Online, incluyendo variantes mal escritas). v13.65: Reportes — FIX crítico cálculos de datos: (1) KPI "Equivalente en Bs" ahora aplica el factor correcto por método de pago (Bs usa BCV×diferencial, USD usa BCV plano). (2) Tab Productos y Categorías: precios en USD base sin inflar con diferencial — los totales cuadran con suma de ventas. (3) Categoría se lee desde el catálogo por id_prod (el item del carrito no la guarda). (4) Tab Caja: ingresos/gastos separados por moneda (Bs y USD) — deja de sumar mezclado dos monedas distintas; KPIs "Saldo USD" y "Saldo Bs" independientes; gráfico diario en equivalente USD para comparar. v13.64: Corrección error SyntaxError byEst/ins duplicados en Reportes. v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -3480,6 +3575,154 @@ function eliminarCategoriaCfg(idx){
 }
 // ── UTILS ──
 function qs(sel, root){ return (root||document).querySelector(sel); }
+
+/* ════════════════════════════════════════════
+   GM-SELECT — Select custom con iconos SVG
+   Envuelve un <select> existente y crea UI visual encima manteniendo
+   el select nativo oculto. Dispara 'change' al elegir, los filtros siguen
+   funcionando igual.
+   Uso: gmEnhanceSelect('ped_fcanal', GM_ICONS.canales);
+════════════════════════════════════════════ */
+const GM_ICONS = {
+  // Canales: Local, WhatsApp, Online
+  canales: {
+    '': { svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>' },
+    'local':    { svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>' },
+    'whatsapp': { svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>' },
+    'online':   { svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>' }
+  },
+  // Envíos: Delivery, Envío, Sin envío
+  envios: {
+    '':          { svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>' },
+    'delivery':  { svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="17" r="3"/><circle cx="18" cy="17" r="3"/><path d="M9 17h6"/><path d="M6 17V9h4l3 4h5l2 4"/><path d="M10 9l-2-5H5"/></svg>' },
+    'envio':     { svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>' },
+    'sin_envio': { svg:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>' }
+  }
+};
+function gmEnhanceSelect(selectId, iconMap, opts){
+  const sel = document.getElementById(selectId);
+  if(!sel || sel.dataset.gmEnhanced === '1') return;
+  sel.dataset.gmEnhanced = '1';
+  const options = { inline: (opts && opts.inline) || false };
+  // Crear wrapper y mover el select dentro
+  const wrap = document.createElement('div');
+  wrap.className = 'gm-select' + (options.inline ? ' gm-inline' : '');
+  wrap.dataset.target = selectId;
+  // Preservar estilo (width, max-width) del select en el wrapper
+  if(sel.style.cssText) wrap.style.cssText = sel.style.cssText;
+  sel.parentNode.insertBefore(wrap, sel);
+  sel.classList.add('gm-native');
+  wrap.appendChild(sel);
+  sel.removeAttribute('style'); // ya no lo necesita, lo tiene el wrap
+
+  // Trigger
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'gm-select-trigger';
+  trigger.setAttribute('aria-haspopup','listbox');
+  trigger.setAttribute('aria-expanded','false');
+  const iconSpan = document.createElement('span'); iconSpan.className = 'gm-select-icon';
+  const textSpan = document.createElement('span'); textSpan.className = 'gm-select-text';
+  trigger.appendChild(iconSpan);
+  trigger.appendChild(textSpan);
+  wrap.appendChild(trigger);
+
+  // Menú
+  const menu = document.createElement('div');
+  menu.className = 'gm-select-menu';
+  menu.setAttribute('role','listbox');
+  wrap.appendChild(menu);
+
+  // Limpia emoji iniciales del texto de la opción (en caso de que el HTML ya los tenga)
+  const cleanLabel = s => String(s||'').replace(/^[\p{Emoji_Presentation}\p{Extended_Pictographic}\uFE0F\u200D\s]+/u,'').trim();
+
+  function buildMenu(){
+    menu.innerHTML = '';
+    Array.from(sel.options).forEach(opt => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.dataset.value = opt.value;
+      b.setAttribute('role','option');
+      const cfg = (iconMap && iconMap[opt.value]) || null;
+      const ic = document.createElement('span'); ic.className = 'gm-select-icon';
+      if(cfg && cfg.svg) ic.innerHTML = cfg.svg;
+      const tx = document.createElement('span');
+      tx.textContent = cleanLabel(opt.textContent) || opt.textContent;
+      b.appendChild(ic);
+      b.appendChild(tx);
+      if(opt.value === sel.value) b.classList.add('selected');
+      b.addEventListener('click', e => {
+        e.preventDefault(); e.stopPropagation();
+        setValue(opt.value, true);
+        close();
+      });
+      menu.appendChild(b);
+    });
+  }
+
+  function syncTrigger(){
+    const current = sel.value;
+    const opt = sel.options[sel.selectedIndex];
+    const cfg = (iconMap && iconMap[current]) || null;
+    iconSpan.innerHTML = (cfg && cfg.svg) ? cfg.svg : '';
+    iconSpan.style.display = (cfg && cfg.svg) ? '' : 'none';
+    textSpan.textContent = opt ? (cleanLabel(opt.textContent) || opt.textContent) : '';
+    // Actualizar 'selected' en menú
+    menu.querySelectorAll('button').forEach(b => {
+      b.classList.toggle('selected', b.dataset.value === current);
+    });
+  }
+
+  function setValue(v, fireChange){
+    if(sel.value === v){ return; }
+    sel.value = v;
+    syncTrigger();
+    if(fireChange){
+      sel.dispatchEvent(new Event('change', { bubbles:true }));
+    }
+  }
+
+  function open(){
+    // Cerrar todos los otros abiertos
+    document.querySelectorAll('.gm-select.open').forEach(el => { if(el !== wrap) el.classList.remove('open'); });
+    wrap.classList.add('open');
+    trigger.setAttribute('aria-expanded','true');
+  }
+  function close(){
+    wrap.classList.remove('open');
+    trigger.setAttribute('aria-expanded','false');
+  }
+  function toggle(){ wrap.classList.contains('open') ? close() : open(); }
+
+  trigger.addEventListener('click', e => { e.preventDefault(); e.stopPropagation(); toggle(); });
+  trigger.addEventListener('keydown', e => {
+    if(e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown'){ e.preventDefault(); open(); }
+    else if(e.key === 'Escape'){ close(); }
+  });
+
+  // Observer: si alguien modifica las opciones del select nativo (ej. ped_fprod
+  // que se puebla dinámicamente), reconstruir el menú.
+  const obs = new MutationObserver(() => { buildMenu(); syncTrigger(); });
+  obs.observe(sel, { childList:true, subtree:true, attributes:true, attributeFilter:['value'] });
+  // También sincronizar si el valor cambia por código externo
+  sel.addEventListener('gmsync', syncTrigger);
+
+  buildMenu();
+  syncTrigger();
+}
+
+// Cerrar menús abiertos al hacer click fuera / presionar Escape
+document.addEventListener('click', e => {
+  if(!e.target.closest('.gm-select')) {
+    document.querySelectorAll('.gm-select.open').forEach(el => el.classList.remove('open'));
+  }
+});
+document.addEventListener('keydown', e => {
+  if(e.key === 'Escape'){
+    document.querySelectorAll('.gm-select.open').forEach(el => el.classList.remove('open'));
+  }
+});
+
 function parseEU(s){
   if(typeof s!=='string') s=String(s??'');
   const v=parseFloat(s.trim().replace(/\./g,'').replace(',','.'));
@@ -5386,6 +5629,16 @@ document.addEventListener('DOMContentLoaded',()=>{
       localStorage.setItem('dark_on',on?'1':'0');
     });
   })();
+
+  // Aplicar gm-select (UI custom con iconos SVG minimalistas) a filtros de canal/envío
+  // El <select> real se mantiene oculto: toda la lógica de filtros sigue funcionando.
+  try {
+    gmEnhanceSelect('ped_fcanal', GM_ICONS.canales);
+    gmEnhanceSelect('ped_fenvio', GM_ICONS.envios);
+    gmEnhanceSelect('ven_fcanal', GM_ICONS.canales);
+    gmEnhanceSelect('pos_canal',  GM_ICONS.canales);
+    gmEnhanceSelect('mp_canal',   GM_ICONS.canales);
+  } catch(e){ console.warn('[gm-select] Error inicializando:', e); }
 });
 
 
@@ -6774,7 +7027,7 @@ function posCobrar(){
     delivery_usd: deliveryUsd, envio_usd: envioUsd, diseno_usd: disenoUsd, extras_usd: extrasUsd,
     total, recibido: recUsd, vuelto: Math.max(0, recUsd - total),
     costo_total, utilidad: total - costo_total,
-    tipo, canal: qs('#pos_canal')?.value || 'local',
+    tipo, canal: normalizarCanalVenta(qs('#pos_canal')?.value),
     metodo: _posMetodoActivo,
     notas: [notaBase, notaExtras].filter(Boolean).join(' | '),
     fecha: new Date().toISOString(), estado: 'completada',
@@ -7472,20 +7725,97 @@ function anularVenta2(idx){
 /* ════════════════════════════════════════════
    CAJA
 ════════════════════════════════════════════ */
+let _mmovPedidoVinculado = null; // pedido seleccionado en el modal de movimiento (solo para 'abono')
+
 function abrirMovimiento(tipo){
   _movTipo=tipo;
+  _mmovPedidoVinculado = null;
   const TITULOS={ingreso:'Registrar Ingreso',gasto:'Registrar Gasto',compra:'Compra de Insumos',abono:'Abono Recibido',retiro:'Registrar Retiro'};
   const CATS={ingreso:'otro',gasto:'gasto',compra:'compra',abono:'abono',retiro:'retiro'};
+  const NOMBRE_LBL={
+    ingreso:'Nombre / Referencia',
+    gasto:'Nombre / Referencia (a quién se pagó)',
+    compra:'Proveedor / Referencia',
+    abono:'Nombre del cliente / Referencia',
+    retiro:'Nombre de quien retira / Referencia'
+  };
+  const NOMBRE_PH={
+    ingreso:'Ej. Aporte socio, venta ocasional…',
+    gasto:'Ej. Pago servicio, taxi, insumos oficina…',
+    compra:'Ej. Proveedor Taza Azul, Ferretería…',
+    abono:'Ej. Juan Pérez (se autollena al elegir pedido)',
+    retiro:'Ej. Caja chica, María (dueña)…'
+  };
   const t=qs('#mmov-title'); if(t) t.textContent=TITULOS[tipo]||'Registrar movimiento';
   const ti=qs('#mmov_tipo'); if(ti) ti.value=tipo;
   const mc=qs('#mmov_cat'); if(mc) mc.value=CATS[tipo]||'otro';
   const mf=qs('#mmov_fecha'); if(mf) mf.value=new Date().toISOString().slice(0,10);
   const mm=qs('#mmov_monto'); if(mm) mm.value='';
   const mn=qs('#mmov_nota'); if(mn) mn.value='';
+  const mnom=qs('#mmov_nombre'); if(mnom) mnom.value='';
+  const mnomLbl=qs('#mmov_nombre_lbl'); if(mnomLbl) mnomLbl.textContent=NOMBRE_LBL[tipo]||'Nombre / Referencia';
+  if(mnom) mnom.setAttribute('placeholder', NOMBRE_PH[tipo]||'');
   const ses=loadSesion();
-  const tasaEl=qs('#mmov_tasa'); if(tasaEl){ const t=ses?.tasa||loadTasa()||0; tasaEl.value=t>0?String(t).replace('.',','):''; }
+  const tasaEl=qs('#mmov_tasa'); if(tasaEl){ const tx=ses?.tasa||loadTasa()||0; tasaEl.value=tx>0?String(tx).replace('.',','):''; }
+
+  // Panel de pedido vinculado: solo visible para ABONO
+  const pp=qs('#mmov_pedido_panel');
+  if(pp){
+    if(tipo==='abono'){
+      pp.style.display='';
+      poblarSelectPedidos('mmov_pedido_sel');
+      const infoEl=qs('#mmov_pedido_info'); if(infoEl) infoEl.style.display='none';
+    } else {
+      pp.style.display='none';
+    }
+  }
+
   mmovActualizarMoneda();
   openModal('m-movimiento');
+}
+
+/* Al seleccionar un pedido en el modal de movimiento (abono):
+   - Pre-llena el nombre del cliente
+   - Muestra info de saldo pendiente
+   - Pre-llena el monto con el saldo (en la moneda actual) */
+function mmovSeleccionarPedido(){
+  const selId = qs('#mmov_pedido_sel')?.value;
+  const infoEl = qs('#mmov_pedido_info');
+  if(!selId){
+    _mmovPedidoVinculado = null;
+    if(infoEl) infoEl.style.display='none';
+    return;
+  }
+  const ped = loadPed().find(p => String(p.id) === String(selId));
+  if(!ped){ _mmovPedidoVinculado = null; return; }
+  _mmovPedidoVinculado = ped;
+  const pagado = (ped.pagos||[]).reduce((a,pg)=>a+pg.monto,0);
+  const saldoUsd = Math.max(0, ped.total - pagado);
+  // Autocompletar nombre cliente si está vacío
+  const nomEl = qs('#mmov_nombre');
+  if(nomEl && !nomEl.value.trim() && ped.cliente){
+    nomEl.value = (ped.cliente.nombre||'') + (ped.cliente.apellido?' '+ped.cliente.apellido:'');
+  }
+  // Info visible del pedido
+  if(infoEl){
+    const cli = ped.cliente ? `${ped.cliente.nombre||''} ${ped.cliente.apellido||''}`.trim() : 'Sin cliente';
+    infoEl.style.display='block';
+    infoEl.innerHTML = `<strong>${ped.numero}</strong> — ${cli} · Total: ${euro(ped.total)} · Saldo pendiente: <strong>${euro(saldoUsd)}</strong>`;
+  }
+  // Pre-llenar monto con saldo en la moneda actual
+  const monEl = qs('#mmov_moneda');
+  const moneda = monEl?.value||'bs';
+  const montoEl = qs('#mmov_monto');
+  if(montoEl){
+    if(moneda==='usd'){
+      montoEl.value = saldoUsd.toFixed(2).replace('.',',');
+    } else {
+      const bcv = getTasaBCV(), dif = getDiferencial();
+      const par = bcv * (dif>0?dif:1);
+      if(par>0) montoEl.value = Math.round(saldoUsd*par).toLocaleString('es-VE').replace(/,/g,'.');
+    }
+    mmovCalcEquiv();
+  }
 }
 
 function guardarMovimiento(){
@@ -7495,30 +7825,101 @@ function guardarMovimiento(){
   const signo=INGRESOS.includes(tipo)||INGRESOS.includes(qs('#mmov_cat').value)?1:-1;
   const moneda=qs('#mmov_moneda')?.value||'bs';
   const tasa=parseEU(qs('#mmov_tasa')?.value||'0');
-  const montoUsd=moneda==='usd'?monto:0;
-  const montoBs=moneda==='bs'?monto:(tasa>0?monto*tasa:0);
+  // Para el registro general del movimiento: conversión simple Bs↔USD con tasa del form
+  const montoUsdGen=moneda==='usd'?monto:(tasa>0?monto/tasa:0);
+  const montoBs    =moneda==='bs' ?monto:(tasa>0?monto*tasa:0);
+  // Para abono vinculado a pedido: usar tasa paralela (bcv×dif) para cuadrar con saldo del pedido
+  let montoUsdParaPedido = montoUsdGen;
+  if(tipo==='abono' && _mmovPedidoVinculado && moneda==='bs'){
+    const bcvA = getTasaBCV(), difA = getDiferencial();
+    const parA = bcvA * (difA>0?difA:1);
+    if(parA>0) montoUsdParaPedido = monto / parA;
+  }
+  const nombre=(qs('#mmov_nombre')?.value||'').trim();
+  const notaRaw=(qs('#mmov_nota')?.value||'').trim();
+  // Concatenar nombre y nota para preservar ambas cosas en el registro
+  const notaFinal=[nombre, notaRaw].filter(Boolean).join(' — ');
+
+  // Si es abono con pedido vinculado: validar saldo y registrar pago en pedido
+  if(tipo==='abono' && _mmovPedidoVinculado){
+    const ped = _mmovPedidoVinculado;
+    const pagado = (ped.pagos||[]).reduce((a,p)=>a+p.monto,0);
+    const saldoUsd = Math.max(0, ped.total - pagado);
+    if(moneda==='bs' && !(getTasaBCV()>0)){
+      toast('Configure la tasa BCV para registrar abono en Bs vinculado','warn'); return;
+    }
+    if(montoUsdParaPedido > saldoUsd + 0.01){
+      toast('El monto supera el saldo pendiente: '+euro(saldoUsd),'warn'); return;
+    }
+  }
+
   const mov={
     id:Date.now(), tipo, categoria:qs('#mmov_cat').value,
     monto, moneda, tasa:tasa||0,
-    monto_bs:montoBs, monto_usd:montoUsd,
+    monto_bs:montoBs, monto_usd: (tipo==='abono' && _mmovPedidoVinculado) ? montoUsdParaPedido : montoUsdGen,
     metodo:qs('#mmov_metodo')?.value||'efectivo_bs',
-    nota:qs('#mmov_nota').value.trim(),
+    nombre: nombre||null,
+    nota:notaFinal,
     fecha:qs('#mmov_fecha').value||new Date().toISOString().slice(0,10),
     signo
   };
+
+  // Si es abono vinculado a pedido: registrar pago en el pedido y enlazar movimiento
+  if(tipo==='abono' && _mmovPedidoVinculado){
+    const ped = _mmovPedidoVinculado;
+    const notaPedido = nombre ? `Abono en caja — ${nombre}` : 'Abono en caja';
+    // Si el abono es en Bs, preservar monto_bs_ingresado para que el pedido muestre el Bs real pagado
+    if(moneda==='bs'){
+      const allPed = loadPed();
+      const idx = allPed.findIndex(p => String(p.id) === String(ped.id));
+      if(idx >= 0){
+        allPed[idx].pagos = allPed[idx].pagos || [];
+        allPed[idx].pagos.push({
+          id: Date.now(),
+          monto: montoUsdParaPedido,
+          monto_bs_ingresado: Math.round(monto),
+          metodo: mov.metodo,
+          nota: notaPedido,
+          fecha: new Date().toISOString(),
+          tasa_bcv_pago: getTasaBCV(),
+          tasa_par_pago: getTasaParalela()
+        });
+        const totalPag = allPed[idx].pagos.reduce((a,p)=>a+p.monto,0);
+        if(totalPag >= allPed[idx].total - 0.01) allPed[idx].estado = 'entregado';
+        savePed(allPed);
+        if(typeof upsertPedido==='function') upsertPedido(allPed[idx]);
+      }
+    } else {
+      registrarPagoEnPedidoVinculado(ped, montoUsdParaPedido, mov.metodo, notaPedido, true);
+    }
+    mov.ref_id = ped.id;
+    mov.ref_tipo = 'pedido';
+    mov.pedido_numero = ped.numero;
+  }
+
   const all=loadCajaMov(); all.push(mov); saveCajaMov(all);
   upsertCajaMov(mov); // ← solo este movimiento
+
+  const msgExtra = (tipo==='abono' && _mmovPedidoVinculado) ? ` · Pedido ${_mmovPedidoVinculado.numero} actualizado` : '';
+  _mmovPedidoVinculado = null;
+
   closeModal('m-movimiento'); renderCaja(); renderSaldosMoneda(); renderDash();
-  toast('Movimiento registrado: '+euro(monto),'ok');
+  if(typeof renderPedidos==='function') renderPedidos();
+  toast('Movimiento registrado: '+euro(monto)+msgExtra,'ok');
 }
 
 function mmovActualizarMoneda(){
   const met=qs('#mmov_metodo')?.value||'';
   const monEl=qs('#mmov_moneda');
+  const lockLbl=qs('#mmov_moneda_lock');
   if(!monEl) return;
-  // Auto-seleccionar moneda según método
-  if(met==='efectivo_usd'||met==='zelle') monEl.value='usd';
-  else monEl.value='bs';
+  // La moneda se deriva del método — BLOQUEADA excepto para "Otro"
+  const esBs  = ['efectivo_bs','pago_movil','transferencia'].includes(met);
+  const esUsdMet = ['efectivo_usd','zelle'].includes(met);
+  const esOtro = met==='otro';
+  if(esBs){ monEl.value='bs'; monEl.disabled=true; if(lockLbl) lockLbl.textContent='(fijada por método)'; }
+  else if(esUsdMet){ monEl.value='usd'; monEl.disabled=true; if(lockLbl) lockLbl.textContent='(fijada por método)'; }
+  else { monEl.disabled=false; if(lockLbl) lockLbl.textContent='(editable)'; }
   const esUsd=monEl.value==='usd';
   const lbl=qs('#mmov_monto_lbl');
   if(lbl) lbl.textContent=esUsd?'Monto (USD)':'Monto (Bs)';
@@ -7823,6 +8224,42 @@ function estadoPago(ped){
 }
 function totalPagado(ped){ return (ped.pagos||[]).reduce((a,p)=>a+p.monto,0); }
 
+
+function nombreClientePedido(ped){
+  const c = ped && ped.cliente ? ped.cliente : null;
+  if(!c) return '';
+  return String((c.nombre||'')+' '+(c.apellido||'')).trim();
+}
+function escapeRegExpGM(s){ return String(s||'').replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
+function sincronizarCajaConPedido(ped){
+  if(!ped || !ped.id) return;
+  const cajaAll = loadCajaMov();
+  let cambio = false;
+  const cliente = nombreClientePedido(ped);
+  const sufijoCliente = cliente ? ' — '+cliente : '';
+  const rePedido = new RegExp('((?:Abono pedido|Pago completo|Abono)\\s+'+escapeRegExpGM(ped.numero||'')+')(?:\\s+—\\s+.*)?$');
+  cajaAll.forEach(m=>{
+    if(String(m.ref_tipo||'') !== 'pedido' || String(m.ref_id) !== String(ped.id)) return;
+    const notaOriginal = String(m.nota||'');
+    let notaNueva = notaOriginal;
+    if(rePedido.test(notaNueva)){
+      notaNueva = notaNueva.replace(rePedido, '$1'+sufijoCliente);
+    }else{
+      const base = notaNueva || ('Movimiento pedido '+(ped.numero||''));
+      notaNueva = base.replace(/\s+—\s+Sin cliente\s*$/,'') + sufijoCliente;
+    }
+    if(notaNueva !== notaOriginal){
+      m.nota = notaNueva;
+      cambio = true;
+      if(typeof upsertCajaMov === 'function') upsertCajaMov(m);
+    }
+  });
+  if(cambio){
+    saveCajaMov(cajaAll);
+    if(typeof renderCaja === 'function') renderCaja();
+  }
+}
+
 // ── badge de pedidos (se llama desde updateBadges base) ──
 function updateBadgesPed(){
   const pedBadge = qs('#badge-ped');
@@ -7841,7 +8278,7 @@ function abrirNuevoPedido(){
   qs('#mp_abono').value = '0,00';
   qs('#mp_notas').value = '';
   qs('#mp_estado').value = 'pendiente';
-  const mpCanal=qs('#mp_canal'); if(mpCanal) mpCanal.value='local';
+  const mpCanal=qs('#mp_canal'); if(mpCanal){ mpCanal.value='local'; mpCanal.dispatchEvent(new Event('gmsync')); }
   qs('#mp_metodo').value = 'efectivo_bs';
   const hoy = new Date().toISOString().slice(0,10);
   qs('#mp_fecha_pedido').value = hoy;
@@ -7913,7 +8350,7 @@ function abrirEditarPedido(idx){
     .trim();
   qs('#mp_notas').value = _notasManual;
   qs('#mp_estado').value = p.estado||'pendiente';
-  const mpCanalE=qs('#mp_canal'); if(mpCanalE) mpCanalE.value=p.canal||'local';
+  const mpCanalE=qs('#mp_canal'); if(mpCanalE){ mpCanalE.value=p.canal||'local'; mpCanalE.dispatchEvent(new Event('gmsync')); }
   qs('#mp_fecha_pedido').value = p.fecha_pedido||'';
   qs('#mp_fecha_entrega').value = p.fecha_entrega||'';
   poblarSelectCatalogo();
@@ -8298,7 +8735,7 @@ function guardarPedido(){
     total_bs,
     pagos,
     estado:      qs('#mp_estado').value,
-    canal:       qs('#mp_canal')?.value || 'local',
+    canal:       normalizarCanalVenta(qs('#mp_canal')?.value),
     notas:       [_notaManual, _notaExtras].filter(Boolean).join(' | '),
     fecha_pedido:qs('#mp_fecha_pedido').value,
     fecha_entrega:qs('#mp_fecha_entrega').value,
@@ -8313,6 +8750,9 @@ function guardarPedido(){
   if(!esNuevo){ all[_pedIdx]=ped; } else { all.push(ped); }
   savePed(all);
   upsertPedido(ped); // ← upsert solo este pedido
+
+  // Si se editó el pedido y se agregó/cambió el cliente, corregir la nota del movimiento vinculado en Caja
+  if(!esNuevo){ sincronizarCajaConPedido(ped); }
 
   // Si es pedido nuevo y tiene abono → registrar en Caja
   if(esNuevo && abono>0){
@@ -8373,7 +8813,7 @@ function renderPedidos(){
     else if(fenvio==='sin_envio') matchEnvio=(_numPedido(p.delivery_usd)===0 && _numPedido(p.envio_usd)===0);
     // Filtro producto
     const matchProd=!fprod||(p.items||[]).some(it=>(it.nombre||'')===fprod);
-    return matchQ&&(!fe||p.estado===fe)&&(!fp||ep===fp)&&matchEnt&&(!fcanal||(p.canal||'local')===fcanal)&&matchEnvio&&matchProd;
+    return matchQ&&(!fe||p.estado===fe)&&(!fp||ep===fp)&&matchEnt&&(!fcanal||normalizarCanalVenta(p.canal)===fcanal)&&matchEnvio&&matchProd;
   }).reverse();
 
   const c=qs('#ped-container');
@@ -8395,7 +8835,7 @@ function renderPedidos(){
           <span class="chip ${CHIP_EST[p.estado]||'chip-warn'}">${PED_ESTADOS[p.estado]||p.estado}</span>
           <span class="chip ${CHIP_PAGO[ep]||'chip-warn'}">${PED_PAGOS[ep]||ep}</span>
           ${vencido?'<span class="chip chip-danger">Vencido</span>':''}
-          ${p.canal?`<span class="chip" style="font-size:10px;${CANALES_COLOR[p.canal]||CANALES_COLOR.local}">${CANALES_LABEL[p.canal]||CANALES_LABEL.local}</span>`:''}
+          ${p.canal?`<span class="chip" style="font-size:10px;${CANALES_COLOR[normalizarCanalVenta(p.canal)]||CANALES_COLOR.local}">${CANALES_LABEL[normalizarCanalVenta(p.canal)]||CANALES_LABEL.local}</span>`:''}
           ${p.usuario_nom?`<span class="chip" style="font-size:10px;background:#f0f4ff;color:#3b5bdb">👤 ${p.usuario_nom.split(' ')[0]}</span>`:''}
         </div>
       </div>
@@ -8499,7 +8939,7 @@ function verPedido(idx){
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
       <span class="chip ${CHIP_EST[p.estado]||'chip-warn'}">${PED_ESTADOS[p.estado]}</span>
       <span class="chip ${CHIP_PAGO[ep]||'chip-warn'}">${PED_PAGOS[ep]}</span>
-      ${p.canal?`<span class="chip" style="${CANALES_COLOR[p.canal]||CANALES_COLOR.local}">${CANALES_LABEL[p.canal]||CANALES_LABEL.local}</span>`:''}
+      ${p.canal?`<span class="chip" style="${CANALES_COLOR[normalizarCanalVenta(p.canal)]||CANALES_COLOR.local}">${CANALES_LABEL[normalizarCanalVenta(p.canal)]||CANALES_LABEL.local}</span>`:''}
       ${p.fecha_entrega?`<span class="chip chip-info">Entrega: ${fmtFecha(p.fecha_entrega)}</span>`:''}
       ${p.fecha_pedido?`<span class="chip" style="background:#f3f4f6">Pedido: ${fmtFecha(p.fecha_pedido)}</span>`:''}
       ${p.usuario_nom?`<span class="chip" style="background:#f0f4ff;color:#3b5bdb;font-weight:600">👤 ${p.usuario_nom}</span>`:''}
@@ -9469,17 +9909,31 @@ function renderReportes(){
   if(renders[tabId]) renders[tabId]();
 }
 
-/* ── KPIs globales ── */
+/* ── KPIs globales ──
+   IMPORTANTE: venta.total se guarda SIEMPRE en USD base (dólar paralelo).
+   El diferencial solo se aplica al precio final que paga el cliente si eligió pagar en Bs.
+   Para "Ventas en Bs" debemos recorrer CADA venta aplicando el criterio correcto:
+   - Métodos Bs (efectivo_bs, pago_movil, transferencia): total × bcv × diferencial (lo que cobró al cliente)
+   - Métodos USD (efectivo_usd, zelle): total × bcv (equivalente en Bs al BCV, sin diferencial)
+*/
 function renderRepKpis(){
   const ven = loadVen().filter(v=>v.estado!=='anulada'&&repInRango(v.fecha));
   const venAnul = loadVen().filter(v=>v.estado==='anulada'&&repInRango(v.fecha));
   const ped = loadPed().filter(p=>repInRango(p.fecha_creado));
   const bcvR = getTasaBCV(), difR = getDiferencial();
+  const METODOS_BS = ['efectivo_bs','pago_movil','transferencia'];
   const totalVen = ven.reduce((a,v)=>a+v.total,0);
   const totalUtil = ven.reduce((a,v)=>a+(v.utilidad||0),0);
   const ticketProm = ven.length ? totalVen/ven.length : 0;
-  // Total en Bs: ventas en Bs (efectivo_bs, pago_movil, transferencia) ya están registradas en Bs via monto_bs
-  const totalVenBs = ven.reduce((a,v)=>a+(v.monto_bs||v.monto_bs_total||(v.total*(bcvR*difR>0?bcvR*difR:1))),0);
+  // Ventas en Bs reales: por venta, aplicar factor correcto según método de pago
+  const totalVenBs = bcvR>0 ? ven.reduce((a,v)=>{
+    const esBs = METODOS_BS.includes(v.metodo);
+    const factor = esBs ? bcvR*(difR>0?difR:1) : bcvR; // Bs con dif, USD a BCV plano
+    return a + (v.total * factor);
+  },0) : 0;
+  // Desglose: cuánto entró efectivamente en cada moneda
+  const totalVenBsOnly  = ven.filter(v=>METODOS_BS.includes(v.metodo)).reduce((a,v)=>a+v.total,0); // USD base de ventas Bs
+  const totalVenUsdOnly = ven.filter(v=>!METODOS_BS.includes(v.metodo)).reduce((a,v)=>a+v.total,0);
   const pedPorCobrar = ped.reduce((a,p)=>a+Math.max(0,p.total-(p.pagos||[]).reduce((x,pg)=>x+pg.monto,0)),0);
   const wrap = qs('#rep-kpis'); if(!wrap) return;
   wrap.innerHTML = `
@@ -9503,9 +9957,9 @@ function renderRepKpis(){
     </div>
     <div class="kpi warn">
       <div class="kpi-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-      <div class="kpi-lbl">Ventas en Bs</div>
-      <div class="kpi-val" style="font-size:15px">Bs ${bcvR>0?Math.round(totalVen*(bcvR*difR>0?bcvR*difR:1)).toLocaleString('es-VE'):'—'}</div>
-      <div class="kpi-sub">${bcvR>0?'BCV ×'+difR.toFixed(2):'Configure tasa BCV'}</div>
+      <div class="kpi-lbl">Equivalente en Bs</div>
+      <div class="kpi-val" style="font-size:15px">Bs ${bcvR>0?Math.round(totalVenBs).toLocaleString('es-VE'):'—'}</div>
+      <div class="kpi-sub">${bcvR>0?`${euro(totalVenBsOnly)} en Bs · ${euro(totalVenUsdOnly)} en USD`:'Configure tasa BCV'}</div>
     </div>`;
 }
 
@@ -9555,7 +10009,7 @@ function renderRepVentas(){
 
   // Por canal de venta
   const byCan = {};
-  ven.forEach(v=>{ const c=v.canal||'local'; byCan[c]=(byCan[c]||0)+v.total; });
+  ven.forEach(v=>{ const c=normalizarCanalVenta(v.canal); byCan[c]=(byCan[c]||0)+v.total; });
   const CANAL_COLORS_REP = { local:'#22c55e', whatsapp:'#25D366', online:'#3b82f6' };
   const CANAL_LABEL_REP  = { local:'🏪 Local', whatsapp:'📱 WhatsApp', online:'🌐 Online' };
   const canWrap = qs('#rep-chart-canales');
@@ -9567,7 +10021,7 @@ function renderRepVentas(){
     } else {
       // Barras horizontales + resumen de transacciones
       const byCanCount = {};
-      ven.forEach(v=>{ const c=v.canal||'local'; byCanCount[c]=(byCanCount[c]||0)+1; });
+      ven.forEach(v=>{ const c=normalizarCanalVenta(v.canal); byCanCount[c]=(byCanCount[c]||0)+1; });
       canWrap.innerHTML =
         // Mini KPIs de canal
         `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">` +
@@ -9623,7 +10077,7 @@ function renderRepVentas(){
                 <td style="padding:8px;color:var(--muted)">${v.fecha.slice(0,10)}</td>
                 <td style="padding:8px">${v.cliente?(v.cliente.nombre+' '+(v.cliente.apellido||'')):'Venta rápida'}</td>
                 <td style="padding:8px"><span class="chip chip-info" style="font-size:10px">${METODOS_LABEL[v.metodo]||v.metodo}</span></td>
-                <td style="padding:8px"><span class="chip" style="font-size:10px;${CANALES_COLOR[v.canal||'local']||CANALES_COLOR.local}">${CANALES_LABEL[v.canal||'local']||'🏪 Local'}</span></td>
+                <td style="padding:8px"><span class="chip" style="font-size:10px;${CANALES_COLOR[normalizarCanalVenta(v.canal)]||CANALES_COLOR.local}">${CANALES_LABEL[normalizarCanalVenta(v.canal)]||CANALES_LABEL.local}</span></td>
                 <td style="padding:8px;text-align:right;font-weight:700">${euro(v.total)}</td>
                 <td style="padding:8px;text-align:right;color:var(--muted)">${euro(v.costo_total||0)}</td>
                 <td style="padding:8px;text-align:right;font-weight:700;color:${(v.utilidad||0)>=0?'var(--ok)':'var(--danger)'}">${euro(v.utilidad||0)}</td>
@@ -9642,23 +10096,29 @@ function renderRepVentas(){
   }
 }
 
-/* ══════════ TAB PRODUCTOS ══════════ */
+/* ══════════ TAB PRODUCTOS ══════════
+   IMPORTANTE: it.precio_unit está en USD base (dólar paralelo).
+   venta.total = Σ(precio_unit × cant) − descuento + extras (todo en USD base).
+   Para que los reportes de productos cuadren con la suma de ventas, TODO se calcula en USD base.
+   La categoría NO se guarda en el item del carrito, hay que leerla del catálogo actual por id_prod.
+*/
 function renderRepProductos(){
   const ven = loadVen().filter(v=>v.estado!=='anulada'&&repInRango(v.fecha));
-  const bcvR=getTasaBCV(), difR=getDiferencial();
+  const catalogo = loadCat();
+  const catById = {}; catalogo.forEach(p=>{ catById[String(p.id)] = p; });
 
   const byProd = {};
   ven.forEach(v=>{
-    const esBsV = ['efectivo_bs','pago_movil','transferencia'].includes(v.metodo);
-    const factorUsd = esBsV ? (difR>0?difR:1) : 1; // precio c/dif si Bs, base si USD
     (v.items||[]).forEach(it=>{
       const key = it.id_prod ? String(it.id_prod) : it.nombre;
       if(!byProd[key]) byProd[key]={ nombre:it.nombre, cant:0, total:0, costo:0, util:0 };
-      const precioReal = it.precio_unit * factorUsd;
-      byProd[key].cant  += it.cant||1;
-      byProd[key].total += precioReal*(it.cant||1);
-      byProd[key].costo += (it.costo_unit||0)*(it.cant||1);
-      byProd[key].util  += (precioReal-(it.costo_unit||0))*(it.cant||1);
+      const precioU = it.precio_unit || 0;
+      const costoU  = it.costo_unit  || 0;
+      const cant    = it.cant || 1;
+      byProd[key].cant  += cant;
+      byProd[key].total += precioU * cant;
+      byProd[key].costo += costoU  * cant;
+      byProd[key].util  += (precioU - costoU) * cant;
     });
   });
 
@@ -9680,14 +10140,18 @@ function renderRepProductos(){
       </div>`).join('');
   }
 
-  // Por categoría
+  // Por categoría — leer desde catálogo por id_prod (el item no guarda categoría)
   const byCat = {};
   ven.forEach(v=>(v.items||[]).forEach(it=>{
-    const cat = it.categoria || 'Sin categoría';
+    const prodCat = it.id_prod ? (catById[String(it.id_prod)]?.categoria || '') : '';
+    const cat = it.categoria || prodCat || 'Sin categoría';
     if(!byCat[cat]) byCat[cat]={ cant:0, total:0, util:0 };
-    byCat[cat].cant  += it.cant||1;
-    byCat[cat].total += (it.precio_unit||0)*(it.cant||1);
-    byCat[cat].util  += ((it.precio_unit||0)-(it.costo_unit||0))*(it.cant||1);
+    const precioU = it.precio_unit || 0;
+    const costoU  = it.costo_unit  || 0;
+    const cant    = it.cant || 1;
+    byCat[cat].cant  += cant;
+    byCat[cat].total += precioU * cant;
+    byCat[cat].util  += (precioU - costoU) * cant;
   }));
   const catWrapP = qs('#rep-prod-categorias');
   if(catWrapP){
@@ -9770,7 +10234,7 @@ function renderRepPedidos(){
 
   // Por canal
   const byCanP = {};
-  all.forEach(p=>{ const c=p.canal||'local'; byCanP[c]=(byCanP[c]||0)+1; });
+  all.forEach(p=>{ const c=normalizarCanalVenta(p.canal); byCanP[c]=(byCanP[c]||0)+1; });
   const canPWrap = qs('#rep-ped-canales');
   if(canPWrap){
     const totalCP = all.length||1;
@@ -9818,7 +10282,7 @@ function renderRepPedidos(){
         <div class="li-meta">
           <span class="chip ${CHIP_EST[p.estado]||'chip-warn'}" style="font-size:10px">${PED_ESTADOS_R[p.estado]||p.estado}</span>
           ${venc?'<span class="chip chip-danger" style="font-size:10px">Vencido</span>':''}
-          ${p.canal?`<span class="chip" style="font-size:10px;background:#f0f4ff;color:#3b5bdb">${CANAL_LABEL_P[p.canal]||p.canal}</span>`:''}
+          ${p.canal?`<span class="chip" style="font-size:10px;background:#f0f4ff;color:#3b5bdb">${CANAL_LABEL_P[normalizarCanalVenta(p.canal)]||normalizarCanalVenta(p.canal)}</span>`:''}
           ${p.fecha_entrega?`<span style="font-size:11px;color:var(--muted)">Entrega: ${fmtFecha(p.fecha_entrega)}</span>`:''}
         </div>
       </div>
@@ -9851,7 +10315,7 @@ function renderRepPedidos(){
           <td style="padding:7px;font-weight:600;color:var(--brand)">${p.numero.replace('PED-','#')}</td>
           <td style="padding:7px;color:var(--muted)">${(p.fecha_creado||'').slice(0,10)}</td>
           <td style="padding:7px">${p.cliente?(p.cliente.nombre+' '+(p.cliente.apellido||'')):'Sin cliente'}</td>
-          <td style="padding:7px"><span class="chip" style="font-size:10px;${CANALES_COLOR[p.canal||'local']||CANALES_COLOR.local}">${CANAL_LABEL_P[p.canal||'local']||'Local'}</span></td>
+          <td style="padding:7px"><span class="chip" style="font-size:10px;${CANALES_COLOR[normalizarCanalVenta(p.canal)]||CANALES_COLOR.local}">${CANAL_LABEL_P[normalizarCanalVenta(p.canal)]||'Local'}</span></td>
           <td style="padding:7px"><span class="chip ${CHIP_EST[p.estado]||'chip-warn'}" style="font-size:10px">${PED_ESTADOS_R[p.estado]||p.estado}</span></td>
           <td style="padding:7px;text-align:right;font-weight:700">${euro(p.total)}</td>
           <td style="padding:7px;text-align:right;color:var(--ok)">${euro(pag)}</td>
@@ -9968,27 +10432,44 @@ function renderRepClientes(){
       </div>`).join('');
   }
 }
-/* ══════════ TAB CAJA ══════════ */
+/* ══════════ TAB CAJA ══════════
+   IMPORTANTE: cada movimiento de caja tiene su moneda (bs|usd) y monto EN esa moneda.
+   Mezclar Bs + USD en un solo total carece de sentido. Separamos ambos.
+*/
 function renderRepCaja(){
   const INGRESOS = ['ingreso','abono','venta'];
   const movs = loadCajaMov().filter(m=>repInRango(m.fecha));
-  const totalIng = movs.filter(m=>INGRESOS.includes(m.categoria)||INGRESOS.includes(m.tipo)).reduce((a,m)=>a+m.monto,0);
-  const totalGas = movs.filter(m=>!INGRESOS.includes(m.categoria)&&!INGRESOS.includes(m.tipo)).reduce((a,m)=>a+m.monto,0);
-  const saldoNeto = totalIng - totalGas;
+  const esIngreso = m => INGRESOS.includes(m.categoria) || INGRESOS.includes(m.tipo);
+  const esBs = m => (m.moneda||'usd') === 'bs';
+
+  // Separar por moneda
+  const ingBs  = movs.filter(m=>esIngreso(m) && esBs(m)).reduce((a,m)=>a+(m.monto||0),0);
+  const gasBs  = movs.filter(m=>!esIngreso(m) && esBs(m)).reduce((a,m)=>a+(m.monto||0),0);
+  const ingUsd = movs.filter(m=>esIngreso(m) && !esBs(m)).reduce((a,m)=>a+(m.monto||0),0);
+  const gasUsd = movs.filter(m=>!esIngreso(m) && !esBs(m)).reduce((a,m)=>a+(m.monto||0),0);
+  const saldoBs  = ingBs  - gasBs;
+  const saldoUsd = ingUsd - gasUsd;
+  const nIng = movs.filter(esIngreso).length;
+  const nGas = movs.length - nIng;
+
+  const fmtBs = n => 'Bs ' + Math.round(n).toLocaleString('es-VE');
+
   const kpiCaja = qs('#rep-caja-kpis');
   if(kpiCaja) kpiCaja.innerHTML = `
-    <div class="kpi c-green"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div><div class="kpi-lbl">Total ingresos</div><div class="kpi-val" style="font-size:16px">${euro(totalIng)}</div><div class="kpi-sub">${movs.filter(m=>INGRESOS.includes(m.categoria)||INGRESOS.includes(m.tipo)).length} movimientos</div></div>
-    <div class="kpi c-red"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div></div><div class="kpi-lbl">Total gastos</div><div class="kpi-val" style="font-size:16px">${euro(totalGas)}</div><div class="kpi-sub">${movs.filter(m=>!INGRESOS.includes(m.categoria)&&!INGRESOS.includes(m.tipo)).length} movimientos</div></div>
-    <div class="kpi ${saldoNeto>=0?'c-teal':'c-amber'}"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:${saldoNeto>=0?'#E1F5EE':'#FAEEDA'}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${saldoNeto>=0?'#0F6E56':'#854F0B'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div><div class="kpi-lbl">Saldo neto</div><div class="kpi-val" style="font-size:16px;color:${saldoNeto>=0?'var(--ok)':'var(--danger)'}">${euro(saldoNeto)}</div><div class="kpi-sub">${saldoNeto>=0?'Superávit':'Déficit'}</div></div>
-    <div class="kpi c-blue"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E6F1FB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></div></div><div class="kpi-lbl">Movimientos</div><div class="kpi-val">${movs.length}</div><div class="kpi-sub">en el período</div></div>`;
+    <div class="kpi c-green"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div><div class="kpi-lbl">Ingresos</div><div class="kpi-val" style="font-size:15px">${euro(ingUsd)}</div><div class="kpi-sub">${fmtBs(ingBs)} · ${nIng} mov.</div></div>
+    <div class="kpi c-red"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div></div><div class="kpi-lbl">Gastos</div><div class="kpi-val" style="font-size:15px">${euro(gasUsd)}</div><div class="kpi-sub">${fmtBs(gasBs)} · ${nGas} mov.</div></div>
+    <div class="kpi ${saldoUsd>=0?'c-teal':'c-amber'}"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:${saldoUsd>=0?'#E1F5EE':'#FAEEDA'}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${saldoUsd>=0?'#0F6E56':'#854F0B'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div><div class="kpi-lbl">Saldo USD</div><div class="kpi-val" style="font-size:16px;color:${saldoUsd>=0?'var(--ok)':'var(--danger)'}">${euro(saldoUsd)}</div><div class="kpi-sub">${saldoUsd>=0?'Superávit':'Déficit'}</div></div>
+    <div class="kpi ${saldoBs>=0?'c-teal':'c-amber'}"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:${saldoBs>=0?'#E1F5EE':'#FAEEDA'}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${saldoBs>=0?'#0F6E56':'#854F0B'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div><div class="kpi-lbl">Saldo Bs</div><div class="kpi-val" style="font-size:16px;color:${saldoBs>=0?'var(--ok)':'var(--danger)'}">${fmtBs(saldoBs)}</div><div class="kpi-sub">${movs.length} movimientos</div></div>`;
 
-  // Balance por día
+  // Balance por día — separado Bs y USD, graficar equivalente USD para comparar
+  const bcvR = getTasaBCV();
+  const toUsd = m => esBs(m) ? (bcvR>0 ? (m.monto||0)/bcvR : 0) : (m.monto||0);
   const byDay = {};
   movs.forEach(m=>{
-    const d = m.fecha||''; if(!d) return;
+    const d = (m.fecha||'').slice(0,10); if(!d) return;
     if(!byDay[d]) byDay[d]={ ing:0, gas:0 };
-    const esIng = INGRESOS.includes(m.categoria)||INGRESOS.includes(m.tipo);
-    if(esIng) byDay[d].ing += m.monto; else byDay[d].gas += m.monto;
+    if(esIngreso(m)) byDay[d].ing += toUsd(m);
+    else byDay[d].gas += toUsd(m);
   });
   const days = Object.entries(byDay).sort(([a],[b])=>a.localeCompare(b));
   const maxV = Math.max(...days.map(([,v])=>Math.max(v.ing,v.gas)),1);
@@ -9996,53 +10477,82 @@ function renderRepCaja(){
   const diaWrap = qs('#rep-chart-caja-dia');
   if(diaWrap){
     if(!days.length){ diaWrap.innerHTML='<div class="empty" style="padding:20px"><p>Sin movimientos</p></div>'; }
-    else diaWrap.innerHTML = `<div style="display:flex;flex-direction:column;gap:6px;padding:4px 0">` +
+    else diaWrap.innerHTML = `<div style="font-size:10px;color:var(--muted);margin-bottom:6px">Equivalente USD (Bs convertidos a BCV)</div><div style="display:flex;flex-direction:column;gap:6px;padding:4px 0">` +
       days.slice(-14).map(([d,v])=>`
         <div style="font-size:11px;color:var(--muted);margin-bottom:2px">${fmtDiaCorto(d)}</div>
         <div style="display:flex;align-items:center;gap:6px;font-size:11px">
-          <div style="min-width:50px;color:var(--ok)">＋${euro(v.ing)}</div>
+          <div style="min-width:70px;color:var(--ok)">＋${euro(v.ing)}</div>
           <div style="flex:1;background:#f3f4f6;border-radius:4px;height:12px;overflow:hidden;position:relative">
             <div style="position:absolute;left:0;top:0;height:100%;width:${(v.ing/maxV*100).toFixed(1)}%;background:var(--ok);opacity:.7;border-radius:4px"></div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:4px">
-          <div style="min-width:50px;color:var(--danger)">−${euro(v.gas)}</div>
+          <div style="min-width:70px;color:var(--danger)">−${euro(v.gas)}</div>
           <div style="flex:1;background:#f3f4f6;border-radius:4px;height:12px;overflow:hidden;position:relative">
             <div style="position:absolute;left:0;top:0;height:100%;width:${(v.gas/maxV*100).toFixed(1)}%;background:var(--danger);opacity:.5;border-radius:4px"></div>
           </div>
         </div>`).join('') + `</div>`;
   }
 
-  // Por categoría
+  // Por categoría — separamos totales Bs y USD para no mezclar monedas
   const byCat = {};
-  movs.forEach(m=>{ const k=m.categoria||m.tipo||'otro'; byCat[k]=(byCat[k]||0)+(INGRESOS.includes(m.categoria)||INGRESOS.includes(m.tipo)?m.monto:-m.monto); });
+  movs.forEach(m=>{
+    const k = m.categoria || m.tipo || 'otro';
+    if(!byCat[k]) byCat[k] = { netoBs:0, netoUsd:0 };
+    const signo = esIngreso(m) ? 1 : -1;
+    if(esBs(m)) byCat[k].netoBs  += signo * (m.monto||0);
+    else        byCat[k].netoUsd += signo * (m.monto||0);
+  });
   const catWrap = qs('#rep-caja-cats');
   if(catWrap){
-    const cats = Object.entries(byCat).sort(([,a],[,b])=>Math.abs(b)-Math.abs(a));
-    const maxC = Math.max(...cats.map(([,v])=>Math.abs(v)),1);
-    catWrap.innerHTML = cats.map(([k,v])=>`
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
-        <div style="min-width:90px;font-weight:600;text-transform:capitalize">${k}</div>
-        <div style="flex:1;background:#f3f4f6;border-radius:6px;height:16px;overflow:hidden">
-          <div style="height:100%;width:${(Math.abs(v)/maxC*100).toFixed(1)}%;background:${v>=0?'var(--ok)':'var(--danger)'};opacity:.7;border-radius:6px"></div>
-        </div>
-        <div style="min-width:90px;text-align:right;font-weight:700;color:${v>=0?'var(--ok)':'var(--danger)'}">${euro(v)}</div>
-      </div>`).join('') || '<p class="muted" style="font-size:12px">Sin movimientos</p>';
+    const cats = Object.entries(byCat).sort(([,a],[,b])=>(Math.abs(b.netoUsd)+Math.abs(b.netoBs)/(bcvR||1)) - (Math.abs(a.netoUsd)+Math.abs(a.netoBs)/(bcvR||1)));
+    if(!cats.length){ catWrap.innerHTML='<p class="muted" style="font-size:12px">Sin movimientos</p>'; }
+    else {
+      // Barra basada en equivalente USD para escala comparable
+      const maxC = Math.max(...cats.map(([,v])=>Math.abs(v.netoUsd)+Math.abs(v.netoBs)/(bcvR||1)),1);
+      catWrap.innerHTML = cats.map(([k,v])=>{
+        const totalEqUsd = v.netoUsd + (bcvR>0 ? v.netoBs/bcvR : 0);
+        const partes = [];
+        if(v.netoUsd !== 0) partes.push(`<span style="color:${v.netoUsd>=0?'var(--ok)':'var(--danger)'};font-weight:700">${euro(v.netoUsd)}</span>`);
+        if(v.netoBs !== 0)  partes.push(`<span style="color:${v.netoBs>=0?'var(--ok)':'var(--danger)'};font-weight:700">${fmtBs(v.netoBs)}</span>`);
+        return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
+          <div style="min-width:90px;font-weight:600;text-transform:capitalize">${k}</div>
+          <div style="flex:1;background:#f3f4f6;border-radius:6px;height:16px;overflow:hidden">
+            <div style="height:100%;width:${(Math.abs(totalEqUsd)/maxC*100).toFixed(1)}%;background:${totalEqUsd>=0?'var(--ok)':'var(--danger)'};opacity:.7;border-radius:6px"></div>
+          </div>
+          <div style="min-width:170px;text-align:right">${partes.join(' · ')||'—'}</div>
+        </div>`;
+      }).join('');
+    }
   }
 
-  // Por método de pago
+  // Por método de pago — también separado por moneda
   const byMet2 = {};
-  movs.forEach(m=>{ const esIng=INGRESOS.includes(m.categoria)||INGRESOS.includes(m.tipo); byMet2[m.metodo]=(byMet2[m.metodo]||0)+(esIng?m.monto:-m.monto); });
+  movs.forEach(m=>{
+    const k = m.metodo || 'otro';
+    if(!byMet2[k]) byMet2[k]={ netoBs:0, netoUsd:0 };
+    const signo = esIngreso(m) ? 1 : -1;
+    if(esBs(m)) byMet2[k].netoBs  += signo * (m.monto||0);
+    else        byMet2[k].netoUsd += signo * (m.monto||0);
+  });
   const metWrap2 = qs('#rep-caja-metodos');
   if(metWrap2){
-    const mets = Object.entries(byMet2).sort(([,a],[,b])=>Math.abs(b)-Math.abs(a));
-    const maxM = Math.max(...mets.map(([,v])=>Math.abs(v)),1);
-    metWrap2.innerHTML = `<div class="grid g2" style="gap:10px">` +
-      mets.map(([k,v])=>`
-        <div style="background:${v>=0?'#dcfce7':'#fee2e2'};border-radius:12px;padding:12px;text-align:center">
-          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">${METODOS_LABEL[k]||k}</div>
-          <div style="font-size:18px;font-weight:700;color:${v>=0?'var(--ok)':'var(--danger)'}">${euro(v)}</div>
-        </div>`).join('') + `</div>` || '<p class="muted">Sin movimientos</p>';
+    const mets = Object.entries(byMet2).sort(([,a],[,b])=>(Math.abs(b.netoUsd)+Math.abs(b.netoBs)/(bcvR||1)) - (Math.abs(a.netoUsd)+Math.abs(a.netoBs)/(bcvR||1)));
+    if(!mets.length){ metWrap2.innerHTML = '<p class="muted">Sin movimientos</p>'; }
+    else {
+      metWrap2.innerHTML = `<div class="grid g2" style="gap:10px">` +
+        mets.map(([k,v])=>{
+          const hayBs  = v.netoBs  !== 0;
+          const hayUsd = v.netoUsd !== 0;
+          const color  = (hayUsd?v.netoUsd:v.netoBs) >= 0 ? 'var(--ok)' : 'var(--danger)';
+          const bg = (hayUsd?v.netoUsd:v.netoBs) >= 0 ? '#dcfce7' : '#fee2e2';
+          return `<div style="background:${bg};border-radius:12px;padding:12px;text-align:center">
+            <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">${METODOS_LABEL[k]||k}</div>
+            ${hayUsd?`<div style="font-size:16px;font-weight:700;color:${v.netoUsd>=0?'var(--ok)':'var(--danger)'}">${euro(v.netoUsd)}</div>`:''}
+            ${hayBs?`<div style="font-size:13px;font-weight:700;color:${v.netoBs>=0?'var(--ok)':'var(--danger)'}">${fmtBs(v.netoBs)}</div>`:''}
+          </div>`;
+        }).join('') + `</div>`;
+    }
   }
 }
 
@@ -10354,10 +10864,26 @@ function exportReportesCSV(){
 
 <!-- ══ MODAL: Movimiento de Caja ══ -->
 <div class="modal-bg" id="m-movimiento">
-  <div class="modal" style="max-width:520px">
+  <div class="modal" style="max-width:560px">
     <button class="modal-close" onclick="closeModal('m-movimiento')">✕</button>
     <div class="modal-title" id="mmov-title">Registrar movimiento</div>
     <input type="hidden" id="mmov_tipo"/>
+
+    <!-- Panel de pedido vinculado (solo visible para ABONO) -->
+    <div id="mmov_pedido_panel" style="display:none;background:#FBEAF0;border:1.5px solid #f3c3d3;border-radius:12px;padding:12px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#993556" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg>
+        <span style="font-size:11px;font-weight:700;color:#993556;text-transform:uppercase;letter-spacing:.04em">Vincular a pedido pendiente (opcional)</span>
+      </div>
+      <select id="mmov_pedido_sel" onchange="mmovSeleccionarPedido()" style="width:100%;margin-bottom:6px">
+        <option value="">— Sin vincular a pedido —</option>
+      </select>
+      <div id="mmov_pedido_info" style="display:none;font-size:11px;color:#993556;margin-top:4px"></div>
+      <div id="mmov_pedido_hint" style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.4">
+        Si vinculas un pedido, el monto se descontará automáticamente de su saldo. Si no, el abono queda registrado en caja sin vincular.
+      </div>
+    </div>
+
     <div class="frow">
       <div class="fg">
         <label>Método de pago</label>
@@ -10371,7 +10897,7 @@ function exportReportesCSV(){
         </select>
       </div>
       <div class="fg">
-        <label>Moneda del monto</label>
+        <label>Moneda del monto <span id="mmov_moneda_lock" style="font-size:10px;color:var(--muted);font-weight:500"></span></label>
         <select id="mmov_moneda" onchange="mmovActualizarMoneda()">
           <option value="bs">Bolívares (Bs)</option>
           <option value="usd">Dólares (USD)</option>
@@ -10392,6 +10918,13 @@ function exportReportesCSV(){
       <div class="pill" style="background:#E6F1FB"><span style="color:#185FA5;font-size:12px">Equivalente: <strong id="mmov_equiv_val">—</strong></span></div>
     </div>
     <div class="frow">
+      <div class="fg" style="flex:2">
+        <label id="mmov_nombre_lbl">Nombre / Referencia</label>
+        <input type="text" id="mmov_nombre" placeholder="Ej. Juan Pérez, Proveedor Taza Azul, Caja chica…"/>
+      </div>
+      <div class="fg"><label>Fecha</label><input type="date" id="mmov_fecha"/></div>
+    </div>
+    <div class="frow">
       <div class="fg"><label>Categoría</label>
         <select id="mmov_cat">
           <option value="otro">Otro</option>
@@ -10402,9 +10935,8 @@ function exportReportesCSV(){
           <option value="retiro">Retiro</option>
         </select>
       </div>
-      <div class="fg"><label>Fecha</label><input type="date" id="mmov_fecha"/></div>
+      <div class="fg" style="flex:2"><label>Descripción / Nota</label><input type="text" id="mmov_nota" placeholder="Detalle adicional…"/></div>
     </div>
-    <div class="fg"><label>Descripción / Nota</label><input type="text" id="mmov_nota" placeholder="Detalle del movimiento…"/></div>
     <div class="btn-row" style="margin-top:12px">
       <button class="btn btn-brand" onclick="guardarMovimiento()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar</button>
       <button class="btn" onclick="closeModal('m-movimiento')">Cancelar</button>
@@ -10611,7 +11143,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_64';
+  const APP_VERSION = 'v13_68';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
