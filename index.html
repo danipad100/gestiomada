@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_68">
+<html lang="es" data-app-version="GestioMada_V13_69">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -2458,7 +2458,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.68: Acciones rápidas de Caja — (1) "Abono recibido" ahora ofrece vincular opcionalmente a un pedido pendiente (híbrido): si se vincula, el pago se registra automáticamente en el pedido reduciendo su saldo, y el movimiento de caja queda referenciado con ref_tipo='pedido'. Si es en Bs, se preserva monto_bs_ingresado usando tasa paralela (bcv×dif) para que cuadre con el saldo del pedido. (2) Nuevo campo "Nombre / Referencia" en todos los movimientos (Ingreso/Gasto/Compra/Abono/Retiro) — etiqueta contextual según el tipo (proveedor, cliente, quien retira, etc.). Al seleccionar pedido en abono, autocompleta el nombre del cliente. (3) La moneda del monto ahora se bloquea automáticamente cuando el método la determina (Bs efectivo/PM/transferencia → Bs; USD efectivo/Zelle → USD). Solo "Otro" permite elegir moneda libre. v13.67: Selects de Canal (Local/WhatsApp/Online) y Envío (Delivery/Envío/Sin envío) rediseñados con componente gm-select custom — SVG minimalistas reales en lugar de emoji, consistentes con el estilo de GestioMada, soporte dark mode, accesibilidad (teclado/Esc) y click-outside. El &lt;select&gt; nativo se mantiene oculto: toda la lógica de filtros sigue intacta. v13.66: Pedidos/Caja/Reportes — al editar un pedido y agregar/cambiar cliente, se actualizan los movimientos vinculados en Caja; canales normalizados para Reportes (Local/WhatsApp/Online, incluyendo variantes mal escritas). v13.65: Reportes — FIX crítico cálculos de datos: (1) KPI "Equivalente en Bs" ahora aplica el factor correcto por método de pago (Bs usa BCV×diferencial, USD usa BCV plano). (2) Tab Productos y Categorías: precios en USD base sin inflar con diferencial — los totales cuadran con suma de ventas. (3) Categoría se lee desde el catálogo por id_prod (el item del carrito no la guarda). (4) Tab Caja: ingresos/gastos separados por moneda (Bs y USD) — deja de sumar mezclado dos monedas distintas; KPIs "Saldo USD" y "Saldo Bs" independientes; gráfico diario en equivalente USD para comparar. v13.64: Corrección error SyntaxError byEst/ins duplicados en Reportes. v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.69: Caja — eliminado campo manual "Tasa Bs/USD" del modal de movimientos; ahora se usa automáticamente la tasa paralela del sistema (BCV × diferencial) para conversiones Bs↔USD, equivalentes y registro histórico. El pill de equivalente muestra la tasa usada. v13.68: Acciones rápidas de Caja — (1) "Abono recibido" ahora ofrece vincular opcionalmente a un pedido pendiente (híbrido): si se vincula, el pago se registra automáticamente en el pedido reduciendo su saldo, y el movimiento de caja queda referenciado con ref_tipo='pedido'. Si es en Bs, se preserva monto_bs_ingresado usando tasa paralela (bcv×dif) para que cuadre con el saldo del pedido. (2) Nuevo campo "Nombre / Referencia" en todos los movimientos (Ingreso/Gasto/Compra/Abono/Retiro) — etiqueta contextual según el tipo (proveedor, cliente, quien retira, etc.). Al seleccionar pedido en abono, autocompleta el nombre del cliente. (3) La moneda del monto ahora se bloquea automáticamente cuando el método la determina (Bs efectivo/PM/transferencia → Bs; USD efectivo/Zelle → USD). Solo "Otro" permite elegir moneda libre. v13.67: Selects de Canal y Envío rediseñados con gm-select custom SVG minimalistas. v13.66: Pedidos/Caja/Reportes — al editar un pedido y agregar/cambiar cliente, se actualizan los movimientos vinculados en Caja; canales normalizados para Reportes (Local/WhatsApp/Online, incluyendo variantes mal escritas). v13.65: Reportes — FIX crítico cálculos de datos: (1) KPI "Equivalente en Bs" ahora aplica el factor correcto por método de pago (Bs usa BCV×diferencial, USD usa BCV plano). (2) Tab Productos y Categorías: precios en USD base sin inflar con diferencial — los totales cuadran con suma de ventas. (3) Categoría se lee desde el catálogo por id_prod (el item del carrito no la guarda). (4) Tab Caja: ingresos/gastos separados por moneda (Bs y USD) — deja de sumar mezclado dos monedas distintas; KPIs "Saldo USD" y "Saldo Bs" independientes; gráfico diario en equivalente USD para comparar. v13.64: Corrección error SyntaxError byEst/ins duplicados en Reportes. v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -7755,8 +7755,6 @@ function abrirMovimiento(tipo){
   const mnom=qs('#mmov_nombre'); if(mnom) mnom.value='';
   const mnomLbl=qs('#mmov_nombre_lbl'); if(mnomLbl) mnomLbl.textContent=NOMBRE_LBL[tipo]||'Nombre / Referencia';
   if(mnom) mnom.setAttribute('placeholder', NOMBRE_PH[tipo]||'');
-  const ses=loadSesion();
-  const tasaEl=qs('#mmov_tasa'); if(tasaEl){ const tx=ses?.tasa||loadTasa()||0; tasaEl.value=tx>0?String(tx).replace('.',','):''; }
 
   // Panel de pedido vinculado: solo visible para ABONO
   const pp=qs('#mmov_pedido_panel');
@@ -7824,17 +7822,14 @@ function guardarMovimiento(){
   const INGRESOS=['ingreso','abono','venta'];
   const signo=INGRESOS.includes(tipo)||INGRESOS.includes(qs('#mmov_cat').value)?1:-1;
   const moneda=qs('#mmov_moneda')?.value||'bs';
-  const tasa=parseEU(qs('#mmov_tasa')?.value||'0');
-  // Para el registro general del movimiento: conversión simple Bs↔USD con tasa del form
-  const montoUsdGen=moneda==='usd'?monto:(tasa>0?monto/tasa:0);
-  const montoBs    =moneda==='bs' ?monto:(tasa>0?monto*tasa:0);
-  // Para abono vinculado a pedido: usar tasa paralela (bcv×dif) para cuadrar con saldo del pedido
+  // Tasa paralela del sistema (bcv × diferencial) — se usa automáticamente
+  const bcvMov=getTasaBCV(), difMov=getDiferencial();
+  const tasaPar=bcvMov*(difMov>0?difMov:1);
+  // Conversiones Bs↔USD usando tasa paralela
+  const montoUsdGen=moneda==='usd'?monto:(tasaPar>0?monto/tasaPar:0);
+  const montoBs    =moneda==='bs' ?monto:(tasaPar>0?monto*tasaPar:0);
+  // Para abono vinculado a pedido: usa la misma tasa paralela del sistema
   let montoUsdParaPedido = montoUsdGen;
-  if(tipo==='abono' && _mmovPedidoVinculado && moneda==='bs'){
-    const bcvA = getTasaBCV(), difA = getDiferencial();
-    const parA = bcvA * (difA>0?difA:1);
-    if(parA>0) montoUsdParaPedido = monto / parA;
-  }
   const nombre=(qs('#mmov_nombre')?.value||'').trim();
   const notaRaw=(qs('#mmov_nota')?.value||'').trim();
   // Concatenar nombre y nota para preservar ambas cosas en el registro
@@ -7845,8 +7840,8 @@ function guardarMovimiento(){
     const ped = _mmovPedidoVinculado;
     const pagado = (ped.pagos||[]).reduce((a,p)=>a+p.monto,0);
     const saldoUsd = Math.max(0, ped.total - pagado);
-    if(moneda==='bs' && !(getTasaBCV()>0)){
-      toast('Configure la tasa BCV para registrar abono en Bs vinculado','warn'); return;
+    if(moneda==='bs' && tasaPar<=0){
+      toast('Configure la tasa BCV en Configuración para registrar abono en Bs','warn'); return;
     }
     if(montoUsdParaPedido > saldoUsd + 0.01){
       toast('El monto supera el saldo pendiente: '+euro(saldoUsd),'warn'); return;
@@ -7855,7 +7850,7 @@ function guardarMovimiento(){
 
   const mov={
     id:Date.now(), tipo, categoria:qs('#mmov_cat').value,
-    monto, moneda, tasa:tasa||0,
+    monto, moneda, tasa:tasaPar,
     monto_bs:montoBs, monto_usd: (tipo==='abono' && _mmovPedidoVinculado) ? montoUsdParaPedido : montoUsdGen,
     metodo:qs('#mmov_metodo')?.value||'efectivo_bs',
     nombre: nombre||null,
@@ -7923,23 +7918,23 @@ function mmovActualizarMoneda(){
   const esUsd=monEl.value==='usd';
   const lbl=qs('#mmov_monto_lbl');
   if(lbl) lbl.textContent=esUsd?'Monto (USD)':'Monto (Bs)';
-  const tasaWrap=qs('#mmov_tasa_wrap');
-  if(tasaWrap) tasaWrap.style.display=esUsd?'':'none';
   mmovCalcEquiv();
 }
 function mmovCalcEquiv(){
   const monEl=qs('#mmov_moneda');
   const esUsd=monEl?.value==='usd';
   const monto=parseEU(qs('#mmov_monto')?.value||'0');
-  const tasa=parseEU(qs('#mmov_tasa')?.value||'0');
+  const bcv=getTasaBCV(), dif=getDiferencial();
+  const par=bcv*(dif>0?dif:1); // tasa paralela = lo que paga el cliente en Bs por cada USD
   const wrap=qs('#mmov_equiv_wrap'), val=qs('#mmov_equiv_val');
   if(!wrap||!val) return;
-  if(esUsd&&tasa>0&&monto>0){
+  if(monto>0 && par>0){
     wrap.style.display='block';
-    val.textContent='Bs '+((monto*tasa).toLocaleString('es-ES',{minimumFractionDigits:2}));
-  } else if(!esUsd&&tasa>0&&monto>0){
-    wrap.style.display='block';
-    val.textContent='USD '+((monto/tasa).toLocaleString('es-ES',{minimumFractionDigits:2}));
+    if(esUsd){
+      val.textContent='Equivalente: Bs '+(monto*par).toLocaleString('es-ES',{minimumFractionDigits:2})+' · Tasa: '+par.toFixed(2);
+    } else {
+      val.textContent='Equivalente: $ '+(monto/par).toFixed(2)+' · Tasa: '+par.toFixed(2);
+    }
   } else { wrap.style.display='none'; }
 }
 function setCajaPeriodo(p, btn){
@@ -10909,13 +10904,9 @@ function exportReportesCSV(){
         <label id="mmov_monto_lbl">Monto (Bs)</label>
         <input type="text" id="mmov_monto" placeholder="0,00" oninput="mmovCalcEquiv()"/>
       </div>
-      <div class="fg" id="mmov_tasa_wrap" style="display:none">
-        <label>Tasa Bs/USD</label>
-        <input type="text" id="mmov_tasa" placeholder="0,00" oninput="mmovCalcEquiv()"/>
-      </div>
     </div>
     <div id="mmov_equiv_wrap" style="display:none;margin-bottom:8px">
-      <div class="pill" style="background:#E6F1FB"><span style="color:#185FA5;font-size:12px">Equivalente: <strong id="mmov_equiv_val">—</strong></span></div>
+      <div class="pill" style="background:#E6F1FB"><span style="color:#185FA5;font-size:12px"><span id="mmov_equiv_val">—</span></span></div>
     </div>
     <div class="frow">
       <div class="fg" style="flex:2">
@@ -11143,7 +11134,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_68';
+  const APP_VERSION = 'v13_69';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
