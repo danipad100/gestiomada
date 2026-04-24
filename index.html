@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_60">
+<html lang="es" data-app-version="GestioMada_V13_62">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -1481,7 +1481,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <select id="mc_estado"><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select>
       </div>
     </div>
-    <div id="mc_moneda_info" style="display:block;font-size:11px;padding:8px 12px;border-radius:8px;background:var(--bg);margin-bottom:8px;color:var(--muted)">💱 El precio se registra en <strong>USD ($)</strong>. El equivalente en <strong>Bs</strong> se calcula automáticamente con la tasa BCV al momento de vender.</div>
+    <div id="mc_moneda_info" style="display:block;font-size:11px;padding:8px 12px;border-radius:8px;background:var(--bg);margin-bottom:8px;color:var(--muted)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> El precio se registra en <strong>USD ($)</strong>. El equivalente en <strong>Bs</strong> se calcula automáticamente con la tasa BCV al momento de vender.</div>
     <input type="hidden" id="mc_moneda_prod" value="usd"/>
     <div style="display:flex;gap:8px">
       <div class="fg" style="flex:2"><label>Control de inventario</label>
@@ -1494,7 +1494,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
       <div class="fg" id="mc_loc_wrap" style="flex:1"><label>Descontar desde</label>
         <select id="mc_inv_loc">
           <option value="deposito" selected>Depósito</option>
-          <option value="local">Local</option>
+          <option value="local">🏪 Local</option>
         </select>
       </div>
     </div>
@@ -1553,7 +1553,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <input type="hidden" id="mpm_moneda_prod" value="usd"/>
       </div>
     </div>
-    <div id="mpm_moneda_info" style="display:block;font-size:11px;padding:8px 12px;border-radius:8px;background:var(--bg);margin-bottom:8px;color:var(--muted)">💱 Precio en <strong>USD</strong>. El equivalente en Bs se calcula con tasa BCV.</div>
+    <div id="mpm_moneda_info" style="display:block;font-size:11px;padding:8px 12px;border-radius:8px;background:var(--bg);margin-bottom:8px;color:var(--muted)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Precio en <strong>USD</strong>. El equivalente en Bs se calcula con tasa BCV.</div>
     <div style="display:flex;gap:8px">
       <div class="fg" style="flex:2"><label>Control de inventario</label>
         <select id="mpm_inv" onchange="mpmToggleReceta()">
@@ -1565,7 +1565,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
       <div class="fg" id="mpm_loc_wrap" style="flex:1"><label>Descontar desde</label>
         <select id="mpm_inv_loc">
           <option value="deposito" selected>Depósito</option>
-          <option value="local">Local</option>
+          <option value="local">🏪 Local</option>
         </select>
       </div>
     </div>
@@ -1706,16 +1706,16 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div style="font-size:12px;color:var(--muted)">Vista previa del avatar.</div>
       </div>
       <div class="sep" style="margin:12px 0 10px"></div>
-      <div style="font-size:13px;font-weight:700;margin-bottom:8px">📋 Módulos visibles</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> Módulos visibles</div>
       <div id="musr-vistas-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:14px"></div>
-      <div style="font-size:13px;font-weight:700;margin-bottom:8px">⚡ Acciones permitidas</div>
+      <div style="font-size:13px;font-weight:700;margin-bottom:8px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Acciones permitidas</div>
       <div id="musr-permisos-grid" style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:8px"></div>
     </div>
     <div style="padding:16px 20px;display:flex;gap:10px;justify-content:space-between;flex-wrap:wrap;border-top:1px solid var(--border)">
-      <button id="musr-btn-del" class="btn btn-danger btn-sm" onclick="eliminarUsuarioActual()" style="display:none">🗑 Eliminar</button>
+      <button id="musr-btn-del" class="btn btn-danger btn-sm" onclick="eliminarUsuarioActual()" style="display:none"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Eliminar</button>
       <div style="display:flex;gap:8px;margin-left:auto">
         <button class="btn btn-sm" onclick="cerrarModalUsuario()">Cancelar</button>
-        <button class="btn btn-brand btn-sm" onclick="guardarUsuario()">💾 Guardar usuario</button>
+        <button class="btn btn-brand btn-sm" onclick="guardarUsuario()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar usuario</button>
       </div>
     </div>
   </div>
@@ -2276,7 +2276,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
             </div>
           </div>
           <div style="font-size:11px;color:var(--muted);background:var(--bg);border-radius:10px;padding:10px 12px;margin-bottom:12px">
-            💡 <strong>Modo Auto:</strong> obtiene BCV desde <em>DolarVZLA / DolarAPI</em> y Paralelo desde <em>Binance P2P vía CriptoYa</em>. Se actualiza cada hora. <strong>Modo Manual:</strong> tú ingresas los valores.
+            <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg> <strong>Modo Auto:</strong> obtiene BCV desde <em>DolarVZLA / DolarAPI</em> y Paralelo desde <em>Binance P2P vía CriptoYa</em>. Se actualiza cada hora. <strong>Modo Manual:</strong> tú ingresas los valores.
           </div>
           <input type="hidden" id="cfg_tasa_global"/>
           <div style="font-size:11px;color:var(--muted)">La tasa BCV también se usa en Caja al convertir movimientos en USD.</div>
@@ -2352,18 +2352,18 @@ body.dark .pos-prod-img-ph{background:#23283a}
           </div>
         </div>
         <div class="card">
-          <div class="card-title"><span class="ico">📲</span> Actualizaciones PWA</div>
+          <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><polyline points="12 6 12 12 16 14"/></svg></span> Actualizaciones PWA</div>
           <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Cuando publiques una nueva versión en Vercel, usa este botón para verificar e instalar la actualización sin perder tus datos.</p>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-            <button class="btn btn-sm" id="btn_pwa_check_updates" type="button">🔍 Buscar actualizaciones</button>
+            <button class="btn btn-sm" id="btn_pwa_check_updates" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Buscar actualizaciones</button>
             <button class="btn btn-sm" id="btn_pwa_apply_update" type="button" style="display:none;background:var(--ok);color:#fff;border-color:var(--ok)">⬆ Actualizar ahora</button>
             <span style="font-size:12px;color:var(--muted)" id="pwa_update_status">—</span>
           </div>
         </div>
         <div class="card" style="opacity:.7">
-          <div class="card-title"><span class="ico">ℹ️</span> Versión</div>
+          <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -2399,6 +2399,15 @@ body.dark .pos-prod-img-ph{background:#23283a}
             <option value="local">🏪 Local</option>
             <option value="whatsapp">📱 WhatsApp</option>
             <option value="online">🌐 Online</option>
+          </select>
+          <select id="ped_fenvio" onchange="renderPedidos()">
+            <option value="">Todos los envíos</option>
+            <option value="delivery">🛵 Delivery</option>
+            <option value="envio">📦 Envío</option>
+            <option value="sin_envio"> 🚫 Sin envío</option>
+          </select>
+          <select id="ped_fprod" onchange="renderPedidos()" style="max-width:180px">
+            <option value="">Todos los productos</option>
           </select>
           <button class="btn btn-brand btn-sm" onclick="abrirNuevoPedido()">＋ Nuevo Pedido</button>
         </div>
@@ -2618,8 +2627,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
                         <div style="flex:2;min-width:130px">
                           <label>Modo de cotización</label>
                           <select id="pos_wa_modo" onchange="posWaActualizar()">
-                            <option value="usd">💵 Solo USD</option>
-                            <option value="bs">💱 Bs + ancla USD</option>
+                            <option value="usd">Solo USD</option>
+                            <option value="bs">Bs + ancla USD</option>
                           </select>
                         </div>
                         <div style="flex:2;min-width:120px">
@@ -2778,7 +2787,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
             <input type="text" id="inv_ins_q" placeholder="Buscar insumo…" oninput="renderInsumos()"/>
             <select id="inv_ins_falerta" onchange="renderInsumos()">
               <option value="">Todos</option>
-              <option value="alerta">⚠ Stock bajo</option>
+              <option value="alerta">Stock bajo</option>
               <option value="ok">Stock OK</option>
             </select>
             <button class="btn btn-brand btn-sm" onclick="abrirNuevoInsumo()">＋ Nuevo Insumo</button>
@@ -2857,6 +2866,10 @@ body.dark .pos-prod-img-ph{background:#23283a}
             </div>
           </div>
           <div class="card">
+            <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Por canal de venta</div>
+            <div id="rep-chart-canales"></div>
+          </div>
+                    <div class="card">
             <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/></svg> Detalle de ventas</div>
             <div id="rep-ventas-tabla"></div>
           </div>
@@ -3280,10 +3293,10 @@ async function guardarConfigNegocio(){
       );
     }
 
-    if(status){ status.textContent = '✅ Guardado y sincronizado'; setTimeout(()=>{ if(status) status.textContent=''; }, 3000); }
+    if(status){ status.textContent = 'Guardado y sincronizado'; setTimeout(()=>{ if(status) status.textContent=''; }, 3000); }
     toast('Datos del negocio guardados en la nube ✓', 'ok');
   } catch(e) {
-    if(status){ status.textContent = '❌ Error al sincronizar'; }
+    if(status){ status.textContent = 'Error al sincronizar'; }
     toast('Error al guardar en nube: ' + e.message, 'warn');
     console.warn('[Config Supabase]', e);
   } finally {
@@ -4639,7 +4652,7 @@ function renderDash(){
     dm.innerHTML = movs.length ? movs.map(m=>`
       <div class="list-item" style="margin-bottom:6px">
         <div class="li-ico" style="font-size:16px;background:transparent;padding:0">
-          ${m.tipo==='ingreso'?'↑':m.tipo==='gasto'?'↓':m.tipo==='compra'?'🛒':m.tipo==='abono'?'💰':'↩'}
+          ${m.tipo==='ingreso'?'↑':m.tipo==='gasto'?'↓':m.tipo==='compra'?'↓':m.tipo==='abono'?'+':'↩'}
         </div>
         <div class="li-body">
           <div class="li-name" style="font-size:12px">${m.nota||m.categoria||m.tipo}</div>
@@ -4710,11 +4723,25 @@ let CURRENT_USR_NOM = 'Admin';
 // Array seguro para lock screen (evita JSON.stringify en onclick)
 window._lockUsuarios = [];
 
+
+// ── Helper: renderizar ícono de rol como SVG ──
+const ROL_SVG_ICONS = {
+  'user':    '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+  'users':   '<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
+  'factory': '<path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4H4a2 2 0 0 0-2 2z"/><path d="M17 18h1M12 18h1M7 18h1"/>',
+  'eye':     '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+  'lock':    '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+};
+function rolIcoSvg(ico, w=18, h=18){
+  const paths = ROL_SVG_ICONS[ico] || ROL_SVG_ICONS['lock'];
+  return `<svg viewBox="0 0 24 24" width="${w}" height="${h}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle">${paths}</svg>`;
+}
+
 const ROLES = {
-  admin:     { label:'Admin',        ico:'👤', desc:'Acceso completo al sistema.',                         vistas:['dashboard','editor','catalogo','clientes','pedidos','ventas','caja','inventario','reportes','config'], puede:['crear','editar','eliminar','ver','exportar','config','reportes','caja','limpiar'] },
-  empleado:  { label:'Empleado',     ico:'🧑‍💼', desc:'Ventas, pedidos y clientes. Sin caja ni config.',    vistas:['dashboard','catalogo','clientes','pedidos','ventas'],                                                puede:['crear','editar','ver'] },
-  produccion:{ label:'Producción',   ico:'🏭', desc:'Pedidos e inventario. Sin ventas ni caja.',           vistas:['dashboard','pedidos','inventario'],                                                                  puede:['ver','editar'] },
-  lectura:   { label:'Solo lectura', ico:'👁', desc:'Consulta catálogo, clientes y reportes. Solo lectura.',vistas:['dashboard','catalogo','clientes','reportes'],                                                       puede:['ver'] }
+  admin:     { label:'Admin',        ico:'user', desc:'Acceso completo al sistema.',                         vistas:['dashboard','editor','catalogo','clientes','pedidos','ventas','caja','inventario','reportes','config'], puede:['crear','editar','eliminar','ver','exportar','config','reportes','caja','limpiar'] },
+  empleado:  { label:'Empleado',     ico:'users', desc:'Ventas, pedidos y clientes. Sin caja ni config.',    vistas:['dashboard','catalogo','clientes','pedidos','ventas'],                                                puede:['crear','editar','ver'] },
+  produccion:{ label:'Producción',   ico:'factory', desc:'Pedidos e inventario. Sin ventas ni caja.',           vistas:['dashboard','pedidos','inventario'],                                                                  puede:['ver','editar'] },
+  lectura:   { label:'Solo lectura', ico:'eye', desc:'Consulta catálogo, clientes y reportes. Solo lectura.',vistas:['dashboard','catalogo','clientes','reportes'],                                                       puede:['ver'] }
 };
 
 // PIN hash simple: no texto plano, pero no criptografía bancaria
@@ -4927,7 +4954,7 @@ function abrirPinModal(rol, modo='entrar', usrObj=null){
     qs('#pin-rol-ico').style.cssText = 'font-size:22px;font-weight:700;background:linear-gradient(135deg,#ff7aa2,#7aa2ff);border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#fff;margin:0 auto 8px';
     qs('#pin-rol-nombre').textContent = modo==='cambiar' ? 'Nuevo PIN — '+usrObj.nombre : usrObj.nombre;
   } else {
-    qs('#pin-rol-ico').textContent = r?.ico||'🔒';
+    const _pinIcoEl=qs('#pin-rol-ico'); if(_pinIcoEl) _pinIcoEl.innerHTML=rolIcoSvg(r?.ico||'lock');
     qs('#pin-rol-ico').style.cssText = 'font-size:36px;margin-bottom:8px';
     qs('#pin-rol-nombre').textContent = modo==='cambiar' ? 'Nuevo PIN — '+r?.label : r?.label;
   }
@@ -5229,7 +5256,7 @@ function aplicarPermisos(){
   const pill=qs('#tb-rol-pill');
   if(pill){
     const nomCorto = CURRENT_USR_ID ? CURRENT_USR_NOM.split(' ')[0] : rol.label;
-    pill.innerHTML=`<span class="rol-ico-tb">${CURRENT_USR_ID ? '👤' : rol.ico}</span><span class="rol-lbl-tb" style="margin-left:4px">${nomCorto}</span>`;
+    pill.innerHTML=`<span class="rol-ico-tb">${rolIcoSvg(CURRENT_USR_ID ? 'user' : rol.ico,14,14)}</span><span class="rol-lbl-tb" style="margin-left:4px">${nomCorto}</span>`;
     pill.style.display='';
     const bg={admin:'#ffe3ee',empleado:'#e8efff',produccion:'#e8f5e9',lectura:'#f3f4f6'};
     pill.style.background=bg[CURRENT_ROL]||'#f3f4f6';
@@ -5665,10 +5692,10 @@ function _mcActualizarMonedaInfo(){
   if(sel==='bs' && bcv>0){
     const pvBs=pvUsd*dif*bcv;
     inf.style.display='block';
-    inf.innerHTML=`💱 El cliente paga en <strong>Bs</strong>. $${pvUsd.toFixed(2)} × ${dif.toFixed(4)} × ${bcv.toLocaleString('es-VE')} = <strong>Bs ${pvBs.toFixed(2).replace('.',',')}</strong> por unidad.`;
+    inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> El cliente paga en <strong>Bs</strong>. $${pvUsd.toFixed(2)} × ${dif.toFixed(4)} × ${bcv.toLocaleString('es-VE')} = <strong>Bs ${pvBs.toFixed(2).replace('.',',')}</strong> por unidad.`;
   } else {
     inf.style.display='block';
-    inf.innerHTML=`💵 El cliente paga en <strong>dólares</strong>. Precio: $${pvUsd.toFixed(2)}.${bcv>0?' Equiv. Bs '+Math.round(pvUsd*bcv).toLocaleString('es-VE')+' (ref.)':''}`;
+    inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> El cliente paga en <strong>dólares</strong>. Precio: $${pvUsd.toFixed(2)}.${bcv>0?' Equiv. Bs '+Math.round(pvUsd*bcv).toLocaleString('es-VE')+' (ref.)':''}`;
   }
 }
 function _mpmActualizarMonedaInfo(){
@@ -5679,10 +5706,10 @@ function _mpmActualizarMonedaInfo(){
   if(sel==='bs' && bcv>0){
     const pvBs=pvUsd*dif*bcv;
     inf.style.display='block';
-    inf.innerHTML=`💱 El cliente paga en <strong>Bs</strong>. $${pvUsd.toFixed(2)} × ${dif.toFixed(4)} × ${bcv.toLocaleString('es-VE')} = <strong>Bs ${pvBs.toFixed(2).replace('.',',')}</strong>.`;
+    inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> El cliente paga en <strong>Bs</strong>. $${pvUsd.toFixed(2)} × ${dif.toFixed(4)} × ${bcv.toLocaleString('es-VE')} = <strong>Bs ${pvBs.toFixed(2).replace('.',',')}</strong>.`;
   } else {
     inf.style.display='block';
-    inf.innerHTML=`💵 El cliente paga en <strong>dólares</strong>. Precio: $${pvUsd.toFixed(2)}.`;
+    inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> El cliente paga en <strong>dólares</strong>. Precio: $${pvUsd.toFixed(2)}.`;
   }
 }
 
@@ -6203,16 +6230,16 @@ function posRenderProductos(){
 }
 
 function posEmoji(cat){
-  if(!cat) return '📦';
+  if(!cat) return 'package';
   const c = cat.toLowerCase();
-  if(c.includes('taza')||c.includes('mug')) return '☕';
-  if(c.includes('camiseta')||c.includes('ropa')) return '👕';
-  if(c.includes('sublim')) return '🎨';
-  if(c.includes('foto')||c.includes('fotografia')) return '📷';
-  if(c.includes('papel')) return '📄';
-  if(c.includes('cuadro')) return '🖼️';
-  if(c.includes('bolso')||c.includes('bolsa')) return '👜';
-  return '🎁';
+  if(c.includes('taza')||c.includes('mug')) return 'coffee';
+  if(c.includes('camiseta')||c.includes('ropa')) return 'shirt';
+  if(c.includes('sublim')) return 'palette';
+  if(c.includes('foto')||c.includes('fotografia')) return 'camera';
+  if(c.includes('papel')) return 'file';
+  if(c.includes('cuadro')) return 'image';
+  if(c.includes('bolso')||c.includes('bolsa')) return 'bag';
+  return 'gift';
 }
 
 function posBuscarProducto(){
@@ -6433,10 +6460,10 @@ function posWaActualizar(){
   if(infoEl){
     if(modo==='bs'&&bcv>0){
       infoEl.style.display='block';
-      infoEl.textContent=`💱 Bs + ancla USD · diferencial ×${dif.toFixed(4)} · BCV ${bcv.toLocaleString('es-VE')}`;
+      infoEl.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Bs + ancla USD · diferencial ×${dif.toFixed(4)} · BCV ${bcv.toLocaleString('es-VE')}`;
     } else {
       infoEl.style.display='block';
-      infoEl.textContent='💵 Precios en dólares directo.';
+      infoEl.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Precios en dólares directo.';
     }
   }
 
@@ -6481,7 +6508,7 @@ function posWaActualizar(){
   const cliNom = _posCliSel ? (_posCliSel.nombre+(_posCliSel.apellido?' '+_posCliSel.apellido:'')).trim() : '';
 
   // Armar texto
-  let txt = 'Hola 👋, te comparto tu cotización:\n';
+  let txt = 'Hola, te comparto tu cotización:\n';
   if(cliNom) txt += `Cliente: ${cliNom}\n`;
   txt += '\n*Detalle:*\n';
 
@@ -6516,7 +6543,7 @@ function posWaActualizar(){
       txt+=`\n📌 *Restante al retirar:* $${restUsd.toFixed(2)}`;
     }
   }
-  txt+='\n\nGracias por tu preferencia ❤️';
+  txt+='\n\nGracias por tu preferencia ♥';
 
   const prev=qs('#pos_wa_preview'); if(prev) prev.textContent=txt;
   const base=tel?`https://wa.me/${tel}?text=`:`https://wa.me/?text=`;
@@ -6770,7 +6797,7 @@ function posCobrar(){
       <span>${it.cant}\u00d7 ${it.nombre}</span>
       <span style="font-weight:600">${euro(it.precio_unit*it.cant)}</span>
     </div>`).join('') : `<div style="font-size:13px;color:var(--muted);padding:6px 0">Cobro de ${VEN_TIPO_LABEL[tipo]||tipo}: ${euro(total)}</div>`;
-  const canalLblConf = CANALES_LABEL[venta.canal]||'\ud83c\udffb Local';
+  const canalLblConf = CANALES_LABEL[venta.canal]||CANALES_LABEL.local;
   const canalStyleConf = CANALES_COLOR[venta.canal]||CANALES_COLOR.local;
   const confEl = qs('#m-venta-confirmada');
   if(confEl){
@@ -7059,7 +7086,7 @@ function guardarVenta(){
 // ── Render lista ventas ──
 const VEN_TIPO_LABEL={ venta_rapida:'Venta rápida', pago_pedido:'Pago de pedido', abono:'Abono', pago_restante:'Pago restante' };
 const VEN_TIPO_COLOR={ venta_rapida:'chip-ok', pago_pedido:'chip-info', abono:'chip-warn', pago_restante:'chip-info' };
-const CANALES_LABEL={ local:'🏪 Local', whatsapp:'📱 WhatsApp', online:'🌐 Online' };
+const CANALES_LABEL={ local:'<svg viewBox=\"0 0 24 24\" width=\"13\" height=\"13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"display:inline-block;vertical-align:middle;margin-right:3px\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><polyline points=\"9 22 9 12 15 12 15 22\"/></svg> Local', whatsapp:'<svg viewBox=\"0 0 24 24\" width=\"13\" height=\"13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"display:inline-block;vertical-align:middle;margin-right:3px\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg> WhatsApp', online:'<svg viewBox=\"0 0 24 24\" width=\"13\" height=\"13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"display:inline-block;vertical-align:middle;margin-right:3px\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"2\" y1=\"12\" x2=\"22\" y2=\"12\"/><path d=\"M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z\"/></svg> Online' };
 const CANALES_COLOR={ local:'background:#E1F5EE;color:#085041', whatsapp:'background:#dcfce7;color:#15803d', online:'background:#E6F1FB;color:#0C447C' };
 // ── Helper: obtiene la foto correcta (Supabase URL > base64 local) ──
 function getFoto(p){ return (p.foto_url && p.foto_url.startsWith('http')) ? p.foto_url : (p.foto || ''); }
@@ -7100,7 +7127,7 @@ function renderVentas(){
     const ri=all.indexOf(v);
     const tipoLbl=VEN_TIPO_LABEL[v.tipo]||'Venta rápida';
     const tipoChip=VEN_TIPO_COLOR[v.tipo]||'chip-ok';
-    const canalLbl=CANALES_LABEL[v.canal]||'🏪 Local';
+    const canalLbl=CANALES_LABEL[v.canal]||CANALES_LABEL.local;
     const canalStyle=CANALES_COLOR[v.canal]||CANALES_COLOR.local;
     const autorBadge=v.usuario_nom?`<span class="chip" style="font-size:10px;background:#f0f4ff">👤 ${v.usuario_nom.split(' ')[0]}</span>`:'';
     const item=document.createElement('div'); item.className='list-item'; item.style.cssText='margin-bottom:10px;flex-wrap:wrap;gap:8px';
@@ -7175,7 +7202,7 @@ function verVenta(idx){
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
       <span class="chip chip-ok">✓ Completada</span>
       <span class="chip chip-info">${METODOS_LABEL[v.metodo]||v.metodo}</span>
-      ${v.canal?`<span class="chip" style="${CANALES_COLOR[v.canal]||CANALES_COLOR.local}">${CANALES_LABEL[v.canal]||v.canal}</span>`:''}
+      ${v.canal?`<span class="chip" style="${CANALES_COLOR[v.canal]||CANALES_COLOR.local}">${CANALES_LABEL[v.canal]||CANALES_LABEL.local}</span>`:''}
       <span class="chip" style="background:#f3f4f6">${new Date(v.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'})}</span>
       ${v.usuario_nom?`<span class="chip" style="background:#f0f4ff;color:#3b5bdb;font-weight:600">👤 ${v.usuario_nom}</span>`:''}
       ${v.estado==='anulada'?'<span class="chip chip-danger">ANULADA</span>':''}
@@ -7312,7 +7339,7 @@ function imprimirComprobante(){
     .print-btn{display:block;width:100%;padding:12px;background:#ff7aa2;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:18px;font-family:inherit}
     @media print{.print-btn{display:none}}
   </style></head><body>
-  <button class="print-btn" onclick="window.print()">🖨 Imprimir recibo</button>
+  <button class="print-btn" onclick="window.print()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir recibo</button>
   <div class="page">
     <div class="top-bar"></div>
     ${v.estado==='anulada'?'<div class="anulada">⚠ VENTA ANULADA</div>':''}
@@ -7352,7 +7379,7 @@ function imprimirComprobante(){
         <div class="label" style="margin-top:10px">Método de pago</div>
         <div class="val">${metLbl}</div>
         <div class="label" style="margin-top:10px">Canal</div>
-        <div class="val">${CANALES_LABEL[v.canal]||'🏪 Local'}</div>
+        <div class="val">${CANALES_LABEL[v.canal]||CANALES_LABEL.local}</div>
         ${v.usuario_nom?`<div class="label" style="margin-top:10px">Atendido por</div><div class="val">${v.usuario_nom}</div>`:''}
       </div>
     </div>
@@ -8270,9 +8297,21 @@ function guardarPedido(){
 }
 
 // ── Render lista pedidos ──
+function _poblarFiltroProductos(){
+  const sel=qs('#ped_fprod'); if(!sel) return;
+  const val=sel.value;
+  const all=loadPed();
+  const nombres=new Set();
+  all.forEach(p=>(p.items||[]).forEach(it=>{ if(it.nombre) nombres.add(it.nombre); }));
+  const sorted=[...nombres].sort((a,b)=>a.localeCompare(b,'es'));
+  sel.innerHTML='<option value="">Todos los productos</option>'+sorted.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">${n}</option>`).join('');
+  sel.value=val;
+}
+
 function renderPedidos(){
   renderKpisPedidos();
-  const all=loadPed(), q=(qs('#ped_q')?.value||'').toLowerCase(), fe=qs('#ped_fest')?.value||'', fp=qs('#ped_fpago')?.value||'', fent=qs('#ped_fentrega')?.value||'', fcanal=qs('#ped_fcanal')?.value||'';
+  _poblarFiltroProductos();
+  const all=loadPed(), q=(qs('#ped_q')?.value||'').toLowerCase(), fe=qs('#ped_fest')?.value||'', fp=qs('#ped_fpago')?.value||'', fent=qs('#ped_fentrega')?.value||'', fcanal=qs('#ped_fcanal')?.value||'', fenvio=qs('#ped_fenvio')?.value||'', fprod=qs('#ped_fprod')?.value||'';
   const hoy=new Date().toISOString().slice(0,10);
   const manana=new Date(Date.now()+86400000).toISOString().slice(0,10);
   const finSem=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
@@ -8286,7 +8325,14 @@ function renderPedidos(){
       else if(fent==='semana') matchEnt=p.fecha_entrega>=hoy&&p.fecha_entrega<=finSem;
       else if(fent==='vencido') matchEnt=p.fecha_entrega<hoy&&p.estado!=='entregado'&&p.estado!=='cancelado';
     } else if(fent && !p.fecha_entrega){ matchEnt=false; }
-    return matchQ&&(!fe||p.estado===fe)&&(!fp||ep===fp)&&matchEnt&&(!fcanal||(p.canal||'local')===fcanal);
+    // Filtro envío
+    let matchEnvio=true;
+    if(fenvio==='delivery')  matchEnvio=(_numPedido(p.delivery_usd)>0);
+    else if(fenvio==='envio') matchEnvio=(_numPedido(p.envio_usd)>0);
+    else if(fenvio==='sin_envio') matchEnvio=(_numPedido(p.delivery_usd)===0 && _numPedido(p.envio_usd)===0);
+    // Filtro producto
+    const matchProd=!fprod||(p.items||[]).some(it=>(it.nombre||'')===fprod);
+    return matchQ&&(!fe||p.estado===fe)&&(!fp||ep===fp)&&matchEnt&&(!fcanal||(p.canal||'local')===fcanal)&&matchEnvio&&matchProd;
   }).reverse();
 
   const c=qs('#ped-container');
@@ -8308,7 +8354,7 @@ function renderPedidos(){
           <span class="chip ${CHIP_EST[p.estado]||'chip-warn'}">${PED_ESTADOS[p.estado]||p.estado}</span>
           <span class="chip ${CHIP_PAGO[ep]||'chip-warn'}">${PED_PAGOS[ep]||ep}</span>
           ${vencido?'<span class="chip chip-danger">Vencido</span>':''}
-          ${p.canal?`<span class="chip" style="font-size:10px;${CANALES_COLOR[p.canal]||CANALES_COLOR.local}">${CANALES_LABEL[p.canal]||p.canal}</span>`:''}
+          ${p.canal?`<span class="chip" style="font-size:10px;${CANALES_COLOR[p.canal]||CANALES_COLOR.local}">${CANALES_LABEL[p.canal]||CANALES_LABEL.local}</span>`:''}
           ${p.usuario_nom?`<span class="chip" style="font-size:10px;background:#f0f4ff;color:#3b5bdb">👤 ${p.usuario_nom.split(' ')[0]}</span>`:''}
         </div>
       </div>
@@ -8406,13 +8452,13 @@ function verPedido(idx){
   const _cliTel = p.cliente?.telefono||'';
   const _waNum  = _fmtWA(_cliTel);
   const _waMsg  = encodeURIComponent('Hola '+(p.cliente?.nombre||'')+', le contactamos por su pedido '+p.numero+' \uD83D\uDE0A');
-  const _clienteCard = p.cliente ? ('<div class="card" style="padding:12px;margin-bottom:10px;background:var(--bg);border:1.5px solid var(--border)"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div style="display:flex;align-items:center;gap:10px"><div style="width:38px;height:38px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0">'+(p.cliente.nombre[0]||'?').toUpperCase()+'</div><div><div style="font-weight:700;font-size:14px">'+(p.cliente.nombre+' '+(p.cliente.apellido||'')).trim()+'</div><div style="font-size:12px;color:var(--muted)">'+(p.cliente.cedula?p.cliente.cedula+' · ':'')+(_cliTel||'Sin teléfono')+'</div></div></div>'+(_waNum?'<a href="https://wa.me/'+_waNum+'?text='+_waMsg+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;border-radius:20px;padding:7px 14px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap"><svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.123.557 4.116 1.533 5.846L.057 23.486a.5.5 0 0 0 .614.614l5.64-1.476A11.934 11.934 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 22c-1.907 0-3.693-.519-5.222-1.422l-.374-.223-3.875 1.015 1.015-3.875-.223-.374A9.953 9.953 0 0 1 2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10z"/></svg> WhatsApp '+_cliTel+'</a>':'<span style="font-size:12px;color:var(--muted)">Sin número</span>')+'</div></div>') : '';
+  const _clienteCard = p.cliente ? ('<div class="card" style="padding:12px;margin-bottom:10px;background:var(--bg);border:1.5px solid var(--border)"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div style="display:flex;align-items:center;gap:10px"><div style="width:38px;height:38px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0">'+(p.cliente.nombre[0]||'?').toUpperCase()+'</div><div><div style="font-weight:700;font-size:14px">'+(p.cliente.nombre+' '+(p.cliente.apellido||'')).trim()+'</div><div style="font-size:12px;color:var(--muted)">'+(p.cliente.cedula?p.cliente.cedula+' · ':'')+(_cliTel||'Sin teléfono')+'</div></div></div>'+(_waNum?'<a href="https://wa.me/'+_waNum+'?text='+_waMsg+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;border-radius:20px;padding:7px 14px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> WhatsApp '+_cliTel+'</a>':'<span style="font-size:12px;color:var(--muted)">Sin número</span>')+'</div></div>') : '';
 
   qs('#mvped-body').innerHTML=`
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
       <span class="chip ${CHIP_EST[p.estado]||'chip-warn'}">${PED_ESTADOS[p.estado]}</span>
       <span class="chip ${CHIP_PAGO[ep]||'chip-warn'}">${PED_PAGOS[ep]}</span>
-      ${p.canal?`<span class="chip" style="${CANALES_COLOR[p.canal]||CANALES_COLOR.local}">${CANALES_LABEL[p.canal]||p.canal}</span>`:''}
+      ${p.canal?`<span class="chip" style="${CANALES_COLOR[p.canal]||CANALES_COLOR.local}">${CANALES_LABEL[p.canal]||CANALES_LABEL.local}</span>`:''}
       ${p.fecha_entrega?`<span class="chip chip-info">Entrega: ${fmtFecha(p.fecha_entrega)}</span>`:''}
       ${p.fecha_pedido?`<span class="chip" style="background:#f3f4f6">Pedido: ${fmtFecha(p.fecha_pedido)}</span>`:''}
       ${p.usuario_nom?`<span class="chip" style="background:#f0f4ff;color:#3b5bdb;font-weight:600">👤 ${p.usuario_nom}</span>`:''}
@@ -9408,6 +9454,50 @@ function renderRepVentas(){
       </div>`).join('') || '<p class="muted" style="font-size:12px">Sin datos</p>';
   }
 
+  // Por canal de venta
+  const byCan = {};
+  ven.forEach(v=>{ const c=v.canal||'local'; byCan[c]=(byCan[c]||0)+v.total; });
+  const CANAL_COLORS_REP = { local:'#22c55e', whatsapp:'#25D366', online:'#3b82f6' };
+  const CANAL_LABEL_REP  = { local:'🏪 Local', whatsapp:'📱 WhatsApp', online:'🌐 Online' };
+  const canWrap = qs('#rep-chart-canales');
+  if(canWrap){
+    const totalCan = Object.values(byCan).reduce((a,b)=>a+b,0)||1;
+    const canEntries = Object.entries(byCan).sort(([,a],[,b])=>b-a);
+    if(!canEntries.length){
+      canWrap.innerHTML='<div class="empty" style="padding:20px"><p>Sin datos en el período</p></div>';
+    } else {
+      // Barras horizontales + resumen de transacciones
+      const byCanCount = {};
+      ven.forEach(v=>{ const c=v.canal||'local'; byCanCount[c]=(byCanCount[c]||0)+1; });
+      canWrap.innerHTML =
+        // Mini KPIs de canal
+        `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">` +
+        canEntries.map(([c,v])=>{
+          const col = CANAL_COLORS_REP[c]||'#aaa';
+          const pct = (v/totalCan*100).toFixed(0);
+          return `<div style="flex:1;min-width:110px;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;border-top:3px solid ${col}">
+            <div style="font-size:13px;font-weight:700;margin-bottom:2px">${CANAL_LABEL_REP[c]||c}</div>
+            <div style="font-size:18px;font-weight:800;color:var(--brand)">${euro(v)}</div>
+            <div style="font-size:11px;color:var(--muted)">${byCanCount[c]||0} ventas · ${pct}%</div>
+          </div>`;
+        }).join('') + `</div>` +
+        // Barras proporcionales
+        `<div style="display:flex;flex-direction:column;gap:8px">` +
+        canEntries.map(([c,v])=>{
+          const col = CANAL_COLORS_REP[c]||'#aaa';
+          const pct = (v/totalCan*100).toFixed(1);
+          return `<div style="display:flex;align-items:center;gap:8px;font-size:12px">
+            <div style="min-width:110px;font-weight:600">${CANAL_LABEL_REP[c]||c}</div>
+            <div style="flex:1;background:#f3f4f6;border-radius:6px;height:18px;overflow:hidden">
+              <div style="height:100%;width:${pct}%;background:${col};opacity:.85;border-radius:6px;transition:width .3s"></div>
+            </div>
+            <div style="min-width:80px;text-align:right;font-weight:700;color:var(--brand)">${euro(v)}</div>
+            <div style="min-width:36px;text-align:right;color:var(--muted)">${pct}%</div>
+          </div>`;
+        }).join('') + `</div>`;
+    }
+  }
+
   // Tabla detalle
   const tablaWrap = qs('#rep-ventas-tabla');
   if(tablaWrap){
@@ -9421,6 +9511,7 @@ function renderRepVentas(){
               <th style="padding:8px;text-align:left;color:var(--muted);font-weight:600">Fecha</th>
               <th style="padding:8px;text-align:left;color:var(--muted);font-weight:600">Cliente</th>
               <th style="padding:8px;text-align:left;color:var(--muted);font-weight:600">Método</th>
+              <th style="padding:8px;text-align:left;color:var(--muted);font-weight:600">Canal</th>
               <th style="padding:8px;text-align:right;color:var(--muted);font-weight:600">Total</th>
               <th style="padding:8px;text-align:right;color:var(--muted);font-weight:600">Costo</th>
               <th style="padding:8px;text-align:right;color:var(--muted);font-weight:600">Utilidad</th>
@@ -9433,6 +9524,7 @@ function renderRepVentas(){
                 <td style="padding:8px;color:var(--muted)">${v.fecha.slice(0,10)}</td>
                 <td style="padding:8px">${v.cliente?(v.cliente.nombre+' '+(v.cliente.apellido||'')):'Venta rápida'}</td>
                 <td style="padding:8px"><span class="chip chip-info" style="font-size:10px">${METODOS_LABEL[v.metodo]||v.metodo}</span></td>
+                <td style="padding:8px"><span class="chip" style="font-size:10px;${CANALES_COLOR[v.canal||'local']||CANALES_COLOR.local}">${CANALES_LABEL[v.canal||'local']||'🏪 Local'}</span></td>
                 <td style="padding:8px;text-align:right;font-weight:700">${euro(v.total)}</td>
                 <td style="padding:8px;text-align:right;color:var(--muted)">${euro(v.costo_total||0)}</td>
                 <td style="padding:8px;text-align:right;font-weight:700;color:${(v.utilidad||0)>=0?'var(--ok)':'var(--danger)'}">${euro(v.utilidad||0)}</td>
@@ -9440,7 +9532,7 @@ function renderRepVentas(){
           </tbody>
           <tfoot>
             <tr style="border-top:2px solid var(--border);background:#f7f7fb">
-              <td colspan="4" style="padding:8px;font-weight:700">TOTAL</td>
+              <td colspan="5" style="padding:8px;font-weight:700">TOTAL</td>
               <td style="padding:8px;text-align:right;font-weight:700">${euro(ven.reduce((a,v)=>a+v.total,0))}</td>
               <td style="padding:8px;text-align:right;font-weight:700">${euro(ven.reduce((a,v)=>a+(v.costo_total||0),0))}</td>
               <td style="padding:8px;text-align:right;font-weight:700;color:var(--ok)">${euro(ven.reduce((a,v)=>a+(v.utilidad||0),0))}</td>
@@ -10226,7 +10318,7 @@ window.addEventListener('popstate',e=>{
       <div style="flex:1;text-align:center">
         <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">Origen</div>
         <select id="traslado_origen" onchange="traslado_actualizarStock()" style="width:100%;padding:8px;border-radius:8px;border:1.5px solid var(--border);background:var(--card)">
-          <option value="local">Local</option>
+          <option value="local">🏪 Local</option>
           <option value="deposito">Depósito</option>
         </select>
         <div id="traslado_stock_origen" style="font-size:22px;font-weight:700;margin-top:6px;color:var(--ok)">0</div>
@@ -10257,7 +10349,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_60';
+  const APP_VERSION = 'v13_62';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
