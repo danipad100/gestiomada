@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_47">
+<html lang="es" data-app-version="GestioMada_V13_48">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -6164,7 +6164,10 @@ function posRenderCarrito(){
       <div class="pos-item-name">${it.nombre}</div>
       <div class="pos-item-qty-ctrl">
         <button class="pos-qty-btn" onclick="posCantItem(${i},-1)">−</button>
-        <div class="pos-item-qty">${it.cant}</div>
+        <input type="number" class="pos-item-qty" min="1" value="${it.cant}"
+          onchange="posSetCant(${i},this.value)"
+          onclick="this.select()"
+          style="width:44px;text-align:center;font-weight:700;border:1px solid #e5e7eb;border-radius:6px;padding:2px 4px;font-size:13px"/>
         <button class="pos-qty-btn" onclick="posCantItem(${i},1)">＋</button>
       </div>
       <div class="pos-item-price" style="text-align:right">${precioLabel}</div>
@@ -6176,12 +6179,14 @@ function posRenderCarrito(){
 
 function posCantItem(i, delta){
   if(!_posItems[i]) return;
-  const it = _posItems[i];
   _posItems[i].cant = Math.max(1, (_posItems[i].cant || 1) + delta);
-  posRenderProductos();
-  posRenderCarrito();
-  posRecalc();
-  posWaActualizar();
+  posRenderProductos(); posRenderCarrito(); posRecalc(); posWaActualizar();
+}
+function posSetCant(i, val){
+  if(!_posItems[i]) return;
+  const n = parseInt(val) || 1;
+  _posItems[i].cant = Math.max(1, n);
+  posRenderProductos(); posRenderCarrito(); posRecalc(); posWaActualizar();
 }
 
 function posQuitarItem(i){
@@ -6337,7 +6342,7 @@ function posWaActualizar(){
   const envioUsd    = (qs('#pos_envio_chk')?.checked    ? parseFloat(qs('#pos_envio_monto')?.value||0)    : 0);
   const disenoUsd   = (qs('#pos_diseno_chk')?.checked   ? parseFloat(qs('#pos_diseno_monto')?.value||0)   : 0);
   const extrasUsd   = (qs('#pos_extras_chk')?.checked   ? parseFloat(qs('#pos_extras_monto')?.value||0)   : 0);
-  const hayEnvio    = envioUsd > 0; // Solo envío desactiva el abono en la cotización
+  const hayExtras   = (envioUsd+disenoUsd+extrasUsd)>0;
 
   // Calcular por ítem
   const itemsCot = _posItems.map(it=>{
@@ -6389,7 +6394,7 @@ function posWaActualizar(){
     if(extrasUsd>0){   const xBs=(extrasUsd*bcv).toFixed(2).replace('.',',');  txt+=`\nExtras: Bs ${xBs} ($${extrasUsd.toFixed(2)})`; }
     txt+=`\n\n*Total: Bs ${totalBs.toFixed(2).replace('.',',')}*`;
     txt+=`\n*$${totalAnclaUsd.toFixed(2)} (BCV ${bcv.toLocaleString('es-VE')})*`;
-    if(!hayEnvio && !sinAbono){
+    if(!hayExtras && !sinAbono){
       txt+=`\n\n📌 *Abono ${aboPct}%:*\n  $${abonoUsd.toFixed(2)} ó Bs ${(abonoUsd*bcv).toFixed(2).replace('.',',')} (BCV hoy)`;
       txt+=`\n📌 *Restante al retirar:*\n  $${restUsd.toFixed(2)} al BCV del día de entrega`;
     }
@@ -6403,7 +6408,7 @@ function posWaActualizar(){
     if(disenoUsd>0)   txt+=`\nDiseño: $${disenoUsd.toFixed(2)}`;
     if(extrasUsd>0)   txt+=`\nExtras: $${extrasUsd.toFixed(2)}`;
     txt+=`\n\n*Total: $${totalUsdDirecto.toFixed(2)}*`;
-    if(!hayEnvio && !sinAbono){
+    if(!hayExtras && !sinAbono){
       txt+=`\n\n📌 *Abono ${aboPct}%:* $${abonoUsd.toFixed(2)}`;
       txt+=`\n📌 *Restante al retirar:* $${restUsd.toFixed(2)}`;
     }
@@ -6788,7 +6793,10 @@ function renderItemsVenta(){
       <div style="flex:2;min-width:0"><div style="font-weight:600;font-size:13px">${it.nombre}</div><div style="font-size:11px;color:var(--muted)">×${it.cant} · ${euro(it.precio_unit)}</div></div>
       <div style="display:flex;align-items:center;gap:4px">
         <button class="copy-btn" onclick="venCant(${i},-1)" style="padding:3px 8px">−</button>
-        <span style="min-width:24px;text-align:center;font-weight:700">${it.cant}</span>
+        <input type="number" min="1" value="${it.cant}"
+          onchange="venSetCant(${i},this.value)"
+          onclick="this.select()"
+          style="width:48px;text-align:center;font-weight:700;padding:3px 4px;font-size:13px;border-radius:6px;border:1px solid #e5e7eb"/>
         <button class="copy-btn" onclick="venCant(${i},1)" style="padding:3px 8px">＋</button>
       </div>
       <input type="text" value="${it.precio_unit.toFixed(2).replace('.',',')}" onchange="venPrecio(${i},this.value)" style="width:80px;text-align:right;padding:4px 8px;font-size:13px;border-radius:8px;border:1px solid #e5e7eb"/>
@@ -6797,6 +6805,7 @@ function renderItemsVenta(){
     </div>`).join('');
 }
 function venCant(i,d){ if(_venItems[i]){ _venItems[i].cant=Math.max(1,(_venItems[i].cant||1)+d); renderItemsVenta(); recalcVenta(); } }
+function venSetCant(i,v){ if(_venItems[i]){ _venItems[i].cant=Math.max(1,parseInt(v)||1); renderItemsVenta(); recalcVenta(); } }
 function venPrecio(i,v){ if(_venItems[i]){ _venItems[i].precio_unit=parseEU(v); recalcVenta(); } }
 function venQuit(i){ _venItems.splice(i,1); renderItemsVenta(); recalcVenta(); }
 
@@ -7860,7 +7869,10 @@ function renderItemsFormulario(){
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
         <div style="display:flex;align-items:center;gap:4px">
           <button class="copy-btn" onclick="cambiarCant(${i},-1)" style="padding:3px 10px">−</button>
-          <span style="min-width:28px;text-align:center;font-weight:700">${it.cant}</span>
+          <input type="number" min="1" value="${it.cant}"
+            onchange="pedSetCant(${i},this.value)"
+            onclick="this.select()"
+            style="width:52px;text-align:center;font-weight:700;padding:3px 4px;font-size:13px;border-radius:6px;border:1px solid #e5e7eb"/>
           <button class="copy-btn" onclick="cambiarCant(${i},1)" style="padding:3px 10px">＋</button>
         </div>
         <div style="display:flex;align-items:center;gap:6px;flex:1;justify-content:flex-end">
@@ -7876,6 +7888,7 @@ function renderItemsFormulario(){
 }
 
 function cambiarCant(i,d){ if(_pedItems[i]){ _pedItems[i].cant=Math.max(1,(_pedItems[i].cant||1)+d); renderItemsFormulario(); recalcPedido(); } }
+function pedSetCant(i,v){ if(_pedItems[i]){ _pedItems[i].cant=Math.max(1,parseInt(v)||1); renderItemsFormulario(); recalcPedido(); } }
 function cambiarPrecio(i,v){ if(_pedItems[i]){ _pedItems[i].precio_unit=parseEU(v); recalcPedido(); } }
 function quitarItem(i){ _pedItems.splice(i,1); renderItemsFormulario(); recalcPedido(); }
 
@@ -7919,28 +7932,29 @@ function recalcPedido(){
   // Total
   if(qs('#mp_subtotal')) qs('#mp_subtotal').textContent = euro(sub);
   if(qs('#mp_total')){
-    qs('#mp_total').textContent = dif>1 ? '$ '+totalCDif.toFixed(2).replace('.',',') : euro(total);
+    // USD: mostrar precio base. Bs: mostrar c/dif (lo que cobra al cliente)
+    qs('#mp_total').textContent = (esBs && dif>1) ? '$ '+totalCDif.toFixed(2).replace('.',',') : euro(total);
   }
   const totalBsEl = qs('#mp_total_bs');
   if(totalBsEl){
-    if(par>0 && total>0){ totalBsEl.textContent = 'Bs '+Math.round(totalBs).toLocaleString('es-VE'); totalBsEl.style.display=''; }
+    // Bs Supabase solo en métodos Bs
+    if(esBs && par>0 && total>0){ totalBsEl.textContent = 'Bs '+Math.round(totalBs).toLocaleString('es-VE'); totalBsEl.style.display=''; }
     else { totalBsEl.style.display='none'; }
   }
 
-  // Panel de referencia de tasas
+  // Panel de referencia de tasas — solo para métodos Bs
   const refPanel = qs('#mp_ref_bs');
-  if(refPanel && bcv>0 && total>0){
-    if(esUsd){
-      refPanel.innerHTML = '<span style="color:var(--muted)">c/dif: </span><strong style="color:var(--brand)">$'+totalCDif.toFixed(2).replace('.',',')+'</strong>';
-      refPanel.style.display='';
-    } else {
+  if(refPanel){
+    if(esBs && bcv>0 && total>0){
       refPanel.innerHTML =
         '<span style="color:var(--muted)">c/dif: </span><strong style="color:#e07ab0">$'+totalCDif.toFixed(2).replace('.',',')+'</strong>' +
         '<span style="color:var(--muted);margin-left:10px">Bs: </span><strong style="color:var(--ok)">Bs '+Math.round(totalBs).toLocaleString('es-VE')+'</strong>' +
         '<span style="color:var(--muted);margin-left:10px;font-size:9px">(BCV '+bcv.toLocaleString('es-VE')+' · par '+Math.round(par).toLocaleString('es-VE')+')</span>';
       refPanel.style.display='';
+    } else {
+      refPanel.style.display='none'; // USD: no mostrar nada
     }
-  } else if(refPanel){ refPanel.style.display='none'; }
+  }
 
   // Pills abonado/restante
   const abonoEl = qs('#mp_pill_abonado');
@@ -7949,13 +7963,14 @@ function recalcPedido(){
     if(abonoEl) abonoEl.textContent = 'Bs '+Math.round(abonoRaw).toLocaleString('es-VE');
     if(restEl)  restEl.textContent  = '$ '+restanteCDif.toFixed(2).replace('.',',');
   } else {
+    // USD: mostrar en USD base sin diferencial
     if(abonoEl) abonoEl.textContent = euro(abonoRaw);
-    if(restEl)  restEl.textContent  = '$ '+restanteCDif.toFixed(2).replace('.',',');
+    if(restEl)  restEl.textContent  = euro(restanteUsd);
   }
 
-  // Referencia Bs del restante
+  // Referencia Bs del restante — solo en métodos Bs
   const refRestante = qs('#mp_ref_restante');
-  if(refRestante && bcv>0 && restanteCDif>0 && esBs){
+  if(refRestante && esBs && bcv>0 && restanteCDif>0){
     const restBs = Math.round(restanteCDif * bcv);
     refRestante.innerHTML =
       '<span style="color:var(--muted)">Restante c/dif: </span><strong style="color:#e07ab0">$'+restanteCDif.toFixed(2).replace('.',',')+'</strong>' +
@@ -10045,7 +10060,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_47';
+  const APP_VERSION = 'v13_48';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
