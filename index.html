@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_55">
+<html lang="es" data-app-version="GestioMada_V13_56">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -2522,7 +2522,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
                         <input type="checkbox" id="pos_delivery_chk" onchange="posToggleExtra('delivery')"/> Delivery
                       </label>
                       <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
-                        <input type="number" id="pos_delivery_monto" value="3" min="0" step="0.01" disabled oninput="posRecalc();posWaActualizar()" style="text-align:right;font-size:12px"/>
+                        <input type="number" id="pos_delivery_monto" value="3" min="0" step="0.01" oninput="posRecalc();posWaActualizar()" style="text-align:right;font-size:12px"/>
                         <span style="font-size:10px;color:var(--muted)">USD</span>
                       </div>
                     </div>
@@ -2531,7 +2531,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
                         <input type="checkbox" id="pos_envio_chk" onchange="posToggleExtra('envio')"/> Envío
                       </label>
                       <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
-                        <input type="number" id="pos_envio_monto" value="2" min="0" step="0.01" disabled oninput="posRecalc();posWaActualizar()" style="text-align:right;font-size:12px"/>
+                        <input type="number" id="pos_envio_monto" value="2" min="0" step="0.01" oninput="posRecalc();posWaActualizar()" style="text-align:right;font-size:12px"/>
                         <span style="font-size:10px;color:var(--muted)">USD</span>
                       </div>
                     </div>
@@ -2540,7 +2540,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
                         <input type="checkbox" id="pos_diseno_chk" onchange="posToggleExtra('diseno')"/> Diseño
                       </label>
                       <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
-                        <input type="number" id="pos_diseno_monto" value="5" min="0" step="0.01" disabled oninput="posRecalc();posWaActualizar()" style="text-align:right;font-size:12px"/>
+                        <input type="number" id="pos_diseno_monto" value="5" min="0" step="0.01" oninput="posRecalc();posWaActualizar()" style="text-align:right;font-size:12px"/>
                         <span style="font-size:10px;color:var(--muted)">USD</span>
                       </div>
                     </div>
@@ -2549,7 +2549,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
                         <input type="checkbox" id="pos_extras_chk" onchange="posToggleExtra('extras')"/> Extras
                       </label>
                       <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
-                        <input type="number" id="pos_extras_monto" value="0" min="0" step="0.01" disabled oninput="posRecalc();posWaActualizar()" style="text-align:right;font-size:12px"/>
+                        <input type="number" id="pos_extras_monto" value="0" min="0" step="0.01" oninput="posRecalc();posWaActualizar()" style="text-align:right;font-size:12px"/>
                         <span style="font-size:10px;color:var(--muted)">USD</span>
                       </div>
                     </div>
@@ -2981,7 +2981,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
               <input type="checkbox" id="mp_delivery_chk" onchange="mpToggleExtra('delivery')"/> Delivery
             </label>
             <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
-              <input type="number" id="mp_delivery_monto" value="3" min="0" step="0.01" disabled oninput="recalcPedido()" style="text-align:right;font-size:12px;flex:1"/>
+              <input type="number" id="mp_delivery_monto" value="3" min="0" step="0.01" oninput="recalcPedido()" style="text-align:right;font-size:12px;flex:1"/>
               <span style="font-size:10px;color:var(--muted)">USD</span>
             </div>
           </div>
@@ -2990,7 +2990,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
               <input type="checkbox" id="mp_envio_chk" onchange="mpToggleExtra('envio')"/> Envío
             </label>
             <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
-              <input type="number" id="mp_envio_monto" value="2" min="0" step="0.01" disabled oninput="recalcPedido()" style="text-align:right;font-size:12px;flex:1"/>
+              <input type="number" id="mp_envio_monto" value="2" min="0" step="0.01" oninput="recalcPedido()" style="text-align:right;font-size:12px;flex:1"/>
               <span style="font-size:10px;color:var(--muted)">USD</span>
             </div>
           </div>
@@ -2999,7 +2999,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
               <input type="checkbox" id="mp_diseno_chk" onchange="mpToggleExtra('diseno')"/> Diseño
             </label>
             <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
-              <input type="number" id="mp_diseno_monto" value="5" min="0" step="0.01" disabled oninput="recalcPedido()" style="text-align:right;font-size:12px;flex:1"/>
+              <input type="number" id="mp_diseno_monto" value="5" min="0" step="0.01" oninput="recalcPedido()" style="text-align:right;font-size:12px;flex:1"/>
               <span style="font-size:10px;color:var(--muted)">USD</span>
             </div>
           </div>
@@ -3008,7 +3008,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
               <input type="checkbox" id="mp_extras_chk" onchange="mpToggleExtra('extras')"/> Extras
             </label>
             <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
-              <input type="number" id="mp_extras_monto" value="0" min="0" step="0.01" disabled oninput="recalcPedido()" style="text-align:right;font-size:12px;flex:1"/>
+              <input type="number" id="mp_extras_monto" value="0" min="0" step="0.01" oninput="recalcPedido()" style="text-align:right;font-size:12px;flex:1"/>
               <span style="font-size:10px;color:var(--muted)">USD</span>
             </div>
           </div>
@@ -6334,11 +6334,6 @@ function posSelMetodo(key){
 // ── Recalc ──
 /* ── Extras toggle (delivery / envío / diseño / extras) ── */
 function posToggleExtra(tipo){
-  const ids = { delivery:'#pos_delivery_chk', envio:'#pos_envio_chk', diseno:'#pos_diseno_chk', extras:'#pos_extras_chk' };
-  const montos = { delivery:'#pos_delivery_monto', envio:'#pos_envio_monto', diseno:'#pos_diseno_monto', extras:'#pos_extras_monto' };
-  const chk = qs(ids[tipo]);
-  const inp = qs(montos[tipo]);
-  if(inp){ inp.disabled = !chk?.checked; if(chk?.checked) inp.focus(); }
   posRecalc();
   posWaActualizar();
 }
@@ -6689,10 +6684,10 @@ function posCobrar(){
   qs('#pos_notas').value = '';
   qs('#pos_tipo').value = 'venta_rapida';
   const pp = qs('#pos_pedido_panel'); if(pp) pp.style.display='none';
-  const delChk=qs('#pos_delivery_chk'); if(delChk){ delChk.checked=false; const m=qs('#pos_delivery_monto'); if(m) m.disabled=true; }
-  const envChk=qs('#pos_envio_chk');    if(envChk){ envChk.checked=false; const m=qs('#pos_envio_monto');    if(m) m.disabled=true; }
-  const disChk=qs('#pos_diseno_chk');   if(disChk){ disChk.checked=false; const m=qs('#pos_diseno_monto');  if(m) m.disabled=true; }
-  const extChk=qs('#pos_extras_chk');   if(extChk){ extChk.checked=false; const m=qs('#pos_extras_monto');  if(m) m.disabled=true; }
+  const delChk=qs('#pos_delivery_chk'); if(delChk) delChk.checked=false;
+  const envChk=qs('#pos_envio_chk');    if(envChk) envChk.checked=false;
+  const disChk=qs('#pos_diseno_chk');   if(disChk) disChk.checked=false;
+  const extChk=qs('#pos_extras_chk');   if(extChk) extChk.checked=false;
   const wb=qs('#pos_wa_body'); if(wb) wb.classList.add('collapsed');
   const wc=qs('#pos_wa_chev'); if(wc) wc.classList.remove('open');
   posRenderProductos(); posRenderCarrito(); posRecalc(); renderDash();
@@ -7711,10 +7706,9 @@ function abrirNuevoPedido(){
   const _qEl=qs('#mp_prod_q'); if(_qEl) _qEl.value='';
   const _nomEl=qs('#mp_prod_sel_nombre'); if(_nomEl) _nomEl.style.display='none';
   const _selEl=qs('#mp_prod_sel'); if(_selEl) _selEl.value='';
-  // Resetear extras
+  // Resetear extras — desmarcar checkboxes pero NO deshabilitar inputs
   ['delivery','envio','diseno','extras'].forEach(t=>{
     const chk=qs('#mp_'+t+'_chk'); if(chk) chk.checked=false;
-    const inp=qs('#mp_'+t+'_monto'); if(inp) inp.disabled=true;
   });
   recalcPedido();
   openModal('m-pedido');
@@ -7785,8 +7779,8 @@ function abrirEditarPedido(idx){
   // Restaurar extras si el pedido los tenía
   const _extMap={delivery:p.delivery_usd||0,envio:p.envio_usd||0,diseno:p.diseno_usd||0,extras:p.extras_usd||0};
   ['delivery','envio','diseno','extras'].forEach(t=>{
-    const chk=qs('#mp_'+t+'_chk'),inp=qs('#mp_'+t+'_monto');
-    if(chk&&inp){const v=_extMap[t];chk.checked=v>0;inp.disabled=!v;if(v>0)inp.value=v;}
+    const chk=qs('#mp_'+t+'_chk'), inp=qs('#mp_'+t+'_monto');
+    if(chk && inp){ const v=_extMap[t]; chk.checked=v>0; if(v>0) inp.value=v; }
   });
   recalcPedido();
   openModal('m-pedido');
@@ -7829,19 +7823,6 @@ document.addEventListener('click', e=>{
 
 // ── Toggle extras en pedido ──
 function mpToggleExtra(tipo){
-  const ids   = { delivery:'#mp_delivery_chk', envio:'#mp_envio_chk', diseno:'#mp_diseno_chk', extras:'#mp_extras_chk' };
-  const montos= { delivery:'#mp_delivery_monto', envio:'#mp_envio_monto', diseno:'#mp_diseno_monto', extras:'#mp_extras_monto' };
-  const defVal= { delivery:3, envio:2, diseno:5, extras:0 };
-  const chk = qs(ids[tipo]);
-  const inp = qs(montos[tipo]);
-  if(inp){
-    inp.disabled = !chk?.checked;
-    // Si se activa y el campo está vacío o es 0 (salvo extras), restaurar el valor por defecto
-    if(chk?.checked){
-      const v = parseFloat(inp.value)||0;
-      if(v===0 && tipo!=='extras') inp.value = defVal[tipo];
-    }
-  }
   recalcPedido();
 }
 
@@ -8114,8 +8095,21 @@ function guardarPedido(){
   // total_cdif: lo que cobra al cliente (productos×dif + extras sin dif)
   const _gDifG = getDiferencial();
   const _gBcvG = getTasaBCV();
-  const total_cdif = parseFloat(((subNetaG * (_gDifG>0?_gDifG:1)) + _gExtrasTotal).toFixed(4));
-  const total_bs   = _gBcvG>0 ? parseFloat((subNetaG*_gBcvG*(_gDifG>0?_gDifG:1) + _gExtrasTotal*_gBcvG).toFixed(2)) : 0;
+  const _totalCdifNuevo = parseFloat(((subNetaG * (_gDifG>0?_gDifG:1)) + _gExtrasTotal).toFixed(4));
+  const _totalBsNuevo   = _gBcvG>0 ? parseFloat((subNetaG*_gBcvG*(_gDifG>0?_gDifG:1) + _gExtrasTotal*_gBcvG).toFixed(2)) : 0;
+  // Al editar: recalcular total_cdif solo si cambió el total paralelo (ítems/extras distintos)
+  // Esto evita que el diferencial de otro dispositivo sobreescriba el total_cdif original
+  const all = loadPed();
+  const _pedExistente = _pedIdx!==null ? all[_pedIdx] : null;
+  const _totalParaleloAnterior = _pedExistente ? (_pedExistente.total||0) : 0;
+  const _totalParaleloNuevo = subNetaG + _gExtrasTotal;
+  const _totalCambio = Math.abs(_totalParaleloNuevo - _totalParaleloAnterior) > 0.001;
+  const total_cdif = (_pedExistente && !_totalCambio && _pedExistente.total_cdif)
+    ? _pedExistente.total_cdif  // preservar si los ítems no cambiaron
+    : _totalCdifNuevo;          // recalcular si es nuevo o cambiaron ítems
+  const total_bs = (_pedExistente && !_totalCambio && _pedExistente.total_bs)
+    ? _pedExistente.total_bs
+    : _totalBsNuevo;
   // Si método es Bs el usuario ingresa Bs — usar la conversión calculada en recalcPedido
   const _metodoAb = qs('#mp_metodo')?.value||'efectivo_bs';
   const _esBsAb = !['efectivo_usd','zelle'].includes(_metodoAb);
@@ -8123,7 +8117,6 @@ function guardarPedido(){
   const _abonoRaw = parseEU(qs('#mp_abono')?.value||'0,00');
   const abono = (_esBsAb && _parAb>0) ? _abonoRaw/_parAb : _abonoRaw; // siempre en USD
 
-  const all = loadPed();
   let pagos = [];
   if(_pedIdx!==null){
     pagos = all[_pedIdx].pagos||[];
@@ -10194,7 +10187,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_55';
+  const APP_VERSION = 'v13_56';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
