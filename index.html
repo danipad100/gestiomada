@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_58">
+<html lang="es" data-app-version="GestioMada_V13_59">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -3515,7 +3515,22 @@ function savePers(a){
 }
 function loadCat()  { try{ return JSON.parse(localStorage.getItem(LS_CAT)||'[]'); }catch(e){ return []; } }
 function saveCat(a) {
-  localStorage.setItem(LS_CAT, JSON.stringify(a));
+  try{
+    localStorage.setItem(LS_CAT, JSON.stringify(a));
+  }catch(e){
+    // Evita que una foto base64 llene localStorage y bloquee el botón Guardar/Agregar.
+    console.warn('[Catálogo] localStorage lleno; reintentando sin fotos base64', e);
+    const limpio=(Array.isArray(a)?a:[]).map(p=>p&&typeof p.foto==='string'&&p.foto.startsWith('data:')?{...p,foto:''}:p);
+    try{
+      localStorage.setItem(LS_CAT, JSON.stringify(limpio));
+      a.length=0; limpio.forEach(x=>a.push(x));
+      if(typeof toast==='function') toast('Producto guardado; foto pesada omitida localmente','warn');
+    }catch(e2){
+      console.error('[Catálogo] No se pudo guardar catálogo', e2);
+      if(typeof toast==='function') toast('No se pudo guardar: almacenamiento lleno','err');
+      return;
+    }
+  }
   updateBadges();
   // Sync individual se hace con syncProductoAhora() en cada operación de guardado
   // saveCat solo actualiza local; el sync a Supabase lo dispara la operación específica
@@ -4006,6 +4021,8 @@ function mcLeerReceta(){
 function confirmarCatalogo(){
   const nom=qs('#mc_nombre').value.trim(); if(!nom){ toast('Nombre requerido','warn'); return; }
   const cat=loadCat();
+  const ei=cat.findIndex(p=>(p.nombre||'').toLowerCase()===nom.toLowerCase());
+  const prodId = ei>=0 ? cat[ei].id : Date.now();
   const _fImg3=qs('#pers_foto_img'); const _foto3=_fImg3&&_fImg3.style.display!=='none'?_fImg3.src:'';
   const modoInv=qs('#mc_modo_inv')?.value||'ninguno';
   const receta=modoInv==='insumos'?mcLeerReceta():[];
@@ -4018,23 +4035,24 @@ function confirmarCatalogo(){
     const skuExiste=cat.find(p=>p.sku&&p.sku.toLowerCase()===skuNuevo.toLowerCase()&&String(p.id)!==String(idActual));
     if(skuExiste){ toast('SKU "'+skuNuevo+'" ya existe en "'+skuExiste.nombre+'"','err'); return; }
   }
-  const prodId = Date.now();
   const skuFinal = skuNuevo || String(prodId); // SKU = ID del producto si no se ingresó uno manual
-  const nuevo={ id:prodId, nombre:nom, sku:skuFinal, categoria:qs('#mc_cat').value, foto:_foto3, foto_url:'', costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, modo_inventario:modoInv, inv_loc:invLoc, moneda_prod:monedaProd, insumos_receta:receta, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
-  const ei=cat.findIndex(p=>p.nombre.toLowerCase()===nom.toLowerCase());
+  const fotoPendienteStorage = _foto3 && _foto3.startsWith('data:') && window._supaConectado;
+  const fotoLocal = fotoPendienteStorage ? '' : _foto3;
+  const fotoUrlExistente = ei>=0 ? (cat[ei].foto_url||'') : '';
+  const nuevo={ id:prodId, nombre:nom, sku:skuFinal, categoria:qs('#mc_cat').value, foto:fotoLocal, foto_url:fotoPendienteStorage?'':fotoUrlExistente, costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, modo_inventario:modoInv, inv_loc:invLoc, moneda_prod:monedaProd, insumos_receta:receta, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
   let _prodSyncEd;
   if(ei>=0){ if(!confirm('Ya existe "'+nom+'". ¿Actualizar?')) return; cat[ei]={...cat[ei],...nuevo,id:cat[ei].id}; _prodSyncEd=cat[ei]; }
   else{ cat.push(nuevo); _prodSyncEd=nuevo; }
   saveCat(cat);
   syncProductoAhora(_prodSyncEd); // Sync inmediato a Supabase → Realtime propaga a otros dispositivos
   closeModal('m-catalogo'); toast('Agregado: '+nom,'ok'); renderDash();
-  // Subir foto a Storage en background (no bloquea UI)
-  if(_foto3 && _foto3.startsWith('data:') && window._supaConectado){
+  // Subir foto a Storage en background (no bloquea UI ni localStorage)
+  if(fotoPendienteStorage){
     subirFotoStorage(_foto3, 'prod_'+prodId).then(url=>{
       if(url){
         const catActual=loadCat();
-        const i=catActual.findIndex(p=>p.id===prodId);
-        if(i>=0){ catActual[i].foto_url=url; saveCat(catActual); syncProductoAhora(catActual[i]); }
+        const i=catActual.findIndex(p=>String(p.id)===String(prodId));
+        if(i>=0){ catActual[i].foto=''; catActual[i].foto_url=url; saveCat(catActual); syncProductoAhora(catActual[i]); }
         console.log('[Storage] Foto subida y sincronizada:', url);
       }
     });
@@ -4149,7 +4167,8 @@ function guardarProdManual(){
   // Preservar foto_url existente si no cambia la foto
   const fotoUrlExistente = esModoEdit ? (cat[_mpmIdx].foto_url||'') : '';
   const fotoBase64Cambio = foto && foto.startsWith('data:') && foto !== (esModoEdit ? cat[_mpmIdx].foto : '');
-  const obj={ nombre:nom, sku:skuNuevo, categoria:qs('#mpm_cat').value, foto,
+  const guardarFotoLocal = !(fotoBase64Cambio && window._supaConectado);
+  const obj={ nombre:nom, sku:skuNuevo, categoria:qs('#mpm_cat').value, foto:guardarFotoLocal?foto:'',
     foto_url: fotoBase64Cambio ? '' : fotoUrlExistente,
     costo:parseEU(qs('#mpm_costo')?.value||'0'), precio_venta:pv,
     estado:qs('#mpm_estado').value, modo_inventario:modoInv, inv_loc:mpmLoc, moneda_prod:mpmMoneda,
@@ -4175,7 +4194,7 @@ function guardarProdManual(){
       if(url){
         const catActual=loadCat();
         const i=catActual.findIndex(p=>p.id===prodId);
-        if(i>=0){ catActual[i].foto_url=url; saveCat(catActual); syncProductoAhora(catActual[i]); }
+        if(i>=0){ catActual[i].foto=''; catActual[i].foto_url=url; saveCat(catActual); syncProductoAhora(catActual[i]); }
         console.log('[Storage] Foto subida y sincronizada:', url);
       }
     });
