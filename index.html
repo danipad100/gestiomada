@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_48">
+<html lang="es" data-app-version="GestioMada_V13_51">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -3966,10 +3966,9 @@ function confirmarCatalogo(){
   const skuNuevo=(qs('#mc_sku').value||'').trim();
   // Verificar SKU duplicado (solo si se ingresó un SKU)
   if(skuNuevo){
-    const skuExiste=cat.find(p=>p.sku&&p.sku.toLowerCase()===skuNuevo.toLowerCase());
-    if(skuExiste && skuExiste.nombre.toLowerCase()!==nom.toLowerCase()){
-      toast('SKU "'+skuNuevo+'" ya existe en "'+skuExiste.nombre+'"','err'); return;
-    }
+    const idActual = ei>=0 ? cat[ei].id : null;
+    const skuExiste=cat.find(p=>p.sku&&p.sku.toLowerCase()===skuNuevo.toLowerCase()&&String(p.id)!==String(idActual));
+    if(skuExiste){ toast('SKU "'+skuNuevo+'" ya existe en "'+skuExiste.nombre+'"','err'); return; }
   }
   const prodId = Date.now();
   const skuFinal = skuNuevo || String(prodId); // SKU = ID del producto si no se ingresó uno manual
@@ -4199,9 +4198,13 @@ function verProd(idx){
     : `<div style="width:80px;height:80px;border-radius:12px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0">${posEmoji(p.categoria)}</div>`;
 
   // Receta de insumos
-  const recetaHtml = (p.receta&&p.receta.length)
+  const recetaHtml = (p.insumos_receta&&p.insumos_receta.length)
     ? `<div style="margin-top:10px"><label style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Receta de insumos</label>
-        ${p.receta.map(r=>`<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid var(--border)"><span>${r.nombre}</span><span style="color:var(--muted)">${r.cantidad} ${r.unidad||''}</span></div>`).join('')}
+        ${p.insumos_receta.map(r=>{
+          const ins=loadIns().find(i=>String(i.id)===String(r.insumo_id));
+          const nomIns=ins?ins.nombre:'Insumo #'+r.insumo_id;
+          return `<div style="display:flex;justify-content:space-between;font-size:12px;padding:4px 0;border-bottom:0.5px solid var(--border)"><span>${nomIns}</span><span style="color:var(--muted)">${r.cantidad} ${ins&&ins.unidad?ins.unidad:''}</span></div>`;
+        }).join('')}
        </div>` : '';
 
   // Historial de costos (últimas 3 versiones)
@@ -4217,9 +4220,15 @@ function verProd(idx){
        </div>` : '';
 
   // Ventas de este producto
-  const ventas = loadVen().filter(v=>v.estado!=='anulada'&&(v.items||[]).some(it=>String(it.id_prod)===String(p.id)));
+  const ventas = loadVen().filter(v=>v.estado!=='anulada'&&(v.items||[]).some(it=>
+    (it.id_prod && String(it.id_prod)===String(p.id)) ||
+    (!it.id_prod && it.nombre && it.nombre.toLowerCase()===p.nombre.toLowerCase())
+  ));
   const totalVendido = ventas.reduce((a,v)=>{
-    const it=v.items.find(i=>String(i.id_prod)===String(p.id));
+    const it=v.items.find(i=>
+      (i.id_prod && String(i.id_prod)===String(p.id)) ||
+      (!i.id_prod && i.nombre && i.nombre.toLowerCase()===p.nombre.toLowerCase())
+    );
     return a + (it?it.cant:0);
   },0);
 
@@ -4282,13 +4291,20 @@ function editarProd(idx){
 function duplicarProd(idx){
   const cat=loadCat(); const p=cat[idx]; if(!p) return;
   const newId=Date.now();
-  const copia={...JSON.parse(JSON.stringify(p)), id:newId, nombre:p.nombre+' (copia)', sku:'P-'+newId, fecha:new Date().toISOString()};
+  const copia={...JSON.parse(JSON.stringify(p)), id:newId, nombre:p.nombre+' (copia)', sku:'P-'+newId, fecha:new Date().toISOString(), foto_url:''};
   cat.push(copia); saveCat(cat); syncProductoAhora(copia);
-  syncProductoAhora(copia); // Sync inmediato
   renderCatalogo(); renderDash();
   toast('Producto duplicado: '+copia.nombre,'ok');
 }
-async function eliminarProd(idx){ const cat=loadCat(); if(!confirm('¿Eliminar "'+cat[idx].nombre+'"?')) return; const _id=cat[idx].id; const _nom=cat[idx].nombre; const _fotoUrl=cat[idx].foto_url||''; await deleteFromSupabase('productos',_id); cat.splice(idx,1); localStorage.setItem(LS_CAT,JSON.stringify(cat)); updateBadges(); if(_fotoUrl) eliminarFotoStorage(_fotoUrl); renderCatalogo(); renderDash(); toast('Eliminado: '+_nom,'ok'); }
+async function eliminarProd(idx){
+  const cat=loadCat(); if(!confirm('¿Eliminar "'+cat[idx].nombre+'"?')) return;
+  const _id=cat[idx].id; const _nom=cat[idx].nombre; const _fotoUrl=cat[idx].foto_url||'';
+  _addBorrado('productos', _id); // lista negra antes de eliminar
+  await deleteFromSupabase('productos',_id);
+  cat.splice(idx,1); localStorage.setItem(LS_CAT,JSON.stringify(cat)); updateBadges();
+  if(_fotoUrl) eliminarFotoStorage(_fotoUrl);
+  renderCatalogo(); renderDash(); toast('Eliminado: '+_nom,'ok');
+}
 
 /* ════════════════════════════════════════════
    CLIENTES
@@ -5548,7 +5564,9 @@ function _initTasasAuto(){
 function getPrecioVentaProducto(prod){
   const pvUsd = prod.precio_venta||0;
   const bcv   = getTasaBCV();
-  const pvBs = bcv>0 ? pvUsd*bcv : 0;
+  const dif   = getDiferencial();
+  const par   = bcv*(dif>0?dif:1);
+  const pvBs  = par>0 ? pvUsd*dif*bcv : 0;
   return { moneda:'$', precioMon:pvUsd, precioUsd:pvUsd, precioBs:pvBs };
 }
 
@@ -5557,11 +5575,12 @@ function fmtPrecioProd(prod){
   return euro(prod.precio_venta||0);
 }
 
-/* Texto de referencia en la otra moneda */
+/* Texto de referencia en la otra moneda — usa paralela (dif × BCV) */
 function precioRefTexto(prod){
   const bcv = getTasaBCV();
+  const dif = getDiferencial();
   if(!bcv) return '';
-  const pvBs = (prod.precio_venta||0) * bcv;
+  const pvBs = (prod.precio_venta||0) * (dif>0?dif:1) * bcv;
   return 'Bs '+Math.round(pvBs).toLocaleString('es-VE');
 }
 
@@ -5945,9 +5964,22 @@ function posSeleccionarPedido(){
     const cw = qs('#pos_cli_wrap'); if(cw) cw.style.display='';
     const cb = qs('#pos_cli_buscar'); if(cb) cb.style.display='none';
   }
-  // Pre-llenar monto recibido con el saldo (para pago_pedido y pago_restante)
+  // Pre-llenar monto recibido con el saldo en la moneda correcta según método activo
   if(tipo === 'pago_pedido' || tipo === 'pago_restante'){
-    const recEl = qs('#pos_recibido'); if(recEl) recEl.value = fmt(saldo);
+    const recEl = qs('#pos_recibido');
+    if(recEl){
+      const metodoBsPre = ['efectivo_bs','pago_movil','transferencia'].includes(_posMetodoActivo);
+      if(metodoBsPre){
+        // Convertir saldo USD → Bs usando tasa paralela actual
+        const bcvPre = getTasaBCV(), difPre = getDiferencial();
+        const parPre = bcvPre * (difPre>0 ? difPre : 1);
+        // Saldo c/dif × BCV = Bs
+        const saldoBs = saldo * (difPre>0 ? difPre : 1) * bcvPre;
+        recEl.value = Math.round(saldoBs).toString().replace('.',',');
+      } else {
+        recEl.value = fmt(saldo);
+      }
+    }
     posRecalc();
   }
 }
@@ -5977,9 +6009,19 @@ function mvSeleccionarPedido(){
       if(cn) cn.textContent = ped.cliente.nombre + (ped.cliente.apellido?' '+ped.cliente.apellido:'');
     }
   }
-  // Pre-llenar monto para pago_pedido y pago_restante
+  // Pre-llenar monto para pago_pedido y pago_restante en la moneda correcta
   if(tipo === 'pago_pedido' || tipo === 'pago_restante'){
-    const recEl = qs('#mv_recibido'); if(recEl) recEl.value = fmt(saldo);
+    const recEl = qs('#mv_recibido');
+    if(recEl){
+      const metodoBsMv = ['efectivo_bs','pago_movil','transferencia'].includes(qs('#mv_metodo')?.value||'');
+      if(metodoBsMv){
+        const bcvMv = getTasaBCV(), difMv = getDiferencial();
+        const saldoBsMv = saldo * (difMv>0?difMv:1) * bcvMv;
+        recEl.value = Math.round(saldoBsMv).toString();
+      } else {
+        recEl.value = fmt(saldo);
+      }
+    }
     recalcVenta();
   }
 }
@@ -6436,16 +6478,30 @@ function posRecalc(){
   const disenoUsd   = (qs('#pos_diseno_chk')?.checked   ? parseFloat(qs('#pos_diseno_monto')?.value||0)   : 0);
   const extrasUsd   = (qs('#pos_extras_chk')?.checked   ? parseFloat(qs('#pos_extras_monto')?.value||0)   : 0);
   const extrasVal = deliveryUsd + envioUsd + disenoUsd + extrasUsd;
-  const total = Math.max(0, sub - desc + extrasVal);
-  const rec = parseEU(qs('#pos_recibido')?.value || '0');
-
-  // Detectar si el método activo es bolivariano
+  const tipo = qs('#pos_tipo')?.value || 'venta_rapida';
   const metodoBs = ['efectivo_bs','pago_movil','transferencia'].includes(_posMetodoActivo);
-  // Bs: productos con diferencial + extras solo BCV (sin diferencial)
-  const subProductos = Math.max(0, sub - desc);
-  const totalBs = (metodoBs && bcvPos > 0)
-    ? (subProductos * difPos * bcvPos) + (extrasVal * bcvPos)
-    : 0;
+
+  // Para pago_restante y pago_pedido con carrito vacío: el total es el saldo del pedido vinculado
+  let totalBase = Math.max(0, sub - desc + extrasVal);
+  let totalBs   = 0;
+  const parPos  = bcvPos * (difPos>0 ? difPos : 1);
+
+  if(['pago_restante','pago_pedido'].includes(tipo) && _posPedidoVinculado && sub === 0){
+    const pagado = (_posPedidoVinculado.pagos||[]).reduce((a,pg)=>a+pg.monto,0);
+    const saldoUsd = Math.max(0, _posPedidoVinculado.total - pagado);
+    const saldoCDif = saldoUsd * (difPos>0 ? difPos : 1); // precio c/dif (lo que debe el cliente)
+    totalBase = saldoUsd;
+    if(metodoBs && bcvPos > 0){
+      totalBs = saldoCDif * bcvPos; // Bs = saldo c/dif × BCV
+    }
+  } else {
+    const subProductos = Math.max(0, sub - desc);
+    if(metodoBs && bcvPos > 0){
+      totalBs = (subProductos * difPos * bcvPos) + (extrasVal * bcvPos);
+    }
+  }
+
+  const rec = parseEU(qs('#pos_recibido')?.value || '0');
 
   // Actualizar labels según moneda
   const recLbl = qs('#pos_recibido_lbl');
@@ -6459,7 +6515,7 @@ function posRecalc(){
     if(metodoBs && bcvPos > 0){
       tv.textContent = 'Bs ' + totalBs.toFixed(2).replace('.',',');
     } else {
-      tv.textContent = euro(total);
+      tv.textContent = euro(totalBase);
     }
   }
 
@@ -6471,13 +6527,14 @@ function posRecalc(){
     refEl.style.cssText = 'font-size:11px;color:rgba(255,255,255,.75);margin-top:2px';
     qs('#pos_total_bar')?.appendChild(refEl);
   }
-  // totalConDif = lo que cobra al cliente en $ (productos con dif, extras sin dif)
-  const totalConDif = (subProductos * difPos) + extrasVal;
+  // totalConDif = lo que cobra al cliente en $ con diferencial
+  const subProductos2 = Math.max(0, sub - desc);
+  const totalConDif = ['pago_restante','pago_pedido'].includes(tipo) && _posPedidoVinculado && sub===0
+    ? totalBase * (difPos>0?difPos:1)
+    : (subProductos2 * difPos) + extrasVal;
   if(metodoBs && bcvPos > 0){
-    // Barra muestra Bs — referencia muestra $ con dif
     refEl.textContent = '≈ $ ' + totalConDif.toFixed(2).replace('.',',');
   } else if(bcvPos > 0){
-    // Barra muestra $ — referencia muestra Bs
     refEl.textContent = '≈ Bs ' + totalBs.toFixed(2).replace('.',',');
   } else { refEl.textContent = ''; }
 
@@ -6492,20 +6549,22 @@ function posRecalc(){
       vueltoEl.value = 'Bs ' + Math.abs(vuelto).toFixed(2).replace('.',',');
       vueltoEl.style.color = vuelto >= 0 ? 'var(--ok)' : 'var(--danger)';
     } else {
-      const vuelto = rec - total;
+      const vuelto = rec - totalBase;
       vueltoEl.value = euro(Math.abs(vuelto));
       vueltoEl.style.color = vuelto >= 0 ? 'var(--ok)' : 'var(--danger)';
     }
   }
 
-  // Botón cobrar — usar totalBs exacto (sin redondear) igual que la barra
+  // Botón cobrar
   const btn = qs('#pos_cobrar_btn');
   const btnTotal = qs('#pos_cobrar_total');
   if(btn){
-    btn.disabled = _posItems.length === 0;
+    // Habilitar cobrar si hay ítems O si es pago de pedido vinculado
+    const tienePedidoVinculado = ['pago_restante','pago_pedido','abono'].includes(tipo) && !!_posPedidoVinculado;
+    btn.disabled = _posItems.length === 0 && !tienePedidoVinculado;
     if(btnTotal) btnTotal.textContent = metodoBs && bcvPos > 0
       ? '$ ' + totalConDif.toFixed(2).replace('.',',') + ' ≈ Bs ' + totalBs.toFixed(2).replace('.',',')
-      : euro(total);
+      : euro(totalBase);
   }
 }
 
@@ -6546,14 +6605,26 @@ function posCobrar(){
     if(rec0 <= 0){ toast('Ingresa el monto a cobrar','warn'); return; }
     const ped0 = _posPedidoVinculado;
     const pagado0 = (ped0.pagos||[]).reduce((a,p)=>a+p.monto,0);
-    const saldo0  = Math.max(0, ped0.total - pagado0);
-    if(rec0 > saldo0 + 0.01){ toast('El monto supera el saldo: '+euro(saldo0),'warn'); return; }
-    total = rec0;
+    const saldo0Usd = Math.max(0, ped0.total - pagado0); // saldo en USD base
+    const bcv0 = getTasaBCV(), dif0 = getDiferencial();
+    const par0 = bcv0 * (dif0>0?dif0:1);
+    const esBs0 = ['efectivo_bs','pago_movil','transferencia'].includes(_posMetodoActivo);
+    // Convertir rec0 a USD para comparar y guardar
+    const rec0Usd = (esBs0 && par0>0) ? rec0/par0 : rec0;
+    const saldo0CoDif = saldo0Usd * (dif0>0?dif0:1); // saldo en c/dif (lo que debe el cliente)
+    // Validar: rec0 en Bs no puede superar saldo en Bs (saldo c/dif × BCV)
+    const saldo0Bs = saldo0CoDif * bcv0;
+    if(esBs0 && rec0 > saldo0Bs + 1){ toast('El monto supera el saldo: Bs '+Math.round(saldo0Bs).toLocaleString('es-VE'),'warn'); return; }
+    if(!esBs0 && rec0Usd > saldo0Usd + 0.01){ toast('El monto supera el saldo: '+euro(saldo0Usd),'warn'); return; }
+    total = rec0Usd; // siempre guardar en USD base internamente
   } else {
     total = Math.max(0, sub - desc + extrasVal);
   }
 
   const rec = parseEU(qs('#pos_recibido')?.value || '0');
+  const bcvCob = getTasaBCV(), difCob = getDiferencial(), parCob = bcvCob*(difCob>0?difCob:1);
+  const esBsCob = ['efectivo_bs','pago_movil','transferencia'].includes(_posMetodoActivo);
+  const recUsd = (esBsCob && parCob>0) ? rec/parCob : rec; // guardar recibido en USD
   const costo_total = _posItems.reduce((a,it) => a + (it.costo_unit * it.cant), 0);
   const clienteVenta = _posCliSel || (_posPedidoVinculado?.cliente || null);
   const notaExtras = [
@@ -6572,7 +6643,7 @@ function posCobrar(){
     items: JSON.parse(JSON.stringify(_posItems)),
     subtotal: sub, descuento: desc,
     delivery_usd: deliveryUsd, envio_usd: envioUsd, diseno_usd: disenoUsd, extras_usd: extrasUsd,
-    total, recibido: rec, vuelto: Math.max(0, rec - total),
+    total, recibido: recUsd, vuelto: Math.max(0, recUsd - total),
     costo_total, utilidad: total - costo_total,
     tipo, canal: qs('#pos_canal')?.value || 'local',
     metodo: _posMetodoActivo,
@@ -6814,12 +6885,19 @@ function recalcVenta(){
   const desc=parseEU(qs('#mv_descuento')?.value||'0,00');
   const total=Math.max(0,sub-desc);
   const rec=parseEU(qs('#mv_recibido')?.value||'0');
-  const vuelto=Math.max(0,rec-total);
-  const falta=Math.max(0,total-rec);
+  const bcvV=getTasaBCV(), difV=getDiferencial();
+  const parV=bcvV*(difV>0?difV:1);
+  const metodoBsV=['efectivo_bs','pago_movil','transferencia'].includes(qs('#mv_metodo')?.value||'');
+  // Total a mostrar: si Bs, mostrar c/dif × BCV
+  const totalMostrar = (metodoBsV && parV>0) ? total*(difV>0?difV:1)*bcvV : total;
+  // rec ya viene en la moneda del campo (Bs o USD)
+  const vuelto=Math.max(0,rec-totalMostrar);
+  const falta=Math.max(0,totalMostrar-rec);
   const ms=qs('#mv_subtotal'); if(ms) ms.textContent=euro(sub);
-  const mt=qs('#mv_total');    if(mt) mt.textContent=euro(total);
-  const mr=qs('#mv_pill_rec'); if(mr) mr.textContent=euro(rec);
-  const mv=qs('#mv_pill_vuelto'); if(mv) mv.textContent=euro(vuelto>0?vuelto:-falta);
+  const mt=qs('#mv_total');
+  if(mt) mt.textContent = metodoBsV && bcvV>0 ? 'Bs '+Math.round(totalMostrar).toLocaleString('es-VE') : euro(total);
+  const mr=qs('#mv_pill_rec'); if(mr) mr.textContent = metodoBsV ? 'Bs '+Math.round(rec).toLocaleString('es-VE') : euro(rec);
+  const mv=qs('#mv_pill_vuelto'); if(mv) mv.textContent = metodoBsV ? 'Bs '+Math.round(vuelto>0?vuelto:-falta).toLocaleString('es-VE') : euro(vuelto>0?vuelto:-falta);
   const vw=qs('#mv_pill_vuelto_wrap');
   if(vw){ vw.style.background=vuelto>0?'#dcfce7':(falta>0?'#fee2e2':'#f3f4f6'); }
 }
@@ -6845,14 +6923,23 @@ function guardarVenta(){
     if(rec0 <= 0){ toast('Ingresa el monto a cobrar','warn'); return; }
     const ped0 = _mvPedidoVinculado;
     const pagado0 = (ped0.pagos||[]).reduce((a,p)=>a+p.monto,0);
-    const saldo0  = Math.max(0, ped0.total - pagado0);
-    if(rec0 > saldo0 + 0.01){ toast('El monto supera el saldo: '+euro(saldo0),'warn'); return; }
-    total = rec0;
+    const saldo0Usd = Math.max(0, ped0.total - pagado0);
+    const bcvMv0 = getTasaBCV(), difMv0 = getDiferencial();
+    const parMv0 = bcvMv0*(difMv0>0?difMv0:1);
+    const esBsMv0 = ['efectivo_bs','pago_movil','transferencia'].includes(qs('#mv_metodo')?.value||'');
+    const rec0Usd = (esBsMv0 && parMv0>0) ? rec0/parMv0 : rec0;
+    const saldo0Bs = saldo0Usd * (difMv0>0?difMv0:1) * bcvMv0;
+    if(esBsMv0 && rec0 > saldo0Bs + 1){ toast('El monto supera el saldo: Bs '+Math.round(saldo0Bs).toLocaleString('es-VE'),'warn'); return; }
+    if(!esBsMv0 && rec0Usd > saldo0Usd + 0.01){ toast('El monto supera el saldo: '+euro(saldo0Usd),'warn'); return; }
+    total = rec0Usd;
   } else {
     total = Math.max(0, sub - desc);
   }
 
   const rec = parseEU(qs('#mv_recibido').value||'0');
+  const bcvMvR = getTasaBCV(), difMvR = getDiferencial(), parMvR = bcvMvR*(difMvR>0?difMvR:1);
+  const esBsMvR = ['efectivo_bs','pago_movil','transferencia'].includes(qs('#mv_metodo')?.value||'');
+  const recUsdMv = (esBsMvR && parMvR>0) ? rec/parMvR : rec;
   const clienteVenta = _venCliSel || (_mvPedidoVinculado?.cliente || null);
   const notaPedido = _mvPedidoVinculado ? 'Pedido: '+_mvPedidoVinculado.numero : '';
   const notaBase = qs('#mv_notas').value.trim();
@@ -6862,7 +6949,7 @@ function guardarVenta(){
     cliente: clienteVenta,
     items: JSON.parse(JSON.stringify(_venItems)),
     subtotal:sub, descuento:desc, total,
-    recibido:rec, vuelto:Math.max(0,rec-total),
+    recibido:recUsdMv, vuelto:Math.max(0,recUsdMv-total),
     costo_total, utilidad:total-costo_total,
     tipo, metodo:qs('#mv_metodo').value,
     notas:[notaBase, notaPedido].filter(Boolean).join(' | '),
@@ -6984,12 +7071,21 @@ function renderKpisVentas(){
   const all=loadVen();
   const hoy=new Date().toISOString().slice(0,10);
   const hoyV=all.filter(v=>v.fecha.slice(0,10)===hoy&&v.estado!=='anulada');
-  const totalHoy=hoyV.reduce((a,v)=>a+v.total,0);
+  const bcvK=getTasaBCV(), difK=getDiferencial();
+  // Separar por moneda para mostrar totales correctos
+  const totalHoyBs = hoyV.filter(v=>['efectivo_bs','pago_movil','transferencia'].includes(v.metodo))
+    .reduce((a,v)=>a + v.total*(difK>0?difK:1)*bcvK, 0);
+  const totalHoyUsd = hoyV.filter(v=>['efectivo_usd','zelle'].includes(v.metodo))
+    .reduce((a,v)=>a+v.total, 0);
+  const totalLabel = totalHoyBs>0 && totalHoyUsd>0
+    ? `Bs ${Math.round(totalHoyBs).toLocaleString('es-VE')} + ${euro(totalHoyUsd)}`
+    : totalHoyBs>0 ? `Bs ${Math.round(totalHoyBs).toLocaleString('es-VE')}`
+    : euro(totalHoyUsd);
   const utilHoy=hoyV.reduce((a,v)=>a+(v.utilidad||0),0);
   const wrap=qs('#ven-kpis'); if(!wrap) return;
   wrap.innerHTML=`
     <div class="kpi c-pink"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FBEAF0"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#993556" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div></div><div class="kpi-lbl">Ventas hoy</div><div class="kpi-val">${hoyV.length}</div><div class="kpi-sub">transacciones</div></div>
-    <div class="kpi c-green"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></div></div><div class="kpi-lbl">Ingresos hoy</div><div class="kpi-val" style="">${euro(totalHoy)}</div><div class="kpi-sub">total cobrado</div></div>
+    <div class="kpi c-green"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></div></div><div class="kpi-lbl">Ingresos hoy</div><div class="kpi-val" style="font-size:13px">${totalLabel}</div><div class="kpi-sub">total cobrado</div></div>
     <div class="kpi c-purple"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EEEDFE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#534AB7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></div></div><div class="kpi-lbl">Utilidad hoy</div><div class="kpi-val" style="">${euro(utilHoy)}</div><div class="kpi-sub">ganancia neta</div></div>
     <div class="kpi c-amber"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/></svg></div></div><div class="kpi-lbl">Total ventas</div><div class="kpi-val">${all.filter(v=>v.estado!=='anulada').length}</div><div class="kpi-sub">historial</div></div>`;
 }
@@ -7003,10 +7099,16 @@ function verVenta(idx){
       <div><div style="font-weight:600;font-size:13px">${it.nombre}</div><div style="font-size:11px;color:var(--muted)">×${it.cant} · ${euro(it.precio_unit)}</div></div>
       <div style="font-weight:700">${euro(it.precio_unit*it.cant)}</div>
     </div>`).join('');
-  // Dual currency reference for verVenta
   const _vcBcv = getTasaBCV();
-  const _vcFmtTotal = euro(v.total);
-  const _vcRef = _vcBcv>0 ? '≈ Bs '+Math.round(v.total*_vcBcv).toLocaleString('es-VE') : '';
+  const _vcDif = getDiferencial();
+  const _vcPar = _vcBcv * (_vcDif>0?_vcDif:1);
+  const _vcEsBs = ['efectivo_bs','pago_movil','transferencia'].includes(v.metodo);
+  // Total mostrado: c/dif si Bs, USD base si no
+  const _vcFmtTotal = (_vcEsBs && _vcDif>1) ? '$ '+(v.total*_vcDif).toFixed(2).replace('.',',') : euro(v.total);
+  const _vcBsRef = (_vcEsBs && _vcPar>0) ? '≈ Bs '+Math.round(v.total*_vcDif*_vcBcv).toLocaleString('es-VE') : (_vcBcv>0&&!_vcEsBs ? '≈ Bs '+Math.round(v.total*_vcBcv).toLocaleString('es-VE') : '');
+  // Recibido y vuelto: reconstruir en Bs si aplica (guardados en USD)
+  const _vcRecBs = _vcEsBs && _vcPar>0 ? Math.round((v.recibido||0)*_vcPar).toLocaleString('es-VE') : null;
+  const _vcVueltoBs = _vcEsBs && _vcPar>0 ? Math.round((v.vuelto||0)*_vcPar).toLocaleString('es-VE') : null;
 
   qs('#mvven-body').innerHTML=`
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
@@ -7024,13 +7126,13 @@ function verVenta(idx){
         ${v.descuento?`<div class="pill">Descuento <strong style="color:var(--danger)">-${euro(v.descuento)}</strong></div>`:''}
         <div class="pill" style="background:#ffe3ee">
           Total <strong style="color:var(--brand)">${_vcFmtTotal}</strong>
-          ${_vcRef?`<span style="font-size:10px;color:var(--muted);margin-left:4px">${_vcRef}</span>`:''}
+          ${_vcBsRef?`<span style="font-size:10px;color:var(--muted);margin-left:4px">${_vcBsRef}</span>`:''}
         </div>
       </div>
     </div>
     <div class="frow">
-      <div><label>Recibido</label><strong>${euro(v.recibido)}</strong></div>
-      <div><label>Vuelto</label><strong>${euro(v.vuelto||0)}</strong></div>
+      <div><label>Recibido</label><strong>${_vcEsBs && _vcRecBs ? 'Bs '+_vcRecBs : euro(v.recibido)}</strong></div>
+      <div><label>Vuelto</label><strong>${_vcEsBs && _vcVueltoBs ? 'Bs '+_vcVueltoBs : euro(v.vuelto||0)}</strong></div>
       <div><label>Costo total</label><strong>${euro(v.costo_total||0)}</strong></div>
       <div><label>Utilidad</label><strong style="color:var(--ok)">${euro(v.utilidad||0)}</strong></div>
     </div>
@@ -8366,7 +8468,6 @@ function cobrarPedidoDesdeModal(){
   const all=loadPed(), p=all[_pedIdx];
   if(!p) return;
   closeModal('m-ver-ped');
-  // Abrir modal venta pre-cargado con items del pedido
   abrirNuevaVenta();
   // Cargar cliente
   if(p.cliente){
@@ -8374,10 +8475,16 @@ function cobrarPedidoDesdeModal(){
     if(cliIdx>=0) seleccionarClienteVenta(cliIdx);
     else _venCliSel=p.cliente;
   }
-  // Cargar items
+  // Vincular el pedido como pago_restante para que el pago quede registrado
+  _mvPedidoVinculado = p;
+  const tipoEl = qs('#mv_tipo');
+  if(tipoEl){ tipoEl.value='pago_restante'; mvTipoChange(); }
+  // Pre-seleccionar el pedido en el select
+  const selPed = qs('#mv_pedido_sel');
+  if(selPed){ selPed.value = String(p.id); mvSeleccionarPedido(); }
+  // Cargar items del pedido
   _venItems=(p.items||[]).map(it=>({...it}));
   renderItemsVenta(); recalcVenta();
-  // Pre-poner notas
   const notEl=qs('#mv_notas'); if(notEl) notEl.value='Cobro restante — Pedido '+p.numero;
   openModal('m-venta');
   toast('Pedido '+p.numero+' cargado en ventas','ok');
@@ -9260,17 +9367,20 @@ function renderRepVentas(){
 /* ══════════ TAB PRODUCTOS ══════════ */
 function renderRepProductos(){
   const ven = loadVen().filter(v=>v.estado!=='anulada'&&repInRango(v.fecha));
+  const bcvR=getTasaBCV(), difR=getDiferencial();
 
-  // Agregar todos los items de todas las ventas
   const byProd = {};
   ven.forEach(v=>{
+    const esBsV = ['efectivo_bs','pago_movil','transferencia'].includes(v.metodo);
+    const factorUsd = esBsV ? (difR>0?difR:1) : 1; // precio c/dif si Bs, base si USD
     (v.items||[]).forEach(it=>{
-      const key = it.nombre;
-      if(!byProd[key]) byProd[key]={ nombre:key, cant:0, total:0, costo:0, util:0 };
+      const key = it.id_prod ? String(it.id_prod) : it.nombre;
+      if(!byProd[key]) byProd[key]={ nombre:it.nombre, cant:0, total:0, costo:0, util:0 };
+      const precioReal = it.precio_unit * factorUsd;
       byProd[key].cant  += it.cant||1;
-      byProd[key].total += it.precio_unit*(it.cant||1);
+      byProd[key].total += precioReal*(it.cant||1);
       byProd[key].costo += (it.costo_unit||0)*(it.cant||1);
-      byProd[key].util  += (it.precio_unit-(it.costo_unit||0))*(it.cant||1);
+      byProd[key].util  += (precioReal-(it.costo_unit||0))*(it.cant||1);
     });
   });
 
@@ -10060,7 +10170,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_48';
+  const APP_VERSION = 'v13_51';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
