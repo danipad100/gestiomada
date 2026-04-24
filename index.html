@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_52">
+<html lang="es" data-app-version="GestioMada_V13_54">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -7758,7 +7758,14 @@ function abrirEditarPedido(idx){
     qs('#mp_abono').value = '0,00';
     qs('#mp_metodo').value = 'efectivo_bs';
   }
-  qs('#mp_notas').value = p.notas||'';
+  // Cargar solo la parte manual de las notas (filtrar extras automáticos para no duplicarlos)
+  const _notasRaw = p.notas||'';
+  const _notasManual = _notasRaw
+    .split(' | ')
+    .filter(s => !s.startsWith('Delivery:') && !s.startsWith('Envío:') && !s.startsWith('Diseño:') && !s.startsWith('Extras:'))
+    .join(' | ')
+    .trim();
+  qs('#mp_notas').value = _notasManual;
   qs('#mp_estado').value = p.estado||'pendiente';
   const mpCanalE=qs('#mp_canal'); if(mpCanalE) mpCanalE.value=p.canal||'local';
   qs('#mp_fecha_pedido').value = p.fecha_pedido||'';
@@ -8131,6 +8138,15 @@ function guardarPedido(){
     _gDis>0?'Diseño: $'+_gDis.toFixed(2):'',
     _gExt>0?'Extras: $'+_gExt.toFixed(2):''
   ].filter(Boolean).join(' | ');
+
+  // Limpiar la nota manual de cualquier extras automáticos que se hayan concatenado antes
+  // para evitar duplicados al editar (el campo mp_notas puede tener la nota original con extras)
+  const _notaManualRaw = qs('#mp_notas').value.trim();
+  const _notaManual = _notaManualRaw
+    .split(' | ')
+    .filter(p => !p.startsWith('Delivery:') && !p.startsWith('Envío:') && !p.startsWith('Diseño:') && !p.startsWith('Extras:'))
+    .join(' | ')
+    .trim();
   const ped = {
     id:          _pedIdx!==null ? all[_pedIdx].id : Date.now(),
     numero:      _pedIdx!==null ? all[_pedIdx].numero : nextNumPed(),
@@ -8145,7 +8161,7 @@ function guardarPedido(){
     pagos,
     estado:      qs('#mp_estado').value,
     canal:       qs('#mp_canal')?.value || 'local',
-    notas:       [qs('#mp_notas').value.trim(), _notaExtras].filter(Boolean).join(' | '),
+    notas:       [_notaManual, _notaExtras].filter(Boolean).join(' | '),
     fecha_pedido:qs('#mp_fecha_pedido').value,
     fecha_entrega:qs('#mp_fecha_entrega').value,
     fecha_creado: _pedIdx!==null ? (all[_pedIdx].fecha_creado||new Date().toISOString()) : new Date().toISOString(),
@@ -8231,10 +8247,10 @@ function renderPedidos(){
           const _bcvL=getTasaBCV(), _difL=getDiferencial(), _parL=_bcvL*_difL;
           const totalCDif = p.total_cdif || (p.total*(_difL>1?_difL:1));
           const totalBs   = p.total_bs   || (_parL>0 ? Math.round(p.total*_parL) : 0);
-          // Restante en USD base, luego convertir a c/dif
-          const pagadoUsd = (p.pagos||[]).reduce((a,pg)=>a+pg.monto,0);
-          const restUsdL  = Math.max(0, p.total - pagadoUsd);
-          const restCDif  = restUsdL * (_difL>1?_difL:1);
+          // Restante = total BCV - pagado BCV
+          // Cada pago en USD paralelo se convierte a BCV multiplicando por diferencial
+          const pagadoCDif = (p.pagos||[]).reduce((a,pg)=>a + pg.monto*(_difL>1?_difL:1), 0);
+          const restCDif   = Math.max(0, totalCDif - pagadoCDif);
           return `<div style="font-weight:700;font-size:15px;color:var(--brand)">$${totalCDif.toFixed(2).replace('.',',')}</div>`+
             (totalBs>0?`<div style="font-size:13px;font-weight:600;color:var(--ok)">Bs ${Math.round(totalBs).toLocaleString('es-VE')}</div>`:'') +
             (rest>0?`<div style="font-size:11px;color:var(--danger);font-weight:600">Restante: $${restCDif.toFixed(2).replace('.',',')}</div>`:`<div style="font-size:11px;color:var(--ok);font-weight:600">✓ Pagado</div>`);
@@ -8271,13 +8287,14 @@ function verPedido(idx){
   const all=loadPed(), p=all[idx]; if(!p) return;
   _pedIdx=idx;
   const ep=estadoPago(p), pag=totalPagado(p);
-  // Restante en USD base — simple resta, sin mezclar con total_cdif
-  const restUsd   = Math.max(0, p.total - pag);
-  // Restante en c/dif — lo que debe el cliente en la moneda de cobro
   const _pedBcv = getTasaBCV();
   const _pedDif = getDiferencial();
   const _pedPar = _pedBcv * (_pedDif>0?_pedDif:1);
-  const restCDif  = restUsd * (_pedDif>0?_pedDif:1);
+  // Restante BCV = total BCV - pagado BCV (cada pago USD paralelo × diferencial)
+  const _totalCDifV  = p.total_cdif || (p.total*(_pedDif>0?_pedDif:1));
+  const _pagadoCDifV = (p.pagos||[]).reduce((a,pg)=>a + pg.monto*(_pedDif>0?_pedDif:1), 0);
+  const restCDif     = Math.max(0, _totalCDifV - _pagadoCDifV);
+  const restUsd      = Math.max(0, p.total - pag);
   qs('#mvped-title').textContent=p.numero+(p.cliente?' — '+p.cliente.nombre+' '+p.cliente.apellido:'');
   const _fmtUsd  = n => euro(n);
   const _pedFmtMon = n => euro(n);
@@ -10170,7 +10187,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_52';
+  const APP_VERSION = 'v13_54';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
