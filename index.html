@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_56">
+<html lang="es" data-app-version="GestioMada_V13_57">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -7776,14 +7776,19 @@ function abrirEditarPedido(idx){
   const _qElE=qs('#mp_prod_q'); if(_qElE) _qElE.value='';
   const _nomElE=qs('#mp_prod_sel_nombre'); if(_nomElE) _nomElE.style.display='none';
   const _selElE=qs('#mp_prod_sel'); if(_selElE) _selElE.value='';
-  // Restaurar extras si el pedido los tenía
-  const _extMap={delivery:p.delivery_usd||0,envio:p.envio_usd||0,diseno:p.diseno_usd||0,extras:p.extras_usd||0};
+  // Restaurar extras — delivery_usd etc. están en dólar paralelo
+  const _extMap={delivery:p.delivery_usd||0, envio:p.envio_usd||0, diseno:p.diseno_usd||0, extras:p.extras_usd||0};
   ['delivery','envio','diseno','extras'].forEach(t=>{
-    const chk=qs('#mp_'+t+'_chk'), inp=qs('#mp_'+t+'_monto');
-    if(chk && inp){ const v=_extMap[t]; chk.checked=v>0; if(v>0) inp.value=v; }
+    const chk = qs('#mp_'+t+'_chk');
+    const inp = qs('#mp_'+t+'_monto');
+    if(!chk || !inp) return;
+    const v = _extMap[t];
+    chk.checked = v > 0;
+    if(v > 0) inp.value = v;
   });
-  recalcPedido();
   openModal('m-pedido');
+  // Recalcular después de abrir el modal para que todos los elementos estén visibles
+  requestAnimationFrame(()=>recalcPedido());
 }
 
 // ── Buscador de catálogo en pedido ──
@@ -8091,25 +8096,12 @@ function guardarPedido(){
   const _gExt = (qs('#mp_extras_chk')?.checked   ? (parseFloat(qs('#mp_extras_monto')?.value)||0)   : 0);
   const _gExtrasTotal = _gDel + _gEnv + _gDis + _gExt;
   const subNetaG = Math.max(0, sub - desc);
-  const total = subNetaG + _gExtrasTotal;           // USD base interno
-  // total_cdif: lo que cobra al cliente (productos×dif + extras sin dif)
+  const total = subNetaG + _gExtrasTotal;                    // dólar paralelo interno
   const _gDifG = getDiferencial();
   const _gBcvG = getTasaBCV();
-  const _totalCdifNuevo = parseFloat(((subNetaG * (_gDifG>0?_gDifG:1)) + _gExtrasTotal).toFixed(4));
-  const _totalBsNuevo   = _gBcvG>0 ? parseFloat((subNetaG*_gBcvG*(_gDifG>0?_gDifG:1) + _gExtrasTotal*_gBcvG).toFixed(2)) : 0;
-  // Al editar: recalcular total_cdif solo si cambió el total paralelo (ítems/extras distintos)
-  // Esto evita que el diferencial de otro dispositivo sobreescriba el total_cdif original
-  const all = loadPed();
-  const _pedExistente = _pedIdx!==null ? all[_pedIdx] : null;
-  const _totalParaleloAnterior = _pedExistente ? (_pedExistente.total||0) : 0;
-  const _totalParaleloNuevo = subNetaG + _gExtrasTotal;
-  const _totalCambio = Math.abs(_totalParaleloNuevo - _totalParaleloAnterior) > 0.001;
-  const total_cdif = (_pedExistente && !_totalCambio && _pedExistente.total_cdif)
-    ? _pedExistente.total_cdif  // preservar si los ítems no cambiaron
-    : _totalCdifNuevo;          // recalcular si es nuevo o cambiaron ítems
-  const total_bs = (_pedExistente && !_totalCambio && _pedExistente.total_bs)
-    ? _pedExistente.total_bs
-    : _totalBsNuevo;
+  // total_cdif = productos en $BCV + extras en dólar paralelo (SIN diferencial)
+  const total_cdif = parseFloat(((subNetaG * (_gDifG>0?_gDifG:1)) + _gExtrasTotal).toFixed(4));
+  const total_bs   = _gBcvG>0 ? parseFloat((total_cdif * _gBcvG).toFixed(2)) : 0;
   // Si método es Bs el usuario ingresa Bs — usar la conversión calculada en recalcPedido
   const _metodoAb = qs('#mp_metodo')?.value||'efectivo_bs';
   const _esBsAb = !['efectivo_usd','zelle'].includes(_metodoAb);
@@ -8117,6 +8109,7 @@ function guardarPedido(){
   const _abonoRaw = parseEU(qs('#mp_abono')?.value||'0,00');
   const abono = (_esBsAb && _parAb>0) ? _abonoRaw/_parAb : _abonoRaw; // siempre en USD
 
+  const all = loadPed();
   let pagos = [];
   if(_pedIdx!==null){
     pagos = all[_pedIdx].pagos||[];
@@ -10187,7 +10180,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_56';
+  const APP_VERSION = 'v13_57';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
