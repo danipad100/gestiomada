@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_62">
+<html lang="es" data-app-version="GestioMada_V13_63">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -2363,7 +2363,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -2883,9 +2883,13 @@ body.dark .pos-prod-img-ph{background:#23283a}
               <div id="rep-top-productos"></div>
             </div>
             <div class="card">
-              <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg> Utilidad por producto</div>
-              <div id="rep-util-productos"></div>
+              <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Por categoría</div>
+              <div id="rep-prod-categorias"></div>
             </div>
+          </div>
+          <div class="card">
+            <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg> Utilidad por producto</div>
+            <div id="rep-util-productos"></div>
           </div>
         </div>
 
@@ -2902,28 +2906,54 @@ body.dark .pos-prod-img-ph{background:#23283a}
               <div id="rep-ped-pagos"></div>
             </div>
           </div>
-          <div class="card">
+          <div class="grid g2" style="margin-bottom:14px">
+            <div class="card">
+              <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Por canal</div>
+              <div id="rep-ped-canales"></div>
+            </div>
+            <div class="card">
+              <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Por método de pago</div>
+              <div id="rep-ped-metodos"></div>
+            </div>
+          </div>
+          <div class="card" style="margin-bottom:14px">
             <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Pendientes y vencidos</div>
             <div id="rep-ped-pendientes"></div>
+          </div>
+          <div class="card">
+            <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/></svg> Detalle de pedidos del período</div>
+            <div id="rep-ped-tabla"></div>
           </div>
         </div>
 
         <!-- Tab Clientes -->
         <div class="tab-panel" id="rep-tab-clientes">
+          <div class="grid g4" id="rep-cli-kpis" style="margin-bottom:14px"></div>
           <div class="grid g2" style="margin-bottom:14px">
             <div class="card">
-              <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg> Clientes top (por facturación)</div>
+              <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg> Top clientes (por facturación)</div>
               <div id="rep-top-clientes"></div>
             </div>
             <div class="card">
-              <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Clientes frecuentes</div>
+              <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Clientes más frecuentes</div>
               <div id="rep-clientes-frec"></div>
+            </div>
+          </div>
+          <div class="grid g2">
+            <div class="card">
+              <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> Clientes nuevos en el período</div>
+              <div id="rep-clientes-nuevos"></div>
+            </div>
+            <div class="card">
+              <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Sin actividad reciente</div>
+              <div id="rep-clientes-inactivos"></div>
             </div>
           </div>
         </div>
 
         <!-- Tab Caja -->
         <div class="tab-panel" id="rep-tab-caja">
+          <div class="grid g4" id="rep-caja-kpis" style="margin-bottom:14px"></div>
           <div class="grid g2" style="margin-bottom:14px">
             <div class="card">
               <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> Balance por día</div>
@@ -2942,6 +2972,17 @@ body.dark .pos-prod-img-ph{background:#23283a}
 
         <!-- Tab Inventario -->
         <div class="tab-panel" id="rep-tab-inventario">
+          <div class="grid g4" id="rep-inv-kpis" style="margin-bottom:14px"></div>
+          <div class="grid g2" style="margin-bottom:14px">
+            <div class="card">
+              <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Alertas de stock bajo</div>
+              <div id="rep-inv-alertas"></div>
+            </div>
+            <div class="card">
+              <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2l9 4.5v11L12 22 3 17.5V6.5L12 2z"/><polyline points="3 6.5 12 11 21 6.5"/><line x1="12" y1="11" x2="12" y2="22"/></svg> Stock actual de insumos</div>
+              <div id="rep-inv-stock"></div>
+            </div>
+          </div>
           <div class="card" style="margin-bottom:14px">
             <div class="card-title" style="margin-bottom:12px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2l9 4.5v11L12 22 3 17.5V6.5L12 2z"/><polyline points="3 6.5 12 11 21 6.5"/><line x1="12" y1="11" x2="12" y2="22"/></svg> Movimientos de inventario</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
@@ -8731,6 +8772,62 @@ VIEWS['pedidos']={ title:'Pedidos', sub:'Gestión de pedidos con abonos y seguim
 
 function renderRepInventario(){
   const all=loadIMov();
+  const ins=loadIns(), ter=loadTer();
+
+  // KPIs inventario
+  const alertasBajo = ins.filter(i=>stockBajo(i)).length + ter.filter(t=>stockBajo(t)).length;
+  const totalIns = ins.length + ter.length;
+  const movsPeriodo = all.filter(m=>repInRango(m.fecha?.slice(0,10)));
+  const entradas = movsPeriodo.filter(m=>m.tipo==='entrada').reduce((a,m)=>a+(m.cant||0),0);
+  const salidas  = movsPeriodo.filter(m=>m.tipo==='salida').reduce((a,m)=>a+(m.cant||0),0);
+  const kpiInv = qs('#rep-inv-kpis');
+  if(kpiInv) kpiInv.innerHTML = `
+    <div class="kpi c-blue"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E6F1FB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l9 4.5v11L12 22 3 17.5V6.5L12 2z"/><polyline points="3 6.5 12 11 21 6.5"/><line x1="12" y1="11" x2="12" y2="22"/></svg></div></div><div class="kpi-lbl">Total ítems</div><div class="kpi-val">${totalIns}</div><div class="kpi-sub">${ins.length} insumos · ${ter.length} terminados</div></div>
+    <div class="kpi ${alertasBajo>0?'c-red':'c-green'}"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:${alertasBajo>0?'#FCEBEB':'#EAF3DE'}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${alertasBajo>0?'#A32D2D':'#3B6D11'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div></div><div class="kpi-lbl">Stock bajo</div><div class="kpi-val">${alertasBajo}</div><div class="kpi-sub">${alertasBajo>0?'ítems bajo mínimo':'Sin alertas'}</div></div>
+    <div class="kpi c-teal"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E1F5EE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F6E56" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div><div class="kpi-lbl">Entradas período</div><div class="kpi-val">+${entradas.toLocaleString('es-ES',{maximumFractionDigits:1})}</div><div class="kpi-sub">unidades ingresadas</div></div>
+    <div class="kpi c-amber"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div></div><div class="kpi-lbl">Salidas período</div><div class="kpi-val">-${salidas.toLocaleString('es-ES',{maximumFractionDigits:1})}</div><div class="kpi-sub">unidades consumidas</div></div>`;
+
+  // Alertas de stock bajo
+  const alertWrap = qs('#rep-inv-alertas');
+  if(alertWrap){
+    const bajos = [...ins.filter(i=>stockBajo(i)).map(i=>({...i,tipo:'Insumo'})), ...ter.filter(t=>stockBajo(t)).map(t=>({...t,tipo:'Terminado'}))].sort((a,b)=>((a.stock||0)/Math.max(a.stock_min||1,1))-((b.stock||0)/Math.max(b.stock_min||1,1)));
+    if(!bajos.length){ alertWrap.innerHTML='<div class="empty" style="padding:20px"><p style="color:var(--ok)">✓ Sin alertas de stock bajo</p></div>'; }
+    else alertWrap.innerHTML = bajos.map(it=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f3f3f8;font-size:12px">
+        <div style="flex:1"><div style="font-weight:600">${it.nombre}</div><div style="color:var(--muted);font-size:11px">${it.tipo} · Mín: ${it.stock_min||0} ${it.unidad||'uds'}</div></div>
+        <div style="background:#f3f4f6;border-radius:6px;height:8px;width:80px;overflow:hidden"><div style="height:100%;width:${Math.min(100,((it.stock||0)/Math.max(it.stock_min||1,1))*100).toFixed(0)}%;background:var(--danger);border-radius:6px"></div></div>
+        <div style="font-weight:700;color:var(--danger);min-width:60px;text-align:right">${it.stock||0} ${it.unidad||'uds'}</div>
+      </div>`).join('');
+  }
+
+  // Stock actual de insumos (top por cantidad)
+  const stockWrap = qs('#rep-inv-stock');
+  if(stockWrap){
+    const allItems = [...ins.map(i=>({...i,tipoItem:'Insumo'})), ...ter.map(t=>({...t,tipoItem:'Terminado'}))].sort((a,b)=>(b.stock||0)-(a.stock||0)).slice(0,15);
+    if(!allItems.length){ stockWrap.innerHTML='<div class="empty" style="padding:20px"><p>Sin insumos registrados</p></div>'; }
+    else{
+      const maxStock = Math.max(...allItems.map(i=>i.stock||0),1);
+      stockWrap.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="border-bottom:2px solid var(--border)">
+          <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Ítem</th>
+          <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Tipo</th>
+          <th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Stock</th>
+          <th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Mínimo</th>
+          <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Estado</th>
+        </tr></thead>
+        <tbody>${allItems.map(it=>{
+          const bajo = stockBajo(it);
+          return `<tr style="border-bottom:1px solid #f3f3f8">
+            <td style="padding:7px;font-weight:600">${it.nombre}</td>
+            <td style="padding:7px;color:var(--muted)">${it.tipoItem}</td>
+            <td style="padding:7px;text-align:right;font-weight:700;color:${bajo?'var(--danger)':'var(--ok)'}">${(it.stock||0).toLocaleString('es-ES',{maximumFractionDigits:2})} ${it.unidad||'uds'}</td>
+            <td style="padding:7px;text-align:right;color:var(--muted)">${it.stock_min||0}</td>
+            <td style="padding:7px"><span class="chip ${bajo?'chip-danger':'chip-ok'}" style="font-size:10px">${bajo?'Stock bajo':'OK'}</span></td>
+          </tr>`;
+        }).join('')}</tbody>
+      </table></div>`;
+    }
+  }
   const tipoF=qs('#rep_inv_tipo')?.value||'';
   const itemF=qs('#rep_inv_item')?.value||'';
   // Poblar selector de insumos/terminados
@@ -9370,7 +9467,7 @@ function renderReportes(){
   // Render tab activo
   const activeTab = qs('#rep-tabs .tab-btn.active');
   if(!activeTab) return;
-  const tabId = activeTab.textContent.includes('Vent')?'ventas':activeTab.textContent.includes('Prod')?'productos':activeTab.textContent.includes('Ped')?'pedidos':activeTab.textContent.includes('Cli')?'clientes':'caja';
+  const txt=activeTab.textContent.trim(); const tabId = txt.includes('Vent')?'ventas':txt.includes('Prod')?'productos':txt.includes('Ped')?'pedidos':txt.includes('Cli')?'clientes':txt.includes('Inv')?'inventario':'caja';
   const renders = { ventas:renderRepVentas, productos:renderRepProductos, pedidos:renderRepPedidos, clientes:renderRepClientes, caja:renderRepCaja, inventario:renderRepInventario };
   if(renders[tabId]) renders[tabId]();
 }
@@ -9378,35 +9475,40 @@ function renderReportes(){
 /* ── KPIs globales ── */
 function renderRepKpis(){
   const ven = loadVen().filter(v=>v.estado!=='anulada'&&repInRango(v.fecha));
+  const venAnul = loadVen().filter(v=>v.estado==='anulada'&&repInRango(v.fecha));
   const ped = loadPed().filter(p=>repInRango(p.fecha_creado));
+  const bcvR = getTasaBCV(), difR = getDiferencial();
   const totalVen = ven.reduce((a,v)=>a+v.total,0);
   const totalUtil = ven.reduce((a,v)=>a+(v.utilidad||0),0);
   const ticketProm = ven.length ? totalVen/ven.length : 0;
+  // Total en Bs: ventas en Bs (efectivo_bs, pago_movil, transferencia) ya están registradas en Bs via monto_bs
+  const totalVenBs = ven.reduce((a,v)=>a+(v.monto_bs||v.monto_bs_total||(v.total*(bcvR*difR>0?bcvR*difR:1))),0);
+  const pedPorCobrar = ped.reduce((a,p)=>a+Math.max(0,p.total-(p.pagos||[]).reduce((x,pg)=>x+pg.monto,0)),0);
   const wrap = qs('#rep-kpis'); if(!wrap) return;
   wrap.innerHTML = `
     <div class="kpi pink">
       <div class="kpi-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
-      <div class="kpi-lbl">Total ventas</div>
-      <div class="kpi-val" style="">${euro(totalVen)}</div>
-      <div class="kpi-sub">${ven.length} transacciones</div>
+      <div class="kpi-lbl">Ventas USD</div>
+      <div class="kpi-val">${euro(totalVen)}</div>
+      <div class="kpi-sub">${ven.length} ventas${venAnul.length?' · '+venAnul.length+' anuladas':''}</div>
     </div>
     <div class="kpi green">
       <div class="kpi-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></div>
       <div class="kpi-lbl">Utilidad neta</div>
-      <div class="kpi-val" style="">${euro(totalUtil)}</div>
-      <div class="kpi-sub">${totalVen>0?((totalUtil/totalVen)*100).toFixed(1):0}% margen</div>
+      <div class="kpi-val">${euro(totalUtil)}</div>
+      <div class="kpi-sub">${totalVen>0?((totalUtil/totalVen)*100).toFixed(1):0}% margen · ${euro(ticketProm)} ticket</div>
     </div>
     <div class="kpi blue">
-      <div class="kpi-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg></div>
-      <div class="kpi-lbl">Ticket promedio</div>
-      <div class="kpi-val" style="">${euro(ticketProm)}</div>
-      <div class="kpi-sub">por venta</div>
-    </div>
-    <div class="kpi warn">
       <div class="kpi-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></div>
       <div class="kpi-lbl">Pedidos</div>
       <div class="kpi-val">${ped.length}</div>
-      <div class="kpi-sub">${euro(ped.reduce((a,p)=>a+p.total,0))} facturado</div>
+      <div class="kpi-sub">${euro(pedPorCobrar)} por cobrar</div>
+    </div>
+    <div class="kpi warn">
+      <div class="kpi-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      <div class="kpi-lbl">Ventas en Bs</div>
+      <div class="kpi-val" style="font-size:15px">Bs ${bcvR>0?Math.round(totalVen*(bcvR*difR>0?bcvR*difR:1)).toLocaleString('es-VE'):'—'}</div>
+      <div class="kpi-sub">${bcvR>0?'BCV ×'+difR.toFixed(2):'Configure tasa BCV'}</div>
     </div>`;
 }
 
@@ -9581,6 +9683,32 @@ function renderRepProductos(){
       </div>`).join('');
   }
 
+  // Por categoría
+  const byCat = {};
+  ven.forEach(v=>(v.items||[]).forEach(it=>{
+    const cat = it.categoria || 'Sin categoría';
+    if(!byCat[cat]) byCat[cat]={ cant:0, total:0, util:0 };
+    byCat[cat].cant  += it.cant||1;
+    byCat[cat].total += (it.precio_unit||0)*(it.cant||1);
+    byCat[cat].util  += ((it.precio_unit||0)-(it.costo_unit||0))*(it.cant||1);
+  }));
+  const catWrapP = qs('#rep-prod-categorias');
+  if(catWrapP){
+    const cats = Object.entries(byCat).sort(([,a],[,b])=>b.total-a.total);
+    const maxCat = cats.length ? cats[0][1].total : 1;
+    if(!cats.length){ catWrapP.innerHTML='<div class="empty" style="padding:20px"><p>Sin datos</p></div>'; }
+    else catWrapP.innerHTML = cats.map(([cat,v],i)=>`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12px">
+        <div style="min-width:20px;font-weight:700;color:${i<3?'var(--brand)':'var(--muted)'};font-size:13px">${i+1}</div>
+        <div style="flex:2;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600">${cat}</div>
+        <div style="flex:1;background:#f3f4f6;border-radius:6px;height:14px;overflow:hidden">
+          <div style="height:100%;width:${(v.total/maxCat*100).toFixed(1)}%;background:linear-gradient(90deg,var(--brand),var(--brand2));border-radius:6px"></div>
+        </div>
+        <div style="min-width:40px;text-align:center;color:var(--muted)">${v.cant} uds</div>
+        <div style="min-width:80px;text-align:right;font-weight:700;color:var(--brand)">${euro(v.total)}</div>
+      </div>`).join('');
+  }
+
   const utilWrap = qs('#rep-util-productos');
   if(utilWrap){
     const byUtil = [...prods].sort((a,b)=>b.util-a.util);
@@ -9618,10 +9746,13 @@ function renderRepProductos(){
 function renderRepPedidos(){
   const PED_ESTADOS_R = { pendiente:'Pendiente', produccion:'En producción', listo:'Listo', entregado:'Entregado', cancelado:'Cancelado' };
   const PED_PAGOS_R   = { sin_abono:'Sin abono', abonado:'Abonado', parcial:'Parcial', pagado:'Pagado' };
+  const CANAL_LABEL_P  = { local:'🏪 Local', whatsapp:'📱 WhatsApp', online:'🌐 Online' };
+  const CANAL_COLOR_P  = { local:'#22c55e', whatsapp:'#25D366', online:'#3b82f6' };
   const all = loadPed().filter(p=>repInRango(p.fecha_creado));
   const totalFact  = all.reduce((a,p)=>a+p.total,0);
   const totalPagado= all.reduce((a,p)=>a+(p.pagos||[]).reduce((x,pg)=>x+pg.monto,0),0);
   const totalPend  = all.filter(p=>p.estado!=='entregado'&&p.estado!=='cancelado').length;
+  const ticketPed  = all.length ? totalFact/all.length : 0;
   const kw = qs('#rep-ped-kpis'); if(kw) kw.innerHTML = `
     <div class="kpi c-pink"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FBEAF0"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#993556" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></div></div><div class="kpi-lbl">Total pedidos</div><div class="kpi-val">${all.length}</div><div class="kpi-sub">en período</div></div>
     <div class="kpi c-green"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></div></div><div class="kpi-lbl">Facturado</div><div class="kpi-val" style="font-size:16px">${euro(totalFact)}</div><div class="kpi-sub">total pedidos</div></div>
@@ -9641,12 +9772,65 @@ function renderRepPedidos(){
   });
   const pagoWrap = qs('#rep-ped-pagos'); if(pagoWrap) pagoWrap.innerHTML = _barras(byPago, PED_PAGOS_R, all.length);
 
+  // KPIs de pedidos
+  const kwp = qs('#rep-ped-kpis');
+  if(kwp) kwp.innerHTML = `
+    <div class="kpi c-pink"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FBEAF0"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#993556" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></div></div><div class="kpi-lbl">Total pedidos</div><div class="kpi-val">${all.length}</div><div class="kpi-sub">en período</div></div>
+    <div class="kpi c-green"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></div></div><div class="kpi-lbl">Facturado</div><div class="kpi-val" style="font-size:16px">${euro(totalFact)}</div><div class="kpi-sub">${euro(ticketPed)} ticket prom.</div></div>
+    <div class="kpi c-teal"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E1F5EE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F6E56" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="kpi-lbl">Cobrado</div><div class="kpi-val" style="font-size:16px">${euro(totalPagado)}</div><div class="kpi-sub">${totalFact>0?((totalPagado/totalFact)*100).toFixed(0):0}% del total</div></div>
+    <div class="kpi c-amber"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div><div class="kpi-lbl">Pendientes</div><div class="kpi-val">${totalPend}</div><div class="kpi-sub">${euro(Math.max(0,totalFact-totalPagado))} por cobrar</div></div>`;
+
+  // Por estado
+  const byEst = {};
+  all.forEach(p=>{ byEst[p.estado]=(byEst[p.estado]||0)+1; });
+  const estWrap = qs('#rep-ped-estados'); if(estWrap) estWrap.innerHTML = _barras(byEst, PED_ESTADOS_R, all.length);
+
+  // Por estado de pago
+  const byPago = {};
+  all.forEach(p=>{ const ep=estadoPago(p); byPago[ep]=(byPago[ep]||0)+1; });
+  const pagoWrap = qs('#rep-ped-pagos'); if(pagoWrap) pagoWrap.innerHTML = _barras(byPago, PED_PAGOS_R, all.length);
+
+  // Por canal
+  const byCanP = {};
+  all.forEach(p=>{ const c=p.canal||'local'; byCanP[c]=(byCanP[c]||0)+1; });
+  const canPWrap = qs('#rep-ped-canales');
+  if(canPWrap){
+    const totalCP = all.length||1;
+    canPWrap.innerHTML = Object.entries(byCanP).sort(([,a],[,b])=>b-a).map(([c,v])=>{
+      const col=CANAL_COLOR_P[c]||'#aaa'; const pct=(v/totalCP*100).toFixed(0);
+      return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
+        <div style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0"></div>
+        <div style="flex:1;font-weight:600">${CANAL_LABEL_P[c]||c}</div>
+        <div style="flex:2;background:#f3f4f6;border-radius:6px;height:16px;overflow:hidden"><div style="height:100%;width:${(v/Math.max(...Object.values(byCanP)))*100}%;background:${col};opacity:.8;border-radius:6px"></div></div>
+        <div style="min-width:30px;text-align:right;font-weight:700">${v}</div>
+        <div style="min-width:38px;text-align:right;color:var(--muted)">${pct}%</div>
+      </div>`;
+    }).join('') || '<p style="font-size:12px;color:var(--muted)">Sin datos</p>';
+  }
+
+  // Por método de pago (de los pagos registrados)
+  const byMetP = {};
+  all.forEach(p=>(p.pagos||[]).forEach(pg=>{ byMetP[pg.metodo]=(byMetP[pg.metodo]||0)+pg.monto; }));
+  const metPWrap = qs('#rep-ped-metodos');
+  if(metPWrap){
+    const totalMP = Object.values(byMetP).reduce((a,b)=>a+b,0)||1;
+    const COLORES_M = { efectivo_bs:'#22c55e', efectivo_usd:'#3b82f6', pago_movil:'#f59e0b', transferencia:'#8b5cf6', zelle:'#ec4899' };
+    metPWrap.innerHTML = Object.entries(byMetP).sort(([,a],[,b])=>b-a).map(([k,v])=>`
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
+        <div style="width:10px;height:10px;border-radius:50%;background:${COLORES_M[k]||'#aaa'};flex-shrink:0"></div>
+        <div style="flex:1">${METODOS_LABEL[k]||k}</div>
+        <div style="flex:2;background:#f3f4f6;border-radius:6px;height:16px;overflow:hidden"><div style="height:100%;width:${(v/totalMP*100).toFixed(1)}%;background:${COLORES_M[k]||'#aaa'};opacity:.8;border-radius:6px"></div></div>
+        <div style="min-width:80px;text-align:right;font-weight:700">${euro(v)}</div>
+        <div style="min-width:38px;text-align:right;color:var(--muted)">${(v/totalMP*100).toFixed(0)}%</div>
+      </div>`).join('') || '<p style="font-size:12px;color:var(--muted)">Sin pagos registrados</p>';
+  }
+
   // Pedidos pendientes / vencidos
   const hoy = new Date().toISOString().slice(0,10);
   const pendientes = loadPed().filter(p=>p.estado!=='entregado'&&p.estado!=='cancelado').sort((a,b)=>(a.fecha_entrega||'').localeCompare(b.fecha_entrega||''));
   const ppWrap = qs('#rep-ped-pendientes'); if(!ppWrap) return;
-  if(!pendientes.length){ ppWrap.innerHTML='<div class="empty" style="padding:20px"><p>No hay pedidos pendientes ✓</p></div>'; return; }
-  ppWrap.innerHTML = pendientes.map(p=>{
+  if(!pendientes.length){ ppWrap.innerHTML='<div class="empty" style="padding:20px"><p>No hay pedidos pendientes ✓</p></div>'; }
+  else ppWrap.innerHTML = pendientes.map(p=>{
     const rest = Math.max(0, p.total - (p.pagos||[]).reduce((a,pg)=>a+pg.monto,0));
     const venc = p.fecha_entrega && p.fecha_entrega < hoy;
     return `<div class="list-item" style="margin-bottom:8px">
@@ -9656,6 +9840,7 @@ function renderRepPedidos(){
         <div class="li-meta">
           <span class="chip ${CHIP_EST[p.estado]||'chip-warn'}" style="font-size:10px">${PED_ESTADOS_R[p.estado]||p.estado}</span>
           ${venc?'<span class="chip chip-danger" style="font-size:10px">Vencido</span>':''}
+          ${p.canal?`<span class="chip" style="font-size:10px;background:#f0f4ff;color:#3b5bdb">${CANAL_LABEL_P[p.canal]||p.canal}</span>`:''}
           ${p.fecha_entrega?`<span style="font-size:11px;color:var(--muted)">Entrega: ${fmtFecha(p.fecha_entrega)}</span>`:''}
         </div>
       </div>
@@ -9665,60 +9850,159 @@ function renderRepPedidos(){
       </div>
     </div>`;
   }).join('');
+
+  // Tabla detalle de pedidos del período
+  const tabPedWrap = qs('#rep-ped-tabla');
+  if(tabPedWrap){
+    if(!all.length){ tabPedWrap.innerHTML='<div class="empty" style="padding:20px"><p>Sin pedidos en el período</p></div>'; }
+    else tabPedWrap.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
+      <thead><tr style="border-bottom:2px solid var(--border)">
+        <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">#</th>
+        <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Fecha</th>
+        <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Cliente</th>
+        <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Canal</th>
+        <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Estado</th>
+        <th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Total</th>
+        <th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Cobrado</th>
+        <th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Pendiente</th>
+      </tr></thead>
+      <tbody>${[...all].reverse().map(p=>{
+        const pag=(p.pagos||[]).reduce((a,pg)=>a+pg.monto,0);
+        const rest=Math.max(0,p.total-pag);
+        return `<tr style="border-bottom:1px solid #f3f3f8">
+          <td style="padding:7px;font-weight:600;color:var(--brand)">${p.numero.replace('PED-','#')}</td>
+          <td style="padding:7px;color:var(--muted)">${(p.fecha_creado||'').slice(0,10)}</td>
+          <td style="padding:7px">${p.cliente?(p.cliente.nombre+' '+(p.cliente.apellido||'')):'Sin cliente'}</td>
+          <td style="padding:7px"><span class="chip" style="font-size:10px;${CANALES_COLOR[p.canal||'local']||CANALES_COLOR.local}">${CANAL_LABEL_P[p.canal||'local']||'Local'}</span></td>
+          <td style="padding:7px"><span class="chip ${CHIP_EST[p.estado]||'chip-warn'}" style="font-size:10px">${PED_ESTADOS_R[p.estado]||p.estado}</span></td>
+          <td style="padding:7px;text-align:right;font-weight:700">${euro(p.total)}</td>
+          <td style="padding:7px;text-align:right;color:var(--ok)">${euro(pag)}</td>
+          <td style="padding:7px;text-align:right;font-weight:700;color:${rest>0?'var(--danger)':'var(--ok)'}">${rest>0?euro(rest):'✓'}</td>
+        </tr>`;
+      }).join('')}</tbody>
+      <tfoot><tr style="border-top:2px solid var(--border);background:#f7f7fb">
+        <td colspan="5" style="padding:7px;font-weight:700">TOTAL</td>
+        <td style="padding:7px;text-align:right;font-weight:700">${euro(totalFact)}</td>
+        <td style="padding:7px;text-align:right;font-weight:700;color:var(--ok)">${euro(totalPagado)}</td>
+        <td style="padding:7px;text-align:right;font-weight:700;color:var(--danger)">${euro(Math.max(0,totalFact-totalPagado))}</td>
+      </tr></tfoot>
+    </table></div>`;
+  }
 }
 
 /* ══════════ TAB CLIENTES ══════════ */
 function renderRepClientes(){
   const ven = loadVen().filter(v=>v.estado!=='anulada'&&repInRango(v.fecha));
   const ped = loadPed().filter(p=>repInRango(p.fecha_creado));
+  const todosVen = loadVen().filter(v=>v.estado!=='anulada');
 
-  // Por cliente — ventas
+  // Acumular por cliente
   const byCli = {};
   ven.forEach(v=>{
     if(!v.cliente) return;
     const k = v.cliente.id || v.cliente.nombre;
-    if(!byCli[k]) byCli[k]={ nombre: v.cliente.nombre+' '+(v.cliente.apellido||''), total:0, count:0, util:0 };
-    byCli[k].total += v.total; byCli[k].count += 1; byCli[k].util += (v.utilidad||0);
+    if(!byCli[k]) byCli[k]={ id:k, nombre:v.cliente.nombre+' '+(v.cliente.apellido||''), total:0, totalPed:0, count:0, countPed:0, util:0, ultimaFecha:v.fecha?.slice(0,10)||'' };
+    byCli[k].total += v.total; byCli[k].count++; byCli[k].util += (v.utilidad||0);
+    if((v.fecha?.slice(0,10)||'') > byCli[k].ultimaFecha) byCli[k].ultimaFecha = v.fecha?.slice(0,10)||'';
   });
-  // Add pedidos too
   ped.forEach(p=>{
     if(!p.cliente) return;
     const k = p.cliente.id || p.cliente.nombre;
-    if(!byCli[k]) byCli[k]={ nombre: p.cliente.nombre+' '+(p.cliente.apellido||''), total:0, count:0, util:0 };
-    byCli[k].total += p.total; byCli[k].count += 1;
+    if(!byCli[k]) byCli[k]={ id:k, nombre:p.cliente.nombre+' '+(p.cliente.apellido||''), total:0, totalPed:0, count:0, countPed:0, util:0, ultimaFecha:p.fecha_creado?.slice(0,10)||'' };
+    byCli[k].totalPed += p.total; byCli[k].countPed++;
+    if((p.fecha_creado?.slice(0,10)||'') > byCli[k].ultimaFecha) byCli[k].ultimaFecha = p.fecha_creado?.slice(0,10)||'';
   });
 
-  const topClis = Object.values(byCli).sort((a,b)=>b.total-a.total).slice(0,10);
+  // Clientes nuevos: primera operación dentro del período
+  const primeraFecha = {};
+  todosVen.forEach(v=>{ if(!v.cliente) return; const k=v.cliente.id||v.cliente.nombre; const f=v.fecha?.slice(0,10)||''; if(!primeraFecha[k]||f<primeraFecha[k]) primeraFecha[k]=f; });
+  loadPed().forEach(p=>{ if(!p.cliente) return; const k=p.cliente.id||p.cliente.nombre; const f=p.fecha_creado?.slice(0,10)||''; if(!primeraFecha[k]||f<primeraFecha[k]) primeraFecha[k]=f; });
+  const nuevosIds = new Set(Object.entries(primeraFecha).filter(([,f])=>f>=_repDesde&&f<=_repHasta).map(([k])=>k));
+
+  const totalCli = Object.keys(byCli).length;
+  const totalNuevos = [...nuevosIds].filter(id=>byCli[id]).length;
+  const totalRecurrentes = Math.max(0, totalCli - totalNuevos);
+  const ticketCli = totalCli>0 ? Object.values(byCli).reduce((a,c)=>a+c.total+c.totalPed,0)/totalCli : 0;
+
+  // KPIs clientes
+  const kpiCli = qs('#rep-cli-kpis');
+  if(kpiCli) kpiCli.innerHTML = `
+    <div class="kpi c-blue"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E6F1FB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div></div><div class="kpi-lbl">Clientes activos</div><div class="kpi-val">${totalCli}</div><div class="kpi-sub">en el período</div></div>
+    <div class="kpi c-green"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg></div></div><div class="kpi-lbl">Clientes nuevos</div><div class="kpi-val">${totalNuevos}</div><div class="kpi-sub">primera compra en período</div></div>
+    <div class="kpi c-teal"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E1F5EE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F6E56" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></div></div><div class="kpi-lbl">Recurrentes</div><div class="kpi-val">${totalRecurrentes}</div><div class="kpi-sub">ya compraron antes</div></div>
+    <div class="kpi c-amber"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div><div class="kpi-lbl">Ticket promedio</div><div class="kpi-val" style="font-size:15px">${euro(ticketCli)}</div><div class="kpi-sub">por cliente</div></div>`;
+
+  // Top clientes
+  const topClis = Object.values(byCli).sort((a,b)=>(b.total+b.totalPed)-(a.total+a.totalPed)).slice(0,10);
   const topWrap = qs('#rep-top-clientes');
   if(topWrap){
     if(!topClis.length){ topWrap.innerHTML='<div class="empty" style="padding:20px"><p>Sin datos en el período</p></div>'; }
     else topWrap.innerHTML = topClis.map((cli,i)=>`
       <div class="list-item" style="margin-bottom:8px">
         <div class="li-ico" style="font-size:14px;font-weight:800;color:var(--brand)">${i+1}</div>
-        <div class="li-body"><div class="li-name">${cli.nombre}</div><div class="li-meta">${cli.count} operaciones · Utilidad: ${euro(cli.util)}</div></div>
-        <div style="font-weight:700;font-size:15px;color:var(--brand)">${euro(cli.total)}</div>
+        <div class="li-body">
+          <div class="li-name">${cli.nombre} ${nuevosIds.has(cli.id)?'<span class="chip chip-ok" style="font-size:9px">Nuevo</span>':''}</div>
+          <div class="li-meta">${cli.count} ventas${cli.countPed?' · '+cli.countPed+' pedidos':''} · Util: ${euro(cli.util)}</div>
+        </div>
+        <div style="font-weight:700;font-size:15px;color:var(--brand)">${euro(cli.total+cli.totalPed)}</div>
       </div>`).join('');
   }
 
   // Frecuentes
   const frecWrap = qs('#rep-clientes-frec');
   if(frecWrap){
-    const frec = Object.values(byCli).sort((a,b)=>b.count-a.count).slice(0,10);
+    const frec = Object.values(byCli).sort((a,b)=>(b.count+b.countPed)-(a.count+a.countPed)).slice(0,10);
     if(!frec.length){ frecWrap.innerHTML='<div class="empty" style="padding:20px"><p>Sin datos</p></div>'; }
     else frecWrap.innerHTML = frec.map((cli,i)=>`
       <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f3f3f8;font-size:12px">
         <div style="min-width:20px;color:var(--muted)">${i+1}</div>
         <div style="flex:1;font-weight:600">${cli.nombre}</div>
-        <div class="chip chip-info" style="font-size:10px">${cli.count} ops.</div>
-        <div style="font-weight:700;min-width:80px;text-align:right">${euro(cli.total)}</div>
+        <div class="chip chip-info" style="font-size:10px">${cli.count+cli.countPed} ops.</div>
+        <div style="font-weight:700;min-width:80px;text-align:right">${euro(cli.total+cli.totalPed)}</div>
+      </div>`).join('');
+  }
+
+  // Clientes nuevos en el período
+  const nuevosWrap = qs('#rep-clientes-nuevos');
+  if(nuevosWrap){
+    const listaNuevos = Object.values(byCli).filter(c=>nuevosIds.has(c.id)).sort((a,b)=>(b.total+b.totalPed)-(a.total+a.totalPed));
+    if(!listaNuevos.length){ nuevosWrap.innerHTML='<div class="empty" style="padding:20px"><p>Sin clientes nuevos en el período</p></div>'; }
+    else nuevosWrap.innerHTML = listaNuevos.map(cli=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f3f3f8;font-size:12px">
+        <div style="flex:1;font-weight:600">${cli.nombre}</div>
+        <div style="color:var(--muted);font-size:11px">${cli.ultimaFecha}</div>
+        <div style="font-weight:700;min-width:80px;text-align:right">${euro(cli.total+cli.totalPed)}</div>
+      </div>`).join('');
+  }
+
+  // Sin actividad en el período
+  const inacWrap = qs('#rep-clientes-inactivos');
+  if(inacWrap){
+    const todosDB = loadCli();
+    const idsActivos = new Set(Object.keys(byCli));
+    const inactivos = todosDB.filter(c=>!idsActivos.has(c.id||c.nombre)).slice(0,15);
+    if(!inactivos.length){ inacWrap.innerHTML='<div class="empty" style="padding:20px"><p>Todos tus clientes compraron en este período 🎉</p></div>'; }
+    else inacWrap.innerHTML = inactivos.map(c=>`
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid #f3f3f8;font-size:12px">
+        <div style="flex:1;font-weight:600">${c.nombre} ${c.apellido||''}</div>
+        <div style="color:var(--muted);font-size:11px">${c.telefono||'Sin teléfono'}</div>
+        <span class="chip chip-warn" style="font-size:10px">Sin actividad</span>
       </div>`).join('');
   }
 }
-
 /* ══════════ TAB CAJA ══════════ */
 function renderRepCaja(){
   const INGRESOS = ['ingreso','abono','venta'];
   const movs = loadCajaMov().filter(m=>repInRango(m.fecha));
+  const totalIng = movs.filter(m=>INGRESOS.includes(m.categoria)||INGRESOS.includes(m.tipo)).reduce((a,m)=>a+m.monto,0);
+  const totalGas = movs.filter(m=>!INGRESOS.includes(m.categoria)&&!INGRESOS.includes(m.tipo)).reduce((a,m)=>a+m.monto,0);
+  const saldoNeto = totalIng - totalGas;
+  const kpiCaja = qs('#rep-caja-kpis');
+  if(kpiCaja) kpiCaja.innerHTML = `
+    <div class="kpi c-green"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div><div class="kpi-lbl">Total ingresos</div><div class="kpi-val" style="font-size:16px">${euro(totalIng)}</div><div class="kpi-sub">${movs.filter(m=>INGRESOS.includes(m.categoria)||INGRESOS.includes(m.tipo)).length} movimientos</div></div>
+    <div class="kpi c-red"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div></div><div class="kpi-lbl">Total gastos</div><div class="kpi-val" style="font-size:16px">${euro(totalGas)}</div><div class="kpi-sub">${movs.filter(m=>!INGRESOS.includes(m.categoria)&&!INGRESOS.includes(m.tipo)).length} movimientos</div></div>
+    <div class="kpi ${saldoNeto>=0?'c-teal':'c-amber'}"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:${saldoNeto>=0?'#E1F5EE':'#FAEEDA'}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${saldoNeto>=0?'#0F6E56':'#854F0B'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div><div class="kpi-lbl">Saldo neto</div><div class="kpi-val" style="font-size:16px;color:${saldoNeto>=0?'var(--ok)':'var(--danger)'}">${euro(saldoNeto)}</div><div class="kpi-sub">${saldoNeto>=0?'Superávit':'Déficit'}</div></div>
+    <div class="kpi c-blue"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E6F1FB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></div></div><div class="kpi-lbl">Movimientos</div><div class="kpi-val">${movs.length}</div><div class="kpi-sub">en el período</div></div>`;
 
   // Balance por día
   const byDay = {};
@@ -10349,7 +10633,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_62';
+  const APP_VERSION = 'v13_63';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
