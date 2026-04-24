@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_54">
+<html lang="es" data-app-version="GestioMada_V13_55">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -7668,9 +7668,16 @@ function nextNumPed(){
 }
 
 function estadoPago(ped){
-  const total = ped.total||0, pagado = (ped.pagos||[]).reduce((a,p)=>a+p.monto,0);
-  if(pagado<=0) return 'sin_abono';
-  if(pagado>=total) return 'pagado';
+  const totalUsd = ped.total||0;
+  const pagadoUsd = (ped.pagos||[]).reduce((a,p)=>a+p.monto,0);
+  if(pagadoUsd<=0) return 'sin_abono';
+  // Comparar en dólar BCV (total_cdif) si está guardado, para evitar errores de redondeo
+  // cuando el cliente pagó en Bs y el monto_usd tiene decimales imprecisos
+  const dif = typeof getDiferencial==='function' ? getDiferencial() : 1;
+  const totalCDif  = ped.total_cdif || totalUsd*(dif>1?dif:1);
+  const pagadoCDif = pagadoUsd*(dif>1?dif:1);
+  // Margen de tolerancia: 0,02 BCV para cubrir redondeos
+  if(pagadoCDif >= totalCDif - 0.02) return 'pagado';
   const primero = (ped.pagos||[]).length===1;
   return primero ? 'abonado' : 'parcial';
 }
@@ -10187,7 +10194,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_54';
+  const APP_VERSION = 'v13_55';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
