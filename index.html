@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_74">
+<html lang="es" data-app-version="GestioMada_V13_75">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -203,8 +203,16 @@ async function upsertFila(tabla, registro){
   try {
     const mapeado = mapearParaSupa(tabla, registro);
     const { error } = await SUPA.from(tabla).upsert([mapeado], { onConflict: 'id' });
-    if(error) console.warn('[upsert fila]', tabla, error.message);
-    else console.log('[upsert fila] ✓', tabla, registro.id);
+    if(error){
+      const msg = (error.message||'').toLowerCase();
+      const code = error.code || '';
+      if(code === 'PGRST205' || code === '42P01' || msg.includes('does not exist') || msg.includes('schema cache')){
+        console.warn(`[Supabase] ⚠ No se pudo guardar en "${tabla}": la tabla NO EXISTE. Crea la tabla en Supabase para que sincronice.`, error.message);
+        if(typeof toast === 'function') toast(`Tabla "${tabla}" no existe en Supabase`,'warn');
+      } else {
+        console.warn('[upsert fila]', tabla, error.message);
+      }
+    } else console.log('[upsert fila] ✓', tabla, registro.id);
   } catch(e){ console.warn('[upsert fila]', tabla, e.message); }
 }
 // Alias semánticos por módulo
@@ -435,7 +443,18 @@ async function deleteFromSupabase(tabla, id){
 async function loadFromSupabase(tabla){
   try {
     const { data, error } = await SUPA.from(tabla).select('*').order('id');
-    if(error) throw error;
+    if(error){
+      // Detectar tabla faltante (PGRST205, 42P01) y avisar visiblemente
+      const msg = (error.message||'').toLowerCase();
+      const code = error.code || '';
+      if(code === 'PGRST205' || code === '42P01' || msg.includes('does not exist') || msg.includes('relation') || msg.includes('schema cache')){
+        console.warn(`[Supabase] ⚠ Tabla "${tabla}" NO EXISTE en Supabase. Crea la tabla con el SQL correspondiente. Detalles:`, error.message);
+        if(typeof toast === 'function') setTimeout(()=>toast(`Tabla "${tabla}" no existe en Supabase`,'warn'), 1000);
+      } else {
+        console.warn(`[Supabase] Error en ${tabla}:`, error.message);
+      }
+      throw error;
+    }
     return data || [];
   } catch(e){ return null; }
 }
@@ -1931,7 +1950,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <button class="btn btn-brand btn-sm" id="tb-nuevo-prod" onclick="nav('editor',document.querySelector('[data-v=editor]'))">＋ Nuevo Producto</button>
         <span id="tb-mon" style="font-size:11px;color:var(--muted);background:var(--bg);padding:4px 10px;border-radius:999px;font-weight:600;border:1px solid var(--border,#e5e7eb)">$ USD</span>
         <div id="tb-rol-wrap" style="position:relative;display:none">
-          <button id="tb-rol-pill" onclick="toggleRolMenu()" title="Usuario activo" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;cursor:pointer;border:1px solid var(--border,#e5e7eb);background:var(--bg);font-family:inherit;line-height:1.4;display:inline-flex;align-items:center;gap:4px"></button>
+          <button id="tb-rol-pill" onclick="toggleRolMenu(event)" title="Usuario activo" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;cursor:pointer;border:1px solid var(--border,#e5e7eb);background:var(--bg);font-family:inherit;line-height:1.4;display:inline-flex;align-items:center;gap:4px"></button>
           <div id="tb-rol-menu" style="display:none;position:absolute;z-index:100;top:calc(100% + 6px);right:0;min-width:200px;background:var(--card);border:1px solid #e5e7eb;border-radius:12px;box-shadow:var(--shadow);overflow:hidden;padding:4px"></div>
         </div>
         <label class="dark-toggle-pill" title="Modo oscuro" aria-label="Modo oscuro">
@@ -2461,7 +2480,10 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" id="cfg-roles-card">
           <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
             <span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Usuarios y acceso</span>
-            <button class="btn btn-brand btn-sm" onclick="abrirNuevoUsuario()">＋ Nuevo usuario</button>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <button class="btn btn-sm" onclick="verificarSyncUsuarios()" title="Verificar conexión y crear tabla en Supabase si falta"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg> Verificar sync</button>
+              <button class="btn btn-brand btn-sm" onclick="abrirNuevoUsuario()">＋ Nuevo usuario</button>
+            </div>
           </div>
           <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Crea usuarios con nombre propio, rol y PIN individual. Si no hay usuarios creados, el sistema usa los 4 roles genéricos (compatibilidad).</div>
           <div id="cfg-usuarios-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
@@ -5265,7 +5287,8 @@ function abrirSelectorRol(){
   renderLockScreen();
   qs('#lock-screen').classList.add('visible');
 }
-function toggleRolMenu(){
+function toggleRolMenu(e){
+  if(e){ e.stopPropagation(); e.preventDefault(); }
   const menu=qs('#tb-rol-menu'); if(!menu) return;
   const vis = menu.style.display !== 'block';
   menu.style.display = vis ? 'block' : 'none';
@@ -5275,6 +5298,8 @@ function cerrarRolMenu(){
 }
 // Cerrar menú al hacer clic fuera
 document.addEventListener('click', e => {
+  const menu = qs('#tb-rol-menu');
+  if(!menu || menu.style.display !== 'block') return;
   if(!e.target.closest('#tb-rol-wrap')) cerrarRolMenu();
 });
 
@@ -5431,6 +5456,95 @@ const VISTA_LABELS   = {dashboard:'Dashboard',editor:'Editor Producto',catalogo:
 const PERMISO_LABELS = {crear:'Crear',editar:'Editar',eliminar:'Eliminar',ver:'Ver',exportar:'Exportar',config:'Configurar',reportes:'Reportes',caja:'Caja',limpiar:'Limpiar datos'};
 
 let _musrEditIdx = null; // índice del usuario que se está editando (null = nuevo)
+
+/* Verifica sync de usuarios con Supabase: chequea conexión, tabla existente,
+   y muestra el SQL si la tabla no existe.
+   Útil para diagnosticar por qué los usuarios no se sincronizan entre dispositivos. */
+async function verificarSyncUsuarios(){
+  if(!window._supaConectado){
+    abrirModalSqlUsuarios('No hay conexión con Supabase. Verifica tu configuración (URL y API key) en index.html.');
+    return;
+  }
+  toast('Verificando…','info');
+  try {
+    const { data, error } = await SUPA.from('usuarios').select('id').limit(1);
+    if(error){
+      const msg = (error.message||'').toLowerCase();
+      const code = error.code || '';
+      if(code === 'PGRST205' || code === '42P01' || msg.includes('does not exist') || msg.includes('schema cache') || msg.includes('relation')){
+        abrirModalSqlUsuarios('La tabla "usuarios" NO existe en Supabase. Cópialo y ejecútalo en el SQL Editor de Supabase:');
+      } else {
+        abrirModalSqlUsuarios('Error de Supabase: ' + error.message);
+      }
+      return;
+    }
+    // Tabla OK: subir usuarios locales que falten
+    const usrsLocal = loadUsuarios();
+    if(usrsLocal.length === 0){
+      toast('Tabla OK · No hay usuarios locales para sincronizar','ok');
+      return;
+    }
+    let subidos = 0;
+    for(const u of usrsLocal){
+      const { error: errUp } = await SUPA.from('usuarios').upsert([mapearParaSupa('usuarios', u)], { onConflict: 'id' });
+      if(!errUp) subidos++;
+    }
+    // Después, recargar de Supabase
+    const { data: remoto } = await SUPA.from('usuarios').select('*').order('id');
+    if(remoto){
+      saveUsuarios(remoto);
+      renderCfgPins();
+    }
+    toast(`Sync OK · ${subidos} subidos · ${remoto?.length||0} en Supabase`,'ok');
+  } catch(e){
+    abrirModalSqlUsuarios('Error inesperado: ' + e.message);
+  }
+}
+
+function abrirModalSqlUsuarios(mensaje){
+  let modal = qs('#m-sql-usuarios');
+  if(!modal){
+    const div = document.createElement('div');
+    div.innerHTML = `
+<div class="modal-bg" id="m-sql-usuarios" onclick="if(event.target===this)closeModal('m-sql-usuarios')">
+  <div class="modal" style="max-width:600px">
+    <button class="modal-close" onclick="closeModal('m-sql-usuarios')">✕</button>
+    <div class="modal-title">Verificar sync — Tabla "usuarios"</div>
+    <div id="msql-msg" style="font-size:13px;margin:10px 0;padding:10px 12px;background:#fff3cd;border-radius:8px;color:#856404"></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:6px">SQL a ejecutar en Supabase → SQL Editor:</div>
+    <pre id="msql-code" style="background:#1e1e1e;color:#d4d4d4;padding:12px;border-radius:8px;overflow-x:auto;font-size:11.5px;line-height:1.5;font-family:Consolas,Monaco,monospace;max-height:280px"></pre>
+    <div class="btn-row" style="margin-top:12px;justify-content:space-between;flex-wrap:wrap">
+      <button class="btn btn-sm" onclick="navigator.clipboard.writeText(qs('#msql-code').textContent).then(()=>toast('SQL copiado','ok'))"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copiar SQL</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="closeModal('m-sql-usuarios')">Cerrar</button>
+        <button class="btn btn-brand btn-sm" onclick="closeModal('m-sql-usuarios');setTimeout(verificarSyncUsuarios,400)">Reintentar</button>
+      </div>
+    </div>
+  </div>
+</div>`;
+    document.body.appendChild(div.firstElementChild);
+  }
+  qs('#msql-msg').textContent = mensaje;
+  qs('#msql-code').textContent = `CREATE TABLE IF NOT EXISTS usuarios (
+  id BIGINT PRIMARY KEY,
+  nombre TEXT NOT NULL DEFAULT '',
+  rol TEXT NOT NULL DEFAULT 'empleado',
+  estado TEXT NOT NULL DEFAULT 'activo',
+  pin TEXT DEFAULT '',
+  vistas JSONB DEFAULT '[]',
+  puede JSONB DEFAULT '[]',
+  fecha TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE usuarios REPLICA IDENTITY FULL;
+ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Acceso público usuarios"
+  ON usuarios FOR ALL
+  USING (true)
+  WITH CHECK (true);`;
+  openModal('m-sql-usuarios');
+}
 
 function abrirNuevoUsuario(){
   if(!can('config')){ toast('Solo el Admin puede gestionar usuarios','err'); return; }
@@ -11265,7 +11379,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_74';
+  const APP_VERSION = 'v13_75';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
