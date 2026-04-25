@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_76">
+<html lang="es" data-app-version="GestioMada_V13_78">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -1253,6 +1253,18 @@ body.dark .gm-select-menu button.focused{background:linear-gradient(120deg,#3a23
 body.dark .gm-select-menu button.selected{background:linear-gradient(120deg,#5b2a3f,#2b3663);color:#fff}
 body.dark #tb-rol-menu{background:#151924;border-color:#2a3147;box-shadow:0 8px 20px rgba(0,0,0,.4)}
 body.dark #tb-rol-menu button{color:#e5e7eb}
+
+/* Fix menú usuario/admin: el dropdown se posiciona como fixed para que no quede recortado por la topbar */
+.topbar{position:relative;z-index:300}
+#tb-rol-menu.gm-role-menu-fixed{
+  position:fixed!important;
+  z-index:2500!important;
+  top:auto;right:auto;
+  min-width:210px;
+}
+@media(max-width:640px){
+  #tb-rol-menu.gm-role-menu-fixed{min-width:190px;max-width:calc(100vw - 16px)}
+}
 
 /* ═══════════════ MODAL ═══════════════ */
 /* ── Checkboxes estilizados del modal de usuario ── */
@@ -5287,20 +5299,65 @@ function abrirSelectorRol(){
   renderLockScreen();
   qs('#lock-screen').classList.add('visible');
 }
+function posicionarRolMenu(){
+  const menu = qs('#tb-rol-menu');
+  const btn  = qs('#tb-rol-pill');
+  if(!menu || !btn) return;
+
+  // FIX v13.78: sacar el menú del wrapper de la topbar antes de medirlo.
+  // Evita que el primer clic lo pinte a la izquierda y el segundo clic lo corrija.
+  if(menu.parentElement !== document.body){
+    document.body.appendChild(menu);
+  }
+
+  const r = btn.getBoundingClientRect();
+  const gap = 6;
+  menu.classList.add('gm-role-menu-fixed');
+  menu.style.position = 'fixed';
+  menu.style.display = 'block';
+  menu.style.visibility = 'hidden';
+  menu.style.right = 'auto';
+  menu.style.left = '-9999px';
+  menu.style.top = '-9999px';
+
+  requestAnimationFrame(() => {
+    const mw = menu.offsetWidth || 210;
+    const mh = menu.offsetHeight || 140;
+    let left = r.right - mw;
+    left = Math.max(8, Math.min(left, window.innerWidth - mw - 8));
+    let top = r.bottom + gap;
+    if(top + mh > window.innerHeight - 8) top = Math.max(8, r.top - mh - gap);
+    menu.style.left = left + 'px';
+    menu.style.top = top + 'px';
+    menu.style.visibility = 'visible';
+  });
+}
 function toggleRolMenu(e){
   if(e){ e.stopPropagation(); e.preventDefault(); }
   const menu=qs('#tb-rol-menu'); if(!menu) return;
-  const vis = menu.style.display !== 'block';
-  menu.style.display = vis ? 'block' : 'none';
+  const abrir = menu.style.display !== 'block';
+  if(abrir){
+    posicionarRolMenu();
+  }else{
+    cerrarRolMenu();
+  }
 }
 function cerrarRolMenu(){
-  const menu=qs('#tb-rol-menu'); if(menu) menu.style.display='none';
+  const menu=qs('#tb-rol-menu');
+  if(menu){
+    menu.style.display='none';
+    menu.style.visibility='';
+  }
 }
+window.addEventListener('resize',()=>{ const menu=qs('#tb-rol-menu'); if(menu && menu.style.display==='block') posicionarRolMenu(); });
+window.addEventListener('scroll',()=>{ const menu=qs('#tb-rol-menu'); if(menu && menu.style.display==='block') posicionarRolMenu(); }, true);
 // Cerrar menú al hacer clic fuera
 document.addEventListener('click', e => {
   const menu = qs('#tb-rol-menu');
+  const btn = qs('#tb-rol-pill');
   if(!menu || menu.style.display !== 'block') return;
-  if(!e.target.closest('#tb-rol-wrap')) cerrarRolMenu();
+  if(menu.contains(e.target) || (btn && btn.contains(e.target))) return;
+  cerrarRolMenu();
 });
 
 /* ── Wrapper seguro para usuario por índice (NUNCA pasar objeto en onclick) ── */
