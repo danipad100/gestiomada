@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_87">
+<html lang="es" data-app-version="GestioMada_V13_88">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -9390,58 +9390,8 @@ function avanzarEstado(){
   savePed(all);
   upsertPedido(all[_pedIdx]); // ← solo este pedido
 
-  // Al marcar ENTREGADO → crear Venta en el módulo Ventas
-  if(nuevoEstado==='entregado'){
-    const venAll=loadVen();
-    const pagado=totalPagado(p);
-    const venta={
-      id:          Date.now(),
-      numero:      nextNumVen(),
-      cliente:     p.cliente||null,
-      items:       (p.items||[]).map(it=>({...it, moneda_prod:it.moneda_prod||'usd'})),
-      subtotal:    p.subtotal||p.total,
-      descuento:   p.descuento||0,
-      total:       p.total,
-      recibido:    pagado,
-      vuelto:      Math.max(0,pagado-p.total),
-      costo_total: (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
-      utilidad:    p.total - (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
-      metodo:      (p.pagos&&p.pagos.length?p.pagos[p.pagos.length-1].metodo:'efectivo_bs'),
-      notas:       'Pedido '+p.numero+(p.notas?' — '+p.notas:''),
-      fecha:       new Date().toISOString(),
-      estado:      'completada',
-      origen:      'pedido',
-      pedido_id:   p.id,
-      pedido_num:  p.numero,
-      usuario_id:  CURRENT_USR_ID || null,
-      usuario_nom: CURRENT_USR_NOM || null
-    };
-    venAll.push(venta); saveVen(venAll);
-    upsertVenta(venta); // ← solo esta venta
-
-    // Registrar el total en Caja (descontando lo ya abonado)
-    const pendienteCobrar = Math.max(0, p.total - pagado);
-    if(pendienteCobrar > 0){
-      const cajaAll=loadCajaMov();
-      const _mm3=cajaMonedaMonto(venta.metodo,pendienteCobrar,getTasaBCV(),getDiferencial());
-      const _movEnt={
-        id: Date.now()+3, tipo:'ingreso', categoria:'venta',
-        monto:_mm3.monto, moneda:_mm3.moneda, monto_bs:_mm3.monto_bs, monto_usd:_mm3.monto_usd, tasa:_mm3.tasa,
-        metodo: venta.metodo,
-        nota: 'Entrega pedido '+p.numero+' — pago restante'+(p.cliente?' ('+p.cliente.nombre+')':''),
-        ref_id: venta.id, ref_tipo:'venta',
-        fecha: new Date().toISOString().slice(0,10)
-      };
-      cajaAll.push(_movEnt);
-      saveCajaMov(cajaAll);
-      upsertCajaMov(_movEnt); // ← solo este movimiento
-    }
-    // Descontar inventario al entregar
-    descontarInventarioDeItems(p.items||[], 'Entrega pedido '+p.numero);
-    toast('Pedido entregado → Venta '+venta.numero+' creada','ok');
-  } else {
-    toast('Estado actualizado: '+PED_ESTADOS[nuevoEstado],'ok');
-  }
+  // Cambio de estado solo actualiza estado, NO genera movimientos en caja ni ventas
+  toast('Estado actualizado: '+(PED_ESTADOS[nuevoEstado]||nuevoEstado),'ok');
 
   closeModal('m-ver-ped'); renderPedidos(); renderDash();
 }
@@ -11510,7 +11460,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_83';
+  const APP_VERSION = 'v13_88';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
