@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_79">
+<html lang="es" data-app-version="GestioMada_V13_83">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -2539,7 +2539,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.79: Clientes/Pedidos — unificado el registro de cliente en un solo campo "Nombre completo"; al editar clientes antiguos se muestra nombre + apellido juntos y se guarda sin separar el apellido. v13.73: FIX CRÍTICO: (1) Topbar pill — el menú de usuario no funcionaba porque los SVGs estaban como template literals en HTML estático. Reescrito: menú generado desde JS en aplicarPermisos() con SVGs reales. Tres opciones: "Cambiar usuario", "Bloquear pantalla", "Cerrar sesión" (en rojo). (2) Modal de usuario reescrito con clases estándar de GestioMada (modal-bg + modal) — antes usaba clases inexistentes (modal-box, modal-hd, modal-body) que no tenían CSS, causando que el modal se mostrara sin overlay, sin centrado y sin estilo. (3) Checkboxes de módulos/acciones rediseñados con estilo GestioMada — custom checkbox con animación de check, colores de la marca, hover con borde rosado, dark mode, responsive a 1 columna en móvil. v13.72: Usuarios sincronizados con Supabase — tabla 'usuarios' como fuente de verdad con sync bidireccional + Realtime. Crear, editar, cambiar PIN y eliminar usuarios se propaga automáticamente a todos los dispositivos. Eliminaciones se propagan sin restaurar registros borrados. El PIN hasheado (no texto plano) viaja entre dispositivos. Al recibir cambio Realtime se refresca la lista de usuarios en Configuración y el lock screen. v13.71: Usuarios y acceso — auditoría y corrección de 7 bugs: (1) CRÍTICO: lock screen en modo genérico mostraba el texto "user" en vez del ícono SVG. (2) Topbar pill con menú dropdown "Cambiar usuario" y "Bloquear pantalla". (3) Typo gradiente CSS corregido. (4) Movimientos de caja graban usuario_id/usuario_nom. (5) No se puede eliminar el usuario logueado ni el último admin activo. (6) PIN default 0000 solo para Admin. v13.70: Pedidos — nuevo filtro por categoría. Las categorías se leen del catálogo por id_prod (porque el item del carrito no guarda categoría). Se puebla dinámicamente con las categorías presentes en los pedidos existentes. v13.69: Caja — eliminado campo manual "Tasa Bs/USD" del modal de movimientos; ahora se usa automáticamente la tasa paralela del sistema (BCV × diferencial) para conversiones Bs↔USD, equivalentes y registro histórico. El pill de equivalente muestra la tasa usada. v13.68: Acciones rápidas de Caja — (1) "Abono recibido" ahora ofrece vincular opcionalmente a un pedido pendiente (híbrido): si se vincula, el pago se registra automáticamente en el pedido reduciendo su saldo, y el movimiento de caja queda referenciado con ref_tipo='pedido'. Si es en Bs, se preserva monto_bs_ingresado usando tasa paralela (bcv×dif) para que cuadre con el saldo del pedido. (2) Nuevo campo "Nombre / Referencia" en todos los movimientos (Ingreso/Gasto/Compra/Abono/Retiro) — etiqueta contextual según el tipo (proveedor, cliente, quien retira, etc.). Al seleccionar pedido en abono, autocompleta el nombre del cliente. (3) La moneda del monto ahora se bloquea automáticamente cuando el método la determina (Bs efectivo/PM/transferencia → Bs; USD efectivo/Zelle → USD). Solo "Otro" permite elegir moneda libre. v13.67: Selects de Canal y Envío rediseñados con gm-select custom SVG minimalistas. v13.66: Pedidos/Caja/Reportes — al editar un pedido y agregar/cambiar cliente, se actualizan los movimientos vinculados en Caja; canales normalizados para Reportes (Local/WhatsApp/Online, incluyendo variantes mal escritas). v13.65: Reportes — FIX crítico cálculos de datos: (1) KPI "Equivalente en Bs" ahora aplica el factor correcto por método de pago (Bs usa BCV×diferencial, USD usa BCV plano). (2) Tab Productos y Categorías: precios en USD base sin inflar con diferencial — los totales cuadran con suma de ventas. (3) Categoría se lee desde el catálogo por id_prod (el item del carrito no la guarda). (4) Tab Caja: ingresos/gastos separados por moneda (Bs y USD) — deja de sumar mezclado dos monedas distintas; KPIs "Saldo USD" y "Saldo Bs" independientes; gráfico diario en equivalente USD para comparar. v13.64: Corrección error SyntaxError byEst/ins duplicados en Reportes. v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.83: Tipos de venta simplificados — eliminado "Pago de pedido" (redundante con "Pago restante"). Quedan 3 tipos: Venta rápida, Abono, Pago restante. v13.82: Formato decimal unificado — todos los montos en Bs y USD usan coma (,) como separador decimal y punto (.) como separador de miles en toda la app (catálogo, POS, pedidos, ventas, caja, reportes, cotizador WhatsApp, recibo). Nuevo helper global fmtBs(). Restante Bs en lista de pedidos y panel "Pedido a cobrar" muestra 2 decimales. v13.81: Pedidos/Ventas — el restante de pedidos ahora muestra también el equivalente en Bs (Restante × tasa BCV del día) tanto en la lista de pedidos como en el panel "Pedido a cobrar" del POS y modal de ventas. v13.80: Ventas/Pedidos — el POS ahora lee el mismo Total/Pagado/Restante c/dif del módulo Pedidos al vincular un pedido, evitando diferencias entre módulos. v13.79: Clientes/Pedidos — unificado el registro de cliente en un solo campo "Nombre completo"; al editar clientes antiguos se muestra nombre + apellido juntos y se guarda sin separar el apellido. v13.73: FIX CRÍTICO: (1) Topbar pill — el menú de usuario no funcionaba porque los SVGs estaban como template literals en HTML estático. Reescrito: menú generado desde JS en aplicarPermisos() con SVGs reales. Tres opciones: "Cambiar usuario", "Bloquear pantalla", "Cerrar sesión" (en rojo). (2) Modal de usuario reescrito con clases estándar de GestioMada (modal-bg + modal) — antes usaba clases inexistentes (modal-box, modal-hd, modal-body) que no tenían CSS, causando que el modal se mostrara sin overlay, sin centrado y sin estilo. (3) Checkboxes de módulos/acciones rediseñados con estilo GestioMada — custom checkbox con animación de check, colores de la marca, hover con borde rosado, dark mode, responsive a 1 columna en móvil. v13.72: Usuarios sincronizados con Supabase — tabla 'usuarios' como fuente de verdad con sync bidireccional + Realtime. Crear, editar, cambiar PIN y eliminar usuarios se propaga automáticamente a todos los dispositivos. Eliminaciones se propagan sin restaurar registros borrados. El PIN hasheado (no texto plano) viaja entre dispositivos. Al recibir cambio Realtime se refresca la lista de usuarios en Configuración y el lock screen. v13.71: Usuarios y acceso — auditoría y corrección de 7 bugs: (1) CRÍTICO: lock screen en modo genérico mostraba el texto "user" en vez del ícono SVG. (2) Topbar pill con menú dropdown "Cambiar usuario" y "Bloquear pantalla". (3) Typo gradiente CSS corregido. (4) Movimientos de caja graban usuario_id/usuario_nom. (5) No se puede eliminar el usuario logueado ni el último admin activo. (6) PIN default 0000 solo para Admin. v13.70: Pedidos — nuevo filtro por categoría. Las categorías se leen del catálogo por id_prod (porque el item del carrito no guarda categoría). Se puebla dinámicamente con las categorías presentes en los pedidos existentes. v13.69: Caja — eliminado campo manual "Tasa Bs/USD" del modal de movimientos; ahora se usa automáticamente la tasa paralela del sistema (BCV × diferencial) para conversiones Bs↔USD, equivalentes y registro histórico. El pill de equivalente muestra la tasa usada. v13.68: Acciones rápidas de Caja — (1) "Abono recibido" ahora ofrece vincular opcionalmente a un pedido pendiente (híbrido): si se vincula, el pago se registra automáticamente en el pedido reduciendo su saldo, y el movimiento de caja queda referenciado con ref_tipo='pedido'. Si es en Bs, se preserva monto_bs_ingresado usando tasa paralela (bcv×dif) para que cuadre con el saldo del pedido. (2) Nuevo campo "Nombre / Referencia" en todos los movimientos (Ingreso/Gasto/Compra/Abono/Retiro) — etiqueta contextual según el tipo (proveedor, cliente, quien retira, etc.). Al seleccionar pedido en abono, autocompleta el nombre del cliente. (3) La moneda del monto ahora se bloquea automáticamente cuando el método la determina (Bs efectivo/PM/transferencia → Bs; USD efectivo/Zelle → USD). Solo "Otro" permite elegir moneda libre. v13.67: Selects de Canal y Envío rediseñados con gm-select custom SVG minimalistas. v13.66: Pedidos/Caja/Reportes — al editar un pedido y agregar/cambiar cliente, se actualizan los movimientos vinculados en Caja; canales normalizados para Reportes (Local/WhatsApp/Online, incluyendo variantes mal escritas). v13.65: Reportes — FIX crítico cálculos de datos: (1) KPI "Equivalente en Bs" ahora aplica el factor correcto por método de pago (Bs usa BCV×diferencial, USD usa BCV plano). (2) Tab Productos y Categorías: precios en USD base sin inflar con diferencial — los totales cuadran con suma de ventas. (3) Categoría se lee desde el catálogo por id_prod (el item del carrito no la guarda). (4) Tab Caja: ingresos/gastos separados por moneda (Bs y USD) — deja de sumar mezclado dos monedas distintas; KPIs "Saldo USD" y "Saldo Bs" independientes; gráfico diario en equivalente USD para comparar. v13.64: Corrección error SyntaxError byEst/ins duplicados en Reportes. v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -2698,7 +2698,6 @@ body.dark .pos-prod-img-ph{background:#23283a}
                       <label>Tipo de venta</label>
                       <select id="pos_tipo" onchange="posTipoChange()">
                         <option value="venta_rapida">Venta rápida</option>
-                        <option value="pago_pedido">Pago de pedido</option>
                         <option value="abono">Abono</option>
                         <option value="pago_restante">Pago restante</option>
                       </select>
@@ -2706,15 +2705,15 @@ body.dark .pos-prod-img-ph{background:#23283a}
                     <div style="flex:1">
                       <label>Canal</label>
                       <select id="pos_canal">
-                        <option value="local">🏪 Local</option>
                         <option value="whatsapp">📱 WhatsApp</option>
+                        <option value="local">🏪 Local</option>
                         <option value="online">🌐 Online</option>
                       </select>
                     </div>
                   </div>
 
                   <!-- Métodos de pago -->
-                  <!-- Panel de pedido vinculado (visible solo para pago_pedido / abono / pago_restante) -->
+                  <!-- Panel de pedido vinculado (visible solo para abono / pago_restante) -->
                   <div id="pos_pedido_panel" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;margin-bottom:4px">
                     <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px">PEDIDO A COBRAR</div>
                     <select id="pos_pedido_sel" onchange="posSeleccionarPedido()" style="width:100%;margin-bottom:6px">
@@ -2725,6 +2724,9 @@ body.dark .pos-prod-img-ph{background:#23283a}
                         <span style="color:var(--muted)">Total pedido:</span><strong id="pos_ped_total">—</strong>
                         <span style="color:var(--muted)">Pagado:</span><strong id="pos_ped_pagado" style="color:var(--ok)">—</strong>
                         <span style="color:var(--muted)">Saldo:</span><strong id="pos_ped_saldo" style="color:var(--warn)">—</strong>
+                      </div>
+                      <div id="pos_ped_saldo_bs" style="display:none;text-align:right;margin-top:4px;font-size:11px">
+                        <span style="color:var(--muted)">Saldo Bs:</span> <strong style="color:var(--danger)">—</strong>
                       </div>
                     </div>
                   </div>
@@ -2866,7 +2868,6 @@ body.dark .pos-prod-img-ph{background:#23283a}
             <select id="ven_ftipo" onchange="renderVentas()">
               <option value="">Todos los tipos</option>
               <option value="venta_rapida">Venta rápida</option>
-              <option value="pago_pedido">Pago de pedido</option>
               <option value="abono">Abono</option>
               <option value="pago_restante">Pago restante</option>
             </select>
@@ -3333,8 +3334,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
       </div>
       <div class="fg"><label>Canal</label>
         <select id="mp_canal">
-          <option value="local">🏪 Local</option>
           <option value="whatsapp">📱 WhatsApp</option>
+          <option value="local">🏪 Local</option>
           <option value="online">🌐 Online</option>
         </select>
       </div>
@@ -3814,6 +3815,7 @@ function parseEU(s){
   return isNaN(v)?0:v;
 }
 function euro(n){ return (CFG.moneda||'$')+' '+Number(n||0).toFixed(2).replace('.',','); }
+function fmtBs(n){ const v=Number(n||0).toFixed(2); const [ent,dec]=v.split('.'); return ent.replace(/\B(?=(\d{3})+(?!\d))/g,'.')+','+dec; }
 
 // ── TOAST ──
 function toast(msg, type=''){
@@ -4612,7 +4614,7 @@ function renderCatalogo(){
             if(bcv>0){
               if(hasDif){
                 // 2. Con diferencial (rosado) — sin texto extra
-                html+=`<div style="font-size:13px;color:var(--brand);font-weight:700">$ ${pvUsdDif.toFixed(2)}</div>`;
+                html+=`<div style="font-size:13px;color:var(--brand);font-weight:700">$ ${pvUsdDif.toFixed(2).replace('.',',')}</div>`;
                 // 3. En Bs (negro)
                 html+=`<div style="font-size:13px;font-weight:700;color:var(--ink)">Bs ${pvBsDif.toFixed(2).replace('.',',')}</div>`;
               } else {
@@ -4704,7 +4706,7 @@ function verProd(idx){
               const hasDif=dif>1.001;
               if(!hasDif) return `<div style="font-size:11px;margin-top:3px"><span style="font-weight:600">Bs ${(pvUsd*bcv).toFixed(2).replace('.',',')}</span> <span style="color:var(--muted)">@ BCV</span></div>`;
               return `<div style="font-size:11px;margin-top:3px;line-height:1.8">
-                <div><span style="font-weight:600;color:var(--brand)">$ ${pvUsdDif.toFixed(2)}</span> <span style="color:var(--muted)">con diferencial ×${dif.toFixed(3)}</span></div>
+                <div><span style="font-weight:600;color:var(--brand)">$ ${pvUsdDif.toFixed(2).replace('.',',')}</span> <span style="color:var(--muted)">con diferencial ×${dif.toFixed(3).replace('.',',')}</span></div>
                 <div><span style="font-weight:600">Bs ${pvBsDif.toFixed(2).replace('.',',')}</span> <span style="color:var(--muted)">@ BCV</span></div>
               </div>`;
             })()}
@@ -6214,7 +6216,7 @@ async function fetchTasasGM(force=false){
     _actualizarDiferencial();
     localStorage.setItem(LS_CFG, JSON.stringify(CFG));
     const hora=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
-    if(st){ st.textContent=`✓ BCV: ${isFinite(usdBcv)?usdBcv.toFixed(2):'—'} Bs/$  ·  Paralela: ${isFinite(parRate)?parRate.toFixed(2):'—'} Bs/$  ·  ${hora}`; st.style.color='var(--ok)'; }
+    if(st){ st.textContent=`✓ BCV: ${isFinite(usdBcv)?usdBcv.toFixed(2).replace('.',','):'—'} Bs/$  ·  Paralela: ${isFinite(parRate)?parRate.toFixed(2).replace('.',','):'—'} Bs/$  ·  ${hora}`; st.style.color='var(--ok)'; }
     const tasaLive=qs('#tasa_live'); if(tasaLive&&isFinite(usdBcv)) tasaLive.value=usdBcv.toFixed(2).replace('.',',');
     renderSaldosMoneda();
   } else {
@@ -6266,7 +6268,7 @@ function precioRefTexto(prod){
   const dif = getDiferencial();
   if(!bcv) return '';
   const pvBs = (prod.precio_venta||0) * (dif>0?dif:1) * bcv;
-  return 'Bs '+Math.round(pvBs).toLocaleString('es-VE');
+  return 'Bs '+fmtBs(pvBs);
 }
 
 /* Precio unitario para el carrito (en la moneda de cobro) */
@@ -6283,10 +6285,10 @@ function _mcActualizarMonedaInfo(){
   if(sel==='bs' && bcv>0){
     const pvBs=pvUsd*dif*bcv;
     inf.style.display='block';
-    inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> El cliente paga en <strong>Bs</strong>. $${pvUsd.toFixed(2)} × ${dif.toFixed(4)} × ${bcv.toLocaleString('es-VE')} = <strong>Bs ${pvBs.toFixed(2).replace('.',',')}</strong> por unidad.`;
+    inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> El cliente paga en <strong>Bs</strong>. $${pvUsd.toFixed(2).replace('.',',')} × ${dif.toFixed(4).replace('.',',')} × ${fmtBs(bcv)} = <strong>Bs ${fmtBs(pvBs)}</strong> por unidad.`;
   } else {
     inf.style.display='block';
-    inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> El cliente paga en <strong>dólares</strong>. Precio: $${pvUsd.toFixed(2)}.${bcv>0?' Equiv. Bs '+Math.round(pvUsd*bcv).toLocaleString('es-VE')+' (ref.)':''}`;
+    inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> El cliente paga en <strong>dólares</strong>. Precio: $${pvUsd.toFixed(2).replace('.',',')}.${bcv>0?' Equiv. Bs '+fmtBs(pvUsd*bcv)+' (ref.)':''}`;
   }
 }
 function _mpmActualizarMonedaInfo(){
@@ -6297,10 +6299,10 @@ function _mpmActualizarMonedaInfo(){
   if(sel==='bs' && bcv>0){
     const pvBs=pvUsd*dif*bcv;
     inf.style.display='block';
-    inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> El cliente paga en <strong>Bs</strong>. $${pvUsd.toFixed(2)} × ${dif.toFixed(4)} × ${bcv.toLocaleString('es-VE')} = <strong>Bs ${pvBs.toFixed(2).replace('.',',')}</strong>.`;
+    inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> El cliente paga en <strong>Bs</strong>. $${pvUsd.toFixed(2).replace('.',',')} × ${dif.toFixed(4).replace('.',',')} × ${fmtBs(bcv)} = <strong>Bs ${fmtBs(pvBs)}</strong>.`;
   } else {
     inf.style.display='block';
-    inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> El cliente paga en <strong>dólares</strong>. Precio: $${pvUsd.toFixed(2)}.`;
+    inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> El cliente paga en <strong>dólares</strong>. Precio: $${pvUsd.toFixed(2).replace('.',',')}.`;
   }
 }
 
@@ -6336,7 +6338,7 @@ function renderSesionBar(){
         <div style="width:8px;height:8px;border-radius:50%;background:var(--ok);flex-shrink:0"></div>
         <div style="flex:1;min-width:180px">
           <div style="font-weight:600;font-size:13px">Caja abierta</div>
-          <div style="font-size:11px;color:var(--muted)">Desde: ${f} · Apertura: Bs ${(ses.apertura_bs||0).toLocaleString('es-ES',{minimumFractionDigits:2})} / USD ${(ses.apertura_usd||0).toLocaleString('es-ES',{minimumFractionDigits:2})}</div>
+          <div style="font-size:11px;color:var(--muted)">Desde: ${f} · Apertura: Bs ${fmtBs(ses.apertura_bs||0)} / USD ${(ses.apertura_usd||0).toFixed(2).replace('.',',')}</div>
         </div>
         <div style="display:flex;gap:8px;align-items:center">
           <div style="display:flex;gap:6px;align-items:center"><label style="font-size:11px;color:var(--muted);white-space:nowrap">Tasa BCV (Bs/$)</label><input type="text" id="tasa_live" value="${ses.tasa>0?String(ses.tasa).replace('.',','):''}" placeholder="0,00" style="width:90px" oninput="actualizarTasaSesion(parseEU(this.value))"/></div>
@@ -6563,14 +6565,29 @@ let _posCatActiva = '';   // categoría filtrada
 /* ═══════════════════════════════════════════════════════
    TIPOS DE VENTA — lógica diferenciada por tipo
    venta_rapida : libre, sin pedido vinculado
-   pago_pedido  : paga el total restante de un pedido
+   pago_pedido removido — unificado con pago_restante
    abono        : pago parcial de un pedido
-   pago_restante: igual que pago_pedido (alias semántico)
+   pago_restante: paga el total restante de un pedido
 ═══════════════════════════════════════════════════════ */
 
 // Variable que almacena el pedido vinculado en la venta activa (POS o modal)
 let _posPedidoVinculado = null;
 let _mvPedidoVinculado  = null;
+
+/* Montos de pedido que ve/cobra el cliente: misma base usada por el módulo Pedidos */
+function pedidoMontoCliente(ped){
+  if(!ped) return { total:0, pagado:0, saldo:0, dif:1, bcv:0 };
+  const dif = (typeof getDiferencial==='function' ? getDiferencial() : 1);
+  const bcv = (typeof getTasaBCV==='function' ? getTasaBCV() : 0);
+  const total = (typeof pedidoTotalCDifCalc==='function')
+    ? pedidoTotalCDifCalc(ped, dif)
+    : (parseFloat(ped.total_cdif||0) || ((parseFloat(ped.total||0)||0) * (dif>0?dif:1)));
+  const saldo = (typeof pedidoSaldoCDif==='function')
+    ? pedidoSaldoCDif(ped, dif)
+    : Math.max(0, total - (ped.pagos||[]).reduce((a,pg)=>a + ((parseFloat(pg.monto)||0)*(dif>0?dif:1)), 0));
+  const pagado = Math.max(0, total - saldo);
+  return { total, pagado, saldo, dif, bcv };
+}
 
 /* Devuelve pedidos con saldo pendiente > 0 y estado != cancelado */
 function getPedidosPendientes(){
@@ -6590,10 +6607,9 @@ function poblarSelectPedidos(selId){
     return;
   }
   peds.forEach(p => {
-    const pagado = (p.pagos||[]).reduce((a,pg)=>a+pg.monto,0);
-    const saldo  = Math.max(0, p.total - pagado);
-    const cli    = p.cliente ? ` — ${p.cliente.nombre}${p.cliente.apellido?' '+p.cliente.apellido:''}` : '';
-    sel.innerHTML += `<option value="${p.id}">${p.numero}${cli} · Saldo: ${euro(saldo)}</option>`;
+    const mc = pedidoMontoCliente(p);
+    const cli = p.cliente ? ` — ${p.cliente.nombre}${p.cliente.apellido?' '+p.cliente.apellido:''}` : '';
+    sel.innerHTML += `<option value="${p.id}">${p.numero}${cli} · Saldo: ${euro(mc.saldo)}</option>`;
   });
 }
 
@@ -6602,7 +6618,7 @@ function posTipoChange(){
   const tipo  = qs('#pos_tipo')?.value || 'venta_rapida';
   const panel = qs('#pos_pedido_panel');
   if(!panel) return;
-  const necesitaPedido = ['pago_pedido','abono','pago_restante'].includes(tipo);
+  const necesitaPedido = ['abono','pago_restante'].includes(tipo);
   panel.style.display = necesitaPedido ? '' : 'none';
   if(necesitaPedido){
     poblarSelectPedidos('pos_pedido_sel');
@@ -6616,7 +6632,7 @@ function mvTipoChange(){
   const tipo  = qs('#mv_tipo')?.value || 'venta_rapida';
   const panel = qs('#mv_pedido_panel');
   if(!panel) return;
-  const necesitaPedido = ['pago_pedido','abono','pago_restante'].includes(tipo);
+  const necesitaPedido = ['abono','pago_restante'].includes(tipo);
   panel.style.display = necesitaPedido ? '' : 'none';
   if(necesitaPedido){
     poblarSelectPedidos('mv_pedido_sel');
@@ -6633,12 +6649,19 @@ function posSeleccionarPedido(){
   const ped = loadPed().find(p => String(p.id) === String(selId));
   if(!ped){ _posPedidoVinculado = null; return; }
   _posPedidoVinculado = ped;
-  const pagado = (ped.pagos||[]).reduce((a,pg)=>a+pg.monto,0);
-  const saldo  = Math.max(0, ped.total - pagado);
+  const mc = pedidoMontoCliente(ped);
+  const saldo = mc.saldo;
   const fmt = n => Number(n||0).toFixed(2).replace('.',',');
-  qs('#pos_ped_total').textContent  = euro(ped.total);
-  qs('#pos_ped_pagado').textContent = euro(pagado);
-  qs('#pos_ped_saldo').textContent  = euro(saldo);
+  qs('#pos_ped_total').textContent  = euro(mc.total);
+  qs('#pos_ped_pagado').textContent = euro(mc.pagado);
+  qs('#pos_ped_saldo').textContent  = euro(mc.saldo);
+  // Mostrar saldo equivalente en Bs
+  const _bcvSel = getTasaBCV();
+  const _saldoBsEl = qs('#pos_ped_saldo_bs');
+  if(_saldoBsEl && _bcvSel > 0 && saldo > 0){
+    _saldoBsEl.querySelector('strong').textContent = 'Bs ' + fmtBs(saldo * _bcvSel);
+    _saldoBsEl.style.display = '';
+  } else if(_saldoBsEl){ _saldoBsEl.style.display = 'none'; }
   qs('#pos_pedido_info').style.display = '';
   // Pre-llenar cliente si el pedido tiene uno
   if(ped.cliente && !_posCliSel){
@@ -6649,17 +6672,15 @@ function posSeleccionarPedido(){
     const cb = qs('#pos_cli_buscar'); if(cb) cb.style.display='none';
   }
   // Pre-llenar monto recibido con el saldo en la moneda correcta según método activo
-  if(tipo === 'pago_pedido' || tipo === 'pago_restante'){
+  if(tipo === 'pago_restante'){
     const recEl = qs('#pos_recibido');
     if(recEl){
       const metodoBsPre = ['efectivo_bs','pago_movil','transferencia'].includes(_posMetodoActivo);
       if(metodoBsPre){
-        // Convertir saldo USD → Bs usando tasa paralela actual
-        const bcvPre = getTasaBCV(), difPre = getDiferencial();
-        const parPre = bcvPre * (difPre>0 ? difPre : 1);
-        // Saldo c/dif × BCV = Bs
-        const saldoBs = saldo * (difPre>0 ? difPre : 1) * bcvPre;
-        recEl.value = Math.round(saldoBs).toString().replace('.',',');
+        // El saldo ya está en dólar c/dif; para Bs se multiplica solo por BCV.
+        const bcvPre = getTasaBCV();
+        const saldoBs = saldo * bcvPre;
+        recEl.value = fmtBs(saldoBs);
       } else {
         recEl.value = fmt(saldo);
       }
@@ -6676,12 +6697,19 @@ function mvSeleccionarPedido(){
   const ped = loadPed().find(p => String(p.id) === String(selId));
   if(!ped){ _mvPedidoVinculado = null; return; }
   _mvPedidoVinculado = ped;
-  const pagado = (ped.pagos||[]).reduce((a,pg)=>a+pg.monto,0);
-  const saldo  = Math.max(0, ped.total - pagado);
+  const mc = pedidoMontoCliente(ped);
+  const saldo = mc.saldo;
   const fmt = n => Number(n||0).toFixed(2).replace('.',',');
-  qs('#mv_ped_total').textContent  = euro(ped.total);
-  qs('#mv_ped_pagado').textContent = euro(pagado);
-  qs('#mv_ped_saldo').textContent  = euro(saldo);
+  qs('#mv_ped_total').textContent  = euro(mc.total);
+  qs('#mv_ped_pagado').textContent = euro(mc.pagado);
+  qs('#mv_ped_saldo').textContent  = euro(mc.saldo);
+  // Mostrar saldo equivalente en Bs
+  const _bcvMvSel = getTasaBCV();
+  const _saldoBsMvEl = qs('#mv_ped_saldo_bs');
+  if(_saldoBsMvEl && _bcvMvSel > 0 && saldo > 0){
+    _saldoBsMvEl.querySelector('strong').textContent = 'Bs ' + fmtBs(saldo * _bcvMvSel);
+    _saldoBsMvEl.style.display = '';
+  } else if(_saldoBsMvEl){ _saldoBsMvEl.style.display = 'none'; }
   qs('#mv_pedido_info').style.display = '';
   // Pre-llenar cliente
   if(ped.cliente && !_venCliSel){
@@ -6693,15 +6721,15 @@ function mvSeleccionarPedido(){
       if(cn) cn.textContent = ped.cliente.nombre + (ped.cliente.apellido?' '+ped.cliente.apellido:'');
     }
   }
-  // Pre-llenar monto para pago_pedido y pago_restante en la moneda correcta
-  if(tipo === 'pago_pedido' || tipo === 'pago_restante'){
+  // Pre-llenar monto para pago_restante en la moneda correcta
+  if(tipo === 'pago_restante'){
     const recEl = qs('#mv_recibido');
     if(recEl){
       const metodoBsMv = ['efectivo_bs','pago_movil','transferencia'].includes(qs('#mv_metodo')?.value||'');
       if(metodoBsMv){
         const bcvMv = getTasaBCV(), difMv = getDiferencial();
-        const saldoBsMv = saldo * (difMv>0?difMv:1) * bcvMv;
-        recEl.value = Math.round(saldoBsMv).toString();
+        const saldoBsMv = saldo * bcvMv;
+        recEl.value = fmtBs(saldoBsMv);
       } else {
         recEl.value = fmt(saldo);
       }
@@ -7051,7 +7079,7 @@ function posWaActualizar(){
   if(infoEl){
     if(modo==='bs'&&bcv>0){
       infoEl.style.display='block';
-      infoEl.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Bs + ancla USD · diferencial ×${dif.toFixed(4)} · BCV ${bcv.toLocaleString('es-VE')}`;
+      infoEl.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Bs + ancla USD · diferencial ×${dif.toFixed(4).replace('.',',')} · BCV ${fmtBs(bcv)}`;
     } else {
       infoEl.style.display='block';
       infoEl.innerHTML='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Precios en dólares directo.';
@@ -7107,31 +7135,31 @@ function posWaActualizar(){
     txt += itemsCot.map(it=>{
       const pvBsStr  = it.pvCotBs.toFixed(2).replace('.',',');
       const totBsStr = (it.pvCotBs*it.cant).toFixed(2).replace('.',',');
-      return `• ${it.cant}x ${it.nombre}\n  $${it.pvAnclaUsd.toFixed(2)}/u → Bs ${pvBsStr}/u = Bs ${totBsStr}`;
+      return `• ${it.cant}x ${it.nombre}\n  $${it.pvAnclaUsd.toFixed(2).replace('.',',')}/u → Bs ${pvBsStr}/u = Bs ${totBsStr}`;
     }).join('\n');
-    if(deliveryUsd>0){ const dBs=(deliveryUsd*bcv).toFixed(2).replace('.',','); txt+=`\nDelivery: Bs ${dBs} ($${deliveryUsd.toFixed(2)})`; }
-    if(envioUsd>0){    const eBs=(envioUsd*bcv).toFixed(2).replace('.',',');    txt+=`\nEnvío: Bs ${eBs} ($${envioUsd.toFixed(2)})`; }
-    if(disenoUsd>0){   const nBs=(disenoUsd*bcv).toFixed(2).replace('.',',');  txt+=`\nDiseño: Bs ${nBs} ($${disenoUsd.toFixed(2)})`; }
-    if(extrasUsd>0){   const xBs=(extrasUsd*bcv).toFixed(2).replace('.',',');  txt+=`\nExtras: Bs ${xBs} ($${extrasUsd.toFixed(2)})`; }
+    if(deliveryUsd>0){ const dBs=(deliveryUsd*bcv).toFixed(2).replace('.',','); txt+=`\nDelivery: Bs ${dBs} ($${deliveryUsd.toFixed(2).replace('.',',')})`; }
+    if(envioUsd>0){    const eBs=(envioUsd*bcv).toFixed(2).replace('.',',');    txt+=`\nEnvío: Bs ${eBs} ($${envioUsd.toFixed(2).replace('.',',')})`; }
+    if(disenoUsd>0){   const nBs=(disenoUsd*bcv).toFixed(2).replace('.',',');  txt+=`\nDiseño: Bs ${nBs} ($${disenoUsd.toFixed(2).replace('.',',')})`; }
+    if(extrasUsd>0){   const xBs=(extrasUsd*bcv).toFixed(2).replace('.',',');  txt+=`\nExtras: Bs ${xBs} ($${extrasUsd.toFixed(2).replace('.',',')})`; }
     txt+=`\n\n*Total: Bs ${totalBs.toFixed(2).replace('.',',')}*`;
-    txt+=`\n*$${totalAnclaUsd.toFixed(2)} (BCV ${bcv.toLocaleString('es-VE')})*`;
+    txt+=`\n*$${totalAnclaUsd.toFixed(2).replace('.',',')} (BCV ${fmtBs(bcv)})*`;
     if(!hayExtras && !sinAbono){
-      txt+=`\n\n📌 *Abono ${aboPct}%:*\n  $${abonoUsd.toFixed(2)} ó Bs ${(abonoUsd*bcv).toFixed(2).replace('.',',')} (BCV hoy)`;
-      txt+=`\n📌 *Restante al retirar:*\n  $${restUsd.toFixed(2)} al BCV del día de entrega`;
+      txt+=`\n\n📌 *Abono ${aboPct}%:*\n  $${abonoUsd.toFixed(2).replace('.',',')} ó Bs ${(abonoUsd*bcv).toFixed(2).replace('.',',')} (BCV hoy)`;
+      txt+=`\n📌 *Restante al retirar:*\n  $${restUsd.toFixed(2).replace('.',',')} al BCV del día de entrega`;
     }
   } else {
     txt += itemsCot.map(it=>{
-      const totU=(it.pvCotUsd*it.cant).toFixed(2);
-      return `• ${it.cant}x ${it.nombre}\n  $${it.pvCotUsd.toFixed(2)}/u → $${totU}`;
+      const totU=(it.pvCotUsd*it.cant).toFixed(2).replace('.',',');
+      return `• ${it.cant}x ${it.nombre}\n  $${it.pvCotUsd.toFixed(2).replace('.',',')}/u → $${totU}`;
     }).join('\n');
-    if(deliveryUsd>0) txt+=`\nDelivery: $${deliveryUsd.toFixed(2)}`;
-    if(envioUsd>0)    txt+=`\nEnvío: $${envioUsd.toFixed(2)}`;
-    if(disenoUsd>0)   txt+=`\nDiseño: $${disenoUsd.toFixed(2)}`;
-    if(extrasUsd>0)   txt+=`\nExtras: $${extrasUsd.toFixed(2)}`;
-    txt+=`\n\n*Total: $${totalUsdDirecto.toFixed(2)}*`;
+    if(deliveryUsd>0) txt+=`\nDelivery: $${deliveryUsd.toFixed(2).replace('.',',')}`;
+    if(envioUsd>0)    txt+=`\nEnvío: $${envioUsd.toFixed(2).replace('.',',')}`;
+    if(disenoUsd>0)   txt+=`\nDiseño: $${disenoUsd.toFixed(2).replace('.',',')}`;
+    if(extrasUsd>0)   txt+=`\nExtras: $${extrasUsd.toFixed(2).replace('.',',')}`;
+    txt+=`\n\n*Total: $${totalUsdDirecto.toFixed(2).replace('.',',')}*`;
     if(!hayExtras && !sinAbono){
-      txt+=`\n\n📌 *Abono ${aboPct}%:* $${abonoUsd.toFixed(2)}`;
-      txt+=`\n📌 *Restante al retirar:* $${restUsd.toFixed(2)}`;
+      txt+=`\n\n📌 *Abono ${aboPct}%:* $${abonoUsd.toFixed(2).replace('.',',')}`;
+      txt+=`\n📌 *Restante al retirar:* $${restUsd.toFixed(2).replace('.',',')}`;
     }
   }
   txt+='\n\nGracias por tu preferencia ♥';
@@ -7160,18 +7188,16 @@ function posRecalc(){
   const tipo = qs('#pos_tipo')?.value || 'venta_rapida';
   const metodoBs = ['efectivo_bs','pago_movil','transferencia'].includes(_posMetodoActivo);
 
-  // Para pago_restante y pago_pedido con carrito vacío: el total es el saldo del pedido vinculado
+  // Para pago_restante con carrito vacío: el total es el saldo del pedido vinculado
   let totalBase = Math.max(0, sub - desc + extrasVal);
   let totalBs   = 0;
   const parPos  = bcvPos * (difPos>0 ? difPos : 1);
 
-  if(['pago_restante','pago_pedido'].includes(tipo) && _posPedidoVinculado && sub === 0){
-    const pagado = (_posPedidoVinculado.pagos||[]).reduce((a,pg)=>a+pg.monto,0);
-    const saldoUsd = Math.max(0, _posPedidoVinculado.total - pagado);
-    const saldoCDif = saldoUsd * (difPos>0 ? difPos : 1); // precio c/dif (lo que debe el cliente)
-    totalBase = saldoUsd;
+  if(['pago_restante'].includes(tipo) && _posPedidoVinculado && sub === 0){
+    const mc = pedidoMontoCliente(_posPedidoVinculado);
+    totalBase = mc.saldo; // saldo c/dif: mismo Restante mostrado en Pedidos
     if(metodoBs && bcvPos > 0){
-      totalBs = saldoCDif * bcvPos; // Bs = saldo c/dif × BCV
+      totalBs = mc.saldo * bcvPos; // Bs = saldo c/dif × BCV
     }
   } else {
     const subProductos = Math.max(0, sub - desc);
@@ -7192,7 +7218,7 @@ function posRecalc(){
   const tv = qs('#pos_total_val');
   if(tv){
     if(metodoBs && bcvPos > 0){
-      tv.textContent = 'Bs ' + totalBs.toFixed(2).replace('.',',');
+      tv.textContent = 'Bs ' + fmtBs(totalBs);
     } else {
       tv.textContent = euro(totalBase);
     }
@@ -7208,8 +7234,8 @@ function posRecalc(){
   }
   // totalConDif = lo que cobra al cliente en $ con diferencial
   const subProductos2 = Math.max(0, sub - desc);
-  const totalConDif = ['pago_restante','pago_pedido'].includes(tipo) && _posPedidoVinculado && sub===0
-    ? totalBase * (difPos>0?difPos:1)
+  const totalConDif = ['pago_restante'].includes(tipo) && _posPedidoVinculado && sub===0
+    ? totalBase
     : (subProductos2 * difPos) + extrasVal;
   if(metodoBs && bcvPos > 0){
     refEl.textContent = '≈ $ ' + totalConDif.toFixed(2).replace('.',',');
@@ -7225,7 +7251,7 @@ function posRecalc(){
   if(vueltoEl){
     if(metodoBs && bcvPos > 0){
       const vuelto = rec - totalBs;
-      vueltoEl.value = 'Bs ' + Math.abs(vuelto).toFixed(2).replace('.',',');
+      vueltoEl.value = 'Bs ' + fmtBs(Math.abs(vuelto));
       vueltoEl.style.color = vuelto >= 0 ? 'var(--ok)' : 'var(--danger)';
     } else {
       const vuelto = rec - totalBase;
@@ -7239,7 +7265,7 @@ function posRecalc(){
   const btnTotal = qs('#pos_cobrar_total');
   if(btn){
     // Habilitar cobrar si hay ítems O si es pago de pedido vinculado
-    const tienePedidoVinculado = ['pago_restante','pago_pedido','abono'].includes(tipo) && !!_posPedidoVinculado;
+    const tienePedidoVinculado = ['pago_restante','abono'].includes(tipo) && !!_posPedidoVinculado;
     btn.disabled = _posItems.length === 0 && !tienePedidoVinculado;
     if(btnTotal) btnTotal.textContent = metodoBs && bcvPos > 0
       ? '$ ' + totalConDif.toFixed(2).replace('.',',') + ' ≈ Bs ' + totalBs.toFixed(2).replace('.',',')
@@ -7264,7 +7290,7 @@ function posCobrar(){
   const tipo = qs('#pos_tipo')?.value || 'venta_rapida';
 
   // Validación por tipo
-  if(['pago_pedido','abono','pago_restante'].includes(tipo)){
+  if(['abono','pago_restante'].includes(tipo)){
     if(!_posPedidoVinculado){ toast('Selecciona un pedido pendiente','warn'); return; }
   } else {
     if(!_posItems.length){ toast('Agrega al menos un producto','warn'); return; }
@@ -7279,23 +7305,19 @@ function posCobrar(){
   const extrasVal = deliveryUsd + envioUsd + disenoUsd + extrasUsd;
 
   let total;
-  if(['pago_pedido','abono','pago_restante'].includes(tipo)){
+  if(['abono','pago_restante'].includes(tipo)){
     const rec0 = parseEU(qs('#pos_recibido')?.value || '0');
     if(rec0 <= 0){ toast('Ingresa el monto a cobrar','warn'); return; }
     const ped0 = _posPedidoVinculado;
-    const pagado0 = (ped0.pagos||[]).reduce((a,p)=>a+p.monto,0);
-    const saldo0Usd = Math.max(0, ped0.total - pagado0); // saldo en USD base
     const bcv0 = getTasaBCV(), dif0 = getDiferencial();
-    const par0 = bcv0 * (dif0>0?dif0:1);
     const esBs0 = ['efectivo_bs','pago_movil','transferencia'].includes(_posMetodoActivo);
-    // Convertir rec0 a USD para comparar y guardar
-    const rec0Usd = (esBs0 && par0>0) ? rec0/par0 : rec0;
-    const saldo0CoDif = saldo0Usd * (dif0>0?dif0:1); // saldo en c/dif (lo que debe el cliente)
-    // Validar: rec0 en Bs no puede superar saldo en Bs (saldo c/dif × BCV)
-    const saldo0Bs = saldo0CoDif * bcv0;
-    if(esBs0 && rec0 > saldo0Bs + 1){ toast('El monto supera el saldo: Bs '+Math.round(saldo0Bs).toLocaleString('es-VE'),'warn'); return; }
-    if(!esBs0 && rec0Usd > saldo0Usd + 0.01){ toast('El monto supera el saldo: '+euro(saldo0Usd),'warn'); return; }
-    total = rec0Usd; // siempre guardar en USD base internamente
+    const mc0 = pedidoMontoCliente(ped0);
+    // El POS cobra el mismo saldo c/dif que muestra Pedidos.
+    const recClienteUsd = (esBs0 && bcv0>0) ? rec0/bcv0 : rec0;
+    const saldo0Bs = mc0.saldo * bcv0;
+    if(esBs0 && rec0 > saldo0Bs + 1){ toast('El monto supera el saldo: Bs '+fmtBs(saldo0Bs),'warn'); return; }
+    if(!esBs0 && recClienteUsd > mc0.saldo + 0.01){ toast('El monto supera el saldo: '+euro(mc0.saldo),'warn'); return; }
+    total = (dif0>0) ? recClienteUsd/dif0 : recClienteUsd; // guardar pago interno compatible con Pedidos
   } else {
     total = Math.max(0, sub - desc + extrasVal);
   }
@@ -7307,10 +7329,10 @@ function posCobrar(){
   const costo_total = _posItems.reduce((a,it) => a + (it.costo_unit * it.cant), 0);
   const clienteVenta = _posCliSel || (_posPedidoVinculado?.cliente || null);
   const notaExtras = [
-    deliveryUsd>0?`Delivery: $${deliveryUsd.toFixed(2)}`:'',
-    envioUsd>0?`Envio: $${envioUsd.toFixed(2)}`:'',
-    disenoUsd>0?`Diseño: $${disenoUsd.toFixed(2)}`:'',
-    extrasUsd>0?`Extras: $${extrasUsd.toFixed(2)}`:'',
+    deliveryUsd>0?`Delivery: $${deliveryUsd.toFixed(2).replace('.',',')}`:'',
+    envioUsd>0?`Envio: $${envioUsd.toFixed(2).replace('.',',')}`:'',
+    disenoUsd>0?`Diseño: $${disenoUsd.toFixed(2).replace('.',',')}`:'',
+    extrasUsd>0?`Extras: $${extrasUsd.toFixed(2).replace('.',',')}`:'',
     _posPedidoVinculado?`Pedido: ${_posPedidoVinculado.numero}`:''
   ].filter(Boolean).join(' | ');
   const notaBase = (qs('#pos_notas')?.value || '').trim();
@@ -7353,7 +7375,7 @@ function posCobrar(){
 
   // Registrar pago en el pedido vinculado
   if(_posPedidoVinculado){
-    const marcar = tipo === 'pago_pedido' || tipo === 'pago_restante';
+    const marcar = tipo === 'pago_restante';
     registrarPagoEnPedidoVinculado(_posPedidoVinculado, total, _posMetodoActivo, notaBase, marcar);
   }
 
@@ -7562,21 +7584,27 @@ function venQuit(i){ _venItems.splice(i,1); renderItemsVenta(); recalcVenta(); }
 function recalcVenta(){
   const sub=_venItems.reduce((a,it)=>a+(it.precio_unit*it.cant),0);
   const desc=parseEU(qs('#mv_descuento')?.value||'0,00');
-  const total=Math.max(0,sub-desc);
+  const tipoV = qs('#mv_tipo')?.value || 'venta_rapida';
+  let total=Math.max(0,sub-desc);
+  if(['pago_restante'].includes(tipoV) && _mvPedidoVinculado && sub===0){
+    total = pedidoMontoCliente(_mvPedidoVinculado).saldo;
+  }
   const rec=parseEU(qs('#mv_recibido')?.value||'0');
   const bcvV=getTasaBCV(), difV=getDiferencial();
   const parV=bcvV*(difV>0?difV:1);
   const metodoBsV=['efectivo_bs','pago_movil','transferencia'].includes(qs('#mv_metodo')?.value||'');
-  // Total a mostrar: si Bs, mostrar c/dif × BCV
-  const totalMostrar = (metodoBsV && parV>0) ? total*(difV>0?difV:1)*bcvV : total;
+  // Total a mostrar: si es pago de pedido, total ya está en c/dif; si no, aplicar diferencial a productos.
+  const totalMostrar = (metodoBsV && bcvV>0)
+    ? (['pago_restante'].includes(tipoV) && _mvPedidoVinculado && sub===0 ? total*bcvV : total*(difV>0?difV:1)*bcvV)
+    : total;
   // rec ya viene en la moneda del campo (Bs o USD)
   const vuelto=Math.max(0,rec-totalMostrar);
   const falta=Math.max(0,totalMostrar-rec);
   const ms=qs('#mv_subtotal'); if(ms) ms.textContent=euro(sub);
   const mt=qs('#mv_total');
-  if(mt) mt.textContent = metodoBsV && bcvV>0 ? 'Bs '+Math.round(totalMostrar).toLocaleString('es-VE') : euro(total);
-  const mr=qs('#mv_pill_rec'); if(mr) mr.textContent = metodoBsV ? 'Bs '+Math.round(rec).toLocaleString('es-VE') : euro(rec);
-  const mv=qs('#mv_pill_vuelto'); if(mv) mv.textContent = metodoBsV ? 'Bs '+Math.round(vuelto>0?vuelto:-falta).toLocaleString('es-VE') : euro(vuelto>0?vuelto:-falta);
+  if(mt) mt.textContent = metodoBsV && bcvV>0 ? 'Bs '+fmtBs(totalMostrar) : euro(total);
+  const mr=qs('#mv_pill_rec'); if(mr) mr.textContent = metodoBsV ? 'Bs '+fmtBs(rec) : euro(rec);
+  const mv=qs('#mv_pill_vuelto'); if(mv) mv.textContent = metodoBsV ? 'Bs '+fmtBs(vuelto>0?vuelto:-falta) : euro(vuelto>0?vuelto:-falta);
   const vw=qs('#mv_pill_vuelto_wrap');
   if(vw){ vw.style.background=vuelto>0?'#dcfce7':(falta>0?'#fee2e2':'#f3f4f6'); }
 }
@@ -7586,7 +7614,7 @@ function guardarVenta(){
   const tipo = qs('#mv_tipo')?.value || 'venta_rapida';
 
   // Validación por tipo
-  if(['pago_pedido','abono','pago_restante'].includes(tipo)){
+  if(['abono','pago_restante'].includes(tipo)){
     if(!_mvPedidoVinculado){ toast('Selecciona un pedido pendiente','warn'); return; }
   } else {
     if(!_venItems.length){ toast('Agrega al menos un producto','warn'); return; }
@@ -7597,20 +7625,18 @@ function guardarVenta(){
   const costo_total = _venItems.reduce((a,it)=>a+(it.costo_unit*it.cant),0);
 
   let total;
-  if(['pago_pedido','abono','pago_restante'].includes(tipo)){
+  if(['abono','pago_restante'].includes(tipo)){
     const rec0 = parseEU(qs('#mv_recibido').value||'0');
     if(rec0 <= 0){ toast('Ingresa el monto a cobrar','warn'); return; }
     const ped0 = _mvPedidoVinculado;
-    const pagado0 = (ped0.pagos||[]).reduce((a,p)=>a+p.monto,0);
-    const saldo0Usd = Math.max(0, ped0.total - pagado0);
     const bcvMv0 = getTasaBCV(), difMv0 = getDiferencial();
-    const parMv0 = bcvMv0*(difMv0>0?difMv0:1);
     const esBsMv0 = ['efectivo_bs','pago_movil','transferencia'].includes(qs('#mv_metodo')?.value||'');
-    const rec0Usd = (esBsMv0 && parMv0>0) ? rec0/parMv0 : rec0;
-    const saldo0Bs = saldo0Usd * (difMv0>0?difMv0:1) * bcvMv0;
-    if(esBsMv0 && rec0 > saldo0Bs + 1){ toast('El monto supera el saldo: Bs '+Math.round(saldo0Bs).toLocaleString('es-VE'),'warn'); return; }
-    if(!esBsMv0 && rec0Usd > saldo0Usd + 0.01){ toast('El monto supera el saldo: '+euro(saldo0Usd),'warn'); return; }
-    total = rec0Usd;
+    const mcMv0 = pedidoMontoCliente(ped0);
+    const recClienteUsd = (esBsMv0 && bcvMv0>0) ? rec0/bcvMv0 : rec0;
+    const saldo0Bs = mcMv0.saldo * bcvMv0;
+    if(esBsMv0 && rec0 > saldo0Bs + 1){ toast('El monto supera el saldo: Bs '+fmtBs(saldo0Bs),'warn'); return; }
+    if(!esBsMv0 && recClienteUsd > mcMv0.saldo + 0.01){ toast('El monto supera el saldo: '+euro(mcMv0.saldo),'warn'); return; }
+    total = (difMv0>0) ? recClienteUsd/difMv0 : recClienteUsd;
   } else {
     total = Math.max(0, sub - desc);
   }
@@ -7659,7 +7685,7 @@ function guardarVenta(){
 
   // Registrar pago en el pedido vinculado
   if(_mvPedidoVinculado){
-    const marcar = tipo === 'pago_pedido' || tipo === 'pago_restante';
+    const marcar = tipo === 'pago_restante';
     registrarPagoEnPedidoVinculado(_mvPedidoVinculado, total, venta.metodo, notaBase, marcar);
   }
 
@@ -7675,8 +7701,8 @@ function guardarVenta(){
 }
 
 // ── Render lista ventas ──
-const VEN_TIPO_LABEL={ venta_rapida:'Venta rápida', pago_pedido:'Pago de pedido', abono:'Abono', pago_restante:'Pago restante' };
-const VEN_TIPO_COLOR={ venta_rapida:'chip-ok', pago_pedido:'chip-info', abono:'chip-warn', pago_restante:'chip-info' };
+const VEN_TIPO_LABEL={ venta_rapida:'Venta rápida', abono:'Abono', pago_restante:'Pago restante' };
+const VEN_TIPO_COLOR={ venta_rapida:'chip-ok', abono:'chip-warn', pago_restante:'chip-info' };
 const CANALES_LABEL={ local:'<svg viewBox=\"0 0 24 24\" width=\"13\" height=\"13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"display:inline-block;vertical-align:middle;margin-right:3px\"><path d=\"M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z\"/><polyline points=\"9 22 9 12 15 12 15 22\"/></svg> Local', whatsapp:'<svg viewBox=\"0 0 24 24\" width=\"13\" height=\"13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"display:inline-block;vertical-align:middle;margin-right:3px\"><path d=\"M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z\"/></svg> WhatsApp', online:'<svg viewBox=\"0 0 24 24\" width=\"13\" height=\"13\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"display:inline-block;vertical-align:middle;margin-right:3px\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"2\" y1=\"12\" x2=\"22\" y2=\"12\"/><path d=\"M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z\"/></svg> Online' };
 const CANALES_COLOR={ local:'background:#E1F5EE;color:#085041', whatsapp:'background:#dcfce7;color:#15803d', online:'background:#E6F1FB;color:#0C447C' };
 // ── Helper: obtiene la foto correcta (Supabase URL > base64 local) ──
@@ -7757,8 +7783,8 @@ function renderKpisVentas(){
   const totalHoyUsd = hoyV.filter(v=>['efectivo_usd','zelle'].includes(v.metodo))
     .reduce((a,v)=>a+v.total, 0);
   const totalLabel = totalHoyBs>0 && totalHoyUsd>0
-    ? `Bs ${Math.round(totalHoyBs).toLocaleString('es-VE')} + ${euro(totalHoyUsd)}`
-    : totalHoyBs>0 ? `Bs ${Math.round(totalHoyBs).toLocaleString('es-VE')}`
+    ? `Bs ${fmtBs(totalHoyBs)} + ${euro(totalHoyUsd)}`
+    : totalHoyBs>0 ? `Bs ${fmtBs(totalHoyBs)}`
     : euro(totalHoyUsd);
   const utilHoy=hoyV.reduce((a,v)=>a+(v.utilidad||0),0);
   const wrap=qs('#ven-kpis'); if(!wrap) return;
@@ -7784,10 +7810,10 @@ function verVenta(idx){
   const _vcEsBs = ['efectivo_bs','pago_movil','transferencia'].includes(v.metodo);
   // Total mostrado: c/dif si Bs, USD base si no
   const _vcFmtTotal = (_vcEsBs && _vcDif>1) ? '$ '+(v.total*_vcDif).toFixed(2).replace('.',',') : euro(v.total);
-  const _vcBsRef = (_vcEsBs && _vcPar>0) ? '≈ Bs '+Math.round(v.total*_vcDif*_vcBcv).toLocaleString('es-VE') : (_vcBcv>0&&!_vcEsBs ? '≈ Bs '+Math.round(v.total*_vcBcv).toLocaleString('es-VE') : '');
+  const _vcBsRef = (_vcEsBs && _vcPar>0) ? '≈ Bs '+fmtBs(v.total*_vcDif*_vcBcv) : (_vcBcv>0&&!_vcEsBs ? '≈ Bs '+fmtBs(v.total*_vcBcv) : '');
   // Recibido y vuelto: reconstruir en Bs si aplica (guardados en USD)
-  const _vcRecBs = _vcEsBs && _vcPar>0 ? Math.round((v.recibido||0)*_vcPar).toLocaleString('es-VE') : null;
-  const _vcVueltoBs = _vcEsBs && _vcPar>0 ? Math.round((v.vuelto||0)*_vcPar).toLocaleString('es-VE') : null;
+  const _vcRecBs = _vcEsBs && _vcPar>0 ? fmtBs((v.recibido||0)*_vcPar) : null;
+  const _vcVueltoBs = _vcEsBs && _vcPar>0 ? fmtBs((v.vuelto||0)*_vcPar) : null;
 
   qs('#mvven-body').innerHTML=`
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
@@ -7815,7 +7841,7 @@ function verVenta(idx){
       <div><label>Costo total</label><strong>${euro(v.costo_total||0)}</strong></div>
       <div><label>Utilidad</label><strong style="color:var(--ok)">${euro(v.utilidad||0)}</strong></div>
     </div>
-    ${_vcBcv>0?`<div style="font-size:11px;color:var(--muted);margin-top:8px;background:var(--bg);padding:6px 10px;border-radius:8px">Tasa BCV al momento: ${_vcBcv.toLocaleString('es-VE')} Bs/$</div>`:''}
+    ${_vcBcv>0?`<div style="font-size:11px;color:var(--muted);margin-top:8px;background:var(--bg);padding:6px 10px;border-radius:8px">Tasa BCV al momento: ${fmtBs(_vcBcv)} Bs/$</div>`:''}
     ${v.notas?`<div style="margin-top:10px"><label>Notas</label><p style="font-size:13px">${v.notas}</p></div>`:''}` ;
   openModal('m-ver-ven');
 }
@@ -7842,7 +7868,7 @@ function imprimirComprobante(){
   const totalBs         = totalClienteUsd * bcvRec;
 
   const metLbl  = METODOS_LABEL[v.metodo]||v.metodo||'';
-  const tipoLbl = {venta_rapida:'Venta rápida',pago_pedido:'Pago de pedido',abono:'Abono',pago_restante:'Pago restante'}[v.tipo]||v.tipo||'Venta';
+  const tipoLbl = {venta_rapida:'Venta rápida',abono:'Abono',pago_restante:'Pago restante'}[v.tipo]||v.tipo||'Venta';
   const fecha   = new Date(v.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
 
   const fmtUsd = n => '$ ' + Number(n||0).toFixed(2).replace('.',',');
@@ -7880,13 +7906,13 @@ function imprimirComprobante(){
       </tr>` : ''}
       <tr>
         <td style="padding:5px 12px;color:#666;font-size:12px">Tasa BCV aplicada</td>
-        <td style="padding:5px 12px;text-align:right;font-size:12px">${bcvRec.toLocaleString('es-VE')} Bs/$</td>
+        <td style="padding:5px 12px;text-align:right;font-size:12px">${fmtBs(bcvRec)} Bs/$</td>
       </tr>
     </table>
     <div style="background:#111;color:#fff;border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin:8px 0">
       <div>
         <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.6)">Total a pagar</div>
-        <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:2px">${fmtUsd(totalClienteUsd)} × ${bcvRec.toLocaleString('es-VE')}</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.7);margin-top:2px">${fmtUsd(totalClienteUsd)} × ${fmtBs(bcvRec)}</div>
       </div>
       <div style="font-size:28px;font-weight:900">Bs ${totalBs.toFixed(2).replace('.',',')}</div>
     </div>
@@ -7998,7 +8024,7 @@ function imprimirComprobante(){
     <div class="conditions">
       <div class="label">Condiciones y forma de pago</div>
       ${metodoBsRec && bcvRec > 0
-        ? `Pago en <strong>Bolívares (Bs)</strong> a tasa BCV: <strong>${bcvRec.toLocaleString('es-VE')} Bs/$</strong>.`
+        ? `Pago en <strong>Bolívares (Bs)</strong> a tasa BCV: <strong>${fmtBs(bcvRec)} Bs/$</strong>.`
         : `Pago en <strong>dólares (USD)</strong>.`}
       ${notaRec?'<br>'+notaRec:''}
     </div>
@@ -8107,7 +8133,7 @@ function mmovSeleccionarPedido(){
     } else {
       const bcv = getTasaBCV(), dif = getDiferencial();
       const par = bcv * (dif>0?dif:1);
-      if(par>0) montoEl.value = Math.round(saldoUsd*par).toLocaleString('es-VE').replace(/,/g,'.');
+      if(par>0) montoEl.value = fmtBs(saldoUsd*par);
     }
     mmovCalcEquiv();
   }
@@ -8230,9 +8256,9 @@ function mmovCalcEquiv(){
   if(monto>0 && par>0){
     wrap.style.display='block';
     if(esUsd){
-      val.textContent='Equivalente: Bs '+(monto*par).toLocaleString('es-ES',{minimumFractionDigits:2})+' · Tasa: '+par.toFixed(2);
+      val.textContent='Equivalente: Bs '+fmtBs(monto*par)+' · Tasa: '+fmtBs(par);
     } else {
-      val.textContent='Equivalente: $ '+(monto/par).toFixed(2)+' · Tasa: '+par.toFixed(2);
+      val.textContent='Equivalente: $ '+(monto/par).toFixed(2).replace('.',',')+' · Tasa: '+fmtBs(par);
     }
   } else { wrap.style.display='none'; }
 }
@@ -8346,10 +8372,10 @@ function renderCaja(){
     const _difC=getDiferencial(), _bcvC=getTasaBCV(), _parC=_bcvC*_difC;
     const montoFmt = m.moneda==='usd'
       ? '$ '+(m.monto||0).toFixed(2).replace('.',',')
-      : 'Bs '+(m.monto||0).toLocaleString('es-VE',{minimumFractionDigits:2,maximumFractionDigits:2});
+      : 'Bs '+fmtBs(m.monto||0);
     const subFmt = m.moneda==='usd'
-      ? (_bcvC>0?'≈ Bs '+((m.monto||0)*_bcvC).toLocaleString('es-VE',{minimumFractionDigits:0,maximumFractionDigits:0}):'')
-      : (_parC>0?'≈ $ '+((m.monto||0)/_parC).toFixed(2)+' paralelo · $ '+(_bcvC>0?((m.monto||0)/_bcvC).toFixed(2):'-')+' BCV':'');
+      ? (_bcvC>0?'≈ Bs '+fmtBs((m.monto||0)*_bcvC):'')
+      : (_parC>0?'≈ $ '+((m.monto||0)/_parC).toFixed(2).replace('.',',')+' paralelo · $ '+(_bcvC>0?((m.monto||0)/_bcvC).toFixed(2).replace('.',','):'-')+' BCV':'');
     return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--card);border-radius:12px;margin-bottom:8px;border:1px solid var(--border)">
       <div style="width:34px;height:34px;border-radius:50%;background:${esIng?'#dcfce7':'#fee2e2'};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;color:${esIng?'#15803d':'#b91c1c'}">${ico}</div>
       <div style="flex:1;min-width:0">
@@ -8572,7 +8598,7 @@ function abrirNuevoPedido(){
   qs('#mp_abono').value = '0,00';
   qs('#mp_notas').value = '';
   qs('#mp_estado').value = 'pendiente';
-  const mpCanal=qs('#mp_canal'); if(mpCanal){ mpCanal.value='local'; mpCanal.dispatchEvent(new Event('gmsync')); }
+  const mpCanal=qs('#mp_canal'); if(mpCanal){ mpCanal.value='whatsapp'; mpCanal.dispatchEvent(new Event('gmsync')); }
   qs('#mp_metodo').value = 'efectivo_bs';
   const hoy = new Date().toISOString().slice(0,10);
   qs('#mp_fecha_pedido').value = hoy;
@@ -8916,7 +8942,7 @@ function recalcPedido(){
   const totalBsEl = qs('#mp_total_bs');
   if(totalBsEl){
     // Bs Supabase solo en métodos Bs
-    if(esBs && par>0 && total>0){ totalBsEl.textContent = 'Bs '+Math.round(totalBs).toLocaleString('es-VE'); totalBsEl.style.display=''; }
+    if(esBs && par>0 && total>0){ totalBsEl.textContent = 'Bs '+fmtBs(totalBs); totalBsEl.style.display=''; }
     else { totalBsEl.style.display='none'; }
   }
 
@@ -8926,8 +8952,8 @@ function recalcPedido(){
     if(esBs && bcv>0 && total>0){
       refPanel.innerHTML =
         '<span style="color:var(--muted)">c/dif: </span><strong style="color:#e07ab0">$'+totalCDif.toFixed(2).replace('.',',')+'</strong>' +
-        '<span style="color:var(--muted);margin-left:10px">Bs: </span><strong style="color:var(--ok)">Bs '+Math.round(totalBs).toLocaleString('es-VE')+'</strong>' +
-        '<span style="color:var(--muted);margin-left:10px;font-size:9px">(BCV '+bcv.toLocaleString('es-VE')+' · par '+Math.round(par).toLocaleString('es-VE')+')</span>';
+        '<span style="color:var(--muted);margin-left:10px">Bs: </span><strong style="color:var(--ok)">Bs '+fmtBs(totalBs)+'</strong>' +
+        '<span style="color:var(--muted);margin-left:10px;font-size:9px">(BCV '+fmtBs(bcv)+' · par '+fmtBs(par)+')</span>';
       refPanel.style.display='';
     } else {
       refPanel.style.display='none'; // USD: no mostrar nada
@@ -8938,7 +8964,7 @@ function recalcPedido(){
   const abonoEl = qs('#mp_pill_abonado');
   const restEl  = qs('#mp_pill_restante');
   if(esBs && par>0){
-    if(abonoEl) abonoEl.textContent = 'Bs '+Math.round(abonoRaw).toLocaleString('es-VE');
+    if(abonoEl) abonoEl.textContent = 'Bs '+fmtBs(abonoRaw);
     if(restEl)  restEl.textContent  = '$ '+restanteCDif.toFixed(2).replace('.',',');
   } else {
     // USD: mostrar en USD base sin diferencial
@@ -8949,10 +8975,10 @@ function recalcPedido(){
   // Referencia Bs del restante — solo en métodos Bs
   const refRestante = qs('#mp_ref_restante');
   if(refRestante && esBs && bcv>0 && restanteCDif>0){
-    const restBs = Math.round(restanteCDif * bcv);
+    const restBs = restanteCDif * bcv;
     refRestante.innerHTML =
       '<span style="color:var(--muted)">Restante c/dif: </span><strong style="color:#e07ab0">$'+restanteCDif.toFixed(2).replace('.',',')+'</strong>' +
-      '<span style="color:var(--muted);margin-left:8px">≈ </span><strong style="color:var(--danger)">Bs '+restBs.toLocaleString('es-VE')+'</strong>' +
+      '<span style="color:var(--muted);margin-left:8px">≈ </span><strong style="color:var(--danger)">Bs '+fmtBs(restBs)+'</strong>' +
       '<span style="color:var(--muted);margin-left:6px;font-size:9px">(se cobrará a BCV del día)</span>';
     refRestante.style.display='';
   } else if(refRestante){ refRestante.style.display='none'; }
@@ -9002,10 +9028,10 @@ function guardarPedido(){
   }
 
   const _notaExtras = [
-    _gDel>0?'Delivery: $'+_gDel.toFixed(2):'',
-    _gEnv>0?'Envío: $'+_gEnv.toFixed(2):'',
-    _gDis>0?'Diseño: $'+_gDis.toFixed(2):'',
-    _gExt>0?'Extras: $'+_gExt.toFixed(2):''
+    _gDel>0?'Delivery: $'+_gDel.toFixed(2).replace('.',','):'',
+    _gEnv>0?'Envío: $'+_gEnv.toFixed(2).replace('.',','):'',
+    _gDis>0?'Diseño: $'+_gDis.toFixed(2).replace('.',','):'',
+    _gExt>0?'Extras: $'+_gExt.toFixed(2).replace('.',','):''
   ].filter(Boolean).join(' | ');
 
   // Limpiar la nota manual de cualquier extras automáticos que se hayan concatenado antes
@@ -9171,8 +9197,8 @@ function renderPedidos(){
           const pagadoCDif = (p.pagos||[]).reduce((a,pg)=>a + pg.monto*(_difL>1?_difL:1), 0);
           const restCDif   = Math.max(0, totalCDif - pagadoCDif);
           return `<div style="font-weight:700;font-size:15px;color:var(--brand)">$${totalCDif.toFixed(2).replace('.',',')}</div>`+
-            (totalBs>0?`<div style="font-size:13px;font-weight:600;color:var(--ok)">Bs ${Math.round(totalBs).toLocaleString('es-VE')}</div>`:'') +
-            (restCDif>PED_SALDO_TOLERANCIA?`<div style="font-size:11px;color:var(--danger);font-weight:600">Restante: $${restCDif.toFixed(2).replace('.',',')}</div>`:`<div style="font-size:11px;color:var(--ok);font-weight:600">✓ Pagado</div>`);
+            (totalBs>0?`<div style="font-size:13px;font-weight:600;color:var(--ok)">Bs ${fmtBs(totalBs)}</div>`:'') +
+            (restCDif>PED_SALDO_TOLERANCIA?`<div style="font-size:11px;color:var(--danger);font-weight:600">Restante: $${restCDif.toFixed(2).replace('.',',')}</div>`+(_bcvL>0?`<div style="font-size:10px;color:var(--danger);font-weight:600">Restante Bs: ${fmtBs(restCDif*_bcvL)}</div>`:''):`<div style="font-size:11px;color:var(--ok);font-weight:600">✓ Pagado</div>`);
         })()}
         ${p.fecha_entrega?`<div style="font-size:11px;color:var(--muted)">Entrega: ${fmtFecha(p.fecha_entrega)}</div>`:''}
       </div>
@@ -9230,10 +9256,10 @@ function verPedido(idx){
     let montoBsPago = null;
     if(esPagoBs){
       if(pg.monto_bs_ingresado && pg.monto_bs_ingresado>0){
-        montoBsPago = Math.round(pg.monto_bs_ingresado).toLocaleString('es-VE');
+        montoBsPago = fmtBs(pg.monto_bs_ingresado);
       } else {
         const tasaPgPar = pg.tasa_par_pago||(pg.tasa_bcv_pago>0?pg.tasa_bcv_pago*(_pedDif>0?_pedDif:1):_pedPar);
-        if(tasaPgPar>0) montoBsPago = Math.round(pg.monto*tasaPgPar).toLocaleString('es-VE');
+        if(tasaPgPar>0) montoBsPago = fmtBs(pg.monto*tasaPgPar);
       }
     }
     // Mostrar monto en c/dif (USD para el cliente)
@@ -9244,7 +9270,7 @@ function verPedido(idx){
         <div style="text-align:right;flex-shrink:0;margin-left:8px">
           ${montoBsPago ? `<div style="font-weight:700;color:var(--ok)">Bs ${montoBsPago}</div>` : ''}
           ${montoCDif ? `<div style="font-size:11px;color:#e07ab0;font-weight:600">$ ${montoCDif} c/dif</div>` : `<div style="font-weight:700;color:var(--ok)">${euro(pg.monto)}</div>`}
-          ${pg.tasa_bcv_pago>0?`<div style="font-size:10px;color:var(--muted)">(BCV ${pg.tasa_bcv_pago.toLocaleString('es-VE')})</div>`:''}
+          ${pg.tasa_bcv_pago>0?`<div style="font-size:10px;color:var(--muted)">(BCV ${fmtBs(pg.tasa_bcv_pago)})</div>`:''}
         </div>
       </div>
     </div>`;
@@ -9278,7 +9304,7 @@ function verPedido(idx){
           const _esBsPed = ['efectivo_bs','pago_movil','transferencia'].includes(_metPed);
           if(_esBsPed && _pedDif>1 && _pedPar>0){
             const tcd=((p.total_cdif||p.total*_pedDif)).toFixed(2).replace('.',',');
-            const tbs=Math.round(p.total_bs||p.total*_pedPar).toLocaleString('es-VE');
+            const tbs=fmtBs(p.total_bs||p.total*_pedPar);
             return '<div class="pill" style="background:#ffe3ee;margin-bottom:4px">Total <strong style="color:var(--brand)">$'+tcd+'</strong> <span style="font-size:9px;color:var(--muted)">c/dif</span></div><div style="font-size:11px;color:var(--ok);text-align:right">Bs '+tbs+'</div>';
           }
           return '<div class="pill" style="background:#ffe3ee">Total <strong style="color:var(--brand)">'+_fmtUsd(p.total)+'</strong></div>';
@@ -9301,7 +9327,7 @@ function verPedido(idx){
               const tpar = pg.tasa_par_pago||(pg.tasa_bcv_pago>0?pg.tasa_bcv_pago*(_pedDif>0?_pedDif:1):_pedPar);
               return acc + (tpar>0 ? pg.monto*tpar : 0);
             },0);
-            return 'Bs '+Math.round(totalBsPagado).toLocaleString('es-VE');
+            return 'Bs '+fmtBs(totalBsPagado);
           }
           return euro(pag);
         })()}</strong></div>
@@ -9309,7 +9335,7 @@ function verPedido(idx){
           const _metPedR = (p.pagos&&p.pagos.length)?p.pagos[0].metodo:'efectivo_bs';
           const _esBsPedR = ['efectivo_bs','pago_movil','transferencia'].includes(_metPedR);
           if(_esBsPedR && _pedDif>1 && _pedBcv>0){
-            const rbs=Math.round(restCDif*_pedBcv).toLocaleString('es-VE');
+            const rbs=fmtBs(restCDif*_pedBcv);
             return '<div class="pill" style="background:#ffe3ee;margin-bottom:4px">Restante <strong style="color:var(--danger)">$'+restCDif.toFixed(2).replace('.',',')+'</strong> <span style="font-size:9px;color:var(--muted)">c/dif</span></div><div style="font-size:10px;color:var(--muted)">A BCV del día: <strong style="color:var(--danger)">Bs '+rbs+'</strong></div>';
           }
           return '<div class="pill" style="background:#ffe3ee">Restante <strong style="color:var(--danger)">'+euro(restCDif)+'</strong></div>';
@@ -10280,7 +10306,7 @@ function renderRepKpis(){
     <div class="kpi warn">
       <div class="kpi-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
       <div class="kpi-lbl">Equivalente en Bs</div>
-      <div class="kpi-val" style="font-size:15px">Bs ${bcvR>0?Math.round(totalVenBs).toLocaleString('es-VE'):'—'}</div>
+      <div class="kpi-val" style="font-size:15px">Bs ${bcvR>0?fmtBs(totalVenBs):'—'}</div>
       <div class="kpi-sub">${bcvR>0?`${euro(totalVenBsOnly)} en Bs · ${euro(totalVenUsdOnly)} en USD`:'Configure tasa BCV'}</div>
     </div>`;
 }
@@ -10774,14 +10800,14 @@ function renderRepCaja(){
   const nIng = movs.filter(esIngreso).length;
   const nGas = movs.length - nIng;
 
-  const fmtBs = n => 'Bs ' + Math.round(n).toLocaleString('es-VE');
+  const fmtBsR = n => 'Bs ' + fmtBs(n);
 
   const kpiCaja = qs('#rep-caja-kpis');
   if(kpiCaja) kpiCaja.innerHTML = `
-    <div class="kpi c-green"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div><div class="kpi-lbl">Ingresos</div><div class="kpi-val" style="font-size:15px">${euro(ingUsd)}</div><div class="kpi-sub">${fmtBs(ingBs)} · ${nIng} mov.</div></div>
-    <div class="kpi c-red"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div></div><div class="kpi-lbl">Gastos</div><div class="kpi-val" style="font-size:15px">${euro(gasUsd)}</div><div class="kpi-sub">${fmtBs(gasBs)} · ${nGas} mov.</div></div>
+    <div class="kpi c-green"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div><div class="kpi-lbl">Ingresos</div><div class="kpi-val" style="font-size:15px">${euro(ingUsd)}</div><div class="kpi-sub">${fmtBsR(ingBs)} · ${nIng} mov.</div></div>
+    <div class="kpi c-red"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div></div><div class="kpi-lbl">Gastos</div><div class="kpi-val" style="font-size:15px">${euro(gasUsd)}</div><div class="kpi-sub">${fmtBsR(gasBs)} · ${nGas} mov.</div></div>
     <div class="kpi ${saldoUsd>=0?'c-teal':'c-amber'}"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:${saldoUsd>=0?'#E1F5EE':'#FAEEDA'}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${saldoUsd>=0?'#0F6E56':'#854F0B'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div><div class="kpi-lbl">Saldo USD</div><div class="kpi-val" style="font-size:16px;color:${saldoUsd>=0?'var(--ok)':'var(--danger)'}">${euro(saldoUsd)}</div><div class="kpi-sub">${saldoUsd>=0?'Superávit':'Déficit'}</div></div>
-    <div class="kpi ${saldoBs>=0?'c-teal':'c-amber'}"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:${saldoBs>=0?'#E1F5EE':'#FAEEDA'}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${saldoBs>=0?'#0F6E56':'#854F0B'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div><div class="kpi-lbl">Saldo Bs</div><div class="kpi-val" style="font-size:16px;color:${saldoBs>=0?'var(--ok)':'var(--danger)'}">${fmtBs(saldoBs)}</div><div class="kpi-sub">${movs.length} movimientos</div></div>`;
+    <div class="kpi ${saldoBs>=0?'c-teal':'c-amber'}"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:${saldoBs>=0?'#E1F5EE':'#FAEEDA'}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${saldoBs>=0?'#0F6E56':'#854F0B'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div><div class="kpi-lbl">Saldo Bs</div><div class="kpi-val" style="font-size:16px;color:${saldoBs>=0?'var(--ok)':'var(--danger)'}">${fmtBsR(saldoBs)}</div><div class="kpi-sub">${movs.length} movimientos</div></div>`;
 
   // Balance por día — separado Bs y USD, graficar equivalente USD para comparar
   const bcvR = getTasaBCV();
@@ -10836,7 +10862,7 @@ function renderRepCaja(){
         const totalEqUsd = v.netoUsd + (bcvR>0 ? v.netoBs/bcvR : 0);
         const partes = [];
         if(v.netoUsd !== 0) partes.push(`<span style="color:${v.netoUsd>=0?'var(--ok)':'var(--danger)'};font-weight:700">${euro(v.netoUsd)}</span>`);
-        if(v.netoBs !== 0)  partes.push(`<span style="color:${v.netoBs>=0?'var(--ok)':'var(--danger)'};font-weight:700">${fmtBs(v.netoBs)}</span>`);
+        if(v.netoBs !== 0)  partes.push(`<span style="color:${v.netoBs>=0?'var(--ok)':'var(--danger)'};font-weight:700">${fmtBsR(v.netoBs)}</span>`);
         return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
           <div style="min-width:90px;font-weight:600;text-transform:capitalize">${k}</div>
           <div style="flex:1;background:#f3f4f6;border-radius:6px;height:16px;overflow:hidden">
@@ -10871,7 +10897,7 @@ function renderRepCaja(){
           return `<div style="background:${bg};border-radius:12px;padding:12px;text-align:center">
             <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:4px">${METODOS_LABEL[k]||k}</div>
             ${hayUsd?`<div style="font-size:16px;font-weight:700;color:${v.netoUsd>=0?'var(--ok)':'var(--danger)'}">${euro(v.netoUsd)}</div>`:''}
-            ${hayBs?`<div style="font-size:13px;font-weight:700;color:${v.netoBs>=0?'var(--ok)':'var(--danger)'}">${fmtBs(v.netoBs)}</div>`:''}
+            ${hayBs?`<div style="font-size:13px;font-weight:700;color:${v.netoBs>=0?'var(--ok)':'var(--danger)'}">${fmtBsR(v.netoBs)}</div>`:''}
           </div>`;
         }).join('') + `</div>`;
     }
@@ -11139,7 +11165,6 @@ function exportReportesCSV(){
         <div class="fg"><label>Tipo de venta</label>
           <select id="mv_tipo" onchange="mvTipoChange()">
             <option value="venta_rapida">Venta rápida</option>
-            <option value="pago_pedido">Pago de pedido</option>
             <option value="abono">Abono</option>
             <option value="pago_restante">Pago restante</option>
           </select>
@@ -11165,6 +11190,9 @@ function exportReportesCSV(){
             <span style="color:var(--muted)">Total pedido:</span><strong id="mv_ped_total">—</strong>
             <span style="color:var(--muted)">Pagado:</span><strong id="mv_ped_pagado" style="color:var(--ok)">—</strong>
             <span style="color:var(--muted)">Saldo:</span><strong id="mv_ped_saldo" style="color:var(--warn)">—</strong>
+          </div>
+          <div id="mv_ped_saldo_bs" style="display:none;text-align:right;margin-top:4px;font-size:11px">
+            <span style="color:var(--muted)">Saldo Bs:</span> <strong style="color:var(--danger)">—</strong>
           </div>
         </div>
       </div>
@@ -11461,7 +11489,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_76';
+  const APP_VERSION = 'v13_83';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
