@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_75">
+<html lang="es" data-app-version="GestioMada_V13_76">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -478,7 +478,7 @@ async function initSupabaseSync(){
     if(remoto.length === 0) continue; // ambos vacíos, nada que hacer
 
     // ── Supabase tiene datos ──
-    if(t.supa === 'caja_movimientos' || t.supa === 'pedidos' || t.supa === 'productos' || t.supa === 'usuarios'){
+    if(t.supa === 'caja_movimientos' || t.supa === 'pedidos' || t.supa === 'productos'){
       // Caja, Pedidos y Productos: Supabase es fuente de verdad absoluta
       // Las eliminaciones y cambios se propagan — no se restauran registros borrados
       const normalizado = t.supa === 'pedidos' ? remoto.map(r => normalizarPedidoImportado(r)).filter(r => !_esBorrado(t.supa, r.id)) : t.supa === 'productos' ? remoto.map(r => {
@@ -5459,7 +5459,7 @@ let _musrEditIdx = null; // índice del usuario que se está editando (null = nu
 
 /* Verifica sync de usuarios con Supabase: chequea conexión, tabla existente,
    y muestra el SQL si la tabla no existe.
-   Útil para diagnosticar por qué los usuarios no se sincronizan entre dispositivos. */
+   IMPORTANTE: nunca pisa los usuarios locales si la subida falla. */
 async function verificarSyncUsuarios(){
   if(!window._supaConectado){
     abrirModalSqlUsuarios('No hay conexión con Supabase. Verifica tu configuración (URL y API key) en index.html.');
@@ -5467,37 +5467,60 @@ async function verificarSyncUsuarios(){
   }
   toast('Verificando…','info');
   try {
-    const { data, error } = await SUPA.from('usuarios').select('id').limit(1);
-    if(error){
-      const msg = (error.message||'').toLowerCase();
-      const code = error.code || '';
+    const { data: probe, error: errProbe } = await SUPA.from('usuarios').select('id').limit(1);
+    if(errProbe){
+      const msg = (errProbe.message||'').toLowerCase();
+      const code = errProbe.code || '';
       if(code === 'PGRST205' || code === '42P01' || msg.includes('does not exist') || msg.includes('schema cache') || msg.includes('relation')){
         abrirModalSqlUsuarios('La tabla "usuarios" NO existe en Supabase. Cópialo y ejecútalo en el SQL Editor de Supabase:');
       } else {
-        abrirModalSqlUsuarios('Error de Supabase: ' + error.message);
+        abrirModalSqlUsuarios('Error de Supabase: ' + errProbe.message);
       }
       return;
     }
-    // Tabla OK: subir usuarios locales que falten
+    // Tabla OK
     const usrsLocal = loadUsuarios();
-    if(usrsLocal.length === 0){
-      toast('Tabla OK · No hay usuarios locales para sincronizar','ok');
-      return;
-    }
-    let subidos = 0;
+
+    // Subir locales (si hay)
+    let subidos = 0, fallidos = 0, ultimoError = '';
     for(const u of usrsLocal){
       const { error: errUp } = await SUPA.from('usuarios').upsert([mapearParaSupa('usuarios', u)], { onConflict: 'id' });
       if(!errUp) subidos++;
+      else { fallidos++; ultimoError = errUp.message || 'desconocido'; }
     }
-    // Después, recargar de Supabase
-    const { data: remoto } = await SUPA.from('usuarios').select('*').order('id');
-    if(remoto){
-      saveUsuarios(remoto);
+
+    // Si HUBO fallidos y NO hay éxitos: NO tocar localStorage, mostrar el error real
+    if(usrsLocal.length > 0 && subidos === 0 && fallidos > 0){
+      abrirModalSqlUsuarios(`No se pudo subir ningún usuario. Error: ${ultimoError}\n\nSi el error menciona "vistas" o "puede" o tipo JSONB, ejecuta este SQL para asegurar que la tabla acepta arrays:`);
+      return;
+    }
+
+    // Recargar desde Supabase
+    const { data: remoto, error: errLoad } = await SUPA.from('usuarios').select('*').order('id');
+    if(errLoad){
+      // No tocar localStorage; informar
+      toast('Subidos '+subidos+' pero falló al recargar: '+errLoad.message,'warn');
       renderCfgPins();
+      return;
     }
-    toast(`Sync OK · ${subidos} subidos · ${remoto?.length||0} en Supabase`,'ok');
+
+    // PROTECCIÓN: si la recarga vino vacía pero tenemos locales, NO sobrescribir
+    if((!remoto || remoto.length === 0) && usrsLocal.length > 0){
+      toast('Sync incompleto. Locales preservados.','warn');
+      renderCfgPins();
+      return;
+    }
+
+    // Mergear: lo de Supabase + locales que no están aún en Supabase (por si acaso)
+    const remotoIds = new Set((remoto||[]).map(r => String(r.id)));
+    const faltantes = usrsLocal.filter(u => !remotoIds.has(String(u.id)));
+    const final = [...(remoto||[]), ...faltantes];
+    saveUsuarios(final);
+    renderCfgPins();
+    if(typeof renderLockScreen === 'function') renderLockScreen();
+    toast(`Sync OK · ${subidos} subidos · ${final.length} usuarios totales`,'ok');
   } catch(e){
-    abrirModalSqlUsuarios('Error inesperado: ' + e.message);
+    toast('Error inesperado: '+e.message,'err');
   }
 }
 
@@ -5524,7 +5547,7 @@ function abrirModalSqlUsuarios(mensaje){
 </div>`;
     document.body.appendChild(div.firstElementChild);
   }
-  qs('#msql-msg').textContent = mensaje;
+  qs('#msql-msg').innerHTML = mensaje.replace(/\n/g, '<br>');
   qs('#msql-code').textContent = `CREATE TABLE IF NOT EXISTS usuarios (
   id BIGINT PRIMARY KEY,
   nombre TEXT NOT NULL DEFAULT '',
@@ -11379,7 +11402,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_75';
+  const APP_VERSION = 'v13_76';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
