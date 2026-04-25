@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_72">
+<html lang="es" data-app-version="GestioMada_V13_73">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
@@ -1232,6 +1232,8 @@ body.dark .gm-select-menu button{color:#e5e7eb}
 body.dark .gm-select-menu button:hover,
 body.dark .gm-select-menu button.focused{background:linear-gradient(120deg,#3a2330,#1f2645)}
 body.dark .gm-select-menu button.selected{background:linear-gradient(120deg,#5b2a3f,#2b3663);color:#fff}
+body.dark #tb-rol-menu{background:#151924;border-color:#2a3147;box-shadow:0 8px 20px rgba(0,0,0,.4)}
+body.dark #tb-rol-menu button{color:#e5e7eb}
 
 /* ═══════════════ MODAL ═══════════════ */
 .modal-bg{
@@ -1901,18 +1903,9 @@ body.dark .pos-prod-img-ph{background:#23283a}
       <div class="topbar-right">
         <button class="btn btn-brand btn-sm" id="tb-nuevo-prod" onclick="nav('editor',document.querySelector('[data-v=editor]'))">＋ Nuevo Producto</button>
         <span id="tb-mon" style="font-size:11px;color:var(--muted);background:var(--bg);padding:4px 10px;border-radius:999px;font-weight:600;border:1px solid var(--border,#e5e7eb)">$ USD</span>
-        <div class="gm-select" id="tb-rol-wrap" style="display:none;min-width:auto">
-          <button id="tb-rol-pill" class="gm-select-trigger" onclick="toggleRolMenu()" title="Usuario activo" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;cursor:pointer;border:1px solid var(--border,#e5e7eb);background:var(--bg);font-family:inherit;line-height:1.4;min-height:auto"></button>
-          <div class="gm-select-menu" id="tb-rol-menu" style="min-width:180px;right:0;left:auto">
-            <button onclick="abrirSelectorRol();cerrarRolMenu()" style="gap:8px">
-              <span class="gm-select-icon">${rolIcoSvg('users',16,16)}</span>
-              <span>Cambiar usuario</span>
-            </button>
-            <button onclick="bloquearPantalla();cerrarRolMenu()" style="gap:8px">
-              <span class="gm-select-icon">${rolIcoSvg('lock',16,16)}</span>
-              <span>Bloquear pantalla</span>
-            </button>
-          </div>
+        <div id="tb-rol-wrap" style="position:relative;display:none">
+          <button id="tb-rol-pill" onclick="toggleRolMenu()" title="Usuario activo" style="font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;cursor:pointer;border:1px solid var(--border,#e5e7eb);background:var(--bg);font-family:inherit;line-height:1.4;display:inline-flex;align-items:center;gap:4px"></button>
+          <div id="tb-rol-menu" style="display:none;position:absolute;z-index:100;top:calc(100% + 6px);right:0;min-width:200px;background:var(--card);border:1px solid #e5e7eb;border-radius:12px;box-shadow:var(--shadow);overflow:hidden;padding:4px"></div>
         </div>
         <label class="dark-toggle-pill" title="Modo oscuro" aria-label="Modo oscuro">
           <input id="dark_toggle" type="checkbox"/>
@@ -2484,7 +2477,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.72: Usuarios sincronizados con Supabase — tabla 'usuarios' como fuente de verdad con sync bidireccional + Realtime. Crear, editar, cambiar PIN y eliminar usuarios se propaga automáticamente a todos los dispositivos. Eliminaciones se propagan sin restaurar registros borrados. El PIN hasheado (no texto plano) viaja entre dispositivos. Al recibir cambio Realtime se refresca la lista de usuarios en Configuración y el lock screen. v13.71: Usuarios y acceso — auditoría y corrección de 7 bugs: (1) CRÍTICO: lock screen en modo genérico mostraba el texto "user" en vez del ícono SVG. (2) Topbar pill con menú dropdown "Cambiar usuario" y "Bloquear pantalla". (3) Typo gradiente CSS corregido. (4) Movimientos de caja graban usuario_id/usuario_nom. (5) No se puede eliminar el usuario logueado ni el último admin activo. (6) PIN default 0000 solo para Admin. v13.70: Pedidos — nuevo filtro por categoría. Las categorías se leen del catálogo por id_prod (porque el item del carrito no guarda categoría). Se puebla dinámicamente con las categorías presentes en los pedidos existentes. v13.69: Caja — eliminado campo manual "Tasa Bs/USD" del modal de movimientos; ahora se usa automáticamente la tasa paralela del sistema (BCV × diferencial) para conversiones Bs↔USD, equivalentes y registro histórico. El pill de equivalente muestra la tasa usada. v13.68: Acciones rápidas de Caja — (1) "Abono recibido" ahora ofrece vincular opcionalmente a un pedido pendiente (híbrido): si se vincula, el pago se registra automáticamente en el pedido reduciendo su saldo, y el movimiento de caja queda referenciado con ref_tipo='pedido'. Si es en Bs, se preserva monto_bs_ingresado usando tasa paralela (bcv×dif) para que cuadre con el saldo del pedido. (2) Nuevo campo "Nombre / Referencia" en todos los movimientos (Ingreso/Gasto/Compra/Abono/Retiro) — etiqueta contextual según el tipo (proveedor, cliente, quien retira, etc.). Al seleccionar pedido en abono, autocompleta el nombre del cliente. (3) La moneda del monto ahora se bloquea automáticamente cuando el método la determina (Bs efectivo/PM/transferencia → Bs; USD efectivo/Zelle → USD). Solo "Otro" permite elegir moneda libre. v13.67: Selects de Canal y Envío rediseñados con gm-select custom SVG minimalistas. v13.66: Pedidos/Caja/Reportes — al editar un pedido y agregar/cambiar cliente, se actualizan los movimientos vinculados en Caja; canales normalizados para Reportes (Local/WhatsApp/Online, incluyendo variantes mal escritas). v13.65: Reportes — FIX crítico cálculos de datos: (1) KPI "Equivalente en Bs" ahora aplica el factor correcto por método de pago (Bs usa BCV×diferencial, USD usa BCV plano). (2) Tab Productos y Categorías: precios en USD base sin inflar con diferencial — los totales cuadran con suma de ventas. (3) Categoría se lee desde el catálogo por id_prod (el item del carrito no la guarda). (4) Tab Caja: ingresos/gastos separados por moneda (Bs y USD) — deja de sumar mezclado dos monedas distintas; KPIs "Saldo USD" y "Saldo Bs" independientes; gráfico diario en equivalente USD para comparar. v13.64: Corrección error SyntaxError byEst/ins duplicados en Reportes. v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.73: FIX CRÍTICO topbar pill — el menú de usuario no funcionaba porque los SVGs estaban como template literals ${...} en HTML estático (se renderizaban como texto). Reescrito: ahora el menú se genera desde JS en aplicarPermisos() con SVGs reales. Tres opciones: "Cambiar usuario" (abre lock screen), "Bloquear pantalla" (bloquea sin cambiar), "Cerrar sesión" (bloquea y vuelve al lock screen). Agregado ícono 'power' a ROL_SVG_ICONS. Dark mode para el menú. v13.72: Usuarios sincronizados con Supabase — tabla 'usuarios' como fuente de verdad con sync bidireccional + Realtime. Crear, editar, cambiar PIN y eliminar usuarios se propaga automáticamente a todos los dispositivos. Eliminaciones se propagan sin restaurar registros borrados. El PIN hasheado (no texto plano) viaja entre dispositivos. Al recibir cambio Realtime se refresca la lista de usuarios en Configuración y el lock screen. v13.71: Usuarios y acceso — auditoría y corrección de 7 bugs: (1) CRÍTICO: lock screen en modo genérico mostraba el texto "user" en vez del ícono SVG. (2) Topbar pill con menú dropdown "Cambiar usuario" y "Bloquear pantalla". (3) Typo gradiente CSS corregido. (4) Movimientos de caja graban usuario_id/usuario_nom. (5) No se puede eliminar el usuario logueado ni el último admin activo. (6) PIN default 0000 solo para Admin. v13.70: Pedidos — nuevo filtro por categoría. Las categorías se leen del catálogo por id_prod (porque el item del carrito no guarda categoría). Se puebla dinámicamente con las categorías presentes en los pedidos existentes. v13.69: Caja — eliminado campo manual "Tasa Bs/USD" del modal de movimientos; ahora se usa automáticamente la tasa paralela del sistema (BCV × diferencial) para conversiones Bs↔USD, equivalentes y registro histórico. El pill de equivalente muestra la tasa usada. v13.68: Acciones rápidas de Caja — (1) "Abono recibido" ahora ofrece vincular opcionalmente a un pedido pendiente (híbrido): si se vincula, el pago se registra automáticamente en el pedido reduciendo su saldo, y el movimiento de caja queda referenciado con ref_tipo='pedido'. Si es en Bs, se preserva monto_bs_ingresado usando tasa paralela (bcv×dif) para que cuadre con el saldo del pedido. (2) Nuevo campo "Nombre / Referencia" en todos los movimientos (Ingreso/Gasto/Compra/Abono/Retiro) — etiqueta contextual según el tipo (proveedor, cliente, quien retira, etc.). Al seleccionar pedido en abono, autocompleta el nombre del cliente. (3) La moneda del monto ahora se bloquea automáticamente cuando el método la determina (Bs efectivo/PM/transferencia → Bs; USD efectivo/Zelle → USD). Solo "Otro" permite elegir moneda libre. v13.67: Selects de Canal y Envío rediseñados con gm-select custom SVG minimalistas. v13.66: Pedidos/Caja/Reportes — al editar un pedido y agregar/cambiar cliente, se actualizan los movimientos vinculados en Caja; canales normalizados para Reportes (Local/WhatsApp/Online, incluyendo variantes mal escritas). v13.65: Reportes — FIX crítico cálculos de datos: (1) KPI "Equivalente en Bs" ahora aplica el factor correcto por método de pago (Bs usa BCV×diferencial, USD usa BCV plano). (2) Tab Productos y Categorías: precios en USD base sin inflar con diferencial — los totales cuadran con suma de ventas. (3) Categoría se lee desde el catálogo por id_prod (el item del carrito no la guarda). (4) Tab Caja: ingresos/gastos separados por moneda (Bs y USD) — deja de sumar mezclado dos monedas distintas; KPIs "Saldo USD" y "Saldo Bs" independientes; gráfico diario en equivalente USD para comparar. v13.64: Corrección error SyntaxError byEst/ins duplicados en Reportes. v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -5044,6 +5037,7 @@ const ROL_SVG_ICONS = {
   'factory': '<path d="M2 20a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V8l-7 5V8l-7 5V4H4a2 2 0 0 0-2 2z"/><path d="M17 18h1M12 18h1M7 18h1"/>',
   'eye':     '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
   'lock':    '<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+  'power':   '<path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/>',
 };
 function rolIcoSvg(ico, w=18, h=18){
   const paths = ROL_SVG_ICONS[ico] || ROL_SVG_ICONS['lock'];
@@ -5245,12 +5239,17 @@ function abrirSelectorRol(){
   qs('#lock-screen').classList.add('visible');
 }
 function toggleRolMenu(){
-  const wrap=qs('#tb-rol-wrap'); if(!wrap) return;
-  wrap.classList.toggle('open');
+  const menu=qs('#tb-rol-menu'); if(!menu) return;
+  const vis = menu.style.display !== 'block';
+  menu.style.display = vis ? 'block' : 'none';
 }
 function cerrarRolMenu(){
-  const wrap=qs('#tb-rol-wrap'); if(wrap) wrap.classList.remove('open');
+  const menu=qs('#tb-rol-menu'); if(menu) menu.style.display='none';
 }
+// Cerrar menú al hacer clic fuera
+document.addEventListener('click', e => {
+  if(!e.target.closest('#tb-rol-wrap')) cerrarRolMenu();
+});
 
 /* ── Wrapper seguro para usuario por índice (NUNCA pasar objeto en onclick) ── */
 function abrirPinModalUsuario(idx){
@@ -5591,12 +5590,32 @@ function aplicarPermisos(){
   // Topbar pill — muestra nombre real si hay usuario, sino el rol
   const pill=qs('#tb-rol-pill');
   const pillWrap=qs('#tb-rol-wrap');
+  const pillMenu=qs('#tb-rol-menu');
   if(pill){
     const nomCorto = CURRENT_USR_ID ? CURRENT_USR_NOM.split(' ')[0] : rol.label;
     pill.innerHTML=`<span class="rol-ico-tb">${rolIcoSvg(CURRENT_USR_ID ? 'user' : rol.ico,14,14)}</span><span class="rol-lbl-tb" style="margin-left:4px">${nomCorto}</span>`;
     if(pillWrap) pillWrap.style.display='';
     const bg={admin:'#ffe3ee',empleado:'#e8efff',produccion:'#e8f5e9',lectura:'#f3f4f6'};
     pill.style.background=bg[CURRENT_ROL]||'#f3f4f6';
+  }
+  // Llenar menú dropdown con botones y SVGs reales
+  if(pillMenu){
+    const btnStyle='width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border:0;background:transparent;color:var(--ink);font-family:inherit;font-size:13px;font-weight:500;text-align:left;cursor:pointer;border-radius:8px;transition:background .12s';
+    const hoverBg='linear-gradient(120deg,#ffe8ee,#eef2ff)';
+    pillMenu.innerHTML = `
+      <button style="${btnStyle}" onmouseover="this.style.background='${hoverBg}'" onmouseout="this.style.background='transparent'" onclick="abrirSelectorRol();cerrarRolMenu()">
+        <span style="display:inline-flex;width:20px;height:20px;color:var(--brand)">${rolIcoSvg('users',18,18)}</span>
+        <span>Cambiar usuario</span>
+      </button>
+      <button style="${btnStyle}" onmouseover="this.style.background='${hoverBg}'" onmouseout="this.style.background='transparent'" onclick="bloquearPantalla();cerrarRolMenu()">
+        <span style="display:inline-flex;width:20px;height:20px;color:var(--brand)">${rolIcoSvg('lock',18,18)}</span>
+        <span>Bloquear pantalla</span>
+      </button>
+      <div style="border-top:1px solid var(--border,#e5e7eb);margin:4px 0"></div>
+      <button style="${btnStyle};color:var(--danger)" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='transparent'" onclick="bloquearPantalla();cerrarRolMenu()">
+        <span style="display:inline-flex;width:20px;height:20px;color:var(--danger)">${rolIcoSvg('power',18,18)}</span>
+        <span>Cerrar sesión</span>
+      </button>`;
   }
   const tbNuevo=qs('#tb-nuevo-prod');
   if(tbNuevo) tbNuevo.style.display=can('crear')?'':'none';
@@ -11217,7 +11236,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_72';
+  const APP_VERSION = 'v13_73';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
