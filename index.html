@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V13_93">
+<html lang="es" data-app-version="GestioMada_V13_98">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -337,7 +337,7 @@ function mapearParaSupa(tabla, d){
     metodo:    d.metodo || 'efectivo_bs',
     nota:      d.nota || '',
     ref_tipo:  d.ref_tipo || '',
-    fecha:     d.fecha || new Date().toISOString().slice(0,10),
+    fecha:     d.fecha || hoyLocal(),
     // FK omitida: sesion_id (no usamos sesiones en sync)
   };
 
@@ -945,6 +945,7 @@ body.dark .ham-btn:hover{background:#1b2030}
   /* Search bar */
   .search-bar{flex-direction:column;gap:8px}
   .search-bar input,.search-bar select{min-width:0;width:100%}
+  .ped-items-preview{white-space:normal;max-width:100%}
 
   /* Botón row wrap */
   .btn-row{flex-wrap:wrap}
@@ -1154,6 +1155,10 @@ label.btn{cursor:pointer}
   flex-wrap:wrap;
 }
 .list-item:hover{box-shadow:0 10px 24px rgba(0,0,0,.09)}
+.ped-items-preview{
+  font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:420px;
+}
 .li-ico{
   width:40px;height:40px;border-radius:12px;flex-shrink:0;
   background:linear-gradient(135deg,#ffe3ee,#e8efff);
@@ -2555,7 +2560,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.93: Font-size inputs restaurado a 13px en desktop (el zoom iOS se previene con viewport maximum-scale). Descuento y abono en POS y Pedidos ahora usan placeholder en vez de value="0,00" — campo vacío al crear, muestra valor solo si hay dato al editar. v13.92: FIX precisión Bs en cotización WhatsApp — aplicada la misma fórmula round2(USD×dif) × BCV a la cotización: precio por ítem, total productos, total general y abono en Bs. Antes el texto de WhatsApp mostraba centavos distintos al total del POS. v13.91: FIX precisión Bs — fórmula corregida en toda la app: ahora se calcula round2(USD×dif) × BCV en vez de USD×dif×BCV directo, eliminando diferencias de centavos por redondeo floating point. Aplica en: POS total y carrito, cobrar, catálogo info moneda, caja movimientos, pedidos recalc. Pedidos — nuevo filtro "Fecha específica" con selector de fecha para buscar pedidos por fecha de entrega exacta. iOS — corregido zoom automático al enfocar inputs (viewport maximum-scale + font-size 16px global). Filtros de pedidos en móvil con font-size 14px para evitar textos cortados. Extra en ventas/pedidos muestra campo vacío con placeholder en vez de 0. v13.89: Ventas/Cotización — activar Diseño ya no oculta ni desactiva el abono; solamente Envío omite el bloque de abono automático en la cotización WhatsApp. v13.83: Tipos de venta simplificados — eliminado "Pago de pedido" (redundante con "Pago restante"). Quedan 3 tipos: Venta rápida, Abono, Pago restante. v13.82: Formato decimal unificado — todos los montos en Bs y USD usan coma (,) como separador decimal y punto (.) como separador de miles en toda la app (catálogo, POS, pedidos, ventas, caja, reportes, cotizador WhatsApp, recibo). Nuevo helper global fmtBs(). Restante Bs en lista de pedidos y panel "Pedido a cobrar" muestra 2 decimales. v13.81: Pedidos/Ventas — el restante de pedidos ahora muestra también el equivalente en Bs (Restante × tasa BCV del día) tanto en la lista de pedidos como en el panel "Pedido a cobrar" del POS y modal de ventas. v13.85: POS móvil — el menú desplegable de Canal ahora abre hacia la izquierda para evitar desbordes laterales. v13.84: Ventas — corregido recibo/modal de Pago restante para mostrar el monto real cobrado al cliente y no el monto interno base; Canal en POS móvil ahora muestra solo el ícono para dar más espacio a Tipo de venta. v13.80: Ventas/Pedidos — el POS ahora lee el mismo Total/Pagado/Restante c/dif del módulo Pedidos al vincular un pedido, evitando diferencias entre módulos. v13.79: Clientes/Pedidos — unificado el registro de cliente en un solo campo "Nombre completo"; al editar clientes antiguos se muestra nombre + apellido juntos y se guarda sin separar el apellido. v13.73: FIX CRÍTICO: (1) Topbar pill — el menú de usuario no funcionaba porque los SVGs estaban como template literals en HTML estático. Reescrito: menú generado desde JS en aplicarPermisos() con SVGs reales. Tres opciones: "Cambiar usuario", "Bloquear pantalla", "Cerrar sesión" (en rojo). (2) Modal de usuario reescrito con clases estándar de GestioMada (modal-bg + modal) — antes usaba clases inexistentes (modal-box, modal-hd, modal-body) que no tenían CSS, causando que el modal se mostrara sin overlay, sin centrado y sin estilo. (3) Checkboxes de módulos/acciones rediseñados con estilo GestioMada — custom checkbox con animación de check, colores de la marca, hover con borde rosado, dark mode, responsive a 1 columna en móvil. v13.72: Usuarios sincronizados con Supabase — tabla 'usuarios' como fuente de verdad con sync bidireccional + Realtime. Crear, editar, cambiar PIN y eliminar usuarios se propaga automáticamente a todos los dispositivos. Eliminaciones se propagan sin restaurar registros borrados. El PIN hasheado (no texto plano) viaja entre dispositivos. Al recibir cambio Realtime se refresca la lista de usuarios en Configuración y el lock screen. v13.71: Usuarios y acceso — auditoría y corrección de 7 bugs: (1) CRÍTICO: lock screen en modo genérico mostraba el texto "user" en vez del ícono SVG. (2) Topbar pill con menú dropdown "Cambiar usuario" y "Bloquear pantalla". (3) Typo gradiente CSS corregido. (4) Movimientos de caja graban usuario_id/usuario_nom. (5) No se puede eliminar el usuario logueado ni el último admin activo. (6) PIN default 0000 solo para Admin. v13.70: Pedidos — nuevo filtro por categoría. Las categorías se leen del catálogo por id_prod (porque el item del carrito no guarda categoría). Se puebla dinámicamente con las categorías presentes en los pedidos existentes. v13.69: Caja — eliminado campo manual "Tasa Bs/USD" del modal de movimientos; ahora se usa automáticamente la tasa paralela del sistema (BCV × diferencial) para conversiones Bs↔USD, equivalentes y registro histórico. El pill de equivalente muestra la tasa usada. v13.68: Acciones rápidas de Caja — (1) "Abono recibido" ahora ofrece vincular opcionalmente a un pedido pendiente (híbrido): si se vincula, el pago se registra automáticamente en el pedido reduciendo su saldo, y el movimiento de caja queda referenciado con ref_tipo='pedido'. Si es en Bs, se preserva monto_bs_ingresado usando tasa paralela (bcv×dif) para que cuadre con el saldo del pedido. (2) Nuevo campo "Nombre / Referencia" en todos los movimientos (Ingreso/Gasto/Compra/Abono/Retiro) — etiqueta contextual según el tipo (proveedor, cliente, quien retira, etc.). Al seleccionar pedido en abono, autocompleta el nombre del cliente. (3) La moneda del monto ahora se bloquea automáticamente cuando el método la determina (Bs efectivo/PM/transferencia → Bs; USD efectivo/Zelle → USD). Solo "Otro" permite elegir moneda libre. v13.67: Selects de Canal y Envío rediseñados con gm-select custom SVG minimalistas. v13.66: Pedidos/Caja/Reportes — al editar un pedido y agregar/cambiar cliente, se actualizan los movimientos vinculados en Caja; canales normalizados para Reportes (Local/WhatsApp/Online, incluyendo variantes mal escritas). v13.65: Reportes — FIX crítico cálculos de datos: (1) KPI "Equivalente en Bs" ahora aplica el factor correcto por método de pago (Bs usa BCV×diferencial, USD usa BCV plano). (2) Tab Productos y Categorías: precios en USD base sin inflar con diferencial — los totales cuadran con suma de ventas. (3) Categoría se lee desde el catálogo por id_prod (el item del carrito no la guarda). (4) Tab Caja: ingresos/gastos separados por moneda (Bs y USD) — deja de sumar mezclado dos monedas distintas; KPIs "Saldo USD" y "Saldo Bs" independientes; gráfico diario en equivalente USD para comparar. v13.64: Corrección error SyntaxError byEst/ins duplicados en Reportes. v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v13.98: Pedidos — botón "Imprimir" en la vista principal (junto a "+ Nuevo Pedido") que imprime el listado de pedidos según los filtros activos. Botón de imprimir dentro de cada popup de KPI (Pendientes, En producción, etc.). La lista impresa incluye: checkbox para rayar, #pedido, cliente con teléfono, productos, estado, pago, total c/dif y fecha entrega. Formato landscape optimizado para papel. v13.97: Pedidos — nuevo botón "Imprimir" en el modal de detalle del pedido. Genera una página limpia con logo del negocio, datos del cliente, tabla de productos (cant, precio, subtotal), totales con diferencial y Bs, historial de pagos, restante y notas. Se abre en ventana nueva y lanza la impresión automáticamente. Eliminado selector de temporalidad de KPIs (innecesario — los KPIs siempre muestran el estado actual). v13.96: KPIs Pedidos — cards limpios que siempre muestran el estado actual real del negocio (sin filtro de temporalidad innecesario); al hacer clic se abre popup con resumen de productos agrupados y detalle por pedido. FIX CRÍTICO zona horaria — todas las fechas "hoy" usan hora local (Venezuela UTC-4) en vez de UTC; antes, después de las 8pm el sistema pensaba que era el día siguiente. Nuevo helper hoyLocal(), corregidas 31+ instancias en toda la app. v13.95: KPIs Pedidos — cada card ahora muestra los productos agrupados con cantidades totales (ej: Taza dorada ×8), máximo 4 productos visibles con "+N más…". Nuevo selector de temporalidad (Hoy, 7 días, 1 mes, 3 meses, Todo) que filtra los KPIs por fecha de creación del pedido. v13.94: Pedidos — cada tarjeta de pedido ahora muestra los productos del cliente (cantidad × nombre) debajo de los badges, sin precio. En desktop se muestra en una línea con "…" si es muy largo; en móvil se expande completo. v13.93: Font-size inputs restaurado a 13px en desktop (el zoom iOS se previene con viewport maximum-scale). Descuento y abono en POS y Pedidos ahora usan placeholder en vez de value="0,00" — campo vacío al crear, muestra valor solo si hay dato al editar. v13.92: FIX precisión Bs en cotización WhatsApp — aplicada la misma fórmula round2(USD×dif) × BCV a la cotización: precio por ítem, total productos, total general y abono en Bs. Antes el texto de WhatsApp mostraba centavos distintos al total del POS. v13.91: FIX precisión Bs — fórmula corregida en toda la app: ahora se calcula round2(USD×dif) × BCV en vez de USD×dif×BCV directo, eliminando diferencias de centavos por redondeo floating point. Aplica en: POS total y carrito, cobrar, catálogo info moneda, caja movimientos, pedidos recalc. Pedidos — nuevo filtro "Fecha específica" con selector de fecha para buscar pedidos por fecha de entrega exacta. iOS — corregido zoom automático al enfocar inputs (viewport maximum-scale + font-size 16px global). Filtros de pedidos en móvil con font-size 14px para evitar textos cortados. Extra en ventas/pedidos muestra campo vacío con placeholder en vez de 0. v13.89: Ventas/Cotización — activar Diseño ya no oculta ni desactiva el abono; solamente Envío omite el bloque de abono automático en la cotización WhatsApp. v13.83: Tipos de venta simplificados — eliminado "Pago de pedido" (redundante con "Pago restante"). Quedan 3 tipos: Venta rápida, Abono, Pago restante. v13.82: Formato decimal unificado — todos los montos en Bs y USD usan coma (,) como separador decimal y punto (.) como separador de miles en toda la app (catálogo, POS, pedidos, ventas, caja, reportes, cotizador WhatsApp, recibo). Nuevo helper global fmtBs(). Restante Bs en lista de pedidos y panel "Pedido a cobrar" muestra 2 decimales. v13.81: Pedidos/Ventas — el restante de pedidos ahora muestra también el equivalente en Bs (Restante × tasa BCV del día) tanto en la lista de pedidos como en el panel "Pedido a cobrar" del POS y modal de ventas. v13.85: POS móvil — el menú desplegable de Canal ahora abre hacia la izquierda para evitar desbordes laterales. v13.84: Ventas — corregido recibo/modal de Pago restante para mostrar el monto real cobrado al cliente y no el monto interno base; Canal en POS móvil ahora muestra solo el ícono para dar más espacio a Tipo de venta. v13.80: Ventas/Pedidos — el POS ahora lee el mismo Total/Pagado/Restante c/dif del módulo Pedidos al vincular un pedido, evitando diferencias entre módulos. v13.79: Clientes/Pedidos — unificado el registro de cliente en un solo campo "Nombre completo"; al editar clientes antiguos se muestra nombre + apellido juntos y se guarda sin separar el apellido. v13.73: FIX CRÍTICO: (1) Topbar pill — el menú de usuario no funcionaba porque los SVGs estaban como template literals en HTML estático. Reescrito: menú generado desde JS en aplicarPermisos() con SVGs reales. Tres opciones: "Cambiar usuario", "Bloquear pantalla", "Cerrar sesión" (en rojo). (2) Modal de usuario reescrito con clases estándar de GestioMada (modal-bg + modal) — antes usaba clases inexistentes (modal-box, modal-hd, modal-body) que no tenían CSS, causando que el modal se mostrara sin overlay, sin centrado y sin estilo. (3) Checkboxes de módulos/acciones rediseñados con estilo GestioMada — custom checkbox con animación de check, colores de la marca, hover con borde rosado, dark mode, responsive a 1 columna en móvil. v13.72: Usuarios sincronizados con Supabase — tabla 'usuarios' como fuente de verdad con sync bidireccional + Realtime. Crear, editar, cambiar PIN y eliminar usuarios se propaga automáticamente a todos los dispositivos. Eliminaciones se propagan sin restaurar registros borrados. El PIN hasheado (no texto plano) viaja entre dispositivos. Al recibir cambio Realtime se refresca la lista de usuarios en Configuración y el lock screen. v13.71: Usuarios y acceso — auditoría y corrección de 7 bugs: (1) CRÍTICO: lock screen en modo genérico mostraba el texto "user" en vez del ícono SVG. (2) Topbar pill con menú dropdown "Cambiar usuario" y "Bloquear pantalla". (3) Typo gradiente CSS corregido. (4) Movimientos de caja graban usuario_id/usuario_nom. (5) No se puede eliminar el usuario logueado ni el último admin activo. (6) PIN default 0000 solo para Admin. v13.70: Pedidos — nuevo filtro por categoría. Las categorías se leen del catálogo por id_prod (porque el item del carrito no guarda categoría). Se puebla dinámicamente con las categorías presentes en los pedidos existentes. v13.69: Caja — eliminado campo manual "Tasa Bs/USD" del modal de movimientos; ahora se usa automáticamente la tasa paralela del sistema (BCV × diferencial) para conversiones Bs↔USD, equivalentes y registro histórico. El pill de equivalente muestra la tasa usada. v13.68: Acciones rápidas de Caja — (1) "Abono recibido" ahora ofrece vincular opcionalmente a un pedido pendiente (híbrido): si se vincula, el pago se registra automáticamente en el pedido reduciendo su saldo, y el movimiento de caja queda referenciado con ref_tipo='pedido'. Si es en Bs, se preserva monto_bs_ingresado usando tasa paralela (bcv×dif) para que cuadre con el saldo del pedido. (2) Nuevo campo "Nombre / Referencia" en todos los movimientos (Ingreso/Gasto/Compra/Abono/Retiro) — etiqueta contextual según el tipo (proveedor, cliente, quien retira, etc.). Al seleccionar pedido en abono, autocompleta el nombre del cliente. (3) La moneda del monto ahora se bloquea automáticamente cuando el método la determina (Bs efectivo/PM/transferencia → Bs; USD efectivo/Zelle → USD). Solo "Otro" permite elegir moneda libre. v13.67: Selects de Canal y Envío rediseñados con gm-select custom SVG minimalistas. v13.66: Pedidos/Caja/Reportes — al editar un pedido y agregar/cambiar cliente, se actualizan los movimientos vinculados en Caja; canales normalizados para Reportes (Local/WhatsApp/Online, incluyendo variantes mal escritas). v13.65: Reportes — FIX crítico cálculos de datos: (1) KPI "Equivalente en Bs" ahora aplica el factor correcto por método de pago (Bs usa BCV×diferencial, USD usa BCV plano). (2) Tab Productos y Categorías: precios en USD base sin inflar con diferencial — los totales cuadran con suma de ventas. (3) Categoría se lee desde el catálogo por id_prod (el item del carrito no la guarda). (4) Tab Caja: ingresos/gastos separados por moneda (Bs y USD) — deja de sumar mezclado dos monedas distintas; KPIs "Saldo USD" y "Saldo Bs" independientes; gráfico diario en equivalente USD para comparar. v13.64: Corrección error SyntaxError byEst/ins duplicados en Reportes. v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
         </div>
       </div>
 
@@ -2607,6 +2612,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
             <option value="">Todas las categorías</option>
           </select>
           <button class="btn btn-brand btn-sm" onclick="abrirNuevoPedido()">＋ Nuevo Pedido</button>
+          <button class="btn btn-sm" onclick="imprimirListaPedidos()" title="Imprimir listado"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>
         </div>
         <div class="grid g4" style="margin-bottom:14px" id="ped-kpis"></div>
         <div id="ped-container"></div>
@@ -3390,6 +3396,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
       </div>
     </div>
     <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-sm" onclick="imprimirPedido()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>
       <button class="btn btn-brand btn-sm" onclick="editarPedidoDesdeModal()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar</button>
       <button class="btn btn-sm" onclick="cobrarPedidoDesdeModal()" id="btn-cobrar-pedido" style="display:none"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Cobrar restante</button>
       <button class="btn btn-sm" id="mvped-avanzar" onclick="avanzarEstado()"></button>
@@ -3827,6 +3834,7 @@ document.addEventListener('keydown', e => {
   }
 });
 
+function hoyLocal(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function parseEU(s){
   if(typeof s!=='string') s=String(s??'');
   const v=parseFloat(s.trim().replace(/\./g,'').replace(',','.'));
@@ -5035,7 +5043,7 @@ function renderDash(){
   // Últimos movimientos de caja
   const dm=qs('#d-movs-caja');
   if(dm){
-    const hoy=new Date().toISOString().slice(0,10);
+    const hoy=hoyLocal();
     const movs=loadCajaMov().filter(m=>m.fecha===hoy).slice(-6).reverse();
     const TIPO_COLOR={ingreso:'var(--ok)',gasto:'var(--danger)',compra:'var(--warn)',abono:'var(--brand2)',retiro:'var(--muted)'};
     dm.innerHTML = movs.length ? movs.map(m=>`
@@ -5069,7 +5077,7 @@ function renderDash(){
 ════════════════════════════════════════════ */
 function exportRespaldo(){
   const data={version:'GestioMada_v1328',fecha:new Date().toISOString(),config:CFG,pers:loadPers(),catalogo:loadCat(),clientes:loadCli(),pedidos:loadPed(),ventas:loadVen(),caja:loadCajaMov(),insumos:loadIns(),terminados:loadTer(),invmov:loadIMov(),sesiones_hist:loadSesionesHist()};
-  dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+new Date().toISOString().slice(0,10)+'.json');
+  dl(JSON.stringify(data,null,2),'application/json','GestioMada-respaldo-'+hoyLocal()+'.json');
   toast('Respaldo exportado','ok');
 }
 function importRespaldo(input){
@@ -6381,7 +6389,7 @@ function abrirSesion(){
 function cerrarSesion(){
   // Calcular saldos para mostrar en el resumen previo
   const ses=loadSesion(); if(!ses) return;
-  const hoy=new Date().toISOString().slice(0,10);
+  const hoy=hoyLocal();
   const mov=loadCajaMov().filter(m=>m.fecha===hoy);
   const INGRESOS=['ingreso','abono','venta'];
   const ingBs=mov.filter(m=>INGRESOS.includes(m.categoria||m.tipo)&&(m.moneda==='bs'||!m.moneda)).reduce((a,m)=>a+m.monto,0);
@@ -6514,7 +6522,7 @@ function renderHistSesiones(){
 function renderSaldosMoneda(){
   const wrap=qs('#caja-saldos-moneda'); if(!wrap) return;
   const ses=loadSesion();
-  const hoy=new Date().toISOString().slice(0,10);
+  const hoy=hoyLocal();
   const mov=loadCajaMov().filter(m=>m.fecha===hoy);
   const INGRESOS=['ingreso','abono','venta'];
   const ingBs=mov.filter(m=>INGRESOS.includes(m.categoria||m.tipo)&&(m.moneda==='bs'||!m.moneda)).reduce((a,m)=>a+m.monto,0);
@@ -7390,7 +7398,7 @@ function posCobrar(){
     metodo: venta.metodo,
     nota: `${VEN_TIPO_LABEL[tipo]||tipo} ${venta.numero}${cliNom}`,
     ref_id: venta.id, ref_tipo:'venta',
-    fecha: new Date().toISOString().slice(0,10)
+    fecha: hoyLocal()
   };
   const cajaAll = loadCajaMov(); cajaAll.push(mov); saveCajaMov(cajaAll);
   upsertCajaMov(mov); // ← solo este movimiento
@@ -7702,7 +7710,7 @@ function guardarVenta(){
     metodo:venta.metodo,
     nota:`${VEN_TIPO_LABEL[tipo]||tipo} ${venta.numero}${cliNom2}`,
     ref_id:venta.id, ref_tipo:'venta',
-    fecha:new Date().toISOString().slice(0,10)
+    fecha:hoyLocal()
   };
   const cajaAll=loadCajaMov(); cajaAll.push(mov); saveCajaMov(cajaAll);
   upsertCajaMov(mov); // ← solo este movimiento
@@ -7742,8 +7750,8 @@ function renderVentas(){
   const fcanal=qs('#ven_fcanal')?.value||'';
   const fp=qs('#ven_fperiodo')?.value||'hoy';
   const fusr=qs('#ven_fusr')?.value||'';
-  const hoy=new Date().toISOString().slice(0,10);
-  const sem=new Date(Date.now()-6*86400000).toISOString().slice(0,10);
+  const hoy=hoyLocal();
+  const sem=(() => { const d=new Date(); d.setDate(d.getDate()-6); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })();
   const mes=new Date().toISOString().slice(0,8)+'01';
 
   const fil=all.filter(v=>{
@@ -7798,7 +7806,7 @@ function renderVentas(){
 
 function renderKpisVentas(){
   const all=loadVen();
-  const hoy=new Date().toISOString().slice(0,10);
+  const hoy=hoyLocal();
   const hoyV=all.filter(v=>v.fecha.slice(0,10)===hoy&&v.estado!=='anulada');
   const bcvK=getTasaBCV(), difK=getDiferencial();
   // Separar por moneda para mostrar totales correctos
@@ -8099,7 +8107,7 @@ function abrirMovimiento(tipo){
   const t=qs('#mmov-title'); if(t) t.textContent=TITULOS[tipo]||'Registrar movimiento';
   const ti=qs('#mmov_tipo'); if(ti) ti.value=tipo;
   const mc=qs('#mmov_cat'); if(mc) mc.value=CATS[tipo]||'otro';
-  const mf=qs('#mmov_fecha'); if(mf) mf.value=new Date().toISOString().slice(0,10);
+  const mf=qs('#mmov_fecha'); if(mf) mf.value=hoyLocal();
   const mm=qs('#mmov_monto'); if(mm) mm.value='';
   const mn=qs('#mmov_nota'); if(mn) mn.value='';
   const mnom=qs('#mmov_nombre'); if(mnom) mnom.value='';
@@ -8205,7 +8213,7 @@ function guardarMovimiento(){
     metodo:qs('#mmov_metodo')?.value||'efectivo_bs',
     nombre: nombre||null,
     nota:notaFinal,
-    fecha:qs('#mmov_fecha').value||new Date().toISOString().slice(0,10),
+    fecha:qs('#mmov_fecha').value||hoyLocal(),
     signo,
     usuario_id: CURRENT_USR_ID || null,
     usuario_nom: CURRENT_USR_NOM || null
@@ -8293,9 +8301,9 @@ function setCajaPeriodo(p, btn){
   _cajaPeriodo=p;
   ['caja-hoy-btn','caja-sem-btn','caja-mes-btn'].forEach(id=>{ const e=qs('#'+id); if(e) e.classList.remove('btn-brand'); });
   if(btn) btn.classList.add('btn-brand');
-  if(p==='hoy'){ const hoy=new Date().toISOString().slice(0,10); const dde=qs('#caja_desde'); if(dde) dde.value=hoy; const hta=qs('#caja_hasta'); if(hta) hta.value=hoy; }
-  else if(p==='semana'){ const d=new Date(); d.setDate(d.getDate()-d.getDay()+1); const dde=qs('#caja_desde'); if(dde) dde.value=d.toISOString().slice(0,10); const hta=qs('#caja_hasta'); if(hta) hta.value=new Date().toISOString().slice(0,10); }
-  else if(p==='mes'){ const d=new Date(); const dde=qs('#caja_desde'); if(dde) dde.value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`; const hta=qs('#caja_hasta'); if(hta) hta.value=new Date().toISOString().slice(0,10); }
+  if(p==='hoy'){ const hoy=hoyLocal(); const dde=qs('#caja_desde'); if(dde) dde.value=hoy; const hta=qs('#caja_hasta'); if(hta) hta.value=hoy; }
+  else if(p==='semana'){ const d=new Date(); d.setDate(d.getDate()-d.getDay()+1); const dde=qs('#caja_desde'); if(dde) dde.value=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); const hta=qs('#caja_hasta'); if(hta) hta.value=hoyLocal(); }
+  else if(p==='mes'){ const d=new Date(); const dde=qs('#caja_desde'); if(dde) dde.value=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-01`; const hta=qs('#caja_hasta'); if(hta) hta.value=hoyLocal(); }
   renderCaja();
 }
 
@@ -8427,7 +8435,7 @@ function renderCaja(){
 function renderKpisCaja(fil, INGRESOS){
   const wrap=qs('#caja-kpis'); if(!wrap) return;
   const all=loadCajaMov();
-  const hoy=new Date().toISOString().slice(0,10);
+  const hoy=hoyLocal();
   const hoyMov=all.filter(m=>m.fecha===hoy);
   const ingMovHoy=hoyMov.filter(m=>INGRESOS.includes(m.categoria)||INGRESOS.includes(m.tipo));
   const gasMovHoy=hoyMov.filter(m=>!INGRESOS.includes(m.categoria)&&!INGRESOS.includes(m.tipo));
@@ -8480,13 +8488,13 @@ function exportCajaCSV(){
     rows.push([m.fecha,esIng?'Ingreso':'Egreso',m.categoria||m.tipo,(esIng?1:-1)*m.monto,METODOS_LABEL[m.metodo]||m.metodo,m.nota||'']);
   });
   const csv=rows.map(r=>r.map(x=>{const s=String(x==null?'':x);return /[",;\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(';')).join('\n');
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='caja-'+new Date().toISOString().slice(0,10)+'.csv'; a.click(); URL.revokeObjectURL(a.href);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='caja-'+hoyLocal()+'.csv'; a.click(); URL.revokeObjectURL(a.href);
   toast('CSV exportado','ok');
 }
 
 /* ═══ Dashboard extensión Ventas/Caja ════ */
 function renderDashVenCaja(){
-  const ven=loadVen(); const hoy=new Date().toISOString().slice(0,10);
+  const ven=loadVen(); const hoy=hoyLocal();
   const venHoy=ven.filter(v=>v.fecha.slice(0,10)===hoy&&v.estado!=='anulada');
   const ingHoy=venHoy.reduce((a,v)=>a+v.total,0);
   const utilHoy=venHoy.reduce((a,v)=>a+(v.utilidad||0),0);
@@ -8515,7 +8523,7 @@ VIEWS['caja']  ={ title:'Caja', sub:'Movimientos de dinero y balance del negocio
 /* ═══ Extensión updateBadges para ventas ════ */
 function updateBadgesVen(){
   const bv=qs('#badge-ven');
-  if(bv){ const hoy=new Date().toISOString().slice(0,10); bv.textContent=loadVen().filter(v=>v.fecha.slice(0,10)===hoy&&v.estado!=='anulada').length; }
+  if(bv){ const hoy=hoyLocal(); bv.textContent=loadVen().filter(v=>v.fecha.slice(0,10)===hoy&&v.estado!=='anulada').length; }
 }
 
 /* ════════════════════════════════════════════
@@ -8627,7 +8635,7 @@ function abrirNuevoPedido(){
   qs('#mp_estado').value = 'pendiente';
   const mpCanal=qs('#mp_canal'); if(mpCanal){ mpCanal.value='whatsapp'; mpCanal.dispatchEvent(new Event('gmsync')); }
   qs('#mp_metodo').value = 'efectivo_bs';
-  const hoy = new Date().toISOString().slice(0,10);
+  const hoy = hoyLocal();
   qs('#mp_fecha_pedido').value = hoy;
   qs('#mp_fecha_entrega').value = '';
   poblarSelectCatalogo();
@@ -9112,7 +9120,7 @@ function guardarPedido(){
       metodo: _metAb,
       nota: 'Abono pedido '+ped.numero+(ped.cliente?' — '+ped.cliente.nombre+' '+(ped.cliente.apellido||''):''),
       ref_id: ped.id, ref_tipo:'pedido',
-      fecha: new Date().toISOString().slice(0,10)
+      fecha: hoyLocal()
     };
     cajaAll.push(_movAb);
     saveCajaMov(cajaAll);
@@ -9158,7 +9166,7 @@ function pedEntregaFiltroChange(){
   const dateEl=qs('#ped_fentrega_fecha');
   if(dateEl){
     dateEl.style.display=sel==='fecha'?'block':'none';
-    if(sel==='fecha'&&!dateEl.value) dateEl.value=new Date().toISOString().slice(0,10);
+    if(sel==='fecha'&&!dateEl.value) dateEl.value=hoyLocal();
   }
 }
 function renderPedidos(){
@@ -9168,9 +9176,9 @@ function renderPedidos(){
   const catalogo=loadCat();
   const catById={}; catalogo.forEach(p=>{ catById[String(p.id)]=p; });
   const all=loadPed(), q=(qs('#ped_q')?.value||'').toLowerCase(), fe=qs('#ped_fest')?.value||'', fp=qs('#ped_fpago')?.value||'', fent=qs('#ped_fentrega')?.value||'', fcanal=qs('#ped_fcanal')?.value||'', fenvio=qs('#ped_fenvio')?.value||'', fprod=qs('#ped_fprod')?.value||'', fcat=qs('#ped_fcat')?.value||'';
-  const hoy=new Date().toISOString().slice(0,10);
-  const manana=new Date(Date.now()+86400000).toISOString().slice(0,10);
-  const finSem=new Date(Date.now()+7*86400000).toISOString().slice(0,10);
+  const hoy=hoyLocal();
+  const manana=(() => { const d=new Date(); d.setDate(d.getDate()+1); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })();
+  const finSem=(() => { const d=new Date(); d.setDate(d.getDate()+7); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); })();
   const fil=all.filter(p=>{
     const ep=estadoPago(p);
     const matchQ=!q||(p.numero||'').toLowerCase().includes(q)||((p.cliente?.nombre||'')+' '+(p.cliente?.apellido||'')).toLowerCase().includes(q);
@@ -9208,7 +9216,7 @@ function renderPedidos(){
   c.innerHTML='';
   fil.forEach(p=>{
     const ri=all.indexOf(p), ep=estadoPago(p), pag=totalPagado(p), rest=Math.max(0,p.total-pag);
-    const hoy=new Date().toISOString().slice(0,10), vencido=p.fecha_entrega&&p.fecha_entrega<hoy&&p.estado!=='entregado'&&p.estado!=='cancelado';
+    const hoy=hoyLocal(), vencido=p.fecha_entrega&&p.fecha_entrega<hoy&&p.estado!=='entregado'&&p.estado!=='cancelado';
     const item=document.createElement('div'); item.className='list-item'; item.style.cssText='margin-bottom:10px;cursor:pointer;flex-wrap:wrap;gap:8px';
     item.onclick=()=>verPedido(ri);
     item.innerHTML=`
@@ -9222,6 +9230,7 @@ function renderPedidos(){
           ${p.canal?`<span class="chip" style="font-size:10px;${CANALES_COLOR[normalizarCanalVenta(p.canal)]||CANALES_COLOR.local}">${CANALES_LABEL[normalizarCanalVenta(p.canal)]||CANALES_LABEL.local}</span>`:''}
           ${p.usuario_nom?`<span class="chip" style="font-size:10px;background:#f0f4ff;color:#3b5bdb">👤 ${p.usuario_nom.split(' ')[0]}</span>`:''}
         </div>
+        ${(p.items&&p.items.length)?`<div class="ped-items-preview">${p.items.map(it=>`${it.cant}× ${it.nombre}`).join(' · ')}</div>`:''}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:120px">
         ${(()=>{
@@ -9250,17 +9259,306 @@ function fmtFecha(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return
 
 function renderKpisPedidos(){
   const all=loadPed();
-  const pend=all.filter(p=>p.estado==='pendiente').length;
-  const prod=all.filter(p=>p.estado==='produccion').length;
-  const listo=all.filter(p=>p.estado==='listo').length;
-  const hoy=new Date().toISOString().slice(0,10);
-  const hoyEnt=all.filter(p=>p.fecha_entrega===hoy&&p.estado!=='entregado'&&p.estado!=='cancelado').length;
+  const hoy=hoyLocal();
+
+  const pedPend=all.filter(p=>p.estado==='pendiente');
+  const pedProd=all.filter(p=>p.estado==='produccion');
+  const pedListo=all.filter(p=>p.estado==='listo');
+  const pedHoyEnt=all.filter(p=>p.fecha_entrega===hoy&&p.estado!=='entregado'&&p.estado!=='cancelado');
+
+  window._kpiPedGroups={pendiente:pedPend,produccion:pedProd,listo:pedListo,entrega_hoy:pedHoyEnt};
+
   const wrap=qs('#ped-kpis'); if(!wrap) return;
   wrap.innerHTML=`
-    <div class="kpi c-amber"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div><div class="kpi-lbl">Pendientes</div><div class="kpi-val">${pend}</div><div class="kpi-sub">por iniciar</div></div>
-    <div class="kpi c-blue"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E6F1FB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div></div><div class="kpi-lbl">En producción</div><div class="kpi-val">${prod}</div><div class="kpi-sub">en proceso</div></div>
-    <div class="kpi c-teal"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E1F5EE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F6E56" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="kpi-lbl">Listos</div><div class="kpi-val">${listo}</div><div class="kpi-sub">para entregar</div></div>
-    <div class="kpi pink"><div class="kpi-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="kpi-lbl">Entregar hoy</div><div class="kpi-val">${hoyEnt}</div><div class="kpi-sub">${hoyEnt===1?'pedido':'pedidos'}</div></div>`;
+    <div class="kpi c-amber" style="cursor:pointer" onclick="mostrarKpiDetalle('pendiente','Pendientes')"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div><div class="kpi-lbl">Pendientes</div><div class="kpi-val">${pedPend.length}</div><div class="kpi-sub">por iniciar</div></div>
+    <div class="kpi c-blue" style="cursor:pointer" onclick="mostrarKpiDetalle('produccion','En producción')"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E6F1FB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div></div><div class="kpi-lbl">En producción</div><div class="kpi-val">${pedProd.length}</div><div class="kpi-sub">en proceso</div></div>
+    <div class="kpi c-teal" style="cursor:pointer" onclick="mostrarKpiDetalle('listo','Listos')"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E1F5EE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F6E56" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="kpi-lbl">Listos</div><div class="kpi-val">${pedListo.length}</div><div class="kpi-sub">para entregar</div></div>
+    <div class="kpi pink" style="cursor:pointer" onclick="mostrarKpiDetalle('entrega_hoy','Entregar hoy')"><div class="kpi-ico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="kpi-lbl">Entregar hoy</div><div class="kpi-val">${pedHoyEnt.length}</div><div class="kpi-sub">${pedHoyEnt.length===1?'pedido':'pedidos'}</div></div>`;
+}
+
+function mostrarKpiDetalle(grupo, titulo){
+  const pedidos=window._kpiPedGroups?.[grupo]||[];
+  if(!pedidos.length){ toast('Sin pedidos en esta categoría','info'); return; }
+
+  // Agrupar productos
+  const prodMap={};
+  pedidos.forEach(p=>(p.items||[]).forEach(it=>{
+    const k=it.nombre||'?';
+    prodMap[k]=(prodMap[k]||0)+(it.cant||1);
+  }));
+  const prods=Object.entries(prodMap).sort((a,b)=>b[1]-a[1]);
+
+  // Resumen de productos
+  let resumenHtml='<div style="margin-bottom:14px"><div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--brand)">Resumen de productos</div>';
+  prods.forEach(([nom,cant])=>{
+    resumenHtml+=`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;border-bottom:1px solid rgba(0,0,0,.04)"><span>${nom}</span><span style="font-weight:700;color:var(--brand)">×${cant}</span></div>`;
+  });
+  resumenHtml+='</div>';
+
+  // Detalle por pedido
+  const pedList=pedidos.map(p=>{
+    const cli=p.cliente?(p.cliente.nombre+(p.cliente.apellido?' '+p.cliente.apellido:'')).trim():'Sin cliente';
+    const items=(p.items||[]).map(it=>`${it.cant}× ${it.nombre}`).join(', ');
+    const fecha=p.fecha_entrega?` · Entrega: ${fmtFecha(p.fecha_entrega)}`:'';
+    return `<div style="padding:8px 0;border-bottom:1px solid rgba(0,0,0,.06)">
+      <div style="font-weight:600;font-size:13px">${p.numero.replace('PED-','#')} — ${cli}</div>
+      <div style="font-size:12px;color:var(--muted);margin-top:2px">${items}${fecha}</div>
+    </div>`;
+  }).join('');
+
+  let bg=qs('#kpi-detalle-bg');
+  if(!bg){
+    bg=document.createElement('div');
+    bg.id='kpi-detalle-bg';
+    bg.className='modal-bg';
+    bg.onclick=e=>{ if(e.target===bg) bg.style.display='none'; };
+    document.body.appendChild(bg);
+  }
+  bg.innerHTML=`<div class="modal" style="max-width:520px;max-height:80vh;overflow-y:auto">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #f0f0f5">
+      <h3 style="margin:0;font-size:16px">${titulo} <span style="color:var(--muted);font-weight:400">(${pedidos.length})</span></h3>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button onclick="imprimirKpiDetalle('${grupo}','${titulo}')" class="btn btn-sm" style="padding:5px 10px" title="Imprimir"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+        <button onclick="qs('#kpi-detalle-bg').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>
+      </div>
+    </div>
+    <div style="padding:16px 18px">
+      ${resumenHtml}
+      <div style="font-weight:700;font-size:13px;margin-bottom:6px">Detalle por pedido</div>
+      ${pedList}
+    </div>
+  </div>`;
+  bg.style.display='flex';
+}
+
+function _generarHtmlListaPedidos(pedidos, titulo){
+  const negocio=JSON.parse(localStorage.getItem('POS.negocio')||'{}');
+  const logo=negocio.logo_url||negocio.logo||'';
+  const dif=getDiferencial(), bcv=getTasaBCV();
+
+  let html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${titulo}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:12px;color:#1a1a2e;padding:16px;max-width:900px;margin:0 auto}
+.header{text-align:center;margin-bottom:12px;padding-bottom:8px;border-bottom:2px solid #eee}
+.header img{max-height:50px;margin-bottom:4px}
+.header h2{font-size:15px;margin:2px 0}
+.header p{font-size:10px;color:#666}
+h3{font-size:13px;margin-bottom:8px}
+table{width:100%;border-collapse:collapse;margin-bottom:10px}
+th{background:#f3f4f6;text-align:left;padding:5px 6px;font-size:10px;text-transform:uppercase;color:#666;border-bottom:2px solid #ddd}
+td{padding:5px 6px;border-bottom:1px solid #eee;font-size:11px;vertical-align:top}
+td.right,th.right{text-align:right}
+td.center,th.center{text-align:center}
+.badge{display:inline-block;padding:1px 6px;border-radius:8px;font-size:9px;font-weight:700}
+.b-pend{background:#fef3c7;color:#92400e}.b-prod{background:#dbeafe;color:#1e40af}.b-listo{background:#d1fae5;color:#065f46}.b-entreg{background:#e5e7eb;color:#374151}.b-cancel{background:#fee2e2;color:#991b1b}
+.b-pagado{background:#d1fae5;color:#065f46}.b-abonado{background:#fef3c7;color:#92400e}.b-sinpago{background:#fee2e2;color:#991b1b}
+.footer{text-align:center;font-size:9px;color:#999;margin-top:12px;padding-top:8px;border-top:1px solid #eee}
+.productos{font-size:10px;color:#555;max-width:250px}
+.check-col{width:28px;text-align:center}
+.check-box{width:14px;height:14px;border:1.5px solid #ccc;border-radius:3px;display:inline-block}
+@media print{body{padding:8px}@page{margin:8mm;size:landscape}}
+</style></head><body>`;
+
+  // Header
+  html+=`<div class="header">`;
+  if(logo) html+=`<img src="${logo}" alt=""/>`;
+  if(negocio.nombre) html+=`<h2>${negocio.nombre}</h2>`;
+  html+=`<p>${titulo} · ${new Date().toLocaleDateString('es-VE')} · ${pedidos.length} pedidos</p></div>`;
+
+  // Tabla
+  html+=`<table><thead><tr>
+    <th class="check-col">✓</th>
+    <th>#</th>
+    <th>Cliente</th>
+    <th>Productos</th>
+    <th class="center">Estado</th>
+    <th class="center">Pago</th>
+    <th class="right">Total</th>
+    <th class="center">Entrega</th>
+  </tr></thead><tbody>`;
+
+  pedidos.forEach(p=>{
+    const ep=estadoPago(p);
+    const totalCDif=(typeof pedidoTotalCDifCalc==='function')?pedidoTotalCDifCalc(p,dif):(p.total_cdif||(p.total*(dif>0?dif:1)));
+    const cli=p.cliente?(p.cliente.nombre+' '+(p.cliente.apellido||'')).trim():'—';
+    const items=(p.items||[]).map(it=>`${it.cant}× ${it.nombre}`).join(', ');
+    const estCls={pendiente:'b-pend',produccion:'b-prod',listo:'b-listo',entregado:'b-entreg',cancelado:'b-cancel'}[p.estado]||'b-pend';
+    const pagCls={pagado:'b-pagado',abonado:'b-abonado',sin_pago:'b-sinpago'}[ep]||'b-abonado';
+
+    html+=`<tr>
+      <td class="check-col"><span class="check-box"></span></td>
+      <td style="font-weight:700;white-space:nowrap">${p.numero.replace('PED-','#')}</td>
+      <td style="font-weight:600">${cli}${p.cliente?.telefono?'<br><span style="font-size:10px;color:#888">'+p.cliente.telefono+'</span>':''}</td>
+      <td class="productos">${items}</td>
+      <td class="center"><span class="badge ${estCls}">${PED_ESTADOS[p.estado]||p.estado}</span></td>
+      <td class="center"><span class="badge ${pagCls}">${PED_PAGOS[ep]||ep}</span></td>
+      <td class="right" style="font-weight:700;white-space:nowrap">$${totalCDif.toFixed(2).replace('.',',')}</td>
+      <td class="center" style="white-space:nowrap">${p.fecha_entrega?fmtFecha(p.fecha_entrega):'—'}</td>
+    </tr>`;
+  });
+
+  html+=`</tbody></table>`;
+  html+=`<div class="footer">Impreso desde GestioMada · ${new Date().toLocaleString('es-VE')}</div>`;
+  html+=`</body></html>`;
+  return html;
+}
+
+function imprimirListaPedidos(){
+  // Usar los mismos filtros activos del módulo
+  const all=loadPed();
+  const q=(qs('#ped_q')?.value||'').toLowerCase().trim();
+  const fe=qs('#ped_fest')?.value||'';
+  const fp=qs('#ped_fpago')?.value||'';
+  const fent=qs('#ped_fentrega')?.value||'';
+  const fcanal=qs('#ped_fcanal')?.value||'';
+  const fenvio=qs('#ped_fenvio')?.value||'';
+  const fprod=qs('#ped_fprod')?.value||'';
+  const fcat=qs('#ped_fcat')?.value||'';
+  const hoy=hoyLocal();
+  const manana=(()=>{const d=new Date();d.setDate(d.getDate()+1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})();
+  const finSem=(()=>{const d=new Date();d.setDate(d.getDate()+7);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')})();
+
+  const fil=all.filter(p=>{
+    let matchQ=true,matchEnt=true,matchEnvio=true,matchProd=true,matchCat=true;
+    if(q){ const nom=(p.cliente?(p.cliente.nombre+' '+p.cliente.apellido):'').toLowerCase(); matchQ=nom.includes(q)||p.numero.toLowerCase().includes(q); }
+    const ep=estadoPago(p);
+    if(fent&&p.fecha_entrega){
+      if(fent==='hoy') matchEnt=p.fecha_entrega===hoy;
+      else if(fent==='manana') matchEnt=p.fecha_entrega===manana;
+      else if(fent==='semana') matchEnt=p.fecha_entrega>=hoy&&p.fecha_entrega<=finSem;
+      else if(fent==='vencido') matchEnt=p.fecha_entrega<hoy&&p.estado!=='entregado'&&p.estado!=='cancelado';
+      else if(fent==='fecha'){const ff=qs('#ped_fentrega_fecha')?.value||'';matchEnt=ff?p.fecha_entrega===ff:true;}
+    } else if(fent&&!p.fecha_entrega){ matchEnt=false; }
+    if(fenvio){ const tieneD=(p.items||[]).some(it=>it.tipo==='delivery')||(p.notas||'').toLowerCase().includes('delivery'); const tieneE=(p.items||[]).some(it=>it.tipo==='envio')||(p.notas||'').toLowerCase().includes('envío')||(p.notas||'').toLowerCase().includes('envio'); if(fenvio==='delivery') matchEnvio=tieneD; else if(fenvio==='envio') matchEnvio=tieneE; else if(fenvio==='sin_envio') matchEnvio=!tieneD&&!tieneE; }
+    if(fprod){ matchProd=(p.items||[]).some(it=>String(it.id_prod)===String(fprod)||it.nombre===fprod); }
+    if(fcat){ const cat=loadCat(); matchCat=(p.items||[]).some(it=>{const pr=cat.find(c=>String(c.id)===String(it.id_prod)); return pr&&pr.categoria===fcat;}); }
+    return matchQ&&(!fe||p.estado===fe)&&(!fp||ep===fp)&&matchEnt&&(!fcanal||normalizarCanalVenta(p.canal)===fcanal)&&matchEnvio&&matchProd&&matchCat;
+  }).reverse();
+
+  if(!fil.length){ toast('No hay pedidos para imprimir','warn'); return; }
+  const html=_generarHtmlListaPedidos(fil,'Listado de pedidos');
+  const win=window.open('','_blank','width=900,height=600');
+  win.document.write(html);win.document.close();win.focus();
+  setTimeout(()=>win.print(),400);
+}
+
+function imprimirKpiDetalle(grupo, titulo){
+  const pedidos=window._kpiPedGroups?.[grupo]||[];
+  if(!pedidos.length){ toast('Sin pedidos para imprimir','warn'); return; }
+  const html=_generarHtmlListaPedidos(pedidos, titulo);
+  const win=window.open('','_blank','width=900,height=600');
+  win.document.write(html);win.document.close();win.focus();
+  setTimeout(()=>win.print(),400);
+}
+
+function imprimirPedido(){
+  const all=loadPed(), p=all[_pedIdx]; if(!p) return;
+  const bcv=getTasaBCV(), dif=getDiferencial(), par=getTasaParalela();
+  const ep=estadoPago(p), pag=totalPagado(p);
+  const totalCDif=(typeof pedidoTotalCDifCalc==='function')?pedidoTotalCDifCalc(p,dif):(p.total_cdif||(p.total*(dif>0?dif:1)));
+  const pagadoCDif=(p.pagos||[]).reduce((a,pg)=>a+pg.monto*(dif>0?dif:1),0);
+  const restCDif=Math.max(0,totalCDif-pagadoCDif);
+  const negocio=JSON.parse(localStorage.getItem('POS.negocio')||'{}');
+  const logo=negocio.logo_url||negocio.logo||'';
+
+  const cli=p.cliente?(p.cliente.nombre+' '+(p.cliente.apellido||'')).trim():'Sin cliente';
+  const cliTel=p.cliente?.telefono||'';
+  const cliCed=p.cliente?.cedula||'';
+
+  let html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${p.numero}</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:13px;color:#1a1a2e;padding:20px;max-width:700px;margin:0 auto}
+.header{text-align:center;margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid #eee}
+.header img{max-height:60px;margin-bottom:6px}
+.header h2{font-size:16px;margin:4px 0}
+.header p{font-size:11px;color:#666}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 16px;margin-bottom:14px;font-size:12px}
+.info-grid strong{color:#333}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+.badge-est{background:#fef3c7;color:#92400e}
+.badge-pago{background:#d1fae5;color:#065f46}
+table{width:100%;border-collapse:collapse;margin-bottom:12px}
+th{background:#f8f9fa;text-align:left;padding:6px 8px;font-size:11px;text-transform:uppercase;color:#666;border-bottom:2px solid #eee}
+td{padding:6px 8px;border-bottom:1px solid #f0f0f0}
+td.right,th.right{text-align:right}
+.totals{margin-bottom:14px}
+.totals .row{display:flex;justify-content:space-between;padding:3px 0;font-size:12px}
+.totals .row.big{font-size:14px;font-weight:700;border-top:2px solid #333;padding-top:6px;margin-top:4px}
+.pagos{margin-bottom:14px}
+.pagos h4{font-size:12px;color:#666;text-transform:uppercase;margin-bottom:6px}
+.pagos .pago-row{display:flex;justify-content:space-between;padding:3px 0;font-size:12px;border-bottom:1px solid #f5f5f5}
+.notas{background:#f9f9fb;border-radius:8px;padding:10px;font-size:12px;margin-bottom:14px}
+.footer{text-align:center;font-size:10px;color:#999;margin-top:20px;padding-top:12px;border-top:1px solid #eee}
+@media print{body{padding:10px}@page{margin:10mm}}
+</style></head><body>`;
+
+  // Header
+  html+=`<div class="header">`;
+  if(logo) html+=`<img src="${logo}" alt="Logo"/>`;
+  if(negocio.nombre) html+=`<h2>${negocio.nombre}</h2>`;
+  html+=`<p>${[negocio.rif,negocio.instagram,negocio.telefono].filter(Boolean).join(' · ')}</p>`;
+  html+=`</div>`;
+
+  // Info pedido
+  html+=`<div class="info-grid">
+    <div><strong>Pedido:</strong> ${p.numero}</div>
+    <div><strong>Estado:</strong> <span class="badge badge-est">${PED_ESTADOS[p.estado]||p.estado}</span> <span class="badge badge-pago">${PED_PAGOS[ep]||ep}</span></div>
+    <div><strong>Cliente:</strong> ${cli}</div>
+    <div><strong>Teléfono:</strong> ${cliTel||'—'}</div>
+    ${cliCed?`<div><strong>Cédula:</strong> ${cliCed}</div>`:'<div></div>'}
+    ${p.canal?`<div><strong>Canal:</strong> ${p.canal}</div>`:'<div></div>'}
+    ${p.fecha_pedido?`<div><strong>Fecha pedido:</strong> ${fmtFecha(p.fecha_pedido)}</div>`:''}
+    ${p.fecha_entrega?`<div><strong>Fecha entrega:</strong> ${fmtFecha(p.fecha_entrega)}</div>`:''}
+  </div>`;
+
+  // Tabla de productos
+  html+=`<table><thead><tr><th>Producto</th><th class="right">Cant.</th><th class="right">P. Unit.</th><th class="right">Subtotal</th></tr></thead><tbody>`;
+  (p.items||[]).forEach(it=>{
+    const pu=it.precio_unit||0;
+    html+=`<tr><td>${it.nombre}</td><td class="right">${it.cant}</td><td class="right">${euro(pu)}</td><td class="right">${euro(pu*it.cant)}</td></tr>`;
+  });
+  html+=`</tbody></table>`;
+
+  // Totales
+  html+=`<div class="totals">`;
+  if(p.descuento) html+=`<div class="row"><span>Descuento:</span><span>-${euro(p.descuento)}</span></div>`;
+  html+=`<div class="row big"><span>Total:</span><span>${euro(p.total)}</span></div>`;
+  if(dif>1 && bcv>0){
+    html+=`<div class="row"><span>Total c/dif (×${dif.toFixed(4)}):</span><span>$${totalCDif.toFixed(2).replace('.',',')}</span></div>`;
+    html+=`<div class="row"><span>Total Bs (BCV ${fmtBs(bcv)}):</span><span>Bs ${fmtBs(totalCDif*bcv)}</span></div>`;
+  }
+  html+=`</div>`;
+
+  // Pagos
+  if(p.pagos&&p.pagos.length){
+    html+=`<div class="pagos"><h4>Historial de pagos</h4>`;
+    p.pagos.forEach(pg=>{
+      const esBsPg=['efectivo_bs','pago_movil','transferencia'].includes(pg.metodo);
+      let montoStr=euro(pg.monto);
+      if(esBsPg && pg.monto_bs_ingresado>0) montoStr='Bs '+fmtBs(pg.monto_bs_ingresado);
+      html+=`<div class="pago-row"><span>${fmtFecha(pg.fecha.slice(0,10))} · ${METODOS[pg.metodo]||pg.metodo}${pg.nota?' · '+pg.nota:''}</span><span style="font-weight:600">${montoStr}</span></div>`;
+    });
+    html+=`<div class="pago-row" style="border-top:1px solid #ccc;font-weight:700"><span>Pagado:</span><span>${euro(pag)}</span></div>`;
+    if(restCDif>PED_SALDO_TOLERANCIA){
+      html+=`<div class="pago-row" style="color:#c0392b;font-weight:700"><span>Restante:</span><span>$${restCDif.toFixed(2).replace('.',',')}${bcv>0?' · Bs '+fmtBs(restCDif*bcv):''}</span></div>`;
+    }
+    html+=`</div>`;
+  }
+
+  // Notas
+  if(p.notas) html+=`<div class="notas"><strong>Notas:</strong> ${p.notas}</div>`;
+
+  // Footer
+  html+=`<div class="footer">Impreso desde GestioMada · ${new Date().toLocaleString('es-VE')}</div>`;
+  html+=`</body></html>`;
+
+  const win=window.open('','_blank','width=800,height=600');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>win.print(),400);
 }
 
 // ── Ver detalle pedido ──
@@ -9506,7 +9804,7 @@ function registrarPago(){
     metodo,
     nota: (nota?nota+' — ':'')+(epActual==='pagado'?'Pago completo':'Abono')+' '+p.numero+(p.cliente?' — '+p.cliente.nombre+' '+(p.cliente.apellido||''):''),
     ref_id: p.id, ref_tipo:'pedido',
-    fecha: new Date().toISOString().slice(0,10)
+    fecha: hoyLocal()
   };
   cajaAll.push(_movP);
   saveCajaMov(cajaAll);
@@ -9519,7 +9817,7 @@ function registrarPago(){
 // ── renderDash extensión pedidos (llamada desde renderDash base) ──
 function renderDashPed(){
   const ped=loadPed();
-  const hoy=new Date().toISOString().slice(0,10);
+  const hoy=hoyLocal();
   const pend=ped.filter(p=>p.estado!=='entregado'&&p.estado!=='cancelado').length;
   const entHoy=ped.filter(p=>p.fecha_entrega===hoy&&p.estado!=='entregado'&&p.estado!=='cancelado').length;
   const vencidos=ped.filter(p=>p.fecha_entrega&&p.fecha_entrega<hoy&&p.estado!=='entregado'&&p.estado!=='cancelado').length;
@@ -9978,7 +10276,7 @@ function _soloLogMovInv(item_id, tipo_item, tipo, cant, costo, nota, loc='local'
     costo_unit: parseFloat(costo)||0,
     nota:       nota||'',
     loc:        loc||'local',
-    fecha:      new Date().toISOString().slice(0,10)
+    fecha:      hoyLocal()
   };
   const all=loadIMov(); all.push(mov); saveIMov(all);
 }
@@ -9991,7 +10289,7 @@ function _registrarMovInv(item_id, tipo_item, tipo, cant, costo, nota, loc='loca
     costo_unit: parseFloat(costo)||0,
     nota:     nota||'',
     loc:      loc||'local',   // 'local' | 'deposito'
-    fecha:    new Date().toISOString().slice(0,10)
+    fecha:    hoyLocal()
   };
   const all=loadIMov(); all.push(mov); saveIMov(all);
   // Actualizar stock del campo correcto según locación
@@ -10030,7 +10328,7 @@ function invMovDesde(tipo){
   const ic=qs('#invmov_cant');       if(ic) ic.value='1';
   const co=qs('#invmov_costo');      if(co) co.value='0,00';
   const no=qs('#invmov_nota');       if(no) no.value='';
-  const fd=qs('#invmov_fecha');      if(fd) fd.value=new Date().toISOString().slice(0,10);
+  const fd=qs('#invmov_fecha');      if(fd) fd.value=hoyLocal();
   toggleInvMovTipo();
   openModal('m-inv-mov');
 }
@@ -10170,7 +10468,7 @@ function exportInvCSV(){
     rows.push([m.fecha||'',getNombreItem(m.item_id,insAll,terAll),m.tipo_item||'',m.tipo,m.cant,m.costo_unit||0,m.nota||'']);
   });
   const csv=rows.map(r=>r.map(x=>{const s=String(x==null?'':x);return/[",;\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s;}).join(';')).join('\n');
-  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='inventario-'+new Date().toISOString().slice(0,10)+'.csv'; a.click(); URL.revokeObjectURL(a.href);
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download='inventario-'+hoyLocal()+'.csv'; a.click(); URL.revokeObjectURL(a.href);
   toast('CSV exportado','ok');
 }
 
@@ -10196,7 +10494,7 @@ function setRepPeriodo(p, btn){
   document.querySelectorAll('#rep-hoy-btn,#rep-sem-btn,#rep-mes-btn,#rep-mes3-btn').forEach(b=>{ if(b) b.classList.remove('btn-brand'); });
   if(btn) btn.classList.add('btn-brand');
   const hoy = new Date();
-  const fmt = d => d.toISOString().slice(0,10);
+  const fmt = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
   if(p==='hoy'){
     _repDesde = _repHasta = fmt(hoy);
   } else if(p==='semana'){
@@ -10602,7 +10900,7 @@ function renderRepPedidos(){
   }
 
   // Pedidos pendientes / vencidos
-  const hoy = new Date().toISOString().slice(0,10);
+  const hoy = hoyLocal();
   const pendientes = loadPed().filter(p=>p.estado!=='entregado'&&p.estado!=='cancelado').sort((a,b)=>(a.fecha_entrega||'').localeCompare(b.fecha_entrega||''));
   const ppWrap = qs('#rep-ped-pendientes'); if(!ppWrap) return;
   if(!pendientes.length){ ppWrap.innerHTML='<div class="empty" style="padding:20px"><p>No hay pedidos pendientes ✓</p></div>'; }
@@ -11475,7 +11773,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v13_93';
+  const APP_VERSION = 'v13_98';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
