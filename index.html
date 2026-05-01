@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_06">
+<html lang="es" data-app-version="GestioMada_V14_07">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -154,6 +154,7 @@ function aplicarCambioRealtime(tabla, tipo, registro){
   const renders = {
     ventas:    ()=>{ if(typeof renderVentas==='function') renderVentas(); if(typeof renderDash==='function') renderDash(); },
     pedidos:   ()=>{ if(typeof renderPedidos==='function') renderPedidos(); if(typeof renderDash==='function') renderDash(); },
+    envios:    ()=>{ if(typeof renderEnvios==='function') renderEnvios(); },
     catalogo:  ()=>{ if(typeof renderCatalogo==='function') renderCatalogo(); },
     clientes:  ()=>{ if(typeof renderClientes==='function') renderClientes(); },
     caja:      ()=>{ if(typeof renderCaja==='function') renderCaja(); },
@@ -1962,6 +1963,10 @@ body.dark .pos-prod-img-ph{background:#23283a}
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg><span class="lbl">Pedidos</span>
       <span class="badge" id="badge-ped">0</span>
     </a>
+    <a class="nav-item" data-v="envios" onclick="nav('envios',this)">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg><span class="lbl">Envíos</span>
+      <span class="badge" id="badge-env" style="background:var(--brand2);display:none">0</span>
+    </a>
     <a class="nav-item" data-v="ventas" onclick="nav('ventas',this)">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg><span class="lbl">Ventas</span>
       <span class="badge" id="badge-ven">0</span>
@@ -3232,6 +3237,47 @@ body.dark .pos-prod-img-ph{background:#23283a}
 
       </div>
 
+
+      <!-- ══════════════════════════════════════════ -->
+      <!--  VIEW: Envíos                              -->
+      <!-- ══════════════════════════════════════════ -->
+      <div class="view" id="view-envios">
+
+        <!-- Toolbar -->
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:14px">
+          <button class="btn btn-brand" onclick="abrirNuevoEnvio()">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Nuevo Envío
+          </button>
+          <input type="text" id="env_q" placeholder="Buscar cliente, guía…" oninput="renderEnvios()" style="flex:1;min-width:160px"/>
+          <select id="env_festado" onchange="renderEnvios()">
+            <option value="">Todos los estados</option>
+            <option value="preparando">Preparando</option>
+            <option value="despachado">Despachado</option>
+            <option value="entregado">Entregado</option>
+          </select>
+          <select id="env_ftransporte" onchange="renderEnvios()">
+            <option value="">Todas las transportistas</option>
+            <option value="MRW">MRW</option>
+            <option value="ZOOM">ZOOM</option>
+            <option value="TEALCA">TEALCA</option>
+            <option value="DOMESA">DOMESA</option>
+            <option value="Otra">Otra</option>
+          </select>
+          <button class="btn btn-sm" onclick="imprimirEtiquetaEnvio(null)" title="Imprimir etiqueta seleccionada">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            Imprimir etiqueta
+          </button>
+        </div>
+
+        <!-- KPIs -->
+        <div class="grid g4" id="env-kpis" style="margin-bottom:14px"></div>
+
+        <!-- Lista de envíos -->
+        <div id="env-container"></div>
+
+      </div>
+
     </div><!-- /view-wrap -->
   </div><!-- /main -->
 </div><!-- /app-wrap -->
@@ -3349,7 +3395,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
       </div>
       <div class="frow">
         <div class="fg"><label>Descuento ($)</label><input type="text" id="mp_descuento" placeholder="0,00" oninput="recalcPedido()"/></div>
-        <div class="fg"><label id="mp_abono_lbl">Abono inicial ($)</label><input type="text" id="mp_abono" placeholder="0,00" oninput="recalcPedido()"/></div>
+        <div class="fg"><label id="mp_abono_lbl">Abono inicial ($) <button type="button" onclick="mpSugerir50()" style="font-size:10px;padding:2px 7px;border-radius:10px;border:1px solid var(--brand);color:var(--brand);background:transparent;cursor:pointer;font-weight:700;vertical-align:middle;margin-left:4px">50%</button></label><input type="text" id="mp_abono" placeholder="0,00" oninput="recalcPedido()"/></div>
         <div class="fg"><label>Método pago abono</label>
           <select id="mp_metodo" class="metodo-pago-sel" onchange="recalcPedido()">
             <option value="efectivo_bs">Efectivo Bs</option>
@@ -3433,6 +3479,72 @@ body.dark .pos-prod-img-ph{background:#23283a}
     </div>
   </div>
 </div>
+
+<!-- ══ MODAL: Nuevo / Editar Envío ══ -->
+<div class="modal-bg" id="m-envio">
+  <div class="modal" style="max-width:600px">
+    <button class="modal-close" onclick="closeModal('m-envio')">✕</button>
+    <div class="modal-title" id="menv-title">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+      Nuevo Envío
+    </div>
+
+    <!-- Vincular pedido existente -->
+    <div style="margin-bottom:10px">
+      <label style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.04em">Vincular a pedido (opcional)</label>
+      <select id="menv_pedido_id" onchange="menvCargarDesdePedido()" style="width:100%;margin-top:4px">
+        <option value="">— Sin vincular —</option>
+      </select>
+    </div>
+
+    <div class="frow">
+      <div class="fg" style="flex:2"><label>Nombre del destinatario</label><input type="text" id="menv_nombre" placeholder="Nombre completo"/></div>
+      <div class="fg"><label>Cédula</label><input type="text" id="menv_cedula" placeholder="V-12345678"/></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Teléfono</label><input type="text" id="menv_telefono" placeholder="0412-3456789"/></div>
+      <div class="fg"><label>Transportista</label>
+        <select id="menv_transportista">
+          <option value="MRW">MRW</option>
+          <option value="ZOOM">ZOOM</option>
+          <option value="TEALCA">TEALCA</option>
+          <option value="DOMESA">DOMESA</option>
+          <option value="Otra">Otra</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label>Dirección de entrega</label><textarea id="menv_direccion" placeholder="Agencia / dirección completa del destinatario…" style="width:100%;min-height:64px;border-radius:10px;border:1.5px solid var(--border);padding:8px 10px;font-size:13px;resize:vertical;background:var(--card);color:var(--ink)"></textarea></div>
+    <div class="frow">
+      <div class="fg"><label>Número de guía</label><input type="text" id="menv_guia" placeholder="Opcional — se completa al despachar"/></div>
+      <div class="fg"><label>Estado del envío</label>
+        <select id="menv_estado">
+          <option value="preparando">Preparando</option>
+          <option value="despachado">Despachado</option>
+          <option value="entregado">Entregado</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg"><label>Contenido / descripción (para etiqueta)</label><input type="text" id="menv_contenido" placeholder="Ej. Tazas personalizadas, 2 unidades"/></div>
+    <div class="fg" style="margin-top:4px">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="menv_fragil" checked/>
+        <span style="font-size:13px">Marcar como FRÁGIL en la etiqueta</span>
+      </label>
+    </div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+      <button class="btn btn-brand" onclick="guardarEnvio()">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Guardar
+      </button>
+      <button class="btn btn-sm" onclick="imprimirEtiquetaEnvio('_actual')">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Imprimir etiqueta
+      </button>
+      <button class="btn btn-sm" onclick="closeModal('m-envio')" style="margin-left:auto">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 
 
 <script>
@@ -3989,7 +4101,8 @@ const VIEWS = {
   editor:   { title:'Editor de Producto', sub:'Calcula costos y crea productos vendibles' },
   catalogo: { title:'Catálogo', sub:'Todos tus productos disponibles para venta' },
   clientes: { title:'Clientes', sub:'Registro y historial de clientes' },
-  config:   { title:'Configuración', sub:'Ajustes del sistema' }
+  config:   { title:'Configuración', sub:'Ajustes del sistema' },
+  envios:   { title:'Envíos', sub:'Registro y etiquetas de envíos' }
 };
 function nav(id, el){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -4007,6 +4120,7 @@ function nav(id, el){
   if(id==='inventario'){ renderInsumos(); }
   if(id==='reportes'){ if(!_repDesde) setRepPeriodo('mes',qs('#rep-mes-btn')); else renderReportes(); }
   if(id==='dashboard') renderDash();
+  if(id==='envios'){ if(typeof renderEnvios==='function') renderEnvios(); }
   if(id==='config'){ renderCatsCfg(); }
   if(id==='editor'){ const dl=qs('#mc_cat_list'); if(dl){ const cats=loadCats(); dl.innerHTML=cats.map(c=>`<option value="${c}">`).join(''); } }
 }
@@ -5268,9 +5382,9 @@ function rolIcoSvg(ico, w=18, h=18){
 }
 
 const ROLES = {
-  admin:     { label:'Admin',        ico:'user', desc:'Acceso completo al sistema.',                         vistas:['dashboard','editor','catalogo','clientes','pedidos','ventas','caja','inventario','reportes','config'], puede:['crear','editar','eliminar','ver','exportar','config','reportes','caja','limpiar'] },
-  empleado:  { label:'Empleado',     ico:'users', desc:'Ventas, pedidos y clientes. Sin caja ni config.',    vistas:['dashboard','catalogo','clientes','pedidos','ventas'],                                                puede:['crear','editar','ver'] },
-  produccion:{ label:'Producción',   ico:'factory', desc:'Pedidos e inventario. Sin ventas ni caja.',           vistas:['dashboard','pedidos','inventario'],                                                                  puede:['ver','editar'] },
+  admin:     { label:'Admin',        ico:'user', desc:'Acceso completo al sistema.',                         vistas:['dashboard','editor','catalogo','clientes','pedidos','envios','ventas','caja','inventario','reportes','config'], puede:['crear','editar','eliminar','ver','exportar','config','reportes','caja','limpiar'] },
+  empleado:  { label:'Empleado',     ico:'users', desc:'Ventas, pedidos y clientes. Sin caja ni config.',    vistas:['dashboard','catalogo','clientes','pedidos','envios','ventas'],                                                puede:['crear','editar','ver'] },
+  produccion:{ label:'Producción',   ico:'factory', desc:'Pedidos e inventario. Sin ventas ni caja.',           vistas:['dashboard','pedidos','envios','inventario'],                                                                  puede:['ver','editar'] },
   lectura:   { label:'Solo lectura', ico:'eye', desc:'Consulta catálogo, clientes y reportes. Solo lectura.',vistas:['dashboard','catalogo','clientes','reportes'],                                                       puede:['ver'] }
 };
 
@@ -5388,7 +5502,14 @@ function canView(vista){
   if(CURRENT_USR_ID){
     const usrs = loadUsuarios();
     const u = usrs.find(x=>x.id===CURRENT_USR_ID);
-    if(u && u.vistas) return u.vistas.includes(vista);
+    if(u && u.vistas){
+      // Si la vista está en su lista personal → OK
+      if(u.vistas.includes(vista)) return true;
+      // Si la vista es nueva (no estaba cuando se creó el usuario) y el ROL la permite → permitir
+      const rolVistas = ROLES[u.rol||CURRENT_ROL]?.vistas || [];
+      if(rolVistas.includes(vista)) return true;
+      return false;
+    }
   }
   return (ROLES[CURRENT_ROL]?.vistas||[]).includes(vista);
 }
@@ -5669,7 +5790,7 @@ function guardarPins(){
 /* ════════════════════════════════════════════
    GESTIÓN DE USUARIOS
 ════════════════════════════════════════════ */
-const TODAS_VISTAS   = ['dashboard','editor','catalogo','clientes','pedidos','ventas','caja','inventario','reportes','config'];
+const TODAS_VISTAS   = ['dashboard','editor','catalogo','clientes','pedidos','envios','ventas','caja','inventario','reportes','config'];
 const TODOS_PERMISOS = ['crear','editar','eliminar','ver','exportar','config','reportes','caja','limpiar'];
 const VISTA_LABELS   = {dashboard:'Dashboard',editor:'Editor Producto',catalogo:'Catálogo',clientes:'Clientes',pedidos:'Pedidos',ventas:'Ventas',caja:'Caja',inventario:'Inventario',reportes:'Reportes',config:'Configuración'};
 const PERMISO_LABELS = {crear:'Crear',editar:'Editar',eliminar:'Eliminar',ver:'Ver',exportar:'Exportar',config:'Configurar',reportes:'Reportes',caja:'Caja',limpiar:'Limpiar datos'};
@@ -8816,7 +8937,7 @@ function abrirNuevoPedido(){
   qs('#mp_notas').value = '';
   qs('#mp_estado').value = 'pendiente';
   const mpCanal=qs('#mp_canal'); if(mpCanal){ mpCanal.value='whatsapp'; mpCanal.dispatchEvent(new Event('gmsync')); }
-  qs('#mp_metodo').value = 'efectivo_bs';
+  qs('#mp_metodo').value = 'pago_movil';
   const hoy = hoyLocal();
   qs('#mp_fecha_pedido').value = hoy;
   qs('#mp_fecha_entrega').value = '';
@@ -8876,7 +8997,7 @@ function abrirEditarPedido(idx){
     qs('#mp_metodo').value = _metPrimer;
   } else {
     qs('#mp_abono').value = '';
-    qs('#mp_metodo').value = 'efectivo_bs';
+    qs('#mp_metodo').value = 'pago_movil';
   }
   // Cargar solo la parte manual de las notas (filtrar extras automáticos para no duplicarlos)
   const _notasRaw = p.notas||'';
@@ -9113,6 +9234,24 @@ function pedSetCant(i,v){ if(_pedItems[i]){ _pedItems[i].cant=Math.max(1,parseIn
 function cambiarPrecio(i,v){ if(_pedItems[i]){ _pedItems[i].precio_unit=parseEU(v); recalcPedido(); } }
 function quitarItem(i){ _pedItems.splice(i,1); renderItemsFormulario(); recalcPedido(); }
 
+function mpSugerir50(){
+  const sub = _pedItems.reduce((a,it)=>a+(it.precio_unit*it.cant),0);
+  const desc = parseEU(qs("#mp_descuento")?.value||"0,00");
+  const _del = (qs("#mp_delivery_chk")?.checked ? (parseFloat(qs("#mp_delivery_monto")?.value)||0) : 0);
+  const _env = (qs("#mp_envio_chk")?.checked    ? (parseFloat(qs("#mp_envio_monto")?.value)||0)    : 0);
+  const _dis = (qs("#mp_diseno_chk")?.checked   ? (parseFloat(qs("#mp_diseno_monto")?.value)||0)   : 0);
+  const _ext = (qs("#mp_extras_chk")?.checked   ? (parseFloat(qs("#mp_extras_monto")?.value)||0)   : 0);
+  const total = Math.max(0, sub - desc) + _del + _env + _dis + _ext;
+  const metodo = qs("#mp_metodo")?.value || "pago_movil";
+  const esBs = !["efectivo_usd","zelle"].includes(metodo);
+  const dif = getDiferencial(); const bcv = getTasaBCV(); const par = getTasaParalela();
+  const totalCDif = parseFloat(((Math.max(0,sub-desc)*(dif>0?dif:1))+_del+_env+_dis+_ext).toFixed(2));
+  let sugerido;
+  if(esBs && par>0){ sugerido = parseFloat((totalCDif * bcv * 0.5).toFixed(2)); }
+  else { sugerido = parseFloat((total * 0.5).toFixed(2)); }
+  const abonoEl = qs("#mp_abono");
+  if(abonoEl){ abonoEl.value = sugerido.toFixed(2).replace(".",","); recalcPedido(); toast("Abono sugerido: 50% del total","ok"); }
+}
 function recalcPedido(){
   const sub = _pedItems.reduce((a,it)=>a+(it.precio_unit*it.cant),0);
   const desc = parseEU(qs('#mp_descuento')?.value||'0,00');
@@ -9417,6 +9556,7 @@ function renderPedidos(){
           ${p.usuario_nom?`<span class="chip" style="font-size:10px;background:#f0f4ff;color:#3b5bdb">👤 ${p.usuario_nom.split(' ')[0]}</span>`:''}
         </div>
         ${(p.items&&p.items.length)?`<div class="ped-items-preview">${p.items.map(it=>`${it.cant}× ${it.nombre}`).join(' · ')}</div>`:''}
+        ${(()=>{ const notasLimpias=(p.notas||'').split(' | ').filter(s=>!s.startsWith('Delivery:')&&!s.startsWith('Envío:')&&!s.startsWith('Diseño:')&&!s.startsWith('Extras:')).join(' | ').trim(); return notasLimpias?`<div class="ped-items-preview" style="color:#e53e3e;margin-top:2px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:3px"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>${notasLimpias}</div>`:''; })()}
         ${(()=>{const _ex=[];if(_numPedido(p.delivery_usd)>0)_ex.push('Delivery');if(_numPedido(p.envio_usd)>0)_ex.push('Envío');if(_numPedido(p.diseno_usd)>0)_ex.push('Diseño');return _ex.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">${_ex.map(e=>`<span class="chip" style="font-size:9px;background:#f0eaff;color:#7c3aed">${e}</span>`).join('')}</div>`:''})()}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:120px">
@@ -9580,6 +9720,8 @@ td.center,th.center{text-align:center}
     const totalCDif=(typeof pedidoTotalCDifCalc==='function')?pedidoTotalCDifCalc(p,dif):(p.total_cdif||(p.total*(dif>0?dif:1)));
     const cli=p.cliente?(p.cliente.nombre+' '+(p.cliente.apellido||'')).trim():'—';
     const items=(p.items||[]).map(it=>`${it.cant}× ${it.nombre}`).join(', ');
+    const _notasPrint=(p.notas||'').split(' | ').filter(s=>!s.startsWith('Delivery:')&&!s.startsWith('Envío:')&&!s.startsWith('Diseño:')&&!s.startsWith('Extras:')).join(' | ').trim();
+    const notasHtml=_notasPrint?'<br><span style="font-size:10px;color:#c0392b;font-weight:600"><svg viewBox=\"0 0 24 24\" width=\"11\" height=\"11\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"display:inline-block;vertical-align:middle;margin-right:2px\"><path d=\"M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2\"/><rect x=\"9\" y=\"3\" width=\"6\" height=\"4\" rx=\"1\"/><line x1=\"9\" y1=\"12\" x2=\"15\" y2=\"12\"/><line x1=\"9\" y1=\"16\" x2=\"13\" y2=\"16\"/></svg>'+_notasPrint+'</span>':'';
     const _extPrint=[];if(_numPedido(p.delivery_usd)>0)_extPrint.push('Delivery');if(_numPedido(p.envio_usd)>0)_extPrint.push('Envío');if(_numPedido(p.diseno_usd)>0)_extPrint.push('Diseño');
     const extrasHtml=_extPrint.length?'<br><span style="font-size:9px;color:#7c3aed;font-weight:600">'+_extPrint.join(' · ')+'</span>':'';
     const estCls={pendiente:'b-pend',produccion:'b-prod',impresion:'b-impr',listo:'b-listo',entregado:'b-entreg',cancelado:'b-cancel'}[p.estado]||'b-pend';
@@ -9589,7 +9731,7 @@ td.center,th.center{text-align:center}
       <td class="check-col"><span class="check-box"></span></td>
       <td style="font-weight:700;white-space:nowrap">${p.numero.replace('PED-','#')}</td>
       <td style="font-weight:600">${cli}${p.cliente?.telefono?'<br><span style="font-size:10px;color:#888">'+p.cliente.telefono+'</span>':''}</td>
-      <td class="productos">${items}${extrasHtml}</td>
+      <td class="productos">${items}${extrasHtml}${notasHtml}</td>
       <td class="center"><span class="badge ${estCls}">${PED_ESTADOS[p.estado]||p.estado}</span></td>
       <td class="center"><span class="badge ${pagCls}">${PED_PAGOS[ep]||ep}</span></td>
       <td class="right" style="font-weight:700;white-space:nowrap">$${totalCDif.toFixed(2).replace('.',',')}</td>
@@ -9688,7 +9830,7 @@ td.right,th.right{text-align:right}
 .pagos{margin-bottom:14px}
 .pagos h4{font-size:12px;color:#666;text-transform:uppercase;margin-bottom:6px}
 .pagos .pago-row{display:flex;justify-content:space-between;padding:3px 0;font-size:12px;border-bottom:1px solid #f5f5f5}
-.notas{background:#f9f9fb;border-radius:8px;padding:10px;font-size:12px;margin-bottom:14px}
+.notas{background:#fff5f5;border:1.5px solid #fed7d7;border-radius:8px;padding:10px;font-size:12px;margin-bottom:14px;color:#c0392b;font-weight:600}
 .footer{text-align:center;font-size:10px;color:#999;margin-top:20px;padding-top:12px;border-top:1px solid #eee}
 @media print{body{padding:10px}@page{margin:10mm}}
 </style></head><body>`;
@@ -9888,7 +10030,7 @@ function verPedido(idx){
         })()}</div>`:'<div class="pill ok">✓ Saldo completo</div>'}
       </div>
     </div>
-    ${p.notas?`<div class="card" style="padding:12px"><div style="font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Notas</div><p style="font-size:13px">${p.notas}</p></div>`:''}`;
+    ${p.notas?`<div class="card" style="padding:12px;border:1.5px solid #fed7d7;background:#fff5f5"><div style="font-size:12px;color:#c0392b;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:3px"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Notas</div><p style="font-size:13px;color:#c0392b;font-weight:600">${p.notas}</p></div>`:''}`;
 
   // Botón avanzar estado
   const avBtn=qs('#mvped-avanzar');
@@ -11985,7 +12127,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_06';
+  const APP_VERSION = 'v14_07';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -12138,5 +12280,270 @@ window.addEventListener('popstate',e=>{
   });
 })();
 </script>
+
+<script>
+/* ════════════════════════════════════════════
+   MÓDULO ENVÍOS — GestioMada V14_07
+   Registro de envíos, etiqueta de impresión,
+   integración con módulo Pedidos.
+════════════════════════════════════════════ */
+const LS_ENV = 'POS.envios';
+let _envIdx = null; // índice del envío en edición
+
+function loadEnv(){ try{ return JSON.parse(localStorage.getItem(LS_ENV)||'[]'); }catch(e){ return []; } }
+function saveEnv(arr){ localStorage.setItem(LS_ENV, JSON.stringify(arr)); }
+
+// ── Render lista ──
+function renderEnvios(){
+  const q   = (qs('#env_q')?.value||'').toLowerCase();
+  const fest = qs('#env_festado')?.value||'';
+  const ftrans = qs('#env_ftransporte')?.value||'';
+  const all = loadEnv();
+
+  // KPIs
+  const kpiEl = qs('#env-kpis');
+  if(kpiEl){
+    const prep = all.filter(e=>e.estado==='preparando').length;
+    const desp = all.filter(e=>e.estado==='despachado').length;
+    const entr = all.filter(e=>e.estado==='entregado').length;
+    kpiEl.innerHTML = `
+      <div class="kpi c-amber"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div></div><div class="kpi-lbl">Preparando</div><div class="kpi-val">${prep}</div></div>
+      <div class="kpi c-blue"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E6F1FB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div></div><div class="kpi-lbl">Despachados</div><div class="kpi-val">${desp}</div></div>
+      <div class="kpi c-teal"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E1F5EE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F6E56" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="kpi-lbl">Entregados</div><div class="kpi-val">${entr}</div></div>
+      <div class="kpi"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EEEDFE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#534AB7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></div></div><div class="kpi-lbl">Total</div><div class="kpi-val">${all.length}</div></div>
+    `;
+  }
+
+  let lista = all.filter((e,i)=>{
+    if(fest && e.estado!==fest) return false;
+    if(ftrans && e.transportista!==ftrans) return false;
+    if(q){
+      const haystack = (e.nombre+' '+(e.guia||'')+(e.cedula||'')).toLowerCase();
+      if(!haystack.includes(q)) return false;
+    }
+    return true;
+  });
+
+  const wrap = qs('#env-container');
+  if(!wrap) return;
+  if(!lista.length){ wrap.innerHTML='<div class="card" style="text-align:center;color:var(--muted);padding:32px">No hay envíos registrados.</div>'; return; }
+
+  const estadoColor = { preparando:'var(--warn)', despachado:'var(--brand)', entregado:'var(--ok)' };
+  const estadoLabel = { preparando:'Preparando', despachado:'Despachado', entregado:'Entregado' };
+
+  wrap.innerHTML = lista.map(e=>{
+    const idx = all.indexOf(e);
+    const color = estadoColor[e.estado]||'var(--muted)';
+    const lbl   = estadoLabel[e.estado]||e.estado;
+    return `
+    <div class="card" style="margin-bottom:10px;padding:14px">
+      <div style="display:flex;align-items:flex-start;gap:10px">
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
+            <span style="font-weight:700;font-size:14px">${e.nombre||'—'}</span>
+            <span style="font-size:11px;padding:2px 8px;border-radius:8px;font-weight:600;background:${color}22;color:${color}">${lbl}</span>
+            <span style="font-size:11px;font-weight:600;color:var(--muted);background:var(--bg);border-radius:8px;padding:2px 8px">${e.transportista||'—'}</span>
+            ${e.fragil?'<span style="font-size:10px;font-weight:800;color:#fff;background:#e74c3c;border-radius:6px;padding:2px 7px;letter-spacing:.05em">FRÁGIL</span>':''}
+          </div>
+          ${e.cedula?`<div style="font-size:12px;color:var(--muted)">CI: ${e.cedula}${e.telefono?' · Tel: '+e.telefono:''}</div>`:''}
+          ${e.guia?`<div style="font-size:12px;color:var(--brand)">Guía: <strong>${e.guia}</strong></div>`:''}
+          ${e.pedido_num?`<div style="font-size:11px;color:var(--muted)">Pedido vinculado: <strong>#${e.pedido_num}</strong></div>`:''}
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.direccion||'Sin dirección'}</div>
+          ${e.contenido?`<div style="font-size:11px;color:var(--muted);font-style:italic">${e.contenido}</div>`:''}
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0">
+          <button class="copy-btn" onclick="abrirEditarEnvio(${idx})" title="Editar">✏️</button>
+          <button class="copy-btn" onclick="imprimirEtiquetaEnvio(${idx})" title="Imprimir etiqueta">🖨️</button>
+          <button class="copy-btn" style="color:var(--danger)" onclick="eliminarEnvio(${idx})" title="Eliminar">✕</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Abrir modal nuevo ──
+function abrirNuevoEnvio(){
+  _envIdx = null;
+  qs('#menv-title').textContent = 'Nuevo Envío';
+  qs('#menv_nombre').value='';
+  qs('#menv_cedula').value='';
+  qs('#menv_telefono').value='';
+  qs('#menv_transportista').value='MRW';
+  qs('#menv_direccion').value='';
+  qs('#menv_guia').value='';
+  qs('#menv_estado').value='preparando';
+  qs('#menv_contenido').value='';
+  qs('#menv_fragil').checked=true;
+  // Poblar select de pedidos
+  menvPoblarPedidos();
+  qs('#menv_pedido_id').value='';
+  openModal('m-envio');
+}
+
+// ── Abrir modal editar ──
+function abrirEditarEnvio(idx){
+  const all=loadEnv(), e=all[idx]; if(!e) return;
+  _envIdx=idx;
+  qs('#menv-title').textContent='Editar Envío';
+  qs('#menv_nombre').value=e.nombre||'';
+  qs('#menv_cedula').value=e.cedula||'';
+  qs('#menv_telefono').value=e.telefono||'';
+  qs('#menv_transportista').value=e.transportista||'MRW';
+  qs('#menv_direccion').value=e.direccion||'';
+  qs('#menv_guia').value=e.guia||'';
+  qs('#menv_estado').value=e.estado||'preparando';
+  qs('#menv_contenido').value=e.contenido||'';
+  qs('#menv_fragil').checked=e.fragil!==false;
+  menvPoblarPedidos(e.pedido_id);
+  openModal('m-envio');
+}
+
+// ── Poblar select de pedidos pendientes (o recientes) ──
+function menvPoblarPedidos(selId){
+  const sel=qs('#menv_pedido_id'); if(!sel) return;
+  const peds=(loadPed ? loadPed() : []).filter(p=>p.estado!=='cancelado').slice().reverse().slice(0,60);
+  sel.innerHTML='<option value="">— Sin vincular —</option>'+
+    peds.map(p=>`<option value="${p.id}"${p.id==selId?' selected':''}>#${p.numero} — ${(p.cliente?.nombre||p.cliente||'Sin cliente')} — ${p.estado}</option>`).join('');
+}
+
+// ── Autocompletar desde pedido vinculado ──
+function menvCargarDesdePedido(){
+  const pedId=qs('#menv_pedido_id')?.value; if(!pedId) return;
+  const ped=(loadPed?loadPed():[]).find(p=>String(p.id)===String(pedId)); if(!ped) return;
+  const cli=ped.cliente||{};
+  if(cli.nombre) qs('#menv_nombre').value=cli.nombre;
+  if(cli.cedula) qs('#menv_cedula').value=cli.cedula;
+  if(cli.telefono) qs('#menv_telefono').value=cli.telefono;
+  // Contenido: primeros items
+  const items=(ped.items||[]).slice(0,3).map(it=>`${it.cant}× ${it.nombre}`).join(', ');
+  if(items && !qs('#menv_contenido').value) qs('#menv_contenido').value=items;
+}
+
+// ── Guardar envío ──
+function guardarEnvio(){
+  const nombre=(qs('#menv_nombre').value||'').trim();
+  if(!nombre){ toast('Ingresa el nombre del destinatario','warn'); return; }
+  const pedId=qs('#menv_pedido_id')?.value||null;
+  const ped=(pedId && loadPed) ? loadPed().find(p=>String(p.id)===String(pedId)) : null;
+  const envio={
+    id:         _envIdx!==null ? loadEnv()[_envIdx].id : Date.now(),
+    nombre,
+    cedula:     qs('#menv_cedula').value.trim(),
+    telefono:   qs('#menv_telefono').value.trim(),
+    transportista: qs('#menv_transportista').value,
+    direccion:  qs('#menv_direccion').value.trim(),
+    guia:       qs('#menv_guia').value.trim(),
+    estado:     qs('#menv_estado').value,
+    contenido:  qs('#menv_contenido').value.trim(),
+    fragil:     qs('#menv_fragil').checked,
+    pedido_id:  pedId||null,
+    pedido_num: ped?.numero||null,
+    fecha_creado: _envIdx!==null ? loadEnv()[_envIdx].fecha_creado : new Date().toISOString()
+  };
+  const all=loadEnv();
+  if(_envIdx!==null){ all[_envIdx]=envio; } else { all.push(envio); }
+  saveEnv(all);
+  toast('Envío guardado','ok');
+  closeModal('m-envio');
+  renderEnvios();
+}
+
+// ── Eliminar envío ──
+function eliminarEnvio(idx){
+  if(!confirm('¿Eliminar este envío?')) return;
+  const all=loadEnv(); all.splice(idx,1); saveEnv(all); renderEnvios();
+}
+
+// ── Imprimir etiqueta — formato media hoja A4 ──
+function imprimirEtiquetaEnvio(idx){
+  let envio=null;
+  if(idx==='_actual'){
+    // Construir desde el formulario actual (antes de guardar)
+    const nombre=(qs('#menv_nombre')?.value||'').trim();
+    if(!nombre){ toast('Completa el nombre antes de imprimir','warn'); return; }
+    const pedId=qs('#menv_pedido_id')?.value||null;
+    const ped=(pedId && loadPed) ? loadPed().find(p=>String(p.id)===String(pedId)) : null;
+    envio={
+      nombre, cedula:qs('#menv_cedula')?.value||'',
+      telefono:qs('#menv_telefono')?.value||'',
+      transportista:qs('#menv_transportista')?.value||'',
+      direccion:qs('#menv_direccion')?.value||'',
+      guia:qs('#menv_guia')?.value||'',
+      contenido:qs('#menv_contenido')?.value||'',
+      fragil:qs('#menv_fragil')?.checked,
+      pedido_num:ped?.numero||null
+    };
+  } else if(idx===null){
+    // Imprimir etiqueta del último envío seleccionado con checkbox (simplificado: el primero de la lista filtrada)
+    const all=loadEnv();
+    if(!all.length){ toast('No hay envíos registrados','warn'); return; }
+    envio=all[0];
+  } else {
+    envio=loadEnv()[idx];
+    if(!envio){ toast('Envío no encontrado','warn'); return; }
+  }
+
+  const neg=CFG?.negocio||'SubliMada';
+  const logo=CFG?.logo||'';
+  const logoHtml=logo?`<img src="${logo}" style="height:50px;object-fit:contain"/>`:
+    `<span style="font-size:22px;font-weight:900;color:#ff7aa2">${neg}</span>`;
+  const fragHtml=envio.fragil?`
+    <div style="margin-top:18px;text-align:center">
+      <div style="font-size:82px;font-weight:900;letter-spacing:4px;font-family:'Arial Black',Impact,sans-serif;color:#000;line-height:1">FRÁGIL</div>
+    </div>`:'';
+
+  const win=window.open('','_blank','width=794,height=580');
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>Etiqueta Envío</title>
+<style>
+  @page { size: A4 portrait; margin: 10mm 12mm; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 13px; color: #000; background: #fff; }
+  /* Media hoja A4 portrait — aprox 148mm de alto */
+  .etiqueta { width: 100%; max-width: 180mm; padding: 14px; border: 2px solid #000; border-radius: 6px; margin: 0 auto; }
+  .header { display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 8px; margin-bottom: 10px; }
+  .titulo { font-size: 16px; font-weight: 900; text-transform: uppercase; letter-spacing: 1px; }
+  table { width: 100%; border-collapse: collapse; }
+  td { padding: 4px 0; vertical-align: top; font-size: 13px; }
+  td:first-child { font-weight: 700; white-space: nowrap; padding-right: 10px; width: 110px; }
+  .guia { font-size:15px; font-weight:900; border:2px solid #000; text-align:center; padding:6px; border-radius:4px; margin-top:10px; letter-spacing:2px; }
+  @media print { body { -webkit-print-color-adjust: exact; } }
+</style>
+</head><body>
+<div class="etiqueta">
+  <div class="header">
+    ${logoHtml}
+    <div class="titulo">Orden de Envío</div>
+    <div style="text-align:right;font-size:12px">
+      ${envio.transportista?`<strong>${envio.transportista}</strong><br/>`:''}
+      ${envio.pedido_num?`Pedido #${envio.pedido_num}`:''}
+    </div>
+  </div>
+  <table>
+    <tr><td>Nombre:</td><td>${envio.nombre||'—'}</td></tr>
+    ${envio.cedula?`<tr><td>Cédula:</td><td>${envio.cedula}</td></tr>`:''}
+    ${envio.telefono?`<tr><td>Teléfono:</td><td>${envio.telefono}</td></tr>`:''}
+    <tr><td>Dirección:</td><td>${(envio.direccion||'—').replace(/\n/g,'<br/>')}</td></tr>
+    ${envio.contenido?`<tr><td>Contenido:</td><td>${envio.contenido}</td></tr>`:''}
+  </table>
+  ${envio.guia?`<div class="guia">Guía: ${envio.guia}</div>`:''}
+  ${fragHtml}
+</div>
+<script>window.onload=function(){window.print();}<\/script>
+</body></html>`);
+  win.document.close();
+}
+
+// ── Integrar en nav ──
+(function _enviosInit(){
+  const origNav = typeof nav === 'function' ? nav : null;
+  // Hook renderizar envíos al activar el tab
+  const origRender = window.renderCurrentView;
+  document.addEventListener('DOMContentLoaded', ()=>{
+    // Por si el nav ya está inicializado
+  });
+})();
+</script>
+
 </body>
 </html>
