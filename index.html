@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_09">
+<html lang="es" data-app-version="GestioMada_V14_12">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -236,6 +236,7 @@ const upsertCajaMov = r => upsertFila('caja_movimientos', r);
 const upsertInsumo  = r => upsertFila('inventario_insumos', r);
 const upsertTerminado = r => upsertFila('inventario_terminados', r);
 const upsertUsuario = r => upsertFila('usuarios', r);
+const upsertPers    = r => upsertFila('productos_pers', r);
 
 // Sync inmediato de UN solo producto — propaga el cambio al instante a todos los dispositivos
 async function syncProductoAhora(prod, reintentos=3){
@@ -517,9 +518,28 @@ async function initSupabaseSync(){
         if(idx >= 0){
           const fotoLocal = mergeado[idx].foto || '';
           const cliLocal  = mergeado[idx].cliente || null;
+          // Para productos_pers: preservar campos de costos locales si Supabase trae null/vacío
+          let persBackup = null;
+          if(t.supa === 'productos_pers'){
+            const _persFields = ['directos','materiales_area','depreciacion','indirectos','mo','gi'];
+            persBackup = {};
+            _persFields.forEach(f => { persBackup[f] = mergeado[idx][f]; });
+          }
           mergeado[idx] = { ...mergeado[idx], ...r };
           if(!r.foto_url && fotoLocal) mergeado[idx].foto = fotoLocal;
           if(!mergeado[idx].cliente && cliLocal) mergeado[idx].cliente = cliLocal;
+          // Restaurar campos de costos si Supabase los trajo vacíos/null
+          if(persBackup){
+            Object.keys(persBackup).forEach(f => {
+              const remVal = mergeado[idx][f];
+              const locVal = persBackup[f];
+              if(locVal && (remVal === null || remVal === undefined ||
+                (Array.isArray(remVal) && remVal.length === 0) ||
+                (typeof remVal === 'object' && !Array.isArray(remVal) && Object.keys(remVal).length === 0))){
+                mergeado[idx][f] = locVal;
+              }
+            });
+          }
         } else {
           mergeado.push(r);
         }
@@ -4527,6 +4547,7 @@ function persSave(){
   const d=persToJSON(), all=loadPers(), idx=all.findIndex(p=>(p.name||'').toLowerCase()===d.name.toLowerCase());
   if(idx>=0){ if(!confirm('Ya existe "'+d.name+'". ¿Reemplazar?')) return; all[idx]=d; }else{ all.push(d); }
   savePers(all); persRefreshLoader();
+  if(typeof upsertPers==='function') upsertPers(d);
   registrarVersionCosto(d.name, window._lastSub||0, window._lastPV||0);
   renderHistorialCostos(d.name);
   toast('Guardado: '+d.name,'ok');
@@ -7661,7 +7682,8 @@ function posCobrar(){
     const saldo0Bs = mc0.saldo * bcv0;
     if(esBs0 && rec0 > saldo0Bs + 1){ toast('El monto supera el saldo: Bs '+fmtBs(saldo0Bs),'warn'); return; }
     if(!esBs0 && recClienteUsd > mc0.saldo + 0.01){ toast('El monto supera el saldo: '+euro(mc0.saldo),'warn'); return; }
-    total = (dif0>0) ? recClienteUsd/dif0 : recClienteUsd; // guardar pago interno compatible con Pedidos
+    // Si pedido es USD puro, el saldo ya es dólar base → no dividir por diferencial
+    total = (mc0.usdPuro || dif0<=0) ? recClienteUsd : recClienteUsd/dif0;
   } else {
     total = Math.max(0, sub - desc + extrasVal);
   }
@@ -7982,7 +8004,8 @@ function guardarVenta(){
     const saldo0Bs = parseFloat((mcMv0.saldo * bcvMv0).toFixed(2));
     if(esBsMv0 && rec0 > saldo0Bs + 1){ toast('El monto supera el saldo: Bs '+fmtBs(saldo0Bs),'warn'); return; }
     if(!esBsMv0 && recClienteUsd > mcMv0.saldo + 0.01){ toast('El monto supera el saldo: '+euro(mcMv0.saldo),'warn'); return; }
-    total = (difMv0>0) ? recClienteUsd/difMv0 : recClienteUsd;
+    // Si pedido es USD puro, el saldo ya es dólar base → no dividir por diferencial
+    total = (mcMv0.usdPuro || difMv0<=0) ? recClienteUsd : recClienteUsd/difMv0;
   } else {
     total = Math.max(0, sub - desc);
   }
@@ -12223,7 +12246,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_09';
+  const APP_VERSION = 'v14_12';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -12466,12 +12489,13 @@ async function ejecutarReprogramacion(){
   });
   if(typeof savePed === 'function') savePed(todos);
 
-  // Sincronizar con Supabase si está disponible
-  if(typeof _supa !== 'undefined' && _supa){
-    try{
-      const ids = afectados.map(p => p.id);
-      await _supa.from('pedidos').update({ fecha_entrega: nuevaFecha }).in('id', ids);
-    } catch(e){ console.warn('Supabase sync reprogramación:', e); }
+  // Sincronizar cada pedido actualizado con Supabase
+  if(typeof upsertPedido === 'function'){
+    const todosActualizados = loadPed ? loadPed() : [];
+    afectados.forEach(a => {
+      const actualizado = todosActualizados.find(p => p.id === a.id);
+      if(actualizado) upsertPedido(actualizado);
+    });
   }
 
   toast(`✓ ${actualizados} pedidos actualizados a ${nuevaFecha}`, 'ok');
