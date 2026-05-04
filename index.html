@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_08">
+<html lang="es" data-app-version="GestioMada_V14_09">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -6908,6 +6908,13 @@ function pedidoMontoCliente(ped){
   if(!ped) return { total:0, pagado:0, saldo:0, dif:1, bcv:0 };
   const dif = (typeof getDiferencial==='function' ? getDiferencial() : 1);
   const bcv = (typeof getTasaBCV==='function' ? getTasaBCV() : 0);
+  // Si la regla USD puro está activa y todos los pagos son en USD → devolver en dólar base
+  if(typeof pedidoPagoEnUsd==='function' && pedidoPagoEnUsd(ped)){
+    const totalBase = parseFloat(ped.total||0)||0;
+    const pagadoBase = (ped.pagos||[]).reduce((a,pg)=>a+(parseFloat(pg.monto)||0),0) + (parseFloat(ped.abono)||0);
+    const saldoBase = Math.max(0, parseFloat((totalBase - pagadoBase).toFixed(2)));
+    return { total:totalBase, pagado:pagadoBase, saldo:saldoBase, dif:1, bcv, usdPuro:true };
+  }
   const total = (typeof pedidoTotalCDifCalc==='function')
     ? pedidoTotalCDifCalc(ped, dif)
     : (parseFloat(ped.total_cdif||0) || ((parseFloat(ped.total||0)||0) * (dif>0?dif:1)));
@@ -7032,10 +7039,10 @@ function mvSeleccionarPedido(){
   qs('#mv_ped_total').textContent  = euro(mc.total);
   qs('#mv_ped_pagado').textContent = euro(mc.pagado);
   qs('#mv_ped_saldo').textContent  = euro(mc.saldo);
-  // Mostrar saldo equivalente en Bs
+  // Mostrar saldo equivalente en Bs (ocultar si es USD puro)
   const _bcvMvSel = getTasaBCV();
   const _saldoBsMvEl = qs('#mv_ped_saldo_bs');
-  if(_saldoBsMvEl && _bcvMvSel > 0 && saldo > 0){
+  if(_saldoBsMvEl && _bcvMvSel > 0 && saldo > 0 && !mc.usdPuro){
     _saldoBsMvEl.querySelector('strong').textContent = 'Bs ' + fmtBs(parseFloat((saldo * _bcvMvSel).toFixed(2)));
     _saldoBsMvEl.style.display = '';
   } else if(_saldoBsMvEl){ _saldoBsMvEl.style.display = 'none'; }
@@ -9537,11 +9544,11 @@ function renderPedidos(){
     const matchQ=!q||(p.numero||'').toLowerCase().includes(q)||((p.cliente?.nombre||'')+' '+(p.cliente?.apellido||'')).toLowerCase().includes(q);
     let matchEnt=true;
     if(fent&&p.fecha_entrega){
-      if(fent==='hoy')    matchEnt=p.fecha_entrega===hoy;
-      else if(fent==='manana') matchEnt=p.fecha_entrega===manana;
-      else if(fent==='semana') matchEnt=p.fecha_entrega>=hoy&&p.fecha_entrega<=finSem;
+      if(fent==='hoy')    matchEnt=p.fecha_entrega===hoy&&p.estado!=='entregado'&&p.estado!=='cancelado';
+      else if(fent==='manana') matchEnt=p.fecha_entrega===manana&&p.estado!=='entregado'&&p.estado!=='cancelado';
+      else if(fent==='semana') matchEnt=p.fecha_entrega>=hoy&&p.fecha_entrega<=finSem&&p.estado!=='entregado'&&p.estado!=='cancelado';
       else if(fent==='vencido') matchEnt=p.fecha_entrega<hoy&&p.estado!=='entregado'&&p.estado!=='cancelado';
-      else if(fent==='fecha'){ const ff=qs('#ped_fentrega_fecha')?.value||''; matchEnt=ff?p.fecha_entrega===ff:true; }
+      else if(fent==='fecha'){ const ff=qs('#ped_fentrega_fecha')?.value||''; matchEnt=ff?(p.fecha_entrega===ff&&p.estado!=='entregado'&&p.estado!=='cancelado'):true; }
     } else if(fent && !p.fecha_entrega){ matchEnt=false; }
     // Filtro envío
     let matchEnvio=true;
@@ -9793,11 +9800,11 @@ function imprimirListaPedidos(){
     if(q){ const nom=(p.cliente?(p.cliente.nombre+' '+p.cliente.apellido):'').toLowerCase(); matchQ=nom.includes(q)||p.numero.toLowerCase().includes(q); }
     const ep=estadoPago(p);
     if(fent&&p.fecha_entrega){
-      if(fent==='hoy') matchEnt=p.fecha_entrega===hoy;
-      else if(fent==='manana') matchEnt=p.fecha_entrega===manana;
-      else if(fent==='semana') matchEnt=p.fecha_entrega>=hoy&&p.fecha_entrega<=finSem;
+      if(fent==='hoy') matchEnt=p.fecha_entrega===hoy&&p.estado!=='entregado'&&p.estado!=='cancelado';
+      else if(fent==='manana') matchEnt=p.fecha_entrega===manana&&p.estado!=='entregado'&&p.estado!=='cancelado';
+      else if(fent==='semana') matchEnt=p.fecha_entrega>=hoy&&p.fecha_entrega<=finSem&&p.estado!=='entregado'&&p.estado!=='cancelado';
       else if(fent==='vencido') matchEnt=p.fecha_entrega<hoy&&p.estado!=='entregado'&&p.estado!=='cancelado';
-      else if(fent==='fecha'){const ff=qs('#ped_fentrega_fecha')?.value||'';matchEnt=ff?p.fecha_entrega===ff:true;}
+      else if(fent==='fecha'){const ff=qs('#ped_fentrega_fecha')?.value||'';matchEnt=ff?(p.fecha_entrega===ff&&p.estado!=='entregado'&&p.estado!=='cancelado'):true;}
     } else if(fent&&!p.fecha_entrega){ matchEnt=false; }
     if(fenvio){ const tieneD=(p.items||[]).some(it=>it.tipo==='delivery')||(p.notas||'').toLowerCase().includes('delivery'); const tieneE=(p.items||[]).some(it=>it.tipo==='envio')||(p.notas||'').toLowerCase().includes('envío')||(p.notas||'').toLowerCase().includes('envio'); if(fenvio==='delivery') matchEnvio=tieneD; else if(fenvio==='envio') matchEnvio=tieneE; else if(fenvio==='sin_envio') matchEnvio=!tieneD&&!tieneE; }
     if(fprod){ matchProd=(p.items||[]).some(it=>String(it.id_prod)===String(fprod)||it.nombre===fprod); }
@@ -10107,11 +10114,16 @@ function cobrarPedidoDesdeModal(){
   _mvPedidoVinculado = p;
   const tipoEl = qs('#mv_tipo');
   if(tipoEl){ tipoEl.value='pago_restante'; mvTipoChange(); }
+  // Pre-seleccionar método de pago según historial del pedido (USD si todos los pagos fueron en USD)
+  if(typeof pedidoPagoEnUsd==='function' && pedidoPagoEnUsd(p)){
+    const metEl = qs('#mv_metodo');
+    if(metEl){ metEl.value='efectivo_usd'; }
+  }
   // Pre-seleccionar el pedido en el select
   const selPed = qs('#mv_pedido_sel');
   if(selPed){ selPed.value = String(p.id); mvSeleccionarPedido(); }
-  // Cargar items del pedido
-  _venItems=(p.items||[]).map(it=>({...it}));
+  // NO cargar items al carrito: pago_restante usa saldo del pedido (sub===0)
+  _venItems=[];
   renderItemsVenta(); recalcVenta();
   const notEl=qs('#mv_notas'); if(notEl) notEl.value='Cobro restante — Pedido '+p.numero;
   openModal('m-venta');
@@ -12211,7 +12223,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_08';
+  const APP_VERSION = 'v14_09';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
