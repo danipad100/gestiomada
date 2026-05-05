@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_17">
+<html lang="es" data-app-version="GestioMada_V14_18">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -3497,7 +3497,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
       <button class="btn btn-sm" onclick="imprimirPedido()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>
       <button class="btn btn-brand btn-sm" onclick="editarPedidoDesdeModal()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar</button>
       <button class="btn btn-sm" onclick="cobrarPedidoDesdeModal()" id="btn-cobrar-pedido" style="display:none"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Cobrar restante</button>
-      <button class="btn btn-sm" id="mvped-avanzar" onclick="avanzarEstado()"></button>
+      <select class="gm-select" id="mvped-estado-sel" onchange="cambiarEstadoPedido(this.value)" style="font-size:12px;padding:6px 10px;min-width:140px"></select>
       <button class="btn btn-danger btn-sm" onclick="cancelarPedido()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Cancelar</button>
       <button class="btn btn-sm" style="background:#fff0f0;color:#c0392b;border:1px solid #f5c6c6" onclick="eliminarPedido()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Eliminar</button>
       <button class="btn btn-sm" onclick="closeModal('m-ver-ped')">Cerrar</button>
@@ -10107,10 +10107,15 @@ function verPedido(idx){
     </div>
     ${p.notas?`<div class="card" style="padding:12px;border:1.5px solid #fed7d7;background:#fff5f5"><div style="font-size:12px;color:#c0392b;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:3px"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Notas</div><p style="font-size:13px;color:#c0392b;font-weight:600">${p.notas}</p></div>`:''}`;
 
-  // Botón avanzar estado
-  const avBtn=qs('#mvped-avanzar');
-  const NEXT={pendiente:{lbl:'Iniciar producción',next:'produccion'},produccion:{lbl:'Pasar a impresión',next:'impresion'},impresion:{lbl:'Marcar listo',next:'listo'},listo:{lbl:'Marcar entregado',next:'entregado'}};
-  if(avBtn){ if(NEXT[p.estado]){ avBtn.textContent=NEXT[p.estado].lbl; avBtn.style.display=''; } else { avBtn.style.display='none'; } }
+  // Select de cambio de estado
+  const estSel=qs('#mvped-estado-sel');
+  if(estSel){
+    const _estOpciones = ['pendiente','produccion','impresion','listo','entregado'];
+    estSel.innerHTML = _estOpciones.map(e =>
+      `<option value="${e}"${e===p.estado?' selected':''}>${PED_ESTADOS[e]||e}</option>`
+    ).join('');
+    estSel.style.display = (p.estado==='cancelado') ? 'none' : '';
+  }
   const cobrBtn=qs('#btn-cobrar-pedido');
   if(cobrBtn){ const rest=Math.max(0,(p.total||0)-totalPagado(p)); cobrBtn.style.display=(rest>0&&p.estado!=='cancelado')?'':'none'; }
 
@@ -10122,19 +10127,15 @@ function verPedido(idx){
   openModal('m-ver-ped');
 }
 
-function avanzarEstado(){
-  if(_pedIdx===null) return;
+function cambiarEstadoPedido(nuevoEstado){
+  if(_pedIdx===null || !nuevoEstado) return;
   const all=loadPed(), p=all[_pedIdx];
-  const NEXT={pendiente:'produccion',produccion:'impresion',impresion:'listo',listo:'entregado'};
-  if(!NEXT[p.estado]) return;
-  const nuevoEstado = NEXT[p.estado];
+  if(!p || p.estado === nuevoEstado) return;
+  const anteriorEstado = p.estado;
   all[_pedIdx].estado = nuevoEstado;
   savePed(all);
-  upsertPedido(all[_pedIdx]); // ← solo este pedido
-
-  // Cambio de estado solo actualiza estado, NO genera movimientos en caja ni ventas
-  toast('Estado actualizado: '+(PED_ESTADOS[nuevoEstado]||nuevoEstado),'ok');
-
+  upsertPedido(all[_pedIdx]);
+  toast(PED_ESTADOS[anteriorEstado]+' → '+(PED_ESTADOS[nuevoEstado]||nuevoEstado),'ok');
   closeModal('m-ver-ped'); renderPedidos(); renderDash();
 }
 
@@ -12263,7 +12264,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_17';
+  const APP_VERSION = 'v14_18';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
