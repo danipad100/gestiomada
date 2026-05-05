@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_18">
+<html lang="es" data-app-version="GestioMada_V14_19">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -12183,12 +12183,13 @@ window.addEventListener('popstate',e=>{
         <label>Seleccionar pedidos</label>
         <select id="rp_criterio" onchange="rpActualizarVista()">
           <option value="vencidos">Vencidos (fecha entrega pasada)</option>
+          <option value="por_fecha">De una fecha específica</option>
           <option value="sin_fecha">Sin fecha de entrega</option>
           <option value="estado">Por estado</option>
           <option value="todos">Todos los activos</option>
         </select>
       </div>
-      <div class="fg" id="rp_estado_wrap">
+      <div class="fg" id="rp_estado_wrap" style="display:none">
         <label>Estado</label>
         <select id="rp_estado" onchange="rpActualizarVista()">
           <option value="pendiente">Pendiente</option>
@@ -12196,6 +12197,10 @@ window.addEventListener('popstate',e=>{
           <option value="impresion">Impresión</option>
           <option value="listo">Listo</option>
         </select>
+      </div>
+      <div class="fg" id="rp_fecha_origen_wrap" style="display:none">
+        <label>Fecha origen</label>
+        <input type="date" id="rp_fecha_origen" onchange="rpActualizarVista()" style="width:100%"/>
       </div>
     </div>
 
@@ -12264,7 +12269,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_18';
+  const APP_VERSION = 'v14_19';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -12424,10 +12429,11 @@ window.addEventListener('popstate',e=>{
    REPROGRAMACIÓN MASIVA DE FECHAS — V14_07
 ───────────────────────────────────────── */
 function abrirReprogramarFechas(){
-  // Por defecto: vencidos, nueva fecha = hoy
   qs('#rp_criterio').value = 'vencidos';
   qs('#rp_nueva_fecha').value = hoyLocal();
+  qs('#rp_fecha_origen').value = hoyLocal();
   qs('#rp_estado_wrap').style.display = 'none';
+  qs('#rp_fecha_origen_wrap').style.display = 'none';
   rpActualizarVista();
   openModal('m-reprog');
 }
@@ -12439,16 +12445,20 @@ function rpGetPedidosAfectados(){
   const todos    = loadPed ? loadPed() : [];
 
   return todos.filter(p => {
-    // Excluir cancelados y pagados/entregados
+    // Excluir cancelados y entregados
     if(['cancelado','entregado'].includes(p.estado)) return false;
     if(criterio === 'vencidos'){
       return p.fecha_entrega && p.fecha_entrega < hoy;
+    } else if(criterio === 'por_fecha'){
+      const fOrigen = qs('#rp_fecha_origen')?.value || '';
+      if(!fOrigen) return false;
+      return p.fecha_entrega === fOrigen;
     } else if(criterio === 'sin_fecha'){
       return !p.fecha_entrega || p.fecha_entrega === '';
     } else if(criterio === 'estado'){
       return p.estado === estado;
     } else { // todos activos
-      return !['cancelado','entregado'].includes(p.estado);
+      return true;
     }
   });
 }
@@ -12456,7 +12466,9 @@ function rpGetPedidosAfectados(){
 function rpActualizarVista(){
   const criterio = qs('#rp_criterio')?.value || 'vencidos';
   const estadoWrap = qs('#rp_estado_wrap');
+  const fechaOrigenWrap = qs('#rp_fecha_origen_wrap');
   if(estadoWrap) estadoWrap.style.display = criterio === 'estado' ? '' : 'none';
+  if(fechaOrigenWrap) fechaOrigenWrap.style.display = criterio === 'por_fecha' ? '' : 'none';
 
   const afectados = rpGetPedidosAfectados();
   const count = qs('#rp_count');
@@ -12490,7 +12502,8 @@ async function ejecutarReprogramacion(){
   if(!afectados.length){ toast('No hay pedidos que actualizar','warn'); return; }
 
   const criterioLabel = {
-    vencidos: 'pedidos vencidos', sin_fecha: 'pedidos sin fecha',
+    vencidos: 'pedidos vencidos', por_fecha: 'pedidos del ' + (qs('#rp_fecha_origen')?.value||''),
+    sin_fecha: 'pedidos sin fecha',
     estado: 'pedidos por estado', todos: 'todos los pedidos activos'
   }[qs('#rp_criterio')?.value] || 'pedidos';
 
