@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_12">
+<html lang="es" data-app-version="GestioMada_V14_13">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -9622,9 +9622,11 @@ function renderPedidos(){
           const _bcvL=getTasaBCV(), _difL=getDiferencial(), _parL=_bcvL*_difL;
           const _usdPuro=pedidoPagoEnUsd(p);
           const totalCDif = (typeof pedidoTotalCDifCalc==='function') ? pedidoTotalCDifCalc(p,_difL) : (p.total_cdif || (p.total*(_difL>1?_difL:1)));
-          const totalBs   = p.total_bs   || (_bcvL>0 ? Math.round(totalCDif*_bcvL) : 0);
+          const totalBs   = p.total_bs   || (_bcvL>0 ? parseFloat((totalCDif*_bcvL).toFixed(2)) : 0);
           const pagadoCDif = parseFloat(((p.pagos||[]).reduce((a,pg)=>a + pg.monto*(_difL>1?_difL:1), 0)).toFixed(2));
           const restCDif   = Math.max(0, parseFloat((totalCDif - pagadoCDif).toFixed(2)));
+          const pagadoBs   = _bcvL>0 ? parseFloat((pagadoCDif*_bcvL).toFixed(2)) : 0;
+          const restBs     = Math.max(0, parseFloat((totalBs - pagadoBs).toFixed(2)));
           if(_usdPuro){
             const restUsdBase=Math.max(0,p.total-totalPagado(p));
             return `<div style="font-weight:700;font-size:15px;color:var(--brand)">$${p.total.toFixed(2).replace('.',',')}</div>`+
@@ -9633,7 +9635,7 @@ function renderPedidos(){
           return `<div style="font-weight:700;font-size:15px;color:var(--brand)">$${totalCDif.toFixed(2).replace('.',',')}</div>`+
             (totalBs>0?`<div style="font-size:13px;font-weight:600;color:var(--ok)">Bs ${fmtBs(totalBs)}</div>`:'') +
             (restCDif>PED_SALDO_TOLERANCIA?
-              `<div style="font-size:11px;color:var(--danger);font-weight:600">Restante: $${restCDif.toFixed(2).replace('.',',')}</div>`+(_bcvL>0?`<div style="font-size:10px;color:var(--danger);font-weight:600">Restante Bs: ${fmtBs(restCDif*_bcvL)}</div>`:'')
+              `<div style="font-size:11px;color:var(--danger);font-weight:600">Restante: $${restCDif.toFixed(2).replace('.',',')}</div>`+(_bcvL>0?`<div style="font-size:10px;color:var(--danger);font-weight:600">Restante Bs: ${fmtBs(restBs)}</div>`:'')
               :`<div style="font-size:11px;color:var(--ok);font-weight:600">✓ Pagado</div>`);
         })()}
         ${p.fecha_entrega?`<div style="font-size:11px;color:var(--muted)">Entrega: ${fmtFecha(p.fecha_entrega)}</div>`:''}
@@ -9924,9 +9926,10 @@ td.right,th.right{text-align:right}
   html+=`<div class="totals">`;
   if(p.descuento) html+=`<div class="row"><span>Descuento:</span><span>-${euro(p.descuento)}</span></div>`;
   html+=`<div class="row big"><span>Total:</span><span>${euro(p.total)}</span></div>`;
+  const totalBsPrint = parseFloat((totalCDif*bcv).toFixed(2));
   if(dif>1 && bcv>0){
     html+=`<div class="row"><span>Total c/dif (×${dif.toFixed(4)}):</span><span>$${totalCDif.toFixed(2).replace('.',',')}</span></div>`;
-    html+=`<div class="row"><span>Total Bs (BCV ${fmtBs(bcv)}):</span><span>Bs ${fmtBs(totalCDif*bcv)}</span></div>`;
+    html+=`<div class="row"><span>Total Bs (BCV ${fmtBs(bcv)}):</span><span>Bs ${fmtBs(totalBsPrint)}</span></div>`;
   }
   html+=`</div>`;
 
@@ -9945,7 +9948,7 @@ td.right,th.right{text-align:right}
         const restUsdBase=Math.max(0,p.total-pag);
         html+=`<div class="pago-row" style="color:#c0392b;font-weight:700"><span>Restante:</span><span>${euro(restUsdBase)} USD</span></div>`;
       } else {
-        html+=`<div class="pago-row" style="color:#c0392b;font-weight:700"><span>Restante:</span><span>$${restCDif.toFixed(2).replace('.',',')}${bcv>0?' · Bs '+fmtBs(restCDif*bcv):''}</span></div>`;
+        html+=`<div class="pago-row" style="color:#c0392b;font-weight:700"><span>Restante:</span><span>$${restCDif.toFixed(2).replace('.',',')}${bcv>0?' · Bs '+fmtBs(parseFloat((totalBsPrint - pagadoCDif*bcv).toFixed(2))):''}</span></div>`;
       }
     }
     html+=`</div>`;
@@ -12246,7 +12249,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_12';
+  const APP_VERSION = 'v14_13';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
