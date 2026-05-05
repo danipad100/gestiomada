@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_13">
+<html lang="es" data-app-version="GestioMada_V14_15">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -98,7 +98,7 @@ function normalizarPedidoImportado(r){
   const dif = (typeof getDiferencial === 'function') ? getDiferencial() : 1;
   const bcv = (typeof getTasaBCV === 'function') ? getTasaBCV() : 0;
   if(!_numPedido(p.total_cdif)) p.total_cdif = parseFloat((productosNetos * (dif>0?dif:1) + extrasTotal).toFixed(4));
-  if(!_numPedido(p.total_bs) && bcv>0) p.total_bs = parseFloat((p.total_cdif * bcv).toFixed(2));
+  if(!_numPedido(p.total_bs) && bcv>0) p.total_bs = usdToBs(p.total_cdif, bcv);
   return p;
 }
 function pedidoExtrasTotal(p){
@@ -4905,7 +4905,7 @@ function renderCatalogo(){
             const dif=getDiferencial();
             const hasDif=dif>1.001;
             const pvUsdDif=pvUsd*dif;
-            const pvBsDif=pvUsdDif*bcv;
+            const pvBsDif=usdToBs(pvUsdDif, bcv);
             // 1. Precio base USD — siempre negro
             let html=`<div class="prod-card-pv">${euro(pvUsd)}</div>`;
             if(bcv>0){
@@ -4916,7 +4916,7 @@ function renderCatalogo(){
                 html+=`<div style="font-size:13px;font-weight:700;color:var(--ink)">Bs ${pvBsDif.toFixed(2).replace('.',',')}</div>`;
               } else {
                 // Sin diferencial: solo Bs
-                html+=`<div style="font-size:13px;font-weight:700;color:var(--ink)">Bs ${(pvUsd*bcv).toFixed(2).replace('.',',')}</div>`;
+                html+=`<div style="font-size:13px;font-weight:700;color:var(--ink)">Bs ${usdToBs(pvUsd, bcv).toFixed(2).replace('.',',')}</div>`;
               }
             }
             return html;
@@ -4999,9 +4999,9 @@ function verProd(idx){
               const pvUsd=p.precio_venta||0;
               const dif=getDiferencial();
               const pvUsdDif=pvUsd*dif;
-              const pvBsDif=pvUsdDif*bcv;
+              const pvBsDif=usdToBs(pvUsdDif, bcv);
               const hasDif=dif>1.001;
-              if(!hasDif) return `<div style="font-size:11px;margin-top:3px"><span style="font-weight:600">Bs ${(pvUsd*bcv).toFixed(2).replace('.',',')}</span> <span style="color:var(--muted)">@ BCV</span></div>`;
+              if(!hasDif) return `<div style="font-size:11px;margin-top:3px"><span style="font-weight:600">Bs ${usdToBs(pvUsd, bcv).toFixed(2).replace('.',',')}</span> <span style="color:var(--muted)">@ BCV</span></div>`;
               return `<div style="font-size:11px;margin-top:3px;line-height:1.8">
                 <div><span style="font-weight:600;color:var(--brand)">$ ${pvUsdDif.toFixed(2).replace('.',',')}</span> <span style="color:var(--muted)">con diferencial ×${dif.toFixed(3).replace('.',',')}</span></div>
                 <div><span style="font-weight:600">Bs ${pvBsDif.toFixed(2).replace('.',',')}</span> <span style="color:var(--muted)">@ BCV</span></div>
@@ -6273,6 +6273,8 @@ function getDiferencial(){
   const bcv=getTasaBCV(), par=getTasaParalela();
   return (bcv>0 && par>0) ? par/bcv : 1;
 }
+/* Helper centralizado: convierte USD a Bs redondeando siempre a 2 decimales */
+function usdToBs(usd, bcv){ return parseFloat(((usd||0) * (bcv||getTasaBCV())).toFixed(2)); }
 
 function _actualizarDiferencial(){
   const bcv=parseEU(qs('#cfg_tasa_bcv')?.value||'0');
@@ -6601,7 +6603,7 @@ function getPrecioVentaProducto(prod){
   const dif   = getDiferencial();
   const par   = getTasaParalela();
   const pvConDif = parseFloat((pvUsd * (dif>0?dif:1)).toFixed(2));
-  const pvBs  = bcv>0 ? pvConDif*bcv : 0;
+  const pvBs  = bcv>0 ? usdToBs(pvConDif, bcv) : 0;
   return { moneda:'$', precioMon:pvUsd, precioUsd:pvUsd, precioBs:pvBs };
 }
 
@@ -6615,7 +6617,7 @@ function precioRefTexto(prod){
   const bcv = getTasaBCV();
   const dif = getDiferencial();
   if(!bcv) return '';
-  const pvBs = (prod.precio_venta||0) * (dif>0?dif:1) * bcv;
+  const pvBs = usdToBs((prod.precio_venta||0) * (dif>0?dif:1), bcv);
   return 'Bs '+fmtBs(pvBs);
 }
 
@@ -6632,12 +6634,12 @@ function _mcActualizarMonedaInfo(){
   const pvUsd=window._lastPV||parseEU(qs('#mc_pv')?.value||'0');
   if(sel==='bs' && bcv>0){
     const pvConDif=parseFloat((pvUsd*dif).toFixed(2));
-    const pvBs=pvConDif*bcv;
+    const pvBs=usdToBs(pvConDif, bcv);
     inf.style.display='block';
     inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> El cliente paga en <strong>Bs</strong>. $${pvUsd.toFixed(2).replace('.',',')} × ${dif.toFixed(4).replace('.',',')} × ${fmtBs(bcv)} = <strong>Bs ${fmtBs(pvBs)}</strong> por unidad.`;
   } else {
     inf.style.display='block';
-    inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> El cliente paga en <strong>dólares</strong>. Precio: $${pvUsd.toFixed(2).replace('.',',')}.${bcv>0?' Equiv. Bs '+fmtBs(pvUsd*bcv)+' (ref.)':''}`;
+    inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> El cliente paga en <strong>dólares</strong>. Precio: $${pvUsd.toFixed(2).replace('.',',')}.${bcv>0?' Equiv. Bs '+fmtBs(usdToBs(pvUsd, bcv))+' (ref.)':''}`;
   }
 }
 function _mpmActualizarMonedaInfo(){
@@ -6647,7 +6649,7 @@ function _mpmActualizarMonedaInfo(){
   const pvUsd=parseEU(qs('#mpm_pv')?.value||'0');
   if(sel==='bs' && bcv>0){
     const pvConDif=parseFloat((pvUsd*dif).toFixed(2));
-    const pvBs=pvConDif*bcv;
+    const pvBs=usdToBs(pvConDif, bcv);
     inf.style.display='block';
     inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> El cliente paga en <strong>Bs</strong>. $${pvUsd.toFixed(2).replace('.',',')} × ${dif.toFixed(4).replace('.',',')} × ${fmtBs(bcv)} = <strong>Bs ${fmtBs(pvBs)}</strong>.`;
   } else {
@@ -7016,7 +7018,7 @@ function posSeleccionarPedido(){
   const _bcvSel = getTasaBCV();
   const _saldoBsEl = qs('#pos_ped_saldo_bs');
   if(_saldoBsEl && _bcvSel > 0 && saldo > 0){
-    _saldoBsEl.querySelector('strong').textContent = 'Bs ' + fmtBs(parseFloat((saldo * _bcvSel).toFixed(2)));
+    _saldoBsEl.querySelector('strong').textContent = 'Bs ' + fmtBs(usdToBs(saldo, _bcvSel));
     _saldoBsEl.style.display = '';
   } else if(_saldoBsEl){ _saldoBsEl.style.display = 'none'; }
   qs('#pos_pedido_info').style.display = '';
@@ -7036,7 +7038,7 @@ function posSeleccionarPedido(){
       if(metodoBsPre){
         // El saldo ya está en dólar c/dif; para Bs se multiplica solo por BCV.
         const bcvPre = getTasaBCV();
-        const saldoBs = parseFloat((saldo * bcvPre).toFixed(2));
+        const saldoBs = usdToBs(saldo, bcvPre);
         recEl.value = fmtBs(saldoBs);
       } else {
         recEl.value = fmt(saldo);
@@ -7064,7 +7066,7 @@ function mvSeleccionarPedido(){
   const _bcvMvSel = getTasaBCV();
   const _saldoBsMvEl = qs('#mv_ped_saldo_bs');
   if(_saldoBsMvEl && _bcvMvSel > 0 && saldo > 0 && !mc.usdPuro){
-    _saldoBsMvEl.querySelector('strong').textContent = 'Bs ' + fmtBs(parseFloat((saldo * _bcvMvSel).toFixed(2)));
+    _saldoBsMvEl.querySelector('strong').textContent = 'Bs ' + fmtBs(usdToBs(saldo, _bcvMvSel));
     _saldoBsMvEl.style.display = '';
   } else if(_saldoBsMvEl){ _saldoBsMvEl.style.display = 'none'; }
   qs('#mv_pedido_info').style.display = '';
@@ -7085,7 +7087,7 @@ function mvSeleccionarPedido(){
       const metodoBsMv = ['efectivo_bs','pago_movil','transferencia'].includes(qs('#mv_metodo')?.value||'');
       if(metodoBsMv){
         const bcvMv = getTasaBCV(), difMv = getDiferencial();
-        const saldoBsMv = parseFloat((saldo * bcvMv).toFixed(2));
+        const saldoBsMv = usdToBs(saldo, bcvMv);
         recEl.value = fmtBs(saldoBsMv);
       } else {
         recEl.value = fmt(saldo);
@@ -7195,9 +7197,9 @@ function posRenderProductos(){
           const pvUsd=p.precio_venta||0;
           const dif=getDiferencial();
           const pvUsdDif=pvUsd*dif;
-          const pvBsDif=pvUsdDif*bcv;
+          const pvBsDif=usdToBs(pvUsdDif, bcv);
           const hasDif=dif>1.001;
-          if(!hasDif) return `<div style="font-size:10px;font-weight:700;color:var(--ink)">Bs ${(pvUsd*bcv).toFixed(2).replace('.',',')}</div>`;
+          if(!hasDif) return `<div style="font-size:10px;font-weight:700;color:var(--ink)">Bs ${usdToBs(pvUsd, bcv).toFixed(2).replace('.',',')}</div>`;
           return `<div style="font-size:10px;font-weight:700;color:var(--brand)">$ ${pvUsdDif.toFixed(2)}</div><div style="font-size:10px;font-weight:700;color:var(--ink)">Bs ${pvBsDif.toFixed(2).replace('.',',')}</div>`;
         })()}
       </div>
@@ -7460,7 +7462,7 @@ function posWaActualizar(){
     if(modo==='bs'){
       const lineaAnclaUsd = parseFloat(((pvUsdBase * cant) * dif).toFixed(2));
       const pvAnclaUsd    = lineaAnclaUsd / cant;
-      const lineaBs       = bcv>0 ? lineaAnclaUsd * bcv : 0;
+      const lineaBs       = bcv>0 ? parseFloat((lineaAnclaUsd * bcv).toFixed(2)) : 0;
       const pvCotBs       = cant>0 ? lineaBs / cant : 0;
       return { ...it, cant, pvAnclaUsd, pvCotBs, lineaAnclaUsd, lineaBs };
     } else {
@@ -7476,9 +7478,9 @@ function posWaActualizar(){
   if(modo==='bs' && bcv>0){
     const totalUsdProductos = itemsCot.reduce((a,it)=>a + (it.lineaAnclaUsd || 0), 0);
     const totalBsProductos  = itemsCot.reduce((a,it)=>a + (it.lineaBs || 0), 0);
-    const totalBsExtras     = totalExtrasUsd * bcv; // extras: solo BCV, sin diferencial
+    const totalBsExtras     = parseFloat((totalExtrasUsd * bcv).toFixed(2)); // extras: solo BCV, sin diferencial
     totalAnclaUsd = parseFloat((totalUsdProductos + totalExtrasUsd).toFixed(2));
-    totalBs       = totalBsProductos + totalBsExtras;
+    totalBs       = parseFloat((totalBsProductos + totalBsExtras).toFixed(2));
   } else {
     totalUsdDirecto = parseFloat((itemsCot.reduce((a,it)=>a + (it.lineaUsd || 0), 0) + totalExtrasUsd).toFixed(2));
   }
@@ -7497,18 +7499,18 @@ function posWaActualizar(){
 
   if(modo==='bs' && bcv>0){
     txt += itemsCot.map(it=>{
-      const pvBsStr  = it.pvCotBs.toFixed(2).replace('.',',');
-      const totBsStr = (it.pvCotBs*it.cant).toFixed(2).replace('.',',');
+      const pvBsStr  = fmtBs(it.pvCotBs);
+      const totBsStr = fmtBs(it.lineaBs);
       return `• ${it.cant}x ${it.nombre}\n  $${it.pvAnclaUsd.toFixed(2).replace('.',',')}/u → Bs ${pvBsStr}/u = Bs ${totBsStr}`;
     }).join('\n');
-    if(deliveryUsd>0){ const dBs=fmtBs(deliveryUsd*bcv); txt+=`\nDelivery: Bs ${dBs} ($${deliveryUsd.toFixed(2).replace('.',',')})`; }
-    if(envioUsd>0){    const eBs=fmtBs(envioUsd*bcv);    txt+=`\nEnvío: Bs ${eBs} ($${envioUsd.toFixed(2).replace('.',',')})`; }
-    if(disenoUsd>0){   const nBs=fmtBs(disenoUsd*bcv);  txt+=`\nDiseño: Bs ${nBs} ($${disenoUsd.toFixed(2).replace('.',',')})`; }
-    if(extrasUsd>0){   const xBs=fmtBs(extrasUsd*bcv);  txt+=`\nExtras: Bs ${xBs} ($${extrasUsd.toFixed(2).replace('.',',')})`; }
+    if(deliveryUsd>0){ const dBs=fmtBs(usdToBs(deliveryUsd, bcv)); txt+=`\nDelivery: Bs ${dBs} ($${deliveryUsd.toFixed(2).replace('.',',')})`; }
+    if(envioUsd>0){    const eBs=fmtBs(usdToBs(envioUsd, bcv));    txt+=`\nEnvío: Bs ${eBs} ($${envioUsd.toFixed(2).replace('.',',')})`; }
+    if(disenoUsd>0){   const nBs=fmtBs(usdToBs(disenoUsd, bcv));  txt+=`\nDiseño: Bs ${nBs} ($${disenoUsd.toFixed(2).replace('.',',')})`; }
+    if(extrasUsd>0){   const xBs=fmtBs(usdToBs(extrasUsd, bcv));  txt+=`\nExtras: Bs ${xBs} ($${extrasUsd.toFixed(2).replace('.',',')})`; }
     txt+=`\n\n*Total: Bs ${fmtBs(totalBs)}*`;
     txt+=`\n*$${totalAnclaUsd.toFixed(2).replace('.',',')} (BCV ${fmtBs(bcv)})*`;
     if(!soloEnvioSinAbono && !sinAbono){
-      const abonoBs = abonoUsd * bcv;
+      const abonoBs = parseFloat((abonoUsd * bcv).toFixed(2));
       txt+=`\n\n📌 *Abono ${aboPct}%:*\n  $${abonoUsd.toFixed(2).replace('.',',')} ó Bs ${fmtBs(abonoBs)} (BCV hoy)`;
       txt+=`\n📌 *Restante al retirar:*\n  $${restUsd.toFixed(2).replace('.',',')} al BCV del día de entrega`;
     }
@@ -7679,7 +7681,7 @@ function posCobrar(){
     const mc0 = pedidoMontoCliente(ped0);
     // El POS cobra el mismo saldo c/dif que muestra Pedidos.
     const recClienteUsd = (esBs0 && bcv0>0) ? rec0/bcv0 : rec0;
-    const saldo0Bs = mc0.saldo * bcv0;
+    const saldo0Bs = usdToBs(mc0.saldo, bcv0);
     if(esBs0 && rec0 > saldo0Bs + 1){ toast('El monto supera el saldo: Bs '+fmtBs(saldo0Bs),'warn'); return; }
     if(!esBs0 && recClienteUsd > mc0.saldo + 0.01){ toast('El monto supera el saldo: '+euro(mc0.saldo),'warn'); return; }
     // Si pedido es USD puro, el saldo ya es dólar base → no dividir por diferencial
@@ -7963,7 +7965,7 @@ function recalcVenta(){
   const metodoBsV=['efectivo_bs','pago_movil','transferencia'].includes(qs('#mv_metodo')?.value||'');
   // Total a mostrar: si es pago de pedido, total ya está en c/dif; si no, aplicar diferencial a productos.
   const totalMostrar = (metodoBsV && bcvV>0)
-    ? parseFloat((['pago_restante'].includes(tipoV) && _mvPedidoVinculado && sub===0 ? total*bcvV : total*(difV>0?difV:1)*bcvV).toFixed(2))
+    ? (['pago_restante'].includes(tipoV) && _mvPedidoVinculado && sub===0 ? usdToBs(total, bcvV) : usdToBs(total*(difV>0?difV:1), bcvV))
     : total;
   // rec ya viene en la moneda del campo (Bs o USD)
   const vuelto=Math.max(0,rec-totalMostrar);
@@ -8001,7 +8003,7 @@ function guardarVenta(){
     const esBsMv0 = ['efectivo_bs','pago_movil','transferencia'].includes(qs('#mv_metodo')?.value||'');
     const mcMv0 = pedidoMontoCliente(ped0);
     const recClienteUsd = (esBsMv0 && bcvMv0>0) ? rec0/bcvMv0 : rec0;
-    const saldo0Bs = parseFloat((mcMv0.saldo * bcvMv0).toFixed(2));
+    const saldo0Bs = usdToBs(mcMv0.saldo, bcvMv0);
     if(esBsMv0 && rec0 > saldo0Bs + 1){ toast('El monto supera el saldo: Bs '+fmtBs(saldo0Bs),'warn'); return; }
     if(!esBsMv0 && recClienteUsd > mcMv0.saldo + 0.01){ toast('El monto supera el saldo: '+euro(mcMv0.saldo),'warn'); return; }
     // Si pedido es USD puro, el saldo ya es dólar base → no dividir por diferencial
@@ -8148,7 +8150,7 @@ function renderKpisVentas(){
   const bcvK=getTasaBCV(), difK=getDiferencial();
   // Separar por moneda para mostrar totales correctos
   const totalHoyBs = hoyV.filter(v=>['efectivo_bs','pago_movil','transferencia'].includes(v.metodo))
-    .reduce((a,v)=>a + v.total*(difK>0?difK:1)*bcvK, 0);
+    .reduce((a,v)=>a + usdToBs(v.total*(difK>0?difK:1), bcvK), 0);
   const totalHoyUsd = hoyV.filter(v=>['efectivo_usd','zelle'].includes(v.metodo))
     .reduce((a,v)=>a+v.total, 0);
   const totalLabel = totalHoyBs>0 && totalHoyUsd>0
@@ -8505,7 +8507,7 @@ function mmovSeleccionarPedido(){
     } else {
       const bcv = getTasaBCV(), dif = getDiferencial();
       const saldoConDif = parseFloat((saldoUsd * (dif>0?dif:1)).toFixed(2));
-      if(bcv>0) montoEl.value = fmtBs(saldoConDif*bcv);
+      if(bcv>0) montoEl.value = fmtBs(usdToBs(saldoConDif, bcv));
     }
     mmovCalcEquiv();
   }
@@ -8628,7 +8630,7 @@ function mmovCalcEquiv(){
   if(monto>0 && par>0){
     wrap.style.display='block';
     if(esUsd){
-      val.textContent='Equivalente: Bs '+fmtBs(monto*par)+' · Tasa: '+fmtBs(par);
+      val.textContent='Equivalente: Bs '+fmtBs(usdToBs(monto, par))+' · Tasa: '+fmtBs(par);
     } else {
       val.textContent='Equivalente: $ '+(monto/par).toFixed(2).replace('.',',')+' · Tasa: '+fmtBs(par);
     }
@@ -8746,7 +8748,7 @@ function renderCaja(){
       ? '$ '+(m.monto||0).toFixed(2).replace('.',',')
       : 'Bs '+fmtBs(m.monto||0);
     const subFmt = m.moneda==='usd'
-      ? (_bcvC>0?'≈ Bs '+fmtBs((m.monto||0)*_bcvC):'')
+      ? (_bcvC>0?'≈ Bs '+fmtBs(usdToBs(m.monto||0, _bcvC)):'')
       : (_parC>0?'≈ $ '+((m.monto||0)/_parC).toFixed(2).replace('.',',')+' paralelo · $ '+(_bcvC>0?((m.monto||0)/_bcvC).toFixed(2).replace('.',','):'-')+' BCV':'');
     return `<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:var(--card);border-radius:12px;margin-bottom:8px;border:1px solid var(--border)">
       <div style="width:34px;height:34px;border-radius:50%;background:${esIng?'#dcfce7':'#fee2e2'};display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;color:${esIng?'#15803d':'#b91c1c'}">${ico}</div>
@@ -9622,10 +9624,10 @@ function renderPedidos(){
           const _bcvL=getTasaBCV(), _difL=getDiferencial(), _parL=_bcvL*_difL;
           const _usdPuro=pedidoPagoEnUsd(p);
           const totalCDif = (typeof pedidoTotalCDifCalc==='function') ? pedidoTotalCDifCalc(p,_difL) : (p.total_cdif || (p.total*(_difL>1?_difL:1)));
-          const totalBs   = p.total_bs   || (_bcvL>0 ? parseFloat((totalCDif*_bcvL).toFixed(2)) : 0);
+          const totalBs   = p.total_bs   || (_bcvL>0 ? usdToBs(totalCDif, _bcvL) : 0);
           const pagadoCDif = parseFloat(((p.pagos||[]).reduce((a,pg)=>a + pg.monto*(_difL>1?_difL:1), 0)).toFixed(2));
           const restCDif   = Math.max(0, parseFloat((totalCDif - pagadoCDif).toFixed(2)));
-          const pagadoBs   = _bcvL>0 ? parseFloat((pagadoCDif*_bcvL).toFixed(2)) : 0;
+          const pagadoBs   = _bcvL>0 ? usdToBs(pagadoCDif, _bcvL) : 0;
           const restBs     = Math.max(0, parseFloat((totalBs - pagadoBs).toFixed(2)));
           if(_usdPuro){
             const restUsdBase=Math.max(0,p.total-totalPagado(p));
@@ -9926,7 +9928,7 @@ td.right,th.right{text-align:right}
   html+=`<div class="totals">`;
   if(p.descuento) html+=`<div class="row"><span>Descuento:</span><span>-${euro(p.descuento)}</span></div>`;
   html+=`<div class="row big"><span>Total:</span><span>${euro(p.total)}</span></div>`;
-  const totalBsPrint = parseFloat((totalCDif*bcv).toFixed(2));
+  const totalBsPrint = usdToBs(totalCDif, bcv);
   if(dif>1 && bcv>0){
     html+=`<div class="row"><span>Total c/dif (×${dif.toFixed(4)}):</span><span>$${totalCDif.toFixed(2).replace('.',',')}</span></div>`;
     html+=`<div class="row"><span>Total Bs (BCV ${fmtBs(bcv)}):</span><span>Bs ${fmtBs(totalBsPrint)}</span></div>`;
@@ -9948,7 +9950,7 @@ td.right,th.right{text-align:right}
         const restUsdBase=Math.max(0,p.total-pag);
         html+=`<div class="pago-row" style="color:#c0392b;font-weight:700"><span>Restante:</span><span>${euro(restUsdBase)} USD</span></div>`;
       } else {
-        html+=`<div class="pago-row" style="color:#c0392b;font-weight:700"><span>Restante:</span><span>$${restCDif.toFixed(2).replace('.',',')}${bcv>0?' · Bs '+fmtBs(parseFloat((totalBsPrint - pagadoCDif*bcv).toFixed(2))):''}</span></div>`;
+        html+=`<div class="pago-row" style="color:#c0392b;font-weight:700"><span>Restante:</span><span>$${restCDif.toFixed(2).replace('.',',')}${bcv>0?' · Bs '+fmtBs(parseFloat((totalBsPrint - usdToBs(pagadoCDif, bcv)).toFixed(2))):''}</span></div>`;
       }
     }
     html+=`</div>`;
@@ -12249,7 +12251,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_13';
+  const APP_VERSION = 'v14_15';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
