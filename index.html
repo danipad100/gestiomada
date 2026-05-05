@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_15">
+<html lang="es" data-app-version="GestioMada_V14_16">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -10049,8 +10049,8 @@ function verPedido(idx){
           const _metPed = (p.pagos&&p.pagos.length)?p.pagos[0].metodo:'efectivo_bs';
           const _esBsPed = ['efectivo_bs','pago_movil','transferencia'].includes(_metPed);
           if(_esBsPed && _pedDif>1 && _pedPar>0){
-            const tcd=((p.total_cdif||p.total*_pedDif)).toFixed(2).replace('.',',');
-            const tbs=fmtBs(p.total_bs||p.total*_pedPar);
+            const tcd=_totalCDifV.toFixed(2).replace('.',',');
+            const tbs=fmtBs(p.total_bs||usdToBs(_totalCDifV, _pedBcv));
             return '<div class="pill" style="background:#ffe3ee;margin-bottom:4px">Total <strong style="color:var(--brand)">$'+tcd+'</strong> <span style="font-size:9px;color:var(--muted)">c/dif</span></div><div style="font-size:11px;color:var(--ok);text-align:right">Bs '+tbs+'</div>';
           }
           return '<div class="pill" style="background:#ffe3ee">Total <strong style="color:var(--brand)">'+_fmtUsd(p.total)+'</strong></div>';
@@ -10086,7 +10086,7 @@ function verPedido(idx){
           const _metPedR = (p.pagos&&p.pagos.length)?p.pagos[0].metodo:'efectivo_bs';
           const _esBsPedR = ['efectivo_bs','pago_movil','transferencia'].includes(_metPedR);
           if(_esBsPedR && _pedDif>1 && _pedBcv>0){
-            const rbs=fmtBs(restCDif*_pedBcv);
+            const rbs=fmtBs(usdToBs(restCDif, _pedBcv));
             return '<div class="pill" style="background:#ffe3ee;margin-bottom:4px">Restante <strong style="color:var(--danger)">$'+restCDif.toFixed(2).replace('.',',')+'</strong> <span style="font-size:9px;color:var(--muted)">c/dif</span></div><div style="font-size:10px;color:var(--muted)">A BCV del día: <strong style="color:var(--danger)">Bs '+rbs+'</strong></div>';
           }
           return '<div class="pill" style="background:#ffe3ee">Restante <strong style="color:var(--danger)">'+euro(restCDif)+'</strong></div>';
@@ -12251,7 +12251,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_15';
+  const APP_VERSION = 'v14_16';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
