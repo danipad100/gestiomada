@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_19">
+<html lang="es" data-app-version="GestioMada_V14_21">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -33,6 +33,7 @@ const SUPA_TABLAS = [
   { supa: 'inventario_movimientos',  ls: 'POS.invmov',      render: null         },
   { supa: 'productos_pers',          ls: 'POS.pers',        render: 'editor'     },
   { supa: 'usuarios',                ls: 'POS.usuarios',    render: 'usuarios'   },
+  { supa: 'envios',                  ls: 'POS.envios',      render: 'envios'     },
 ];
 
 // ── Lista negra de registros eliminados (evita restauración por Realtime o upsert) ──
@@ -238,6 +239,7 @@ const upsertInsumo  = r => upsertFila('inventario_insumos', r);
 const upsertTerminado = r => upsertFila('inventario_terminados', r);
 const upsertUsuario = r => upsertFila('usuarios', r);
 const upsertPers    = r => upsertFila('productos_pers', r);
+const upsertEnvio   = r => upsertFila('envios', r);
 
 // Sync inmediato de UN solo producto — propaga el cambio al instante a todos los dispositivos
 async function syncProductoAhora(prod, reintentos=3){
@@ -440,6 +442,22 @@ function mapearParaSupa(tabla, d){
     vistas:   d.vistas || [],
     puede:    d.puede || [],
     fecha:    d.fecha || new Date().toISOString(),
+  };
+
+  if(tabla === 'envios') return {
+    id,
+    nombre:       d.nombre || '',
+    cedula:       d.cedula || '',
+    telefono:     d.telefono || '',
+    transportista:d.transportista || '',
+    direccion:    d.direccion || '',
+    guia:         d.guia || '',
+    estado:       d.estado || 'pendiente',
+    contenido:    d.contenido || '',
+    fragil:       d.fragil || false,
+    pedido_id:    d.pedido_id || null,
+    pedido_num:   d.pedido_num || null,
+    fecha_creado: d.fecha_creado || new Date().toISOString(),
   };
 
   // Fallback: solo campos seguros
@@ -3155,7 +3173,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
 
         <!-- Tab Pedidos -->
         <div class="tab-panel" id="rep-tab-pedidos">
-          <div class="grid g4" id="rep-ped-kpis" style="margin-bottom:14px"></div>
+          <div class="grid g5" id="rep-ped-kpis" style="margin-bottom:14px"></div>
           <div class="grid g2" style="margin-bottom:14px">
             <div class="card">
               <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg> Por estado</div>
@@ -5217,7 +5235,7 @@ function pagosPendientesCli(c){
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)">
       <div style="flex:1;min-width:0">
         <div style="font-size:12px;font-weight:700">${p.numero}</div>
-        <div style="font-size:11px;color:var(--muted)">${p.fecha_entrega?'Entrega: '+new Date(p.fecha_entrega+'T12:00').toLocaleDateString('es-ES',{day:'2-digit',month:'short'}):''}</div>
+        <div style="font-size:11px;color:var(--muted)">${p.fecha_entrega?'Entrega: '+fmtFecha(p.fecha_entrega):''}</div>
         <div style="margin-top:4px;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
           <div style="height:100%;width:${pct}%;background:${ESTADO_COLOR[p.estado]||'var(--brand)'};border-radius:2px;transition:width .3s"></div>
         </div>
@@ -7483,15 +7501,15 @@ function posWaActualizar(){
     }
   });
 
-  // Totales — extras (delivery/envío/diseño/extras) van a precio fijo USD sin diferencial
+  // Totales — deben cuadrar con el carrito POS
+  // El carrito calcula: totalConDif = round2(subProductos × dif + extras)
+  // La cotización debe usar exactamente la misma fórmula
   const totalExtrasUsd = deliveryUsd + envioUsd + disenoUsd + extrasUsd;
   let totalAnclaUsd = 0, totalBs = 0, totalUsdDirecto = 0;
   if(modo==='bs' && bcv>0){
-    const totalUsdProductos = itemsCot.reduce((a,it)=>a + (it.lineaAnclaUsd || 0), 0);
-    const totalBsProductos  = itemsCot.reduce((a,it)=>a + (it.lineaBs || 0), 0);
-    const totalBsExtras     = parseFloat((totalExtrasUsd * bcv).toFixed(2)); // extras: solo BCV, sin diferencial
-    totalAnclaUsd = parseFloat((totalUsdProductos + totalExtrasUsd).toFixed(2));
-    totalBs       = parseFloat((totalBsProductos + totalBsExtras).toFixed(2));
+    const subProductosBase = itemsCot.reduce((a,it)=>a + ((it.precio_usd||0) * it.cant), 0);
+    totalAnclaUsd = parseFloat(((subProductosBase * dif) + totalExtrasUsd).toFixed(2));
+    totalBs       = usdToBs(totalAnclaUsd, bcv);
   } else {
     totalUsdDirecto = parseFloat((itemsCot.reduce((a,it)=>a + (it.lineaUsd || 0), 0) + totalExtrasUsd).toFixed(2));
   }
@@ -7521,7 +7539,7 @@ function posWaActualizar(){
     txt+=`\n\n*Total: Bs ${fmtBs(totalBs)}*`;
     txt+=`\n*$${totalAnclaUsd.toFixed(2).replace('.',',')} (BCV ${fmtBs(bcv)})*`;
     if(!soloEnvioSinAbono && !sinAbono){
-      const abonoBs = parseFloat((abonoUsd * bcv).toFixed(2));
+      const abonoBs = usdToBs(abonoUsd, bcv);
       txt+=`\n\n📌 *Abono ${aboPct}%:*\n  $${abonoUsd.toFixed(2).replace('.',',')} ó Bs ${fmtBs(abonoBs)} (BCV hoy)`;
       txt+=`\n📌 *Restante al retirar:*\n  $${restUsd.toFixed(2).replace('.',',')} al BCV del día de entrega`;
     }
@@ -9643,16 +9661,16 @@ function renderPedidos(){
           const restBs     = Math.max(0, parseFloat((totalBs - pagadoBs).toFixed(2)));
           if(_usdPuro){
             const restUsdBase=Math.max(0,p.total-totalPagado(p));
-            return `<div style="font-weight:700;font-size:15px;color:var(--brand)">$${p.total.toFixed(2).replace('.',',')}</div>`+
-              (restUsdBase>PED_SALDO_TOLERANCIA?`<div style="font-size:11px;color:var(--danger);font-weight:600">Restante: $${restUsdBase.toFixed(2).replace('.',',')}</div>`:`<div style="font-size:11px;color:var(--ok);font-weight:600">✓ Pagado</div>`);
+            return `<div style="font-weight:700;font-size:16px;color:var(--brand)">$${p.total.toFixed(2).replace('.',',')}</div>`+
+              (restUsdBase>PED_SALDO_TOLERANCIA?`<div style="font-size:12px;color:var(--danger);font-weight:600">Restante: $${restUsdBase.toFixed(2).replace('.',',')}</div>`:`<div style="font-size:12px;color:var(--ok);font-weight:600">✓ Pagado</div>`);
           }
-          return `<div style="font-weight:700;font-size:15px;color:var(--brand)">$${totalCDif.toFixed(2).replace('.',',')}</div>`+
-            (totalBs>0?`<div style="font-size:13px;font-weight:600;color:var(--ok)">Bs ${fmtBs(totalBs)}</div>`:'') +
+          return `<div style="font-weight:700;font-size:16px;color:var(--brand)">$${totalCDif.toFixed(2).replace('.',',')}</div>`+
+            (totalBs>0?`<div style="font-size:14px;font-weight:600;color:var(--ok)">Bs ${fmtBs(totalBs)}</div>`:'') +
             (restCDif>PED_SALDO_TOLERANCIA?
-              `<div style="font-size:11px;color:var(--danger);font-weight:600">Restante: $${restCDif.toFixed(2).replace('.',',')}</div>`+(_bcvL>0?`<div style="font-size:10px;color:var(--danger);font-weight:600">Restante Bs: ${fmtBs(restBs)}</div>`:'')
-              :`<div style="font-size:11px;color:var(--ok);font-weight:600">✓ Pagado</div>`);
+              `<div style="font-size:12px;color:var(--danger);font-weight:600">Restante: $${restCDif.toFixed(2).replace('.',',')}</div>`+(_bcvL>0?`<div style="font-size:11px;color:var(--danger);font-weight:600">Restante Bs: ${fmtBs(restBs)}</div>`:'')
+              :`<div style="font-size:12px;color:var(--ok);font-weight:600">✓ Pagado</div>`);
         })()}
-        ${p.fecha_entrega?`<div style="font-size:11px;color:var(--muted)">Entrega: ${fmtFecha(p.fecha_entrega)}</div>`:''}
+        ${p.fecha_entrega?`<div style="font-size:13px;color:var(--muted);font-weight:600">Entrega: ${fmtFecha(p.fecha_entrega)}</div>`:''}
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0" onclick="event.stopPropagation()">
         <button class="btn btn-brand btn-sm" onclick="verPedido(${ri})">Ver</button>
@@ -9662,7 +9680,7 @@ function renderPedidos(){
   });
 }
 
-function fmtFecha(iso){ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+function fmtFecha(iso){ if(!iso) return ''; const d=new Date(iso+'T12:00'); const dias=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']; return dias[d.getDay()]+' '+d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'}); }
 
 function renderKpisPedidos(){
   const all=loadPed();
@@ -11279,15 +11297,18 @@ function renderRepPedidos(){
   const all = loadPed().filter(p=>repInRango(p.fecha_creado));
   const totalFact  = all.reduce((a,p)=>a+p.total,0);
   const totalPagado= all.reduce((a,p)=>a+(p.pagos||[]).reduce((x,pg)=>x+pg.monto,0),0);
+  const totalPorCobrar = Math.max(0, totalFact - totalPagado);
   const totalPend  = all.filter(p=>p.estado!=='entregado'&&p.estado!=='cancelado').length;
   const ticketPed  = all.length ? totalFact/all.length : 0;
+  const bcvR = getTasaBCV();
   // KPIs de pedidos
   const kwp = qs('#rep-ped-kpis');
   if(kwp) kwp.innerHTML = `
     <div class="kpi c-pink"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FBEAF0"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#993556" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></div></div><div class="kpi-lbl">Total pedidos</div><div class="kpi-val">${all.length}</div><div class="kpi-sub">en período</div></div>
     <div class="kpi c-green"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></div></div><div class="kpi-lbl">Facturado</div><div class="kpi-val" style="font-size:16px">${euro(totalFact)}</div><div class="kpi-sub">${euro(ticketPed)} ticket prom.</div></div>
     <div class="kpi c-teal"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E1F5EE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F6E56" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div><div class="kpi-lbl">Cobrado</div><div class="kpi-val" style="font-size:16px">${euro(totalPagado)}</div><div class="kpi-sub">${totalFact>0?((totalPagado/totalFact)*100).toFixed(0):0}% del total</div></div>
-    <div class="kpi c-amber"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div><div class="kpi-lbl">Pendientes</div><div class="kpi-val">${totalPend}</div><div class="kpi-sub">${euro(Math.max(0,totalFact-totalPagado))} por cobrar</div></div>`;
+    <div class="kpi c-red"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FEE2E2"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#B91C1C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div></div><div class="kpi-lbl">Por cobrar</div><div class="kpi-val" style="font-size:16px">${euro(totalPorCobrar)}</div><div class="kpi-sub">${bcvR>0?'Bs '+fmtBs(usdToBs(totalPorCobrar,bcvR)):''} ${totalFact>0?((totalPorCobrar/totalFact)*100).toFixed(0)+'% pendiente':''}</div></div>
+    <div class="kpi c-amber"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div><div class="kpi-lbl">Pendientes</div><div class="kpi-val">${totalPend}</div><div class="kpi-sub">pedidos activos</div></div>`;
 
   // Por estado
   const byEst = {};
@@ -12269,7 +12290,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_19';
+  const APP_VERSION = 'v14_21';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -12544,7 +12565,7 @@ const LS_ENV = 'POS.envios';
 let _envIdx = null; // índice del envío en edición
 
 function loadEnv(){ try{ return JSON.parse(localStorage.getItem(LS_ENV)||'[]'); }catch(e){ return []; } }
-function saveEnv(arr){ localStorage.setItem(LS_ENV, JSON.stringify(arr)); }
+function saveEnv(arr){ localStorage.setItem(LS_ENV, JSON.stringify(arr)); syncToSupabase('envios', arr); }
 
 // ── Render lista ──
 function renderEnvios(){
@@ -12696,6 +12717,7 @@ function guardarEnvio(){
   const all=loadEnv();
   if(_envIdx!==null){ all[_envIdx]=envio; } else { all.push(envio); }
   saveEnv(all);
+  upsertEnvio(envio);
   toast('Envío guardado','ok');
   closeModal('m-envio');
   renderEnvios();
@@ -12704,7 +12726,11 @@ function guardarEnvio(){
 // ── Eliminar envío ──
 function eliminarEnvio(idx){
   if(!confirm('¿Eliminar este envío?')) return;
-  const all=loadEnv(); all.splice(idx,1); saveEnv(all); renderEnvios();
+  const all=loadEnv();
+  const deletedId = all[idx]?.id;
+  all.splice(idx,1); saveEnv(all);
+  if(deletedId) deleteFromSupabase('envios', deletedId);
+  renderEnvios();
 }
 
 // ── Imprimir etiqueta — formato media hoja A4 ──
