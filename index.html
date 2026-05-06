@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_24">
+<html lang="es" data-app-version="GestioMada_V14_25">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -10136,7 +10136,7 @@ function verPedido(idx){
     estSel.style.display = (p.estado==='cancelado') ? 'none' : '';
   }
   const cobrBtn=qs('#btn-cobrar-pedido');
-  if(cobrBtn){ const rest=Math.max(0,(p.total||0)-totalPagado(p)); cobrBtn.style.display=(rest>0&&p.estado!=='cancelado'&&p.estado!=='entregado')?'':'none'; }
+  if(cobrBtn){ const rest=Math.max(0,(p.total||0)-totalPagado(p)); cobrBtn.style.display=(rest>0&&p.estado!=='cancelado')?'':'none'; }
   const cobrEntBtn=qs('#btn-cobrar-y-entregar');
   if(cobrEntBtn){ const rest2=pedidoSaldoCDif(p); cobrEntBtn.style.display=(rest2>0&&p.estado!=='cancelado'&&p.estado!=='entregado')?'':'none'; }
 
@@ -12471,7 +12471,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_24';
+  const APP_VERSION = 'v14_25';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
