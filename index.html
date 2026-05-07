@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_28">
+<html lang="es" data-app-version="GestioMada_V14_29">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -2640,7 +2640,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.29: Resiliencia y UX — openModal/closeModal mejorados con stack de modales, scroll lock del body, y cierre con Escape (closeTopModal). Modal de usuarios unificado al sistema centralizado. Nuevo helper safeNum(v, fallback) para validar inputs numéricos de forma segura (NaN/Infinity → fallback). v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
         </div>
       </div>
 
@@ -4129,6 +4129,7 @@ document.addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   if(e.key === 'Escape'){
     document.querySelectorAll('.gm-select.open').forEach(el => el.classList.remove('open'));
+    closeTopModal();
   }
 });
 
@@ -4139,6 +4140,7 @@ function parseEU(s){
   const v=parseFloat(s.trim().replace(/\./g,'').replace(',','.'));
   return isNaN(v)?0:v;
 }
+function safeNum(v,fallback){ const n=typeof v==='string'?parseEU(v):Number(v); return isNaN(n)||!isFinite(n)?(fallback??0):n; }
 function euro(n){ return (CFG.moneda||'$')+' '+Number(n||0).toFixed(2).replace('.',','); }
 function fmtBs(n){ const v=Number(n||0).toFixed(2); const [ent,dec]=v.split('.'); return ent.replace(/\B(?=(\d{3})+(?!\d))/g,'.')+','+dec; }
 function esc(s){ if(s==null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
@@ -4258,8 +4260,27 @@ function nav(id, el){
 }
 
 // ── MODAL ──
-function openModal(id){ qs('#'+id).classList.add('open'); }
-function closeModal(id){ qs('#'+id).classList.remove('open'); }
+// ── Gestión centralizada de modales ──
+const _modalStack = [];
+function openModal(id){
+  const el=qs('#'+id); if(!el) return;
+  // Cerrar gm-selects abiertos
+  document.querySelectorAll('.gm-select.open').forEach(s=>s.classList.remove('open'));
+  el.classList.add('open');
+  if(!_modalStack.includes(id)) _modalStack.push(id);
+  document.body.style.overflow='hidden';
+}
+function closeModal(id){
+  const el=qs('#'+id); if(!el) return;
+  el.classList.remove('open');
+  const idx=_modalStack.indexOf(id);
+  if(idx>=0) _modalStack.splice(idx,1);
+  if(_modalStack.length===0) document.body.style.overflow='';
+}
+function closeTopModal(){
+  if(_modalStack.length===0) return;
+  closeModal(_modalStack[_modalStack.length-1]);
+}
 
 // ── STORAGE ──
 function loadPers(){ try{ return JSON.parse(localStorage.getItem(LS_PERS)||'[]'); }catch(e){ return []; } }
@@ -6054,7 +6075,7 @@ function abrirNuevoUsuario(){
   qs('#musr-avatar').textContent = '?';
   qs('#musr-btn-del').style.display = 'none';
   musrAplicarRolBase();
-  qs('#m-usuario').classList.add('open');
+  openModal('m-usuario');
 }
 
 function editarUsuario(idx){
@@ -6072,11 +6093,11 @@ function editarUsuario(idx){
   musrActualizarAvatar();
   qs('#musr-btn-del').style.display = '';
   musrRenderPermisos(u.rol, u.vistas, u.puede);
-  qs('#m-usuario').classList.add('open');
+  openModal('m-usuario');
 }
 
 function cerrarModalUsuario(){
-  qs('#m-usuario').classList.remove('open');
+  closeModal('m-usuario');
   _musrEditIdx = null;
 }
 
@@ -12561,7 +12582,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_28';
+  const APP_VERSION = 'v14_29';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -12570,7 +12591,7 @@ window.addEventListener('popstate',e=>{
   let _regPromise = null;
   function registerSW(){
     if(!hasSW()) return;
-    _regPromise = navigator.serviceWorker.register('./sw.js?v=v14_28', { updateViaCache: 'none' })
+    _regPromise = navigator.serviceWorker.register('./sw.js?v=v14_29', { updateViaCache: 'none' })
       .then(function(reg){
         console.log('[PWA] SW registrado scope:', reg.scope);
         return reg;
@@ -12653,7 +12674,7 @@ window.addEventListener('popstate',e=>{
       setStatus('Actualización disponible: ' + vActual + ' → ' + vServidor + '. Instalando…');
     }
 
-    try{ await reg.update(); }catch(e){ setStatus('No se pudo descargar la actualización.'); return; }
+    try{ await reg.update(); }catch(e){ setStatus('No se pudo descargar la actualización: '+(e.message||e)); console.error('[PWA] reg.update() falló:',e); return; }
 
     // 5. Esperar hasta 5 segundos a que el nuevo SW quede instalado
     await new Promise(function(resolve){
@@ -12678,6 +12699,8 @@ window.addEventListener('popstate',e=>{
       const vW = await getSWVersion(reg.waiting);
       setStatus('¡Actualización lista' + (vW ? ' ('+vW+')' : '') + '! Toca "Aplicar" para instalar.');
       showApply(true);
+    } else if(reg.installing){
+      setStatus('Instalando actualización… recarga la página en unos segundos.');
     } else {
       // SW ya se activó automáticamente (primera instalación o skipWaiting inmediato)
       const vNueva = await getSWVersion(reg.active);

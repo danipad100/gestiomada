@@ -1,9 +1,12 @@
-const VERSION = 'v14_28';
+const VERSION = 'v14_29';
 const CACHE_NAME = 'gestiomada-' + VERSION;
 
 const URLS_TO_CACHE = [
   './',
-  './index.html',
+  './index.html'
+];
+
+const URLS_OPTIONAL = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
@@ -12,7 +15,14 @@ const URLS_TO_CACHE = [
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(URLS_TO_CACHE))
+    caches.open(CACHE_NAME).then(async cache => {
+      // Critical: must succeed
+      await cache.addAll(URLS_TO_CACHE);
+      // Optional: cache what we can, ignore failures
+      await Promise.allSettled(URLS_OPTIONAL.map(url =>
+        cache.add(url).catch(e => console.warn('[SW] No se pudo cachear:', url, e.message))
+      ));
+    })
   );
 });
 
