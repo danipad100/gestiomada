@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_25">
+<html lang="es" data-app-version="GestioMada_V14_28">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -98,8 +98,8 @@ function normalizarPedidoImportado(r){
   if(!_numPedido(p.total)) p.total = parseFloat((productosNetos + extrasTotal).toFixed(4));
   const dif = (typeof getDiferencial === 'function') ? getDiferencial() : 1;
   const bcv = (typeof getTasaBCV === 'function') ? getTasaBCV() : 0;
-  const productosCDif = parseFloat((productosNetos * (dif>0?dif:1)).toFixed(2));
-  p.total_cdif = parseFloat((productosCDif + extrasTotal).toFixed(2));
+  const productosCDif = round2(productosNetos * (dif>0?dif:1));
+  p.total_cdif = round2(productosCDif + extrasTotal);
   p.total_bs = bcv>0 ? usdToBs(p.total_cdif, bcv) : 0;
   return p;
 }
@@ -111,8 +111,8 @@ function pedidoTotalCDifCalc(p, dif){
   p = normalizarPedidoImportado(p || {});
   dif = dif || (typeof getDiferencial==='function' ? getDiferencial() : 1);
   const productosNetos = Math.max(0, _numPedido(p.subtotal) - _numPedido(p.descuento));
-  const productosCDif = parseFloat((productosNetos * (dif>0?dif:1)).toFixed(2));
-  return parseFloat((productosCDif + pedidoExtrasTotal(p)).toFixed(2));
+  const productosCDif = round2(productosNetos * (dif>0?dif:1));
+  return round2(productosCDif + pedidoExtrasTotal(p));
 }
 
 function aplicarCambioRealtime(tabla, tipo, registro){
@@ -151,7 +151,7 @@ function aplicarCambioRealtime(tabla, tipo, registro){
     local = local.filter(x => String(x.id) !== String(registro.id));
   }
 
-  localStorage.setItem(t.ls, JSON.stringify(local));
+  _lsSet(t.ls, JSON.stringify(local));
 
   const renders = {
     ventas:    ()=>{ if(typeof renderVentas==='function') renderVentas(); if(typeof renderDash==='function') renderDash(); },
@@ -515,13 +515,15 @@ async function initSupabaseSync(){
       // Caja, Pedidos y Productos: Supabase es fuente de verdad absoluta
       // Las eliminaciones y cambios se propagan — no se restauran registros borrados
       const normalizado = t.supa === 'pedidos' ? remoto.map(r => normalizarPedidoImportado(r)).filter(r => !_esBorrado(t.supa, r.id)) : t.supa === 'productos' ? remoto.map(r => {
-        // Preservar foto base64 local si Supabase no tiene foto_url
+        // Preservar foto base64 local SOLO si Supabase no tiene foto_url
         const localItems2 = JSON.parse(localStorage.getItem(t.ls)||'[]');
         const local = localItems2.find(l => String(l.id) === String(r.id));
-        if(local && !r.foto_url && local.foto) r = { ...r, foto: local.foto };
+        if(local && !r.foto_url && local.foto && !local.foto.startsWith('data:')) r = { ...r, foto: local.foto };
+        // Si Supabase ya tiene foto_url, no preservar base64 pesada
+        if(r.foto_url && r.foto_url.startsWith('http')) r.foto = '';
         return r;
       }) : remoto;
-      localStorage.setItem(t.ls, JSON.stringify(normalizado));
+      _lsSet(t.ls, JSON.stringify(normalizado));
       console.log(`[Supabase] ${t.supa} sync (fuente de verdad): ${normalizado.length} registros`);
     } else {
       // Resto de tablas: merge seguro
@@ -563,7 +565,7 @@ async function initSupabaseSync(){
           mergeado.push(r);
         }
       });
-      localStorage.setItem(t.ls, JSON.stringify(mergeado));
+      _lsSet(t.ls, JSON.stringify(mergeado));
       console.log(`[Supabase] Sync ${t.supa}: ${mergeado.length} registros`);
     }
   }
@@ -1696,6 +1698,13 @@ body.dark .pos-prod-img-ph{background:#23283a}
   .view-wrap{padding:0}
   body{background:#fff}
 }
+.offline-bar{display:none;align-items:center;justify-content:center;gap:8px;padding:6px 16px;background:#FEF3CD;color:#856404;font-size:12px;font-weight:600;text-align:center;border-bottom:1px solid #FFEEBA;z-index:999}
+.offline-bar.visible{display:flex}
+.dark .offline-bar{background:#4A3800;color:#FFD666;border-color:#6B5200}
+.offline-bar .dot{width:8px;height:8px;border-radius:50%;background:#dc3545;flex-shrink:0}
+.offline-bar.reconectado .dot{background:#28a745}
+.ls-meter{height:6px;background:var(--border,#e5e7eb);border-radius:3px;overflow:hidden;margin-top:4px}
+.ls-meter-fill{height:100%;border-radius:3px;transition:width .3s}
 </style>
 </head>
 <body>
@@ -2052,6 +2061,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
       </div>
     </div>
 
+    <div class="offline-bar" id="offline-bar"><span class="dot"></span><span id="offline-msg">Sin conexión — los cambios se guardan localmente</span></div>
     <div class="view-wrap">
 
       <!-- ══════════════════════════════════════
@@ -2612,6 +2622,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card">
           <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Datos</div>
           <div class="btn-row">
+            <div id="ls-monitor" style="margin-bottom:12px"></div>
             <button class="btn" onclick="exportRespaldo()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg> Exportar respaldo</button>
             <label class="btn" style="cursor:pointer"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.72"/></svg> Importar respaldo<input type="file" id="cfg_import" accept=".json" style="display:none" onchange="importRespaldo(this)"/></label>
             <button class="btn btn-danger" onclick="if(confirm('¿Borrar TODOS los datos?'))limpiarTodo()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Limpiar todo</button>
@@ -2629,7 +2640,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.24: Flujo de entrega corregido — marcar "Entregado" ahora solo funciona si el pedido está 100% pagado (crea Venta + descuenta inventario). Si tiene saldo pendiente, bloquea y avisa. Nuevo botón "Cobrar y entregar": registra el pago restante (con método de pago seleccionado), crea movimiento en Caja, marca entregado, crea Venta vinculada y descuenta inventario en un solo paso. Se elimina el registro automático de pagos fantasma en Caja al entregar. v14.16: Pedidos — montos Bs unificados entre lista, detalle y edición: productos aplican diferencial con redondeo previo; delivery/envío/diseño/extras no llevan diferencial; conversión final siempre usa usdToBs(). v14.06: Extras visibles en pedidos — tarjetas de lista muestran chips violeta de Diseño/Envío/Delivery cuando aplican. Impresión de lista (vista principal y KPIs) incluye extras debajo de productos. Modal de KPI detalle también muestra extras. v14.05: KPIs de pedidos ahora caben 5 en una fila en desktop — grid cambiado de g4 a g5 (5 columnas). Responsive: 2 columnas en tablet, 1 en móvil. v14.04: Nuevo estado de pedido "Impresión" — se inserta entre "En producción" y "Listo" en el flujo de estados. Incluye: filtro en lista de pedidos, opción en formulario de pedido, KPI card con ícono de impresora (violeta), badge en impresión de listado, flujo de avance (Producción → Impresión → Listo), soporte en reportes, historial de cliente y modal de detalle. FIX precisión Bs en pedidos — el problema raíz era que pagadoCDif acumulaba errores de floating point sin redondear, causando restante c/dif con decimales fantasma. Corregido en todos los puntos de cálculo con parseFloat(toFixed(2)). v14.02: Ventas/Cotización WhatsApp — los montos del texto ahora usan exactamente el mismo motor de redondeo del carrito POS: productos redondeados por línea (cantidad × precio × diferencial), extras sin diferencial, total Bs/USD y ancla USD iguales a la barra del carrito. v14.01: Sincronización completa de configuraciones entre dispositivos — todas las opciones de Configuración ahora se propagan automáticamente via Supabase + Realtime: toggle "Tasas de cambio Auto/Manual" (incluyendo los valores de BCV y Paralela al obtenerlos), regla "Restante USD puro", impuestos (on/off y porcentaje), métodos de pago activos, categorías de productos, monedas, y diferencial congelado. Realtime activado en tabla config: cualquier cambio en un dispositivo se refleja al instante en todos los demás sin recargar. v14.00: FIX regla "Restante USD puro" — cuando el checkbox está activo y todos los pagos son en USD/Zelle, ahora la tarjeta del pedido muestra TODO en dólar base: total sin diferencial (ej: $40,00 en vez de $52,08), sin equivalente en Bs, y restante solo en USD (ej: $15,00). Lo mismo en el modal de detalle: total, pagado y restante en USD base sin c/dif ni Bs. v13.99: Configuración — nueva sección "Reglas de negocio" con checkbox "Restante en USD puro si el abono fue en dólares". Cuando está activo y TODOS los pagos del pedido son en USD Efectivo o Zelle/Binance, el restante se muestra solo en dólar paralelo (precio base sin diferencial, sin equivalente en Bs). Aplica en: lista de pedidos, modal detalle, POS panel pedido, e impresión. Se sincroniza con Supabase. Diseñado como opción configurable para no imponer reglas de negocio específicas a futuros usuarios de GestioMada. v13.98: Pedidos — botón "Imprimir" en la vista principal (junto a "+ Nuevo Pedido") que imprime el listado de pedidos según los filtros activos. Botón de imprimir dentro de cada popup de KPI (Pendientes, En producción, etc.). La lista impresa incluye: checkbox para rayar, #pedido, cliente con teléfono, productos, estado, pago, total c/dif y fecha entrega. Formato landscape optimizado para papel. v13.97: Pedidos — nuevo botón "Imprimir" en el modal de detalle del pedido. Genera una página limpia con logo del negocio, datos del cliente, tabla de productos (cant, precio, subtotal), totales con diferencial y Bs, historial de pagos, restante y notas. Se abre en ventana nueva y lanza la impresión automáticamente. Eliminado selector de temporalidad de KPIs (innecesario — los KPIs siempre muestran el estado actual). v13.96: KPIs Pedidos — cards limpios que siempre muestran el estado actual real del negocio (sin filtro de temporalidad innecesario); al hacer clic se abre popup con resumen de productos agrupados y detalle por pedido. FIX CRÍTICO zona horaria — todas las fechas "hoy" usan hora local (Venezuela UTC-4) en vez de UTC; antes, después de las 8pm el sistema pensaba que era el día siguiente. Nuevo helper hoyLocal(), corregidas 31+ instancias en toda la app. v13.95: KPIs Pedidos — cada card ahora muestra los productos agrupados con cantidades totales (ej: Taza dorada ×8), máximo 4 productos visibles con "+N más…". Nuevo selector de temporalidad (Hoy, 7 días, 1 mes, 3 meses, Todo) que filtra los KPIs por fecha de creación del pedido. v13.94: Pedidos — cada tarjeta de pedido ahora muestra los productos del cliente (cantidad × nombre) debajo de los badges, sin precio. En desktop se muestra en una línea con "…" si es muy largo; en móvil se expande completo. v13.93: Font-size inputs restaurado a 13px en desktop (el zoom iOS se previene con viewport maximum-scale). Descuento y abono en POS y Pedidos ahora usan placeholder en vez de value="0,00" — campo vacío al crear, muestra valor solo si hay dato al editar. v13.92: FIX precisión Bs en cotización WhatsApp — aplicada la misma fórmula round2(USD×dif) × BCV a la cotización: precio por ítem, total productos, total general y abono en Bs. Antes el texto de WhatsApp mostraba centavos distintos al total del POS. v13.91: FIX precisión Bs — fórmula corregida en toda la app: ahora se calcula round2(USD×dif) × BCV en vez de USD×dif×BCV directo, eliminando diferencias de centavos por redondeo floating point. Aplica en: POS total y carrito, cobrar, catálogo info moneda, caja movimientos, pedidos recalc. Pedidos — nuevo filtro "Fecha específica" con selector de fecha para buscar pedidos por fecha de entrega exacta. iOS — corregido zoom automático al enfocar inputs (viewport maximum-scale + font-size 16px global). Filtros de pedidos en móvil con font-size 14px para evitar textos cortados. Extra en ventas/pedidos muestra campo vacío con placeholder en vez de 0. v13.89: Ventas/Cotización — activar Diseño ya no oculta ni desactiva el abono; solamente Envío omite el bloque de abono automático en la cotización WhatsApp. v13.83: Tipos de venta simplificados — eliminado "Pago de pedido" (redundante con "Pago restante"). Quedan 3 tipos: Venta rápida, Abono, Pago restante. v13.82: Formato decimal unificado — todos los montos en Bs y USD usan coma (,) como separador decimal y punto (.) como separador de miles en toda la app (catálogo, POS, pedidos, ventas, caja, reportes, cotizador WhatsApp, recibo). Nuevo helper global fmtBs(). Restante Bs en lista de pedidos y panel "Pedido a cobrar" muestra 2 decimales. v13.81: Pedidos/Ventas — el restante de pedidos ahora muestra también el equivalente en Bs (Restante × tasa BCV del día) tanto en la lista de pedidos como en el panel "Pedido a cobrar" del POS y modal de ventas. v13.85: POS móvil — el menú desplegable de Canal ahora abre hacia la izquierda para evitar desbordes laterales. v13.84: Ventas — corregido recibo/modal de Pago restante para mostrar el monto real cobrado al cliente y no el monto interno base; Canal en POS móvil ahora muestra solo el ícono para dar más espacio a Tipo de venta. v13.80: Ventas/Pedidos — el POS ahora lee el mismo Total/Pagado/Restante c/dif del módulo Pedidos al vincular un pedido, evitando diferencias entre módulos. v13.79: Clientes/Pedidos — unificado el registro de cliente en un solo campo "Nombre completo"; al editar clientes antiguos se muestra nombre + apellido juntos y se guarda sin separar el apellido. v13.73: FIX CRÍTICO: (1) Topbar pill — el menú de usuario no funcionaba porque los SVGs estaban como template literals en HTML estático. Reescrito: menú generado desde JS en aplicarPermisos() con SVGs reales. Tres opciones: "Cambiar usuario", "Bloquear pantalla", "Cerrar sesión" (en rojo). (2) Modal de usuario reescrito con clases estándar de GestioMada (modal-bg + modal) — antes usaba clases inexistentes (modal-box, modal-hd, modal-body) que no tenían CSS, causando que el modal se mostrara sin overlay, sin centrado y sin estilo. (3) Checkboxes de módulos/acciones rediseñados con estilo GestioMada — custom checkbox con animación de check, colores de la marca, hover con borde rosado, dark mode, responsive a 1 columna en móvil. v13.72: Usuarios sincronizados con Supabase — tabla 'usuarios' como fuente de verdad con sync bidireccional + Realtime. Crear, editar, cambiar PIN y eliminar usuarios se propaga automáticamente a todos los dispositivos. Eliminaciones se propagan sin restaurar registros borrados. El PIN hasheado (no texto plano) viaja entre dispositivos. Al recibir cambio Realtime se refresca la lista de usuarios en Configuración y el lock screen. v13.71: Usuarios y acceso — auditoría y corrección de 7 bugs: (1) CRÍTICO: lock screen en modo genérico mostraba el texto "user" en vez del ícono SVG. (2) Topbar pill con menú dropdown "Cambiar usuario" y "Bloquear pantalla". (3) Typo gradiente CSS corregido. (4) Movimientos de caja graban usuario_id/usuario_nom. (5) No se puede eliminar el usuario logueado ni el último admin activo. (6) PIN default 0000 solo para Admin. v13.70: Pedidos — nuevo filtro por categoría. Las categorías se leen del catálogo por id_prod (porque el item del carrito no guarda categoría). Se puebla dinámicamente con las categorías presentes en los pedidos existentes. v13.69: Caja — eliminado campo manual "Tasa Bs/USD" del modal de movimientos; ahora se usa automáticamente la tasa paralela del sistema (BCV × diferencial) para conversiones Bs↔USD, equivalentes y registro histórico. El pill de equivalente muestra la tasa usada. v13.68: Acciones rápidas de Caja — (1) "Abono recibido" ahora ofrece vincular opcionalmente a un pedido pendiente (híbrido): si se vincula, el pago se registra automáticamente en el pedido reduciendo su saldo, y el movimiento de caja queda referenciado con ref_tipo='pedido'. Si es en Bs, se preserva monto_bs_ingresado usando tasa paralela (bcv×dif) para que cuadre con el saldo del pedido. (2) Nuevo campo "Nombre / Referencia" en todos los movimientos (Ingreso/Gasto/Compra/Abono/Retiro) — etiqueta contextual según el tipo (proveedor, cliente, quien retira, etc.). Al seleccionar pedido en abono, autocompleta el nombre del cliente. (3) La moneda del monto ahora se bloquea automáticamente cuando el método la determina (Bs efectivo/PM/transferencia → Bs; USD efectivo/Zelle → USD). Solo "Otro" permite elegir moneda libre. v13.67: Selects de Canal y Envío rediseñados con gm-select custom SVG minimalistas. v13.66: Pedidos/Caja/Reportes — al editar un pedido y agregar/cambiar cliente, se actualizan los movimientos vinculados en Caja; canales normalizados para Reportes (Local/WhatsApp/Online, incluyendo variantes mal escritas). v13.65: Reportes — FIX crítico cálculos de datos: (1) KPI "Equivalente en Bs" ahora aplica el factor correcto por método de pago (Bs usa BCV×diferencial, USD usa BCV plano). (2) Tab Productos y Categorías: precios en USD base sin inflar con diferencial — los totales cuadran con suma de ventas. (3) Categoría se lee desde el catálogo por id_prod (el item del carrito no la guarda). (4) Tab Caja: ingresos/gastos separados por moneda (Bs y USD) — deja de sumar mezclado dos monedas distintas; KPIs "Saldo USD" y "Saldo Bs" independientes; gráfico diario en equivalente USD para comparar. v13.64: Corrección error SyntaxError byEst/ins duplicados en Reportes. v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
         </div>
       </div>
 
@@ -3660,7 +3671,7 @@ async function guardarConfigNegocio(){
   CFG.nota_recibo = qs('#cfg_nota_recibo')?.value || '';
 
   // Guardar en localStorage
-  localStorage.setItem(LS_CFG, JSON.stringify(CFG));
+  _lsSet(LS_CFG, JSON.stringify(CFG));
 
   if(!window._supaConectado){
     toast('Datos del negocio guardados localmente (sin conexión a nube)', 'warn');
@@ -3708,7 +3719,7 @@ async function guardarConfigNegocio(){
             .from('productos-fotos')
             .getPublicUrl('negocio-logo.' + ext);
           CFG.logo_url = publicUrl;
-          localStorage.setItem(LS_CFG, JSON.stringify(CFG));
+          _lsSet(LS_CFG, JSON.stringify(CFG));
           await SUPA.from('config').upsert(
             { clave: 'logo_url', valor: JSON.stringify(publicUrl) },
             { onConflict: 'clave' }
@@ -3757,7 +3768,7 @@ async function cargarConfigNegocioDesdeNube(){
           // Para tasa_auto, guardar en localStorage dedicado
           if(row.clave === 'tasa_auto'){
             const cur = localStorage.getItem(LS_TASA_AUTO)==='1';
-            if(val !== cur){ localStorage.setItem(LS_TASA_AUTO, val ? '1' : '0'); changed = true; }
+            if(val !== cur){ _lsSet(LS_TASA_AUTO, val ? '1' : '0'); changed = true; }
             return;
           }
           if(val !== undefined && val !== null && val !== CFG[row.clave]){
@@ -3780,7 +3791,7 @@ async function cargarConfigNegocioDesdeNube(){
     });
 
     if(changed){
-      localStorage.setItem(LS_CFG, JSON.stringify(CFG));
+      _lsSet(LS_CFG, JSON.stringify(CFG));
       _aplicarConfigEnUI();
       console.log('[Config] Datos sincronizados desde Supabase (completo).');
     }
@@ -3847,7 +3858,7 @@ function _aplicarConfigRemota(clave, valorRaw){
     if(clave === 'tasa_auto'){
       const cur = localStorage.getItem(LS_TASA_AUTO)==='1';
       if(val !== cur){
-        localStorage.setItem(LS_TASA_AUTO, val ? '1' : '0');
+        _lsSet(LS_TASA_AUTO, val ? '1' : '0');
         _aplicarConfigEnUI();
         // Si se activó auto, ejecutar fetch
         if(val && typeof fetchTasasGM === 'function') fetchTasasGM(false);
@@ -3859,7 +3870,7 @@ function _aplicarConfigRemota(clave, valorRaw){
     if(typeof val === 'object' && JSON.stringify(val) === JSON.stringify(CFG[clave])) return;
     if(val === CFG[clave]) return;
     CFG[clave] = val;
-    localStorage.setItem(LS_CFG, JSON.stringify(CFG));
+    _lsSet(LS_CFG, JSON.stringify(CFG));
     if(clave === 'logo_url') CFG.logo = val;
     _aplicarConfigEnUI();
     console.log('[Config Realtime]', clave, '→', typeof val === 'object' ? JSON.stringify(val).slice(0,60) : val);
@@ -3910,7 +3921,7 @@ function guardarConfig(){
   CFG.metodos_activos=mets.length?mets:['efectivo_bs'];
   CFG.restante_usd_puro=qs('#cfg_restante_usd_puro')?.checked||false;
   aplicarMetodosActivos();
-  localStorage.setItem(LS_CFG, JSON.stringify(CFG));
+  _lsSet(LS_CFG, JSON.stringify(CFG));
   const tbm2=qs('#tb-mon'); if(tbm2) tbm2.textContent=CFG.moneda+' Moneda';
   persUpdate();
   toast('Configuración guardada', 'ok');
@@ -3931,7 +3942,7 @@ function aplicarMetodosActivos(){
 /* ── CATEGORÍAS DINÁMICAS ── */
 const CATS_DEFAULT=['Sublimación','Vinil','DTF','Papelería','Empaques','Etiquetas','Insumos/Materiales','Otro'];
 function loadCats(){ return CFG.categorias&&CFG.categorias.length?CFG.categorias:CATS_DEFAULT; }
-function saveCats(arr){ CFG.categorias=arr; localStorage.setItem(LS_CFG, JSON.stringify(CFG)); aplicarCategorias(); _sincCategoriasSupa(); }
+function saveCats(arr){ CFG.categorias=arr; _lsSet(LS_CFG, JSON.stringify(CFG)); aplicarCategorias(); _sincCategoriasSupa(); }
 
 function aplicarCategorias(){
   const cats=loadCats();
@@ -3940,7 +3951,7 @@ function aplicarCategorias(){
   // Select categoría en Editor de Producto
   const persCat=qs('#pers_categoria'); if(persCat){ const v=persCat.value; persCat.innerHTML=optsConVacio; if(cats.includes(v)) persCat.value=v; }
   // Modal agregar al catálogo + vista editor
-  const dlMc=qs('#mc_cat_list'); if(dlMc) dlMc.innerHTML=cats.map(c=>`<option value="${c}">`).join('');
+  const dlMc=qs('#mc_cat_list'); if(dlMc) dlMc.innerHTML=cats.map(c=>`<option value="${esc(c)}">`).join('');
   // Filtro catálogo
   const ccCat=qs('#cat_fcat'); if(ccCat){ const v=ccCat.value; ccCat.innerHTML=`<option value="">Todas las categorías</option>`+optsSinVacio; if(cats.includes(v)) ccCat.value=v; }
   // Modal producto manual (lo generamos dinámicamente, se aplica al abrir)
@@ -4130,6 +4141,82 @@ function parseEU(s){
 }
 function euro(n){ return (CFG.moneda||'$')+' '+Number(n||0).toFixed(2).replace('.',','); }
 function fmtBs(n){ const v=Number(n||0).toFixed(2); const [ent,dec]=v.split('.'); return ent.replace(/\B(?=(\d{3})+(?!\d))/g,'.')+','+dec; }
+function esc(s){ if(s==null) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+// ── Íconos SVG reutilizables ──
+const GM_ICOS={
+  save:'<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>',
+  pkg:'<path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
+  edit:'<path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>',
+  trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+  dollar:'<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>',
+  print:'<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
+  clip:'<path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/>',
+  upload:'<polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/>',
+  card:'<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>',
+  box3d:'<path d="M12 2l9 4.5v11L12 22 3 17.5V6.5L12 2z"/><polyline points="3 6.5 12 11 21 6.5"/><line x1="12" y1="11" x2="12" y2="22"/>',
+};
+function gmIco(name,w=16,h=16){ return '<svg viewBox="0 0 24 24" width="'+w+'" height="'+h+'" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0">'+(GM_ICOS[name]||'')+'</svg>'; }
+
+function _lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){ console.warn('[Storage] Cuota excedida en',k,e); toast('Almacenamiento lleno — haz un respaldo','err'); } }
+
+// ── Indicador offline/online ──
+function _offlineInit(){
+  const bar=document.getElementById('offline-bar');
+  const msg=document.getElementById('offline-msg');
+  if(!bar||!msg) return;
+  function setOff(){ bar.classList.add('visible'); bar.classList.remove('reconectado'); msg.textContent='Sin conexión — los cambios se guardan localmente'; }
+  function setOn(){ bar.classList.add('reconectado'); msg.textContent='Conexión restaurada'; setTimeout(()=>{ bar.classList.remove('visible','reconectado'); },3000); }
+  window.addEventListener('offline', setOff);
+  window.addEventListener('online', setOn);
+  if(!navigator.onLine) setOff();
+}
+
+// ── Migración: limpiar fotos base64 del catálogo local ──
+// Si el producto ya tiene foto_url de Supabase, el base64 local es peso muerto.
+// Se ejecuta una vez al cargar; libera MB de localStorage.
+function _migrarFotosBase64(){
+  try{
+    const raw=localStorage.getItem('POS.cat');
+    if(!raw) return;
+    const cat=JSON.parse(raw);
+    let limpiados=0;
+    cat.forEach(p=>{
+      if(p.foto && p.foto.startsWith('data:') && p.foto_url && p.foto_url.startsWith('http')){
+        p.foto=''; limpiados++;
+      }
+    });
+    if(limpiados>0){
+      localStorage.setItem('POS.cat', JSON.stringify(cat));
+      console.log('[Migración] Eliminadas '+limpiados+' fotos base64 redundantes del catálogo local');
+    }
+  }catch(e){ console.warn('[Migración] Error limpiando fotos base64',e); }
+}
+
+// ── Monitor de uso de localStorage ──
+function _lsUsageKB(){
+  let total=0;
+  try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); total+=k.length+(localStorage.getItem(k)||'').length; } }catch(e){}
+  return Math.round(total*2/1024); // UTF-16 = 2 bytes/char → KB
+}
+function _lsUsagePct(){ return Math.min(100,Math.round(_lsUsageKB()/5120*100)); } // 5MB typical limit
+function renderLsMonitor(){
+  const el=document.getElementById('ls-monitor');
+  if(!el) return;
+  const kb=_lsUsageKB();
+  const pct=_lsUsagePct();
+  const color=pct>80?'#dc3545':pct>60?'#ffc107':'#28a745';
+  el.innerHTML='<span style="font-size:12px;color:var(--muted)">Almacenamiento local: <strong>'+kb+' KB</strong> de ~5.120 KB ('+pct+'%)</span><div class="ls-meter"><div class="ls-meter-fill" style="width:'+pct+'%;background:'+color+'"></div></div>';
+}
+
+function abrirChangelog(){
+  const body=document.getElementById('changelog-body');
+  if(body && !body.dataset.loaded){
+    const raw='v14.27: Blindaje de datos Fase 1 continuación — indicador visual offline/online (banner amarillo cuando se pierde conexión, confirma reconexión con verde). Migración automática al cargar: elimina fotos base64 redundantes del catálogo local cuando el producto ya tiene foto_url de Supabase (libera MB de localStorage). Monitor de uso de localStorage en Config (barra visual KB usados / 5MB con alerta por color). Sync merge ya no preserva base64 cuando Supabase tiene foto_url. v14.26: Blindaje de datos Fase 1 — nuevo helper esc() sanitiza HTML en todos los innerHTML que interpolan datos del usuario (nombres de productos, clientes, categorías, etc.) previniendo inyección XSS. Nuevo wrapper _lsSet() centraliza todos los localStorage.setItem con try/catch: si el almacenamiento se llena, muestra toast de alerta en vez de fallar silenciosamente. v14.24: Flujo de entrega corregido — marcar "Entregado" ahora solo funciona si el pedido está 100% pagado (crea Venta + descuenta inventario). Si tiene saldo pendiente, bloquea y avisa. Nuevo botón "Cobrar y entregar": registra el pago restante (con método de pago seleccionado), crea movimiento en Caja, marca entregado, crea Venta vinculada y descuenta inventario en un solo paso. Se elimina el registro automático de pagos fantasma en Caja al entregar. v14.16: Pedidos — montos Bs unificados entre lista, detalle y edición: productos aplican diferencial con redondeo previo; delivery/envío/diseño/extras no llevan diferencial; conversión final siempre usa usdToBs(). v14.06: Extras visibles en pedidos — tarjetas de lista muestran chips violeta de Diseño/Envío/Delivery cuando aplican. Impresión de lista (vista principal y KPIs) incluye extras debajo de productos. Modal de KPI detalle también muestra extras. v14.05: KPIs de pedidos ahora caben 5 en una fila en desktop — grid cambiado de g4 a g5 (5 columnas). Responsive: 2 columnas en tablet, 1 en móvil. v14.04: Nuevo estado de pedido "Impresión" — se inserta entre "En producción" y "Listo" en el flujo de estados. Incluye: filtro en lista de pedidos, opción en formulario de pedido, KPI card con ícono de impresora (violeta), badge en impresión de listado, flujo de avance (Producción → Impresión → Listo), soporte en reportes, historial de cliente y modal de detalle. FIX precisión Bs en pedidos — el problema raíz era que pagadoCDif acumulaba errores de floating point sin redondear, causando restante c/dif con decimales fantasma. Corregido en todos los puntos de cálculo con parseFloat(toFixed(2)). v14.02: Ventas/Cotización WhatsApp — los montos del texto ahora usan exactamente el mismo motor de redondeo del carrito POS: productos redondeados por línea (cantidad × precio × diferencial), extras sin diferencial, total Bs/USD y ancla USD iguales a la barra del carrito. v14.01: Sincronización completa de configuraciones entre dispositivos — todas las opciones de Configuración ahora se propagan automáticamente via Supabase + Realtime: toggle "Tasas de cambio Auto/Manual" (incluyendo los valores de BCV y Paralela al obtenerlos), regla "Restante USD puro", impuestos (on/off y porcentaje), métodos de pago activos, categorías de productos, monedas, y diferencial congelado. Realtime activado en tabla config: cualquier cambio en un dispositivo se refleja al instante en todos los demás sin recargar. v14.00: FIX regla "Restante USD puro" — cuando el checkbox está activo y todos los pagos son en USD/Zelle, ahora la tarjeta del pedido muestra TODO en dólar base: total sin diferencial (ej: $40,00 en vez de $52,08), sin equivalente en Bs, y restante solo en USD (ej: $15,00). Lo mismo en el modal de detalle: total, pagado y restante en USD base sin c/dif ni Bs. v13.99: Configuración — nueva sección "Reglas de negocio" con checkbox "Restante en USD puro si el abono fue en dólares". Cuando está activo y TODOS los pagos del pedido son en USD Efectivo o Zelle/Binance, el restante se muestra solo en dólar paralelo (precio base sin diferencial, sin equivalente en Bs). Aplica en: lista de pedidos, modal detalle, POS panel pedido, e impresión. Se sincroniza con Supabase. Diseñado como opción configurable para no imponer reglas de negocio específicas a futuros usuarios de GestioMada. v13.98: Pedidos — botón "Imprimir" en la vista principal (junto a "+ Nuevo Pedido") que imprime el listado de pedidos según los filtros activos. Botón de imprimir dentro de cada popup de KPI (Pendientes, En producción, etc.). La lista impresa incluye: checkbox para rayar, #pedido, cliente con teléfono, productos, estado, pago, total c/dif y fecha entrega. Formato landscape optimizado para papel. v13.97: Pedidos — nuevo botón "Imprimir" en el modal de detalle del pedido. Genera una página limpia con logo del negocio, datos del cliente, tabla de productos (cant, precio, subtotal), totales con diferencial y Bs, historial de pagos, restante y notas. Se abre en ventana nueva y lanza la impresión automáticamente. Eliminado selector de temporalidad de KPIs (innecesario — los KPIs siempre muestran el estado actual). v13.96: KPIs Pedidos — cards limpios que siempre muestran el estado actual real del negocio (sin filtro de temporalidad innecesario); al hacer clic se abre popup con resumen de productos agrupados y detalle por pedido. FIX CRÍTICO zona horaria — todas las fechas "hoy" usan hora local (Venezuela UTC-4) en vez de UTC; antes, después de las 8pm el sistema pensaba que era el día siguiente. Nuevo helper hoyLocal(), corregidas 31+ instancias en toda la app. v13.95: KPIs Pedidos — cada card ahora muestra los productos agrupados con cantidades totales (ej: Taza dorada ×8), máximo 4 productos visibles con "+N más…". Nuevo selector de temporalidad (Hoy, 7 días, 1 mes, 3 meses, Todo) que filtra los KPIs por fecha de creación del pedido. v13.94: Pedidos — cada tarjeta de pedido ahora muestra los productos del cliente (cantidad × nombre) debajo de los badges, sin precio. En desktop se muestra en una línea con "…" si es muy largo; en móvil se expande completo. v13.93: Font-size inputs restaurado a 13px en desktop (el zoom iOS se previene con viewport maximum-scale). Descuento y abono en POS y Pedidos ahora usan placeholder en vez de value="0,00" — campo vacío al crear, muestra valor solo si hay dato al editar. v13.92: FIX precisión Bs en cotización WhatsApp — aplicada la misma fórmula round2(USD×dif) × BCV a la cotización: precio por ítem, total productos, total general y abono en Bs. Antes el texto de WhatsApp mostraba centavos distintos al total del POS. v13.91: FIX precisión Bs — fórmula corregida en toda la app: ahora se calcula round2(USD×dif) × BCV en vez de USD×dif×BCV directo, eliminando diferencias de centavos por redondeo floating point. Aplica en: POS total y carrito, cobrar, catálogo info moneda, caja movimientos, pedidos recalc. Pedidos — nuevo filtro "Fecha específica" con selector de fecha para buscar pedidos por fecha de entrega exacta. iOS — corregido zoom automático al enfocar inputs (viewport maximum-scale + font-size 16px global). Filtros de pedidos en móvil con font-size 14px para evitar textos cortados. Extra en ventas/pedidos muestra campo vacío con placeholder en vez de 0. v13.89: Ventas/Cotización — activar Diseño ya no oculta ni desactiva el abono; solamente Envío omite el bloque de abono automático en la cotización WhatsApp. v13.83: Tipos de venta simplificados — eliminado "Pago de pedido" (redundante con "Pago restante"). Quedan 3 tipos: Venta rápida, Abono, Pago restante. v13.82: Formato decimal unificado — todos los montos en Bs y USD usan coma (,) como separador decimal y punto (.) como separador de miles en toda la app (catálogo, POS, pedidos, ventas, caja, reportes, cotizador WhatsApp, recibo). Nuevo helper global fmtBs(). Restante Bs en lista de pedidos y panel "Pedido a cobrar" muestra 2 decimales. v13.81: Pedidos/Ventas — el restante de pedidos ahora muestra también el equivalente en Bs (Restante × tasa BCV del día) tanto en la lista de pedidos como en el panel "Pedido a cobrar" del POS y modal de ventas. v13.85: POS móvil — el menú desplegable de Canal ahora abre hacia la izquierda para evitar desbordes laterales. v13.84: Ventas — corregido recibo/modal de Pago restante para mostrar el monto real cobrado al cliente y no el monto interno base; Canal en POS móvil ahora muestra solo el ícono para dar más espacio a Tipo de venta. v13.80: Ventas/Pedidos — el POS ahora lee el mismo Total/Pagado/Restante c/dif del módulo Pedidos al vincular un pedido, evitando diferencias entre módulos. v13.79: Clientes/Pedidos — unificado el registro de cliente en un solo campo "Nombre completo"; al editar clientes antiguos se muestra nombre + apellido juntos y se guarda sin separar el apellido. v13.73: FIX CRÍTICO: (1) Topbar pill — el menú de usuario no funcionaba porque los SVGs estaban como template literals en HTML estático. Reescrito: menú generado desde JS en aplicarPermisos() con SVGs reales. Tres opciones: "Cambiar usuario", "Bloquear pantalla", "Cerrar sesión" (en rojo). (2) Modal de usuario reescrito con clases estándar de GestioMada (modal-bg + modal) — antes usaba clases inexistentes (modal-box, modal-hd, modal-body) que no tenían CSS, causando que el modal se mostrara sin overlay, sin centrado y sin estilo. (3) Checkboxes de módulos/acciones rediseñados con estilo GestioMada — custom checkbox con animación de check, colores de la marca, hover con borde rosado, dark mode, responsive a 1 columna en móvil. v13.72: Usuarios sincronizados con Supabase — tabla \'usuarios\' como fuente de verdad con sync bidireccional + Realtime. Crear, editar, cambiar PIN y eliminar usuarios se propaga automáticamente a todos los dispositivos. Eliminaciones se propagan sin restaurar registros borrados. El PIN hasheado (no texto plano) viaja entre dispositivos. Al recibir cambio Realtime se refresca la lista de usuarios en Configuración y el lock screen. v13.71: Usuarios y acceso — auditoría y corrección de 7 bugs: (1) CRÍTICO: lock screen en modo genérico mostraba el texto "user" en vez del ícono SVG. (2) Topbar pill con menú dropdown "Cambiar usuario" y "Bloquear pantalla". (3) Typo gradiente CSS corregido. (4) Movimientos de caja graban usuario_id/usuario_nom. (5) No se puede eliminar el usuario logueado ni el último admin activo. (6) PIN default 0000 solo para Admin. v13.70: Pedidos — nuevo filtro por categoría. Las categorías se leen del catálogo por id_prod (porque el item del carrito no guarda categoría). Se puebla dinámicamente con las categorías presentes en los pedidos existentes. v13.69: Caja — eliminado campo manual "Tasa Bs/USD" del modal de movimientos; ahora se usa automáticamente la tasa paralela del sistema (BCV × diferencial) para conversiones Bs↔USD, equivalentes y registro histórico. El pill de equivalente muestra la tasa usada. v13.68: Acciones rápidas de Caja — (1) "Abono recibido" ahora ofrece vincular opcionalmente a un pedido pendiente (híbrido): si se vincula, el pago se registra automáticamente en el pedido reduciendo su saldo, y el movimiento de caja queda referenciado con ref_tipo=\'pedido\'. Si es en Bs, se preserva monto_bs_ingresado usando tasa paralela (bcv×dif) para que cuadre con el saldo del pedido. (2) Nuevo campo "Nombre / Referencia" en todos los movimientos (Ingreso/Gasto/Compra/Abono/Retiro) — etiqueta contextual según el tipo (proveedor, cliente, quien retira, etc.). Al seleccionar pedido en abono, autocompleta el nombre del cliente. (3) La moneda del monto ahora se bloquea automáticamente cuando el método la determina (Bs efectivo/PM/transferencia → Bs; USD efectivo/Zelle → USD). Solo "Otro" permite elegir moneda libre. v13.67: Selects de Canal y Envío rediseñados con gm-select custom SVG minimalistas. v13.66: Pedidos/Caja/Reportes — al editar un pedido y agregar/cambiar cliente, se actualizan los movimientos vinculados en Caja; canales normalizados para Reportes (Local/WhatsApp/Online, incluyendo variantes mal escritas). v13.65: Reportes — FIX crítico cálculos de datos: (1) KPI "Equivalente en Bs" ahora aplica el factor correcto por método de pago (Bs usa BCV×diferencial, USD usa BCV plano). (2) Tab Productos y Categorías: precios en USD base sin inflar con diferencial — los totales cuadran con suma de ventas. (3) Categoría se lee desde el catálogo por id_prod (el item del carrito no la guarda). (4) Tab Caja: ingresos/gastos separados por moneda (Bs y USD) — deja de sumar mezclado dos monedas distintas; KPIs "Saldo USD" y "Saldo Bs" independientes; gráfico diario en equivalente USD para comparar. v13.64: Corrección error SyntaxError byEst/ins duplicados en Reportes. v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.';
+    body.innerHTML=raw.split(/(?=v\d+\.\d+:)/).map(s=>s.trim()).filter(Boolean).map(s=>'<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border,#e5e7eb)">'+s+'</div>').join('');
+    body.dataset.loaded='1';
+  }
+  openModal('m-changelog');
+}
 
 // ── TOAST ──
 function toast(msg, type=''){
@@ -4166,7 +4253,8 @@ function nav(id, el){
   if(id==='dashboard') renderDash();
   if(id==='envios'){ if(typeof renderEnvios==='function') renderEnvios(); }
   if(id==='config'){ renderCatsCfg(); }
-  if(id==='editor'){ const dl=qs('#mc_cat_list'); if(dl){ const cats=loadCats(); dl.innerHTML=cats.map(c=>`<option value="${c}">`).join(''); } }
+  if(id==='config'){ renderLsMonitor(); }
+  if(id==='editor'){ const dl=qs('#mc_cat_list'); if(dl){ const cats=loadCats(); dl.innerHTML=cats.map(c=>`<option value="${esc(c)}">`).join(''); } }
 }
 
 // ── MODAL ──
@@ -4176,7 +4264,7 @@ function closeModal(id){ qs('#'+id).classList.remove('open'); }
 // ── STORAGE ──
 function loadPers(){ try{ return JSON.parse(localStorage.getItem(LS_PERS)||'[]'); }catch(e){ return []; } }
 function loadHist(){ try{ return JSON.parse(localStorage.getItem(LS_HIST)||'{}'); }catch(e){ return {}; } }
-function saveHist(h){ localStorage.setItem(LS_HIST, JSON.stringify(h)); }
+function saveHist(h){ _lsSet(LS_HIST, JSON.stringify(h)); }
 function registrarVersionCosto(nombre, costo, precio_venta){
   const h=loadHist();
   if(!h[nombre]) h[nombre]=[];
@@ -4210,7 +4298,7 @@ function renderHistorialCostos(nombre){
     </div>`).join('');
 }
 function savePers(a){
-  localStorage.setItem(LS_PERS, JSON.stringify(a));
+  _lsSet(LS_PERS, JSON.stringify(a));
   if(window._supaConectado) syncToSupabase('productos_pers', a);
 }
 function loadCat()  { try{ return JSON.parse(localStorage.getItem(LS_CAT)||'[]'); }catch(e){ return []; } }
@@ -4236,7 +4324,7 @@ function saveCat(a) {
   // saveCat solo actualiza local; el sync a Supabase lo dispara la operación específica
 }
 function loadCli()  { try{ return JSON.parse(localStorage.getItem(LS_CLI)||'[]'); }catch(e){ return []; } }
-function saveCli(a) { localStorage.setItem(LS_CLI, JSON.stringify(a)); updateBadges(); }
+function saveCli(a) { _lsSet(LS_CLI, JSON.stringify(a)); updateBadges(); }
 
 function updateBadges(){
   const _bc=qs('#badge-cat'); if(_bc) _bc.textContent=loadCat().length;
@@ -4559,7 +4647,7 @@ function persFill(data){
 
 function persRefreshLoader(){
   const all=loadPers();
-  pLoader.innerHTML='<option value="">— Cargar guardado —</option>'+all.map((p,i)=>`<option value="${i}">${p.name}</option>`).join('');
+  pLoader.innerHTML='<option value="">— Cargar guardado —</option>'+all.map((p,i)=>`<option value="${i}">${esc(p.name)}</option>`).join('');
   pLoader.onchange=()=>{ const i=parseInt(pLoader.value); if(!isNaN(i)) persFill(all[i]); };
 }
 
@@ -4579,7 +4667,7 @@ function persDel(){
   if(!confirm('¿Borrar "'+name+'"?')) return;
   const deletedId = all[idx].id;
   all.splice(idx,1);
-  localStorage.setItem(LS_PERS, JSON.stringify(all));
+  _lsSet(LS_PERS, JSON.stringify(all));
   if(window._supaConectado) deleteFromSupabase('productos_pers', deletedId);
   if(window._supaConectado) syncToSupabase('productos_pers', all);
   persRefreshLoader(); toast('Borrado','ok');
@@ -4635,7 +4723,7 @@ function persImportCat(e){
         }
       });
       // Guardar en localStorage primero
-      localStorage.setItem(LS_PERS, JSON.stringify(cur));
+      _lsSet(LS_PERS, JSON.stringify(cur));
       // Sync a Supabase con ids estables
       if(window._supaConectado) syncToSupabase('productos_pers', cur);
       persRefreshLoader();
@@ -4667,7 +4755,7 @@ function abrirCatalogo(){
   qs('#mc_cat').value=qs('#pers_categoria')?.value||'';
   qs('#mc_estado').value=qs('#pers_estado')?.value||'activo';
   // Aplicar categorías dinámicas al select del modal
-  const mcCatEl=qs('#mc_cat'); if(mcCatEl){ const cats=loadCats(); const cur=mcCatEl.value; const dl=qs('#mc_cat_list'); if(dl) dl.innerHTML=cats.map(c=>`<option value="${c}">`).join(''); if(!cur) mcCatEl.value=qs('#pers_categoria')?.value||''; }
+  const mcCatEl=qs('#mc_cat'); if(mcCatEl){ const cats=loadCats(); const cur=mcCatEl.value; const dl=qs('#mc_cat_list'); if(dl) dl.innerHTML=cats.map(c=>`<option value="${esc(c)}">`).join(''); if(!cur) mcCatEl.value=qs('#pers_categoria')?.value||''; }
   // Restaurar modo inventario y receta del producto existente (si ya está en catálogo)
   const mcInv=qs('#mc_modo_inv');
   if(mcInv){
@@ -4771,7 +4859,7 @@ function abrirProdManual(idx=null){
   qs('#mpm-title').innerHTML=`<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> ${esEdit?'Editar producto':'Nuevo producto'}`;
   // Poblar categorías en datalist
   const mpmCat=qs('#mpm_cat');
-  if(mpmCat){ const cats=loadCats(); const dl=qs('#mpm_cat_list'); if(dl) dl.innerHTML=cats.map(c=>`<option value="${c}">`).join(''); }
+  if(mpmCat){ const cats=loadCats(); const dl=qs('#mpm_cat_list'); if(dl) dl.innerHTML=cats.map(c=>`<option value="${esc(c)}">`).join(''); }
   // Foto handlers
   const fInp=qs('#mpm_foto_input'), fImg=qs('#mpm_foto_img'), fPh=qs('#mpm_foto_ph'), fDel=qs('#mpm_foto_del');
   if(fInp&&!fInp._mpmBound){ fInp._mpmBound=true; fInp.addEventListener('change',e=>{ const f=e.target.files[0]; if(!f) return; e.target.value=''; comprimirImagen(f, 800, 800, 0.75).then(dataUrl=>{ fImg.src=dataUrl; fImg.style.display='block'; fPh.style.display='none'; fDel.style.display='block'; const kb=Math.round(dataUrl.length*0.75/1024); toast('Foto cargada · ~'+kb+' KB','ok'); }).catch(()=>toast('Error al procesar imagen','err')); }); }
@@ -4784,7 +4872,7 @@ function abrirProdManual(idx=null){
     if(mpmCat){
       const cats=loadCats();
       const allCats=[...new Set([...cats, p.categoria||''].filter(Boolean))];
-      const dl=qs('#mpm_cat_list'); if(dl) dl.innerHTML=allCats.map(c=>`<option value="${c}">`).join('');
+      const dl=qs('#mpm_cat_list'); if(dl) dl.innerHTML=allCats.map(c=>`<option value="${esc(c)}">`).join('');
       mpmCat.value=p.categoria||'';
     }
     qs('#mpm_costo').value=p.costo?String(p.costo).replace('.',','):'';
@@ -5069,7 +5157,7 @@ async function eliminarProd(idx){
   const _id=cat[idx].id; const _nom=cat[idx].nombre; const _fotoUrl=cat[idx].foto_url||'';
   _addBorrado('productos', _id); // lista negra antes de eliminar
   await deleteFromSupabase('productos',_id);
-  cat.splice(idx,1); localStorage.setItem(LS_CAT,JSON.stringify(cat)); updateBadges();
+  cat.splice(idx,1); _lsSet(LS_CAT,JSON.stringify(cat)); updateBadges();
   if(_fotoUrl) eliminarFotoStorage(_fotoUrl);
   renderCatalogo(); renderDash(); toast('Eliminado: '+_nom,'ok');
 }
@@ -5170,7 +5258,7 @@ function editarCliente(){
 }
 function editarCliente2(idx){ _cliIdx=idx; editarCliente(); }
 function eliminarCliente(){ if(_cliIdx===null) return; eliminarCliente2(_cliIdx); closeModal('m-ver-cli'); }
-async function eliminarCliente2(idx){ const all=loadCli(); if(!confirm('¿Eliminar a "'+all[idx].nombre+'"?')) return; const _id=all[idx].id; all.splice(idx,1); localStorage.setItem(LS_CLI,JSON.stringify(all)); await deleteFromSupabase('clientes',_id); saveCli(all); renderClientes(); renderDash(); toast('Cliente eliminado','ok'); _cliIdx=null; }
+async function eliminarCliente2(idx){ const all=loadCli(); if(!confirm('¿Eliminar a "'+esc(all[idx].nombre)+'"?')) return; const _id=all[idx].id; all.splice(idx,1); _lsSet(LS_CLI,JSON.stringify(all)); await deleteFromSupabase('clientes',_id); saveCli(all); renderClientes(); renderDash(); toast('Cliente eliminado','ok'); _cliIdx=null; }
 
 function calcTotalCli(c){
   const vens=loadVen().filter(v=>v.cliente&&v.cliente.id===c.id&&v.estado!=='anulada');
@@ -5387,7 +5475,7 @@ function importRespaldo(input){
     if(d.terminados) saveTer(d.terminados);
     if(d.invmov) saveIMov(d.invmov);
     if(d.sesiones_hist) saveSesionesHist(d.sesiones_hist);
-    if(d.config){ localStorage.setItem(LS_CFG,JSON.stringify(d.config)); loadCfg(); }
+    if(d.config){ _lsSet(LS_CFG,JSON.stringify(d.config)); loadCfg(); }
     renderDash();
   renderSesionBar();
   renderSaldosMoneda(); renderCatalogo(); renderClientes(); persRefreshLoader();
@@ -5516,7 +5604,7 @@ function comprimirImagen(file, maxW=800, maxH=800, quality=0.75){
 
 function hashPin(pin){ let h=0; for(let i=0;i<pin.length;i++) h=(h*31+pin.charCodeAt(i)+i*7)&0xFFFFFFFF; return h.toString(16)+'_gm'; }
 function loadPins(){ try{ return JSON.parse(localStorage.getItem(LS_PINS)||'{}'); }catch(e){ return {}; } }
-function savePins(p){ localStorage.setItem(LS_PINS, JSON.stringify(p)); }
+function savePins(p){ _lsSet(LS_PINS, JSON.stringify(p)); }
 function getPin(rol){ const p=loadPins(); return p[rol]||null; }
 function pinCorrecto(rol, intento){
   const stored = getPin(rol);
@@ -5532,7 +5620,7 @@ let _sesionTimer = null;
 
 /* ── Usuarios: carga/guardado ── */
 function loadUsuarios(){ try{ return JSON.parse(localStorage.getItem(LS_USUARIOS)||'[]'); }catch(e){ return []; } }
-function saveUsuarios(a){ localStorage.setItem(LS_USUARIOS, JSON.stringify(a)); }
+function saveUsuarios(a){ _lsSet(LS_USUARIOS, JSON.stringify(a)); }
 
 /* ── Permisos: usuario activo si existe, sino rol genérico ── */
 function can(permiso){
@@ -5563,8 +5651,8 @@ function canView(vista){
 function guardarSesionRol(rol, usrId, usrNom){
   const horas = parseInt(localStorage.getItem('POS.sesion_horas')||'0');
   const expira = horas > 0 ? Date.now() + horas*3600000 : 0;
-  localStorage.setItem(LS_SESION_R, JSON.stringify({rol, usrId: usrId||null, usrNom: usrNom||'Admin', expira, ts:Date.now()}));
-  localStorage.setItem(LS_ROL, rol);
+  _lsSet(LS_SESION_R, JSON.stringify({rol, usrId: usrId||null, usrNom: usrNom||'Admin', expira, ts:Date.now()}));
+  _lsSet(LS_ROL, rol);
   if(_sesionTimer) clearTimeout(_sesionTimer);
   if(horas > 0) _sesionTimer = setTimeout(()=>{ bloquearPantalla(); }, horas*3600000);
 }
@@ -5828,7 +5916,7 @@ function renderCfgPins(){
 }
 function guardarPins(){
   const horas = qs('#cfg_sesion_tiempo')?.value||'0';
-  localStorage.setItem('POS.sesion_horas', horas);
+  _lsSet('POS.sesion_horas', horas);
   toast('Configuración de sesión guardada','ok');
 }
 
@@ -6144,7 +6232,7 @@ function aplicarPermisos(){
   const pillMenu=qs('#tb-rol-menu');
   if(pill){
     const nomCorto = CURRENT_USR_ID ? CURRENT_USR_NOM.split(' ')[0] : rol.label;
-    pill.innerHTML=`<span class="rol-ico-tb">${rolIcoSvg(CURRENT_USR_ID ? 'user' : rol.ico,14,14)}</span><span class="rol-lbl-tb" style="margin-left:4px">${nomCorto}</span>`;
+    pill.innerHTML=`<span class="rol-ico-tb">${rolIcoSvg(CURRENT_USR_ID ? 'user' : rol.ico,14,14)}</span><span class="rol-lbl-tb" style="margin-left:4px">${esc(nomCorto)}</span>`;
     if(pillWrap) pillWrap.style.display='';
     const bg={admin:'#ffe3ee',empleado:'#e8efff',produccion:'#e8f5e9',lectura:'#f3f4f6'};
     pill.style.background=bg[CURRENT_ROL]||'#f3f4f6';
@@ -6213,6 +6301,8 @@ document.addEventListener('DOMContentLoaded',()=>{
   if(_lInp) _lInp.addEventListener('change',e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=ev=>{ _lImg.src=ev.target.result; _lImg.style.display='block'; if(_lPh) _lPh.style.display='none'; if(_lDel) _lDel.style.display='block'; }; r.readAsDataURL(f); e.target.value=''; });
   if(_lDel) _lDel.addEventListener('click',()=>{ _lImg.src=''; _lImg.style.display='none'; if(_lPh) _lPh.style.display='block'; _lDel.style.display='none'; });
   // Defer badge/dash update until after full DOM paint
+  _offlineInit();
+  _migrarFotosBase64();
   requestAnimationFrame(()=>{
     updateBadges();
     renderDash();
@@ -6249,7 +6339,7 @@ document.addEventListener('DOMContentLoaded',()=>{
     t&&t.addEventListener('change',()=>{
       const on=t.checked;
       document.body.classList.toggle('dark',on);
-      localStorage.setItem('dark_on',on?'1':'0');
+      _lsSet('dark_on',on?'1':'0');
     });
   })();
 
@@ -6283,7 +6373,7 @@ let _cajaPeriodo = 'hoy';
 
 /* ---- Tasa de cambio ---- */
 function loadTasa(){ try{ return parseFloat(localStorage.getItem(LS_TASA)||'0')||0; }catch(e){ return 0; } }
-function saveTasa(t){ localStorage.setItem(LS_TASA, t); }
+function saveTasa(t){ _lsSet(LS_TASA, t); }
 
 /* ══════════ SISTEMA DUAL DE TASAS ══════════ */
 function getTasaBCV(){    return CFG.tasa_bcv>0 ? CFG.tasa_bcv : (loadTasa()||0); }
@@ -6294,7 +6384,7 @@ function getDiferencial(){
   return (bcv>0 && par>0) ? par/bcv : 1;
 }
 /* Helper centralizado: convierte USD a Bs redondeando siempre a 2 decimales */
-function usdToBs(usd, bcv){ return parseFloat(((usd||0) * (bcv||getTasaBCV())).toFixed(2)); }
+function usdToBs(usd, bcv){ return round2((usd||0) * (bcv||getTasaBCV())); }
 function round2(n){ return parseFloat((parseFloat(n||0)||0).toFixed(2)); }
 function pedidoProductosNetos(p){ return Math.max(0, _numPedido(p?.subtotal) - _numPedido(p?.descuento)); }
 function pedidoTotalCDifCanonico(p, dif){
@@ -6315,7 +6405,7 @@ function _actualizarDiferencial(){
       const parCalc=bcv*CFG.dif_congelado;
       CFG.tasa_bcv=bcv; CFG.tasa_paralela=parCalc;
       const pEl=qs('#cfg_tasa_paralela'); if(pEl) pEl.value=parCalc.toFixed(2).replace('.',',');
-      saveTasa(bcv); localStorage.setItem(LS_CFG,JSON.stringify(CFG));
+      saveTasa(bcv); _lsSet(LS_CFG,JSON.stringify(CFG));
     }
     el.textContent='[=] ×'+CFG.dif_congelado.toFixed(4);
     el.style.color='#e67e22';
@@ -6328,18 +6418,18 @@ function _actualizarDiferencial(){
     CFG.tasa_bcv=bcv; CFG.tasa_paralela=par;
     // Persistir inmediatamente sin esperar al botón Guardar
     saveTasa(bcv);
-    localStorage.setItem(LS_CFG, JSON.stringify(CFG));
+    _lsSet(LS_CFG, JSON.stringify(CFG));
   } else if(bcv>0){
     el.textContent='—';
     el.style.color='var(--muted)';
     CFG.tasa_bcv=bcv;
     saveTasa(bcv);
-    localStorage.setItem(LS_CFG, JSON.stringify(CFG));
+    _lsSet(LS_CFG, JSON.stringify(CFG));
   } else if(par>0){
     el.textContent='—';
     el.style.color='var(--muted)';
     CFG.tasa_paralela=par;
-    localStorage.setItem(LS_CFG, JSON.stringify(CFG));
+    _lsSet(LS_CFG, JSON.stringify(CFG));
   } else {
     el.textContent='—';
     el.style.color='var(--muted)';
@@ -6377,7 +6467,7 @@ function toggleCongelarDif(){
     CFG.dif_bloqueado=false; CFG.dif_congelado=0;
     toast('Diferencial liberado','ok');
   }
-  localStorage.setItem(LS_CFG,JSON.stringify(CFG));
+  _lsSet(LS_CFG,JSON.stringify(CFG));
   _aplicarEstiloDifLock(CFG.dif_bloqueado);
   _actualizarDiferencial();
   // Sincronizar estado del diferencial en Supabase para todos los dispositivos
@@ -6389,7 +6479,7 @@ function editarDifCongelado(val){
   const n=parseEU(val);
   if(n<=0 || n>10) return; // rango razonable 0-10
   CFG.dif_congelado=n;
-  localStorage.setItem(LS_CFG,JSON.stringify(CFG));
+  _lsSet(LS_CFG,JSON.stringify(CFG));
   _actualizarDiferencial();
   // Debounce: sincronizar a Supabase 1 segundo después del último cambio
   clearTimeout(window._difEditTimer);
@@ -6417,7 +6507,7 @@ const LS_TASA_LAST_OK = 'POS.tasa_last_ok';
 
 function tasasModoToggle(){
   const auto = qs('#cfg_tasa_auto')?.checked;
-  localStorage.setItem(LS_TASA_AUTO, auto ? '1' : '0');
+  _lsSet(LS_TASA_AUTO, auto ? '1' : '0');
   _aplicarEstiloToggle(auto);
   const btn = qs('#btn_fetch_tasas');
   const inputs = [qs('#cfg_tasa_bcv'), qs('#cfg_tasa_paralela')];
@@ -6589,9 +6679,9 @@ async function fetchTasasGM(force=false){
   }
 
   if(isFinite(usdBcv)||isFinite(parRate)){
-    localStorage.setItem(LS_TASA_LAST_OK, String(Date.now()));
+    _lsSet(LS_TASA_LAST_OK, String(Date.now()));
     _actualizarDiferencial();
-    localStorage.setItem(LS_CFG, JSON.stringify(CFG));
+    _lsSet(LS_CFG, JSON.stringify(CFG));
     const hora=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
     if(st){ st.textContent=`✓ BCV: ${isFinite(usdBcv)?usdBcv.toFixed(2).replace('.',','):'—'} Bs/$  ·  Paralela: ${isFinite(parRate)?parRate.toFixed(2).replace('.',','):'—'} Bs/$  ·  ${hora}`; st.style.color='var(--ok)'; }
     const tasaLive=qs('#tasa_live'); if(tasaLive&&isFinite(usdBcv)) tasaLive.value=usdBcv.toFixed(2).replace('.',',');
@@ -6632,7 +6722,7 @@ function getPrecioVentaProducto(prod){
   const bcv   = getTasaBCV();
   const dif   = getDiferencial();
   const par   = getTasaParalela();
-  const pvConDif = parseFloat((pvUsd * (dif>0?dif:1)).toFixed(2));
+  const pvConDif = round2(pvUsd * (dif>0?dif:1));
   const pvBs  = bcv>0 ? usdToBs(pvConDif, bcv) : 0;
   return { moneda:'$', precioMon:pvUsd, precioUsd:pvUsd, precioBs:pvBs };
 }
@@ -6663,7 +6753,7 @@ function _mcActualizarMonedaInfo(){
   const dif=getDiferencial(), bcv=getTasaBCV();
   const pvUsd=window._lastPV||parseEU(qs('#mc_pv')?.value||'0');
   if(sel==='bs' && bcv>0){
-    const pvConDif=parseFloat((pvUsd*dif).toFixed(2));
+    const pvConDif=round2(pvUsd*dif);
     const pvBs=usdToBs(pvConDif, bcv);
     inf.style.display='block';
     inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> El cliente paga en <strong>Bs</strong>. $${pvUsd.toFixed(2).replace('.',',')} × ${dif.toFixed(4).replace('.',',')} × ${fmtBs(bcv)} = <strong>Bs ${fmtBs(pvBs)}</strong> por unidad.`;
@@ -6678,7 +6768,7 @@ function _mpmActualizarMonedaInfo(){
   const dif=getDiferencial(), bcv=getTasaBCV();
   const pvUsd=parseEU(qs('#mpm_pv')?.value||'0');
   if(sel==='bs' && bcv>0){
-    const pvConDif=parseFloat((pvUsd*dif).toFixed(2));
+    const pvConDif=round2(pvUsd*dif);
     const pvBs=usdToBs(pvConDif, bcv);
     inf.style.display='block';
     inf.innerHTML=`<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> El cliente paga en <strong>Bs</strong>. $${pvUsd.toFixed(2).replace('.',',')} × ${dif.toFixed(4).replace('.',',')} × ${fmtBs(bcv)} = <strong>Bs ${fmtBs(pvBs)}</strong>.`;
@@ -6691,9 +6781,9 @@ function _mpmActualizarMonedaInfo(){
 /* Info del selector de moneda en modal editor */
 /* ---- Sesión de caja ---- */
 function loadSesion(){ try{ return JSON.parse(localStorage.getItem(LS_SESION)||'null'); }catch(e){ return null; } }
-function saveSesion(s){ localStorage.setItem(LS_SESION, JSON.stringify(s)); }
+function saveSesion(s){ _lsSet(LS_SESION, JSON.stringify(s)); }
 function loadSesionesHist(){ try{ return JSON.parse(localStorage.getItem(LS_SESIONES_HIST)||'[]'); }catch(e){ return []; } }
-function saveSesionesHist(a){ localStorage.setItem(LS_SESIONES_HIST, JSON.stringify(a)); }
+function saveSesionesHist(a){ _lsSet(LS_SESIONES_HIST, JSON.stringify(a)); }
 
 function renderSesionBar(){
   const bar=qs('#caja-sesion-bar'); if(!bar) return;
@@ -6925,9 +7015,9 @@ function renderSaldosMoneda(){
 }
 
 function loadVen(){ try{ return JSON.parse(localStorage.getItem(LS_VEN)||'[]'); }catch(e){ return []; } }
-function saveVen(a){ localStorage.setItem(LS_VEN, JSON.stringify(a)); updateBadges(); }
+function saveVen(a){ _lsSet(LS_VEN, JSON.stringify(a)); updateBadges(); }
 function loadCajaMov(){ try{ return JSON.parse(localStorage.getItem(LS_CAJA)||'[]'); }catch(e){ return []; } }
-function saveCajaMov(a){ localStorage.setItem(LS_CAJA, JSON.stringify(a)); }
+function saveCajaMov(a){ _lsSet(LS_CAJA, JSON.stringify(a)); }
 
 function nextNumVen(){
   const all=loadVen();
@@ -6965,7 +7055,7 @@ function pedidoMontoCliente(ped){
   if(typeof pedidoPagoEnUsd==='function' && pedidoPagoEnUsd(ped)){
     const totalBase = parseFloat(ped.total||0)||0;
     const pagadoBase = (ped.pagos||[]).reduce((a,pg)=>a+(parseFloat(pg.monto)||0),0) + (parseFloat(ped.abono)||0);
-    const saldoBase = Math.max(0, parseFloat((totalBase - pagadoBase).toFixed(2)));
+    const saldoBase = Math.max(0, round2(totalBase - pagadoBase));
     return { total:totalBase, pagado:pagadoBase, saldo:saldoBase, dif:1, bcv, usdPuro:true };
   }
   const total = (typeof pedidoTotalCDifCalc==='function')
@@ -6998,7 +7088,7 @@ function poblarSelectPedidos(selId){
   peds.forEach(p => {
     const mc = pedidoMontoCliente(p);
     const cli = p.cliente ? ` — ${p.cliente.nombre}${p.cliente.apellido?' '+p.cliente.apellido:''}` : '';
-    sel.innerHTML += `<option value="${p.id}">${p.numero}${cli} · Saldo: ${euro(mc.saldo)}</option>`;
+    sel.innerHTML += `<option value="${p.id}">${esc(p.numero)}${esc(cli)} · Saldo: ${euro(mc.saldo)}</option>`;
   });
 }
 
@@ -7296,7 +7386,7 @@ function posRenderCarrito(){
   const _bcvCart = getTasaBCV();
   wrap.innerHTML = _posItems.map((it,i) => {
     const puBase = it.precio_unit * it.cant;
-    const puConDif = parseFloat((puBase * _difCart).toFixed(2));
+    const puConDif = round2(puBase * _difCart);
     const puBs = puConDif * _bcvCart;
     const precioLabel = _metodoBsCart && _bcvCart > 0
       ? `<div style="font-size:12px;font-weight:700">$ ${puConDif.toFixed(2).replace('.',',')}</div>
@@ -7490,13 +7580,13 @@ function posWaActualizar(){
     const pvUsdBase = it.precio_usd || 0;
     const cant = Math.max(1, parseInt(it.cant || 1));
     if(modo==='bs'){
-      const lineaAnclaUsd = parseFloat(((pvUsdBase * cant) * dif).toFixed(2));
+      const lineaAnclaUsd = round2((pvUsdBase * cant) * dif);
       const pvAnclaUsd    = lineaAnclaUsd / cant;
-      const lineaBs       = bcv>0 ? parseFloat((lineaAnclaUsd * bcv).toFixed(2)) : 0;
+      const lineaBs       = bcv>0 ? round2(lineaAnclaUsd * bcv) : 0;
       const pvCotBs       = cant>0 ? lineaBs / cant : 0;
       return { ...it, cant, pvAnclaUsd, pvCotBs, lineaAnclaUsd, lineaBs };
     } else {
-      const lineaUsd = parseFloat((pvUsdBase * cant).toFixed(2));
+      const lineaUsd = round2(pvUsdBase * cant);
       const pvCotUsd = lineaUsd / cant;
       return { ...it, cant, pvCotUsd, lineaUsd };
     }
@@ -7509,15 +7599,15 @@ function posWaActualizar(){
   let totalAnclaUsd = 0, totalBs = 0, totalUsdDirecto = 0;
   if(modo==='bs' && bcv>0){
     const subProductosBase = itemsCot.reduce((a,it)=>a + ((it.precio_usd||0) * it.cant), 0);
-    totalAnclaUsd = parseFloat(((subProductosBase * dif) + totalExtrasUsd).toFixed(2));
+    totalAnclaUsd = round2((subProductosBase * dif) + totalExtrasUsd);
     totalBs       = usdToBs(totalAnclaUsd, bcv);
   } else {
-    totalUsdDirecto = parseFloat((itemsCot.reduce((a,it)=>a + (it.lineaUsd || 0), 0) + totalExtrasUsd).toFixed(2));
+    totalUsdDirecto = round2(itemsCot.reduce((a,it)=>a + (it.lineaUsd || 0), 0) + totalExtrasUsd);
   }
 
   const baseAbonoUsd = modo==='bs' ? totalAnclaUsd : totalUsdDirecto;
-  const abonoUsd = parseFloat((baseAbonoUsd*(aboPct/100)).toFixed(2));
-  const restUsd  = parseFloat((baseAbonoUsd - abonoUsd).toFixed(2));
+  const abonoUsd = round2(baseAbonoUsd*(aboPct/100));
+  const restUsd  = round2(baseAbonoUsd - abonoUsd);
 
   // Nombre cliente
   const cliNom = _posCliSel ? (_posCliSel.nombre+(_posCliSel.apellido?' '+_posCliSel.apellido:'')).trim() : '';
@@ -7598,12 +7688,12 @@ function posRecalc(){
     totalBase = mc.saldo; // saldo c/dif: mismo Restante mostrado en Pedidos
     totalConDif = totalBase;
     if(metodoBs && bcvPos > 0){
-      totalBs = parseFloat((totalConDif * bcvPos).toFixed(2));
+      totalBs = round2(totalConDif * bcvPos);
     }
   } else {
-    totalConDif = parseFloat(((subProductos * difPos) + extrasVal).toFixed(2));
+    totalConDif = round2((subProductos * difPos) + extrasVal);
     if(metodoBs && bcvPos > 0){
-      totalBs = parseFloat((totalConDif * bcvPos).toFixed(2));
+      totalBs = round2(totalConDif * bcvPos);
     }
   }
 
@@ -7676,7 +7766,7 @@ function cajaMonedaMonto(metodo, totalUsd, bcv, dif){
   // totalUsd = precio base interno. Para Bs: round2(totalUsd×dif) × bcv
   const esBs = ['efectivo_bs','pago_movil','transferencia'].includes(metodo);
   if(esBs && bcv > 0){
-    const totalConDif = parseFloat((totalUsd * (dif > 0 ? dif : 1)).toFixed(2));
+    const totalConDif = round2(totalUsd * (dif > 0 ? dif : 1));
     const montoBs = totalConDif * bcv;
     const tasaPar = getTasaParalela();
     return { moneda:'bs', monto: montoBs, monto_bs: montoBs, monto_usd: totalUsd, tasa: bcv, tasa_paralela: tasaPar };
@@ -7852,7 +7942,7 @@ function filtrarProdVenta(catSel){
   const catF=hidden?.value||'';
   const sel=qs('#mv_prod_sel'); if(!sel) return;
   const fil=catF?cat.filter(p=>(p.categoria||'')===(catF)):cat;
-  sel.innerHTML='<option value="">— Seleccionar —</option>'+fil.map(p=>`<option value="${p.id}">${p.nombre}${p.precio_venta?' · '+euro(p.precio_venta):''}</option>`).join('');
+  sel.innerHTML='<option value="">— Seleccionar —</option>'+fil.map(p=>`<option value="${p.id}">${esc(p.nombre)}${p.precio_venta?' · '+euro(p.precio_venta):''}</option>`).join('');
 }
 function poblarCategoriasVenta(){
   const cats=[...new Set(loadCat().filter(p=>p.estado!=='inactivo'&&p.categoria).map(p=>p.categoria))].sort();
@@ -8525,7 +8615,7 @@ function mmovSeleccionarPedido(){
   if(infoEl){
     const cli = ped.cliente ? `${ped.cliente.nombre||''} ${ped.cliente.apellido||''}`.trim() : 'Sin cliente';
     infoEl.style.display='block';
-    infoEl.innerHTML = `<strong>${ped.numero}</strong> — ${cli} · Total: ${euro(ped.total)} · Saldo pendiente: <strong>${euro(saldoUsd)}</strong>`;
+    infoEl.innerHTML = `<strong>${esc(ped.numero)}</strong> — ${esc(cli)} · Total: ${euro(ped.total)} · Saldo pendiente: <strong>${euro(saldoUsd)}</strong>`;
   }
   // Pre-llenar monto con saldo en la moneda actual
   const monEl = qs('#mmov_moneda');
@@ -8536,7 +8626,7 @@ function mmovSeleccionarPedido(){
       montoEl.value = saldoUsd.toFixed(2).replace('.',',');
     } else {
       const bcv = getTasaBCV(), dif = getDiferencial();
-      const saldoConDif = parseFloat((saldoUsd * (dif>0?dif:1)).toFixed(2));
+      const saldoConDif = round2(saldoUsd * (dif>0?dif:1));
       if(bcv>0) montoEl.value = fmtBs(usdToBs(saldoConDif, bcv));
     }
     mmovCalcEquiv();
@@ -8842,7 +8932,7 @@ async function eliminarMovimiento(posEnFil, _){
     await deleteFromSupabase('caja_movimientos', _id);
     // Actualizar localStorage sin hacer upsert (evita restaurar el registro)
     all.splice(ri,1);
-    localStorage.setItem(LS_CAJA, JSON.stringify(all));
+    _lsSet(LS_CAJA, JSON.stringify(all));
     renderCaja(); renderDash();
     toast('Movimiento eliminado','ok');
   }
@@ -8918,14 +9008,14 @@ function pedidoSaldoCDif(ped, dif){
   const mult = dif>1 ? dif : 1;
   const totalBase = parseFloat(ped.total||0)||0;
   const totalCDif = (typeof pedidoTotalCDifCalc==='function') ? pedidoTotalCDifCalc(ped, dif) : (parseFloat(ped.total_cdif||0) || totalBase*mult);
-  const pagadoCDif = parseFloat(((ped.pagos||[]).reduce((a,pg)=>a + ((parseFloat(pg.monto)||0)*mult), 0) + ((parseFloat(ped.abono)||0)*mult)).toFixed(2));
+  const pagadoCDif = round2((ped.pagos||[]).reduce((a,pg)=>a + ((parseFloat(pg.monto)||0)*mult), 0) + ((parseFloat(ped.abono)||0)*mult));
   const saldo = totalCDif - pagadoCDif;
-  return Math.abs(saldo) <= PED_SALDO_TOLERANCIA ? 0 : Math.max(0, parseFloat(saldo.toFixed(2)));
+  return Math.abs(saldo) <= PED_SALDO_TOLERANCIA ? 0 : Math.max(0, round2(saldo));
 }
 function pedidoPagadoCerca(ped, dif){ return pedidoSaldoCDif(ped, dif) <= 0; }
 
 function loadPed(){ try{ return JSON.parse(localStorage.getItem(LS_PED)||'[]').map(p=>typeof normalizarPedidoImportado==='function'?normalizarPedidoImportado(p):p); }catch(e){ return []; } }
-function savePed(a){ localStorage.setItem(LS_PED, JSON.stringify(a)); updateBadges(); }
+function savePed(a){ _lsSet(LS_PED, JSON.stringify(a)); updateBadges(); }
 
 function nextNumPed(){
   const all = loadPed();
@@ -9315,18 +9405,18 @@ function mpSugerir50(){
   const esBs      = !esUsd;
   const bcv       = getTasaBCV();
   const dif       = getDiferencial();
-  const subCDif   = parseFloat((subNeta * (dif>0?dif:1)).toFixed(2));
-  const totalCDif = parseFloat((subCDif + extras).toFixed(2));
+  const subCDif   = round2(subNeta * (dif>0?dif:1));
+  const totalCDif = round2(subCDif + extras);
   const totalBs   = bcv>0 ? usdToBs(totalCDif, bcv) : 0;
 
   let sugerido, label;
   if(esBs && bcv>0){
     // El campo espera Bs (así lo lee recalcPedido cuando esBs)
-    sugerido = parseFloat((totalBs * 0.5).toFixed(2));
+    sugerido = round2(totalBs * 0.5);
     label = "50% = Bs " + fmtBs(sugerido);
   } else {
     // El campo espera USD base
-    sugerido = parseFloat(((subNeta + extras) * 0.5).toFixed(2));
+    sugerido = round2((subNeta + extras) * 0.5);
     label = "50% = $" + sugerido.toFixed(2).replace(".",",");
   }
   const abonoEl = qs("#mp_abono");
@@ -9352,8 +9442,8 @@ function recalcPedido(){
   const bcv = getTasaBCV();
   const dif = getDiferencial();
   const par = getTasaParalela();
-  const subNetaCDif = parseFloat((subNetaUsd * (dif>0?dif:1)).toFixed(2));
-  const totalCDif   = parseFloat((subNetaCDif + _mpExtrasTotal).toFixed(2));
+  const subNetaCDif = round2(subNetaUsd * (dif>0?dif:1));
+  const totalCDif   = round2(subNetaCDif + _mpExtrasTotal);
   const totalBs     = bcv>0 ? usdToBs(totalCDif, bcv) : 0;
 
   // Re-renderizar ítems si cambió el método (para actualizar colores c/dif)
@@ -9375,8 +9465,8 @@ function recalcPedido(){
 
   const abonoRaw = parseEU(qs('#mp_abono')?.value||'0,00');
   const abonoUsd = (esBs && par>0) ? abonoRaw / par : abonoRaw;
-  const abonoEnCDif = parseFloat(((esBs && bcv>0) ? abonoRaw / bcv : abonoRaw).toFixed(2));
-  const restanteCDif = Math.max(0, parseFloat((totalCDif - abonoEnCDif).toFixed(2)));
+  const abonoEnCDif = round2((esBs && bcv>0) ? abonoRaw / bcv : abonoRaw);
+  const restanteCDif = Math.max(0, round2(totalCDif - abonoEnCDif));
   const restanteUsd  = Math.max(0, total - abonoUsd);
 
   // Total
@@ -9452,8 +9542,8 @@ function guardarPedido(){
   const _gDifG = getDiferencial();
   const _gBcvG = getTasaBCV();
   // total_cdif = productos en $BCV + extras en dólar paralelo (SIN diferencial)
-  const productos_cdif = parseFloat((subNetaG * (_gDifG>0?_gDifG:1)).toFixed(2));
-  const total_cdif = parseFloat((productos_cdif + _gExtrasTotal).toFixed(2));
+  const productos_cdif = round2(subNetaG * (_gDifG>0?_gDifG:1));
+  const total_cdif = round2(productos_cdif + _gExtrasTotal);
   const total_bs   = _gBcvG>0 ? usdToBs(total_cdif, _gBcvG) : 0;
   // Si método es Bs el usuario ingresa Bs — usar la conversión calculada en recalcPedido
   const _metodoAb = qs('#mp_metodo')?.value||'efectivo_bs';
@@ -9556,7 +9646,7 @@ function _poblarFiltroProductos(){
   const nombres=new Set();
   all.forEach(p=>(p.items||[]).forEach(it=>{ if(it.nombre) nombres.add(it.nombre); }));
   const sorted=[...nombres].sort((a,b)=>a.localeCompare(b,'es'));
-  sel.innerHTML='<option value="">Todos los productos</option>'+sorted.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">${n}</option>`).join('');
+  sel.innerHTML='<option value="">Todos los productos</option>'+sorted.map(n=>`<option value="${n.replace(/"/g,'&quot;')}">${esc(n)}</option>`).join('');
   sel.value=val;
 }
 
@@ -9573,7 +9663,7 @@ function _poblarFiltroCategorias(){
     if(cat) cats.add(cat);
   }));
   const sorted=[...cats].sort((a,b)=>a.localeCompare(b,'es'));
-  sel.innerHTML='<option value="">Todas las categorías</option>'+sorted.map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${c}</option>`).join('');
+  sel.innerHTML='<option value="">Todas las categorías</option>'+sorted.map(c=>`<option value="${c.replace(/"/g,'&quot;')}">${esc(c)}</option>`).join('');
   sel.value=val;
 }
 
@@ -9656,10 +9746,10 @@ function renderPedidos(){
           const _usdPuro=pedidoPagoEnUsd(p);
           const totalCDif = (typeof pedidoTotalCDifCalc==='function') ? pedidoTotalCDifCalc(p,_difL) : (p.total_cdif || (p.total*(_difL>1?_difL:1)));
           const totalBs   = _bcvL>0 ? usdToBs(totalCDif, _bcvL) : 0;
-          const pagadoCDif = parseFloat(((p.pagos||[]).reduce((a,pg)=>a + pg.monto*(_difL>1?_difL:1), 0)).toFixed(2));
-          const restCDif   = Math.max(0, parseFloat((totalCDif - pagadoCDif).toFixed(2)));
+          const pagadoCDif = round2((p.pagos||[]).reduce((a,pg)=>a + pg.monto*(_difL>1?_difL:1), 0));
+          const restCDif   = Math.max(0, round2(totalCDif - pagadoCDif));
           const pagadoBs   = _bcvL>0 ? usdToBs(pagadoCDif, _bcvL) : 0;
-          const restBs     = Math.max(0, parseFloat((totalBs - pagadoBs).toFixed(2)));
+          const restBs     = Math.max(0, round2(totalBs - pagadoBs));
           if(_usdPuro){
             const restUsdBase=Math.max(0,p.total-totalPagado(p));
             return `<div style="font-weight:700;font-size:16px;color:var(--brand)">$${p.total.toFixed(2).replace('.',',')}</div>`+
@@ -9891,8 +9981,8 @@ function imprimirPedido(){
   const bcv=getTasaBCV(), dif=getDiferencial(), par=getTasaParalela();
   const ep=estadoPago(p), pag=totalPagado(p);
   const totalCDif=(typeof pedidoTotalCDifCalc==='function')?pedidoTotalCDifCalc(p,dif):(p.total_cdif||(p.total*(dif>0?dif:1)));
-  const pagadoCDif=parseFloat(((p.pagos||[]).reduce((a,pg)=>a+pg.monto*(dif>0?dif:1),0)).toFixed(2));
-  const restCDif=Math.max(0,parseFloat((totalCDif-pagadoCDif).toFixed(2)));
+  const pagadoCDif=round2((p.pagos||[]).reduce((a,pg)=>a+pg.monto*(dif>0?dif:1),0));
+  const restCDif=Math.max(0,round2(totalCDif-pagadoCDif));
   const negocio=JSON.parse(localStorage.getItem('POS.negocio')||'{}');
   const logo=negocio.logo_url||negocio.logo||'';
 
@@ -9981,7 +10071,7 @@ td.right,th.right{text-align:right}
         const restUsdBase=Math.max(0,p.total-pag);
         html+=`<div class="pago-row" style="color:#c0392b;font-weight:700"><span>Restante:</span><span>${euro(restUsdBase)} USD</span></div>`;
       } else {
-        html+=`<div class="pago-row" style="color:#c0392b;font-weight:700"><span>Restante:</span><span>$${restCDif.toFixed(2).replace('.',',')}${bcv>0?' · Bs '+fmtBs(parseFloat((totalBsPrint - usdToBs(pagadoCDif, bcv)).toFixed(2))):''}</span></div>`;
+        html+=`<div class="pago-row" style="color:#c0392b;font-weight:700"><span>Restante:</span><span>$${restCDif.toFixed(2).replace('.',',')}${bcv>0?' · Bs '+fmtBs(round2(totalBsPrint - usdToBs(pagadoCDif, bcv))):''}</span></div>`;
       }
     }
     html+=`</div>`;
@@ -10011,8 +10101,8 @@ function verPedido(idx){
   const _pedPar = _pedBcv * (_pedDif>0?_pedDif:1);
   // Restante BCV = total BCV - pagado BCV (cada pago USD paralelo × diferencial)
   const _totalCDifV  = (typeof pedidoTotalCDifCalc==='function') ? pedidoTotalCDifCalc(p,_pedDif) : (p.total_cdif || (p.total*(_pedDif>0?_pedDif:1)));
-  const _pagadoCDifV = parseFloat(((p.pagos||[]).reduce((a,pg)=>a + pg.monto*(_pedDif>0?_pedDif:1), 0)).toFixed(2));
-  const restCDif     = Math.max(0, parseFloat((_totalCDifV - _pagadoCDifV).toFixed(2)));
+  const _pagadoCDifV = round2((p.pagos||[]).reduce((a,pg)=>a + pg.monto*(_pedDif>0?_pedDif:1), 0));
+  const restCDif     = Math.max(0, round2(_totalCDifV - _pagadoCDifV));
   const restUsd      = Math.max(0, p.total - pag);
   qs('#mvped-title').textContent=p.numero+(p.cliente?' — '+p.cliente.nombre+' '+p.cliente.apellido:'');
   const _fmtUsd  = n => euro(n);
@@ -10366,7 +10456,7 @@ async function eliminarPedido(){
   const idx = all.findIndex(x => String(x.id) === String(_id));
   if(idx >= 0){
     all.splice(idx, 1);
-    localStorage.setItem('POS.ped', JSON.stringify(all));
+    _lsSet('POS.ped', JSON.stringify(all));
   }
   closeModal('m-ver-ped');
   renderPedidos(); renderDash();
@@ -10550,11 +10640,11 @@ let _terIdx  = null;
 let _invMovCtx = null; // { id, tipo_item:'insumo'|'terminado' }
 
 function loadIns()  { try{ return JSON.parse(localStorage.getItem(LS_INS)||'[]'); }catch(e){ return []; } }
-function saveIns(a) { localStorage.setItem(LS_INS, JSON.stringify(a)); updateBadges(); }
+function saveIns(a) { _lsSet(LS_INS, JSON.stringify(a)); updateBadges(); }
 function loadTer()  { try{ return JSON.parse(localStorage.getItem(LS_TER)||'[]'); }catch(e){ return []; } }
-function saveTer(a) { localStorage.setItem(LS_TER, JSON.stringify(a)); updateBadges(); }
+function saveTer(a) { _lsSet(LS_TER, JSON.stringify(a)); updateBadges(); }
 function loadIMov() { try{ return JSON.parse(localStorage.getItem(LS_IMOV)||'[]'); }catch(e){ return []; } }
-function saveIMov(a){ localStorage.setItem(LS_IMOV, JSON.stringify(a)); }
+function saveIMov(a){ _lsSet(LS_IMOV, JSON.stringify(a)); }
 
 /* ── Tabs ── */
 function invTab(tab, btn){
@@ -10643,7 +10733,7 @@ async function eliminarInsumo(){
   if(_insIdx===null) return;
   const all=loadIns();
   if(!confirm('¿Eliminar "'+all[_insIdx].nombre+'"?')) return;
-  const _insId=all[_insIdx].id; all.splice(_insIdx,1); localStorage.setItem(LS_INS,JSON.stringify(all)); await deleteFromSupabase('inventario_insumos',_insId); saveIns(all); closeModal('m-ver-ins'); renderInsumos(); renderDash();
+  const _insId=all[_insIdx].id; all.splice(_insIdx,1); _lsSet(LS_INS,JSON.stringify(all)); await deleteFromSupabase('inventario_insumos',_insId); saveIns(all); closeModal('m-ver-ins'); renderInsumos(); renderDash();
   toast('Insumo eliminado','ok'); _insIdx=null;
 }
 
@@ -10747,7 +10837,7 @@ function abrirNuevoTerminado(){
   _terIdx=null;
   qs('#mter-title').textContent='Stock Producto Terminado';
   const cat=loadCat().filter(p=>p.estado==='activo');
-  qs('#ter_prod_sel').innerHTML='<option value="">— Seleccionar producto —</option>'+cat.map((p,i)=>`<option value="${p.id}">${p.nombre}</option>`).join('');
+  qs('#ter_prod_sel').innerHTML='<option value="">— Seleccionar producto —</option>'+cat.map((p,i)=>`<option value="${p.id}">${esc(p.nombre)}</option>`).join('');
   qs('#ter_stock').value='0'; qs('#ter_min').value='0'; qs('#ter_notas').value='';
   openModal('m-terminado');
 }
@@ -10819,7 +10909,7 @@ function editarTerminado(idx){
   const item=loadTer()[idx];
   qs('#mter-title').textContent='Editar Stock';
   const cat=loadCat().filter(p=>p.estado==='activo');
-  qs('#ter_prod_sel').innerHTML=cat.map(p=>`<option value="${p.id}" ${p.id==item.prod_id?'selected':''}>${p.nombre}</option>`).join('');
+  qs('#ter_prod_sel').innerHTML=cat.map(p=>`<option value="${p.id}" ${p.id==item.prod_id?'selected':''}>${esc(p.nombre)}</option>`).join('');
   qs('#ter_stock').value=String(item.stock||0);
   const terDepEl=qs('#ter_stock_dep'); if(terDepEl) terDepEl.value=String(item.stock_dep||0);
   qs('#ter_min').value=String(item.stock_min||0);
@@ -12471,7 +12561,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_25';
+  const APP_VERSION = 'v14_28';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -12480,7 +12570,7 @@ window.addEventListener('popstate',e=>{
   let _regPromise = null;
   function registerSW(){
     if(!hasSW()) return;
-    _regPromise = navigator.serviceWorker.register('./sw.js?v=v14_23', { updateViaCache: 'none' })
+    _regPromise = navigator.serviceWorker.register('./sw.js?v=v14_28', { updateViaCache: 'none' })
       .then(function(reg){
         console.log('[PWA] SW registrado scope:', reg.scope);
         return reg;
@@ -12746,7 +12836,7 @@ const LS_ENV = 'POS.envios';
 let _envIdx = null; // índice del envío en edición
 
 function loadEnv(){ try{ return JSON.parse(localStorage.getItem(LS_ENV)||'[]'); }catch(e){ return []; } }
-function saveEnv(arr){ localStorage.setItem(LS_ENV, JSON.stringify(arr)); syncToSupabase('envios', arr); }
+function saveEnv(arr){ _lsSet(LS_ENV, JSON.stringify(arr)); syncToSupabase('envios', arr); }
 
 // ── Render lista ──
 function renderEnvios(){
@@ -12968,6 +13058,13 @@ function imprimirEtiquetaEnvio(idx){
   td:first-child { font-weight: 700; white-space: nowrap; padding-right: 10px; width: 110px; }
   .guia { font-size:15px; font-weight:900; border:2px solid #000; text-align:center; padding:6px; border-radius:4px; margin-top:10px; letter-spacing:2px; }
   @media print { body { -webkit-print-color-adjust: exact; } }
+.offline-bar{display:none;align-items:center;justify-content:center;gap:8px;padding:6px 16px;background:#FEF3CD;color:#856404;font-size:12px;font-weight:600;text-align:center;border-bottom:1px solid #FFEEBA;z-index:999}
+.offline-bar.visible{display:flex}
+.dark .offline-bar{background:#4A3800;color:#FFD666;border-color:#6B5200}
+.offline-bar .dot{width:8px;height:8px;border-radius:50%;background:#dc3545;flex-shrink:0}
+.offline-bar.reconectado .dot{background:#28a745}
+.ls-meter{height:6px;background:var(--border,#e5e7eb);border-radius:3px;overflow:hidden;margin-top:4px}
+.ls-meter-fill{height:100%;border-radius:3px;transition:width .3s}
 </style>
 </head><body>
 <div class="etiqueta">
@@ -13005,5 +13102,16 @@ function imprimirEtiquetaEnvio(idx){
 })();
 </script>
 
+
+<!-- Modal Changelog (lazy) -->
+<div class="modal-bg" id="m-changelog" onclick="if(event.target===this)closeModal('m-changelog')">
+  <div class="modal" style="max-width:680px;max-height:80vh;overflow-y:auto">
+    <div class="modal-hd">
+      <h3 style="font-size:16px;font-weight:600">Historial de cambios</h3>
+      <button class="modal-x" onclick="closeModal('m-changelog')" aria-label="Cerrar">&times;</button>
+    </div>
+    <div id="changelog-body" style="padding:16px;font-size:12px;color:var(--muted);line-height:1.7;white-space:pre-line"></div>
+  </div>
+</div>
 </body>
 </html>
