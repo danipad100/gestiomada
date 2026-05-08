@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_29">
+<html lang="es" data-app-version="GestioMada_V14_34">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -585,7 +585,7 @@ SUPA.from('productos').select('id').limit(1)
     window._supaConectado = !error;
     if(window._supaConectado){
       console.log('[Supabase] Conectado ✓ — iniciando sync + Realtime');
-      initSupabaseSync().then(() => _procesarColaSyncProd());
+      initSupabaseSync().then(() => { _procesarColaSyncProd(); _migrarFotosBase64(); });
     } else {
       console.warn('[Supabase] Error de conexión:', error?.message);
     }
@@ -610,6 +610,27 @@ SUPA.from('productos').select('id').limit(1)
   --radius: 16px;
   --shadow: 0 8px 20px rgba(0,0,0,.06);
   --sidebar-w: 220px;
+  /* ── Design tokens ── */
+  --sp-xs: 4px;
+  --sp-sm: 8px;
+  --sp-md: 12px;
+  --sp-lg: 16px;
+  --sp-xl: 24px;
+  --sp-2xl: 32px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-pill: 999px;
+  --fs-xs: 10px;
+  --fs-sm: 11px;
+  --fs-md: 12px;
+  --fs-base: 13px;
+  --fs-lg: 15px;
+  --fs-xl: 18px;
+  --fs-2xl: 22px;
+  --font: Poppins, system-ui, sans-serif;
+  --transition: .2s ease;
 }
 /* ── Dark mode tokens ── */
 body.dark{
@@ -688,7 +709,7 @@ body.dark .badge{background:#1b2030;color:#e5e7eb}
 body.dark .frow{gap:12px}
 body.dark .dark-toggle-pill{background:#1b2030;color:#e5e7eb}
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{height:100%;font-family:Poppins,system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.4;font-size:14px}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--ink);line-height:1.4;font-size:14px}
 
 /* ═══════════════ LAYOUT ═══════════════ */
 .app-wrap{display:flex;height:100vh;overflow:hidden}
@@ -779,14 +800,14 @@ html,body{height:100%;font-family:Poppins,system-ui,sans-serif;background:var(--
 /* ═══════════════ CARDS ═══════════════ */
 .card{
   background:var(--card);border-radius:var(--radius);
-  box-shadow:var(--shadow);padding:18px;
-  margin-bottom:14px;overflow:hidden;
+  box-shadow:var(--shadow);padding:var(--sp-lg);
+  margin-bottom:var(--sp-lg);overflow:hidden;
 }
-.card-title{font-size:14px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.card-title{font-size:var(--fs-lg);font-weight:700;margin-bottom:var(--sp-lg);display:flex;align-items:center;gap:var(--sp-sm)}
 .card-title .ico{font-size:16px}
 
 /* ═══════════════ GRID ═══════════════ */
-.grid{display:grid;gap:14px}
+.grid{display:grid;gap:var(--sp-lg)}
 .g2{grid-template-columns:repeat(2,1fr)}
 .g3{grid-template-columns:repeat(3,1fr)}
 .g4{grid-template-columns:repeat(4,1fr)}
@@ -985,8 +1006,8 @@ body.dark .ham-btn:hover{background:#1b2030}
   .prod-grid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
 
   /* Cards y modales */
-  .card{padding:14px}
-  .modal{padding:16px;border-radius:14px}
+  .card{padding:var(--sp-lg)}
+  .modal{padding:var(--sp-lg);border-radius:var(--r-lg)}
   .modal-title{font-size:14px;margin-bottom:14px}
 
   /* Rows de formulario a columna */
@@ -1086,10 +1107,10 @@ input[readonly]{background:#ffe8ee;font-weight:600;color:var(--ink)}
 
 /* ═══════════════ BUTTONS ═══════════════ */
 .btn{
-  display:inline-flex;align-items:center;gap:6px;
-  padding:9px 16px;border-radius:12px;border:none;
-  font-family:inherit;font-size:13px;font-weight:600;
-  cursor:pointer;transition:opacity .15s,transform .1s;
+  display:inline-flex;align-items:center;gap:var(--sp-sm);
+  padding:9px var(--sp-lg);border-radius:var(--r-md);border:none;
+  font-family:var(--font);font-size:var(--fs-base);font-weight:600;
+  cursor:pointer;transition:opacity var(--transition),transform .1s;
   white-space:nowrap;background:#f3f4f6;color:var(--ink);
 }
 .btn:active{transform:scale(.97)}
@@ -1381,12 +1402,12 @@ body.dark .musr-chk input:checked ~ .musr-chk-box{background:var(--brand);border
 .modal{
   background:var(--card);border-radius:var(--radius);
   width:100%;max-width:520px;max-height:90vh;overflow-y:auto;
-  box-shadow:0 20px 60px rgba(0,0,0,.15);padding:24px;position:relative;
+  box-shadow:0 20px 60px rgba(0,0,0,.15);padding:var(--sp-xl);position:relative;
 }
 .modal-close{
   position:absolute;top:12px;right:14px;
   background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted);
-  width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+  width:30px;height:30px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;
 }
 .modal-close:hover{background:#f3f4f6}
 .modal-title{font-size:16px;font-weight:700;margin-bottom:18px}
@@ -1713,8 +1734,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
 <div class="toast-wrap" id="toastWrap"></div>
 
 <!-- ══ MODAL: Agregar al Catálogo ══ -->
-<div class="modal-bg" id="m-catalogo">
-  <div class="modal">
+<div class="modal-bg" id="m-catalogo" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1">
     <button class="modal-close" onclick="closeModal('m-catalogo')">✕</button>
     <div class="modal-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Agregar al Catálogo</div>
     <div class="fg"><label>Nombre del producto *</label><input type="text" id="mc_nombre" placeholder="Ej. Taza Premium 11oz"/></div>
@@ -1767,8 +1788,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
 </div>
 
 <!-- ══ MODAL: Producto Manual ══ -->
-<div class="modal-bg" id="m-prod-manual">
-  <div class="modal">
+<div class="modal-bg" id="m-prod-manual" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1">
     <button class="modal-close" onclick="closeModal('m-prod-manual')">✕</button>
     <div class="modal-title" id="mpm-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Nuevo producto</div>
     <!-- Foto -->
@@ -1839,8 +1860,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
 </div>
 
 <!-- ══ MODAL: Ver Producto ══ -->
-<div class="modal-bg" id="m-ver-prod">
-  <div class="modal">
+<div class="modal-bg" id="m-ver-prod" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1">
     <button class="modal-close" onclick="closeModal('m-ver-prod')">✕</button>
     <div class="modal-title" id="mvp-title">Producto</div>
     <div id="mvp-body"></div>
@@ -1855,8 +1876,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
 </div>
 
 <!-- ══ MODAL: Cliente ══ -->
-<div class="modal-bg" id="m-cliente">
-  <div class="modal">
+<div class="modal-bg" id="m-cliente" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1">
     <button class="modal-close" onclick="closeModal('m-cliente')">✕</button>
     <div class="modal-title" id="mc-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> Nuevo Cliente</div>
     <div class="fg">
@@ -1878,8 +1899,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
 </div>
 
 <!-- ══ MODAL: Ver Cliente ══ -->
-<div class="modal-bg" id="m-ver-cli">
-  <div class="modal">
+<div class="modal-bg" id="m-ver-cli" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1">
     <button class="modal-close" onclick="closeModal('m-ver-cli')">✕</button>
     <div class="modal-title" id="mvc-title">Cliente</div>
     <div id="mvc-body"></div>
@@ -1940,8 +1961,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
 </div>
 
 <!-- ══ MODAL USUARIO ══ -->
-<div id="m-usuario" class="modal-bg" onclick="if(event.target===this)cerrarModalUsuario()">
-  <div class="modal" style="max-width:520px">
+<div id="m-usuario" class="modal-bg" onclick="if(event.target===this)cerrarModalUsuario()" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:520px">
     <button class="modal-close" onclick="cerrarModalUsuario()">✕</button>
     <div class="modal-title" id="musr-title">Nuevo usuario</div>
     <div style="max-height:65vh;overflow-y:auto;padding:0 2px">
@@ -2028,6 +2049,10 @@ body.dark .pos-prod-img-ph{background:#23283a}
     </a>
     <a class="nav-item" data-v="reportes" onclick="nav('reportes',this)">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg><span class="lbl">Reportes</span>
+    </a>
+    <a class="nav-item" data-v="finanzas" onclick="nav('finanzas',this)">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 1v22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg><span class="lbl">Finanzas</span>
+      <span class="badge" id="badge-fin" style="background:var(--danger);display:none">0</span>
     </a>
 
     <div class="sb-group">Sistema</div>
@@ -2120,6 +2145,33 @@ body.dark .pos-prod-img-ph{background:#23283a}
             <div class="kpi-sub">stock bajo →</div>
           </div>
         </div>
+        <!-- Fila Finanzas (V14_33): KPIs ejecutivos financieros — solo visibles si admin -->
+        <div class="grid g4" id="d-finanzas-row" style="margin-bottom:14px;display:none">
+          <div class="kpi c-coral" style="cursor:pointer" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'))">
+            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FFE4E1"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#C2410C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div></div>
+            <div class="kpi-lbl">Por cobrar</div>
+            <div class="kpi-val" id="d-fin-cxc" style="font-size:16px">$ 0,00</div>
+            <div class="kpi-sub" id="d-fin-cxc-sub">— pedidos</div>
+          </div>
+          <div class="kpi c-amber" style="cursor:pointer" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'))">
+            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div></div>
+            <div class="kpi-lbl">CxC vencida</div>
+            <div class="kpi-val" id="d-fin-vencido" style="font-size:16px">$ 0,00</div>
+            <div class="kpi-sub" id="d-fin-vencido-sub">— pedidos vencidos</div>
+          </div>
+          <div class="kpi c-red" style="cursor:pointer" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'));setTimeout(()=>{const t=document.querySelectorAll('#fin-tabs .tab-btn')[3];if(t)t.click();},150)">
+            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div></div>
+            <div class="kpi-lbl">Pérdida cambiaria</div>
+            <div class="kpi-val" id="d-fin-fx" style="font-size:16px">$ 0,00</div>
+            <div class="kpi-sub" id="d-fin-fx-sub">este mes</div>
+          </div>
+          <div class="kpi c-purple" style="cursor:pointer" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'));setTimeout(()=>{const t=document.querySelectorAll('#fin-tabs .tab-btn')[2];if(t)t.click();},150)">
+            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EEEDFE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#534AB7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div></div>
+            <div class="kpi-lbl">Saldo proyectado</div>
+            <div class="kpi-val" id="d-fin-flujo" style="font-size:16px">$ 0,00</div>
+            <div class="kpi-sub" id="d-fin-flujo-sub">en 15 días</div>
+          </div>
+        </div>
         <!-- Fila 3: Entregas hoy + Saldo caja -->
         <div class="grid g4" style="margin-bottom:14px">
           <div class="kpi c-amber" style="cursor:pointer" onclick="nav('pedidos',document.querySelector('[data-v=pedidos]'))">
@@ -2189,7 +2241,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
                 <select id="pers_load" style="min-width:190px;border-radius:12px">
                   <option value="">— Cargar guardado —</option>
                 </select>
-                <button class="btn btn-danger btn-sm" id="pers_delete"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+                <button class="btn btn-danger btn-sm" id="pers_delete" aria-label="Eliminar personalización"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
               </div>
             </div>
           </div>
@@ -2640,7 +2692,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.29: Resiliencia y UX — openModal/closeModal mejorados con stack de modales, scroll lock del body, y cierre con Escape (closeTopModal). Modal de usuarios unificado al sistema centralizado. Nuevo helper safeNum(v, fallback) para validar inputs numéricos de forma segura (NaN/Infinity → fallback). v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.32: Arquitectura — 17 CSS design tokens (--sp-xs a --sp-2xl, --r-sm a --r-pill, --fs-xs a --fs-2xl, --font, --transition). Aplicados a .btn, .modal, .card y body como convención. Suite de tests de regresión para cálculos financieros: 28 assertions cubriendo round2, parseEU, safeNum, euro, fmtBs, pedidoTotalCDifCalc, pedidoSaldoCDif, esc. Se activan con ?test en URL o localStorage._gm_tests=1. v14.31: Accesibilidad — role="dialog" y aria-modal="true" en los 21 modales. aria-label en 10 botones de solo ícono (editar, duplicar, eliminar, anular, imprimir). tabindex="-1" en contenedores .modal para recibir foco al abrir. openModal() ahora enfoca el modal abierto. Contraste dark mode verificado (7.4:1 y 6.9:1 — supera WCAG AA). v14.30: Migración agresiva de fotos base64 — al cargar, sube fotos pendientes a Supabase Storage y limpia base64 del localStorage. Monitor de almacenamiento mejorado con desglose de las 3 keys más pesadas y botón de limpieza manual. SW resiliente: install ya no falla si un ícono o manifest no se descarga. Mensajes de error de actualización PWA más descriptivos. v14.29: Resiliencia y UX — openModal/closeModal mejorados con stack de modales, scroll lock del body, y cierre con Escape (closeTopModal). Modal de usuarios unificado al sistema centralizado. Nuevo helper safeNum(v, fallback) para validar inputs numéricos de forma segura (NaN/Infinity → fallback). v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
         </div>
       </div>
 
@@ -2694,6 +2746,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
           </select>
           <button class="btn btn-brand btn-sm" onclick="abrirNuevoPedido()">＋ Nuevo Pedido</button>
           <button class="btn btn-sm" onclick="imprimirListaPedidos()" title="Imprimir listado"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>
+          <button class="btn btn-sm" onclick="abrirImprimirRangoPedidos()" title="Imprimir pedidos por rango de números"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/><line x1="9" y1="17" x2="15" y2="17"/></svg> Rango #</button>
           <button class="btn btn-sm" onclick="abrirReprogramarFechas()" title="Reprogramar fechas de entrega masivamente" style="border-color:var(--warn);color:var(--warn)">
             <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01"/><path d="M12 14h4"/><path d="M8 18h.01"/><path d="M12 18h2"/></svg>
             Reprogramar fechas
@@ -3332,12 +3385,151 @@ body.dark .pos-prod-img-ph{background:#23283a}
 
       </div>
 
+      <!-- ══════════════════════════════════════════ -->
+      <!--  VIEW: Finanzas (V14_33)                   -->
+      <!-- ══════════════════════════════════════════ -->
+      <div class="view" id="view-finanzas">
+
+        <!-- Filtro global de período -->
+        <div class="card" style="padding:14px;margin-bottom:14px">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Período</span>
+            <button class="btn btn-sm"           id="fin-hoy-btn"   onclick="setFinPeriodo('hoy',this)">Hoy</button>
+            <button class="btn btn-sm"           id="fin-sem-btn"   onclick="setFinPeriodo('semana',this)">7 días</button>
+            <button class="btn btn-brand btn-sm" id="fin-mes-btn"   onclick="setFinPeriodo('mes',this)">Este mes</button>
+            <button class="btn btn-sm"           id="fin-mes3-btn"  onclick="setFinPeriodo('mes3',this)">3 meses</button>
+            <button class="btn btn-sm"           id="fin-anio-btn"  onclick="setFinPeriodo('anio',this)">Año</button>
+            <input type="date" id="fin_desde" onchange="setFinPeriodo('custom',null)"/>
+            <span style="color:var(--muted);font-size:12px">→</span>
+            <input type="date" id="fin_hasta" onchange="setFinPeriodo('custom',null)"/>
+          </div>
+        </div>
+
+        <!-- KPIs ejecutivos -->
+        <div class="grid g4" id="fin-kpis" style="margin-bottom:14px"></div>
+
+        <!-- Tabs de secciones -->
+        <div class="tabs" id="fin-tabs">
+          <button class="tab-btn active" onclick="finTab('cxc',this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg> Cuentas por Cobrar</button>
+          <button class="tab-btn" onclick="finTab('pyl',this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg> Estado de Resultados</button>
+          <button class="tab-btn" onclick="finTab('flujo',this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Flujo Proyectado</button>
+          <button class="tab-btn" onclick="finTab('cambiario',this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Riesgo Cambiario</button>
+        </div>
+
+        <!-- ══ TAB CXC (Cuentas por Cobrar) ══ -->
+        <div class="tab-panel active" id="fin-tab-cxc">
+          <div class="grid g4" id="fin-cxc-aging" style="margin-bottom:14px"></div>
+
+          <div class="grid g2" style="margin-bottom:14px">
+            <div class="card">
+              <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Distribución por antigüedad</div>
+              <div id="fin-cxc-buckets-chart"></div>
+            </div>
+            <div class="card">
+              <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg> Indicadores</div>
+              <div id="fin-cxc-indicadores"></div>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+              <div class="card-title" style="margin:0"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Saldo por cliente</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <select id="fin_cxc_orden" onchange="renderFinCxC()" style="min-width:160px">
+                  <option value="saldo">Mayor saldo</option>
+                  <option value="dias">Más días vencido</option>
+                  <option value="nombre">Nombre A-Z</option>
+                </select>
+                <select id="fin_cxc_filtro" onchange="renderFinCxC()" style="min-width:160px">
+                  <option value="todos">Todos</option>
+                  <option value="vigente">Solo vigentes</option>
+                  <option value="vencido">Solo vencidos</option>
+                </select>
+                <button class="btn btn-sm" onclick="exportFinCxCCSV()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Exportar</button>
+              </div>
+            </div>
+            <div id="fin-cxc-clientes"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Pedidos vencidos sin cobrar</div>
+            <div id="fin-cxc-vencidos"></div>
+          </div>
+        </div>
+
+        <!-- ══ TAB PYL (Estado de Resultados) ══ -->
+        <div class="tab-panel" id="fin-tab-pyl">
+          <div class="card" style="padding:14px;margin-bottom:14px;background:linear-gradient(135deg,#fef3c7 0%,#fed7aa 100%);border-left:4px solid var(--warn)">
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              <div style="font-size:12.5px;color:#5c3a08;line-height:1.5">
+                <strong>Para que el P&amp;L sea exacto</strong>, clasifica los gastos en Caja con su subcategoría (Alquiler, Servicios, Sueldos, etc.). Los movimientos sin clasificar aparecerán como "Sin categorizar".
+                <span id="fin-pyl-sincat-warn"></span>
+              </div>
+            </div>
+          </div>
+
+          <div id="fin-pyl-content"></div>
+        </div>
+
+        <!-- ══ TAB FLUJO PROYECTADO ══ -->
+        <div class="tab-panel" id="fin-tab-flujo">
+          <div class="card" style="padding:14px;margin-bottom:14px">
+            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+              <span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Horizonte</span>
+              <button class="btn btn-sm"           id="fin-flu-7-btn"  onclick="setFlujoHorizonte(7,this)">7 días</button>
+              <button class="btn btn-brand btn-sm" id="fin-flu-15-btn" onclick="setFlujoHorizonte(15,this)">15 días</button>
+              <button class="btn btn-sm"           id="fin-flu-30-btn" onclick="setFlujoHorizonte(30,this)">30 días</button>
+              <button class="btn btn-sm"           id="fin-flu-60-btn" onclick="setFlujoHorizonte(60,this)">60 días</button>
+            </div>
+          </div>
+          <div class="grid g4" id="fin-flujo-kpis" style="margin-bottom:14px"></div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg> Proyección día a día</div>
+            <div id="fin-flujo-tabla"></div>
+          </div>
+          <div class="grid g2">
+            <div class="card">
+              <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg> Cobros esperados</div>
+              <div id="fin-flujo-cobros"></div>
+            </div>
+            <div class="card">
+              <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33"/></svg> Configurar gastos recurrentes</div>
+              <div id="fin-flujo-recurrentes"></div>
+              <button class="btn btn-sm btn-brand" style="margin-top:10px" onclick="abrirGastoRecurrente()">＋ Agregar gasto recurrente</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ══ TAB CAMBIARIO ══ -->
+        <div class="tab-panel" id="fin-tab-cambiario">
+          <div class="grid g4" id="fin-cam-kpis" style="margin-bottom:14px"></div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/></svg> Evolución de la tasa BCV</div>
+            <div id="fin-cam-evolucion"></div>
+          </div>
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg> Pedidos con exposición cambiaria activa</div>
+            <div id="fin-cam-expuestos"></div>
+          </div>
+          <div class="card">
+            <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Cómo se calcula</div>
+            <div style="font-size:12.5px;color:var(--muted);line-height:1.6">
+              <p style="margin-bottom:8px"><strong style="color:var(--ink)">Pérdida cambiaria realizada:</strong> diferencia entre el USD que se debió cobrar al crear el pedido y el USD efectivamente cobrado en cada abono. Si la tasa BCV subió entre la creación del pedido y el cobro, hubo pérdida.</p>
+              <p style="margin-bottom:8px"><strong style="color:var(--ink)">Exposición cambiaria activa:</strong> saldo pendiente de cobrar valuado en Bs al momento de creación del pedido. Si el cliente paga tarde, este monto en Bs vale menos USD.</p>
+              <p><strong style="color:var(--ink)">Fórmula:</strong> <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px">Pérdida = monto_bs_pagado / tasa_pago − monto_bs_pagado / tasa_creación</code></p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
     </div><!-- /view-wrap -->
   </div><!-- /main -->
 </div><!-- /app-wrap -->
 <!-- ══ MODAL: Nuevo / Editar Pedido ══ -->
-<div class="modal-bg" id="m-pedido">
-  <div class="modal" style="max-width:640px">
+<div class="modal-bg" id="m-pedido" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:640px">
     <button class="modal-close" onclick="closeModal('m-pedido')">✕</button>
     <div class="modal-title" id="mp-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Nuevo Pedido</div>
     <div class="card" style="margin-bottom:12px;padding:14px">
@@ -3500,8 +3692,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
 </div>
 
 <!-- ══ MODAL: Detalle Pedido ══ -->
-<div class="modal-bg" id="m-ver-ped">
-  <div class="modal" style="max-width:640px">
+<div class="modal-bg" id="m-ver-ped" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:640px">
     <button class="modal-close" onclick="closeModal('m-ver-ped')">✕</button>
     <div class="modal-title" id="mvped-title">Pedido</div>
     <div id="mvped-body"></div>
@@ -3536,8 +3728,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
 </div>
 
 <!-- ══ MODAL: Nuevo / Editar Envío ══ -->
-<div class="modal-bg" id="m-envio">
-  <div class="modal" style="max-width:600px">
+<div class="modal-bg" id="m-envio" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:600px">
     <button class="modal-close" onclick="closeModal('m-envio')">✕</button>
     <div class="modal-title" id="menv-title">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 5v4h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
@@ -4174,22 +4366,44 @@ function _offlineInit(){
 }
 
 // ── Migración: limpiar fotos base64 del catálogo local ──
-// Si el producto ya tiene foto_url de Supabase, el base64 local es peso muerto.
-// Se ejecuta una vez al cargar; libera MB de localStorage.
-function _migrarFotosBase64(){
+// Fase A: eliminar base64 de productos que ya tienen foto_url en Supabase
+// Fase B: subir a Supabase Storage las fotos que solo existen como base64, luego limpiar
+async function _migrarFotosBase64(){
   try{
     const raw=localStorage.getItem('POS.cat');
     if(!raw) return;
     const cat=JSON.parse(raw);
-    let limpiados=0;
+    let limpiados=0, subidos=0;
+    // Fase A: limpiar base64 redundantes (ya tienen foto_url)
     cat.forEach(p=>{
       if(p.foto && p.foto.startsWith('data:') && p.foto_url && p.foto_url.startsWith('http')){
         p.foto=''; limpiados++;
       }
     });
-    if(limpiados>0){
+    // Fase B: subir fotos que solo existen como base64 (si hay Supabase)
+    if(window._supaConectado && typeof subirFotoStorage==='function'){
+      const pendientes=cat.filter(p=>p.foto && p.foto.startsWith('data:') && (!p.foto_url || !p.foto_url.startsWith('http')));
+      for(const p of pendientes){
+        try{
+          const url=await subirFotoStorage(p.foto, 'prod_'+p.id);
+          if(url){
+            p.foto_url=url; p.foto=''; subidos++;
+            // Sync al servidor
+            if(typeof syncProductoAhora==='function') syncProductoAhora(p);
+          }
+        }catch(e){ console.warn('[Migración] No se pudo subir foto de',p.nombre,e); }
+      }
+    }
+    // Si no hay Supabase, limpiar base64 de todas formas (la foto se pierde pero se libera espacio)
+    if(!window._supaConectado){
+      cat.forEach(p=>{
+        if(p.foto && p.foto.startsWith('data:')){ p.foto=''; limpiados++; }
+      });
+    }
+    if(limpiados>0||subidos>0){
       localStorage.setItem('POS.cat', JSON.stringify(cat));
-      console.log('[Migración] Eliminadas '+limpiados+' fotos base64 redundantes del catálogo local');
+      console.log('[Migración] Fotos base64: '+limpiados+' eliminadas, '+subidos+' subidas a Storage');
+      if(subidos>0) toast(subidos+' foto(s) migrada(s) a la nube','ok');
     }
   }catch(e){ console.warn('[Migración] Error limpiando fotos base64',e); }
 }
@@ -4207,7 +4421,18 @@ function renderLsMonitor(){
   const kb=_lsUsageKB();
   const pct=_lsUsagePct();
   const color=pct>80?'#dc3545':pct>60?'#ffc107':'#28a745';
-  el.innerHTML='<span style="font-size:12px;color:var(--muted)">Almacenamiento local: <strong>'+kb+' KB</strong> de ~5.120 KB ('+pct+'%)</span><div class="ls-meter"><div class="ls-meter-fill" style="width:'+pct+'%;background:'+color+'"></div></div>';
+  // Desglose por key
+  let items=[];
+  try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); const sz=Math.round((k.length+(localStorage.getItem(k)||'').length)*2/1024); items.push({k,sz}); } }catch(e){}
+  items.sort((a,b)=>b.sz-a.sz);
+  const top3=items.slice(0,3).map(i=>i.k.replace('POS.','')+'&nbsp;('+i.sz+'&nbsp;KB)').join(', ');
+  el.innerHTML='<span style="font-size:12px;color:var(--muted)">Almacenamiento local: <strong>'+kb+' KB</strong> de ~5.120 KB ('+pct+'%)</span><div class="ls-meter"><div class="ls-meter-fill" style="width:'+pct+'%;background:'+color+'"></div></div><div style="font-size:11px;color:var(--muted);margin-top:4px">Mayor uso: '+top3+'</div>'+(pct>60?'<button class="btn btn-sm" style="margin-top:6px;font-size:11px" onclick="_limpiarFotosBase64Manual()">Limpiar fotos base64 del catálogo</button>':'');
+}
+async function _limpiarFotosBase64Manual(){
+  toast('Limpiando fotos base64…','info');
+  await _migrarFotosBase64();
+  renderLsMonitor();
+  toast('Limpieza completada. Almacenamiento: '+_lsUsageKB()+' KB','ok');
 }
 
 function abrirChangelog(){
@@ -4252,6 +4477,7 @@ function nav(id, el){
   if(id==='caja'){ setCajaPeriodo('hoy',qs('#caja-hoy-btn')); renderSesionBar(); renderSaldosMoneda(); }
   if(id==='inventario'){ renderInsumos(); }
   if(id==='reportes'){ if(!_repDesde) setRepPeriodo('mes',qs('#rep-mes-btn')); else renderReportes(); }
+  if(id==='finanzas'){ renderFinanzas(); }
   if(id==='dashboard') renderDash();
   if(id==='envios'){ if(typeof renderEnvios==='function') renderEnvios(); }
   if(id==='config'){ renderCatsCfg(); }
@@ -4269,6 +4495,8 @@ function openModal(id){
   el.classList.add('open');
   if(!_modalStack.includes(id)) _modalStack.push(id);
   document.body.style.overflow='hidden';
+  // Accesibilidad: foco al modal y aria-hidden en el resto
+  const inner=el.querySelector('.modal'); if(inner) inner.focus?.();
 }
 function closeModal(id){
   const el=qs('#'+id); if(!el) return;
@@ -5054,8 +5282,8 @@ function renderCatalogo(){
       </div>
       <div class="prod-card-actions">
         <button class="btn btn-brand btn-sm" onclick="verProd(${ri})">Ver</button>
-        <button class="btn btn-sm" onclick="editarProd(${ri})"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
-        <button class="btn btn-sm" onclick="duplicarProd(${ri})" title="Duplicar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
+        <button class="btn btn-sm" onclick="editarProd(${ri})" aria-label="Editar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="btn btn-sm" onclick="duplicarProd(${ri})" title="Duplicar" aria-label="Duplicar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
         <button class="btn btn-danger btn-sm" onclick="eliminarProd(${ri})">✕</button>
       </div>`;
     grid.appendChild(card);
@@ -5238,7 +5466,7 @@ function renderClientes(){
       <div class="li-right">
         <div class="li-actions">
           <button class="btn btn-brand btn-sm" onclick="verCliente(${ri})">Ver</button>
-          <button class="btn btn-sm" onclick="editarCliente2(${ri})"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+          <button class="btn btn-sm" onclick="editarCliente2(${ri})" aria-label="Editar cliente"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
           <button class="btn btn-danger btn-sm" onclick="eliminarCliente2(${ri})">✕</button>
         </div>
       </div>`;
@@ -5410,6 +5638,9 @@ function renderDash(){
   const _dl=qs('#d-cli'); if(_dl) _dl.textContent=cli.length;
   const _ds=qs('#d-cats'); if(_ds) _ds.textContent=cats;
 
+  // Fila Finanzas (V14_33): solo si el usuario tiene permisos
+  if(typeof renderDashFinanzas==='function') renderDashFinanzas();
+
   // Productos más vendidos (conteo de ventas)
   const dp=qs('#d-prods');
   if(dp){
@@ -5536,7 +5767,7 @@ function rolIcoSvg(ico, w=18, h=18){
 }
 
 const ROLES = {
-  admin:     { label:'Admin',        ico:'user', desc:'Acceso completo al sistema.',                         vistas:['dashboard','editor','catalogo','clientes','pedidos','envios','ventas','caja','inventario','reportes','config'], puede:['crear','editar','eliminar','ver','exportar','config','reportes','caja','limpiar'] },
+  admin:     { label:'Admin',        ico:'user', desc:'Acceso completo al sistema.',                         vistas:['dashboard','editor','catalogo','clientes','pedidos','envios','ventas','caja','inventario','reportes','finanzas','config'], puede:['crear','editar','eliminar','ver','exportar','config','reportes','caja','limpiar','finanzas'] },
   empleado:  { label:'Empleado',     ico:'users', desc:'Ventas, pedidos y clientes. Sin caja ni config.',    vistas:['dashboard','catalogo','clientes','pedidos','envios','ventas'],                                                puede:['crear','editar','ver'] },
   produccion:{ label:'Producción',   ico:'factory', desc:'Pedidos e inventario. Sin ventas ni caja.',           vistas:['dashboard','pedidos','envios','inventario'],                                                                  puede:['ver','editar'] },
   lectura:   { label:'Solo lectura', ico:'eye', desc:'Consulta catálogo, clientes y reportes. Solo lectura.',vistas:['dashboard','catalogo','clientes','reportes'],                                                       puede:['ver'] }
@@ -6023,8 +6254,8 @@ function abrirModalSqlUsuarios(mensaje){
   if(!modal){
     const div = document.createElement('div');
     div.innerHTML = `
-<div class="modal-bg" id="m-sql-usuarios" onclick="if(event.target===this)closeModal('m-sql-usuarios')">
-  <div class="modal" style="max-width:600px">
+<div class="modal-bg" id="m-sql-usuarios" onclick="if(event.target===this)closeModal('m-sql-usuarios')" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:600px">
     <button class="modal-close" onclick="closeModal('m-sql-usuarios')">✕</button>
     <div class="modal-title">Verificar sync — Tabla "usuarios"</div>
     <div id="msql-msg" style="font-size:13px;margin:10px 0;padding:10px 12px;background:#fff3cd;border-radius:8px;color:#856404"></div>
@@ -8278,7 +8509,7 @@ function renderVentas(){
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0" onclick="event.stopPropagation()">
         <button class="btn btn-brand btn-sm" onclick="verVenta(${ri})">Ver</button>
-        <button class="btn btn-danger btn-sm" onclick="anularVenta2(${ri})"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+        <button class="btn btn-danger btn-sm" onclick="anularVenta2(${ri})" aria-label="Anular venta"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
       </div>`;
     ct.appendChild(item);
   });
@@ -8587,6 +8818,13 @@ function abrirMovimiento(tipo){
   const t=qs('#mmov-title'); if(t) t.textContent=TITULOS[tipo]||'Registrar movimiento';
   const ti=qs('#mmov_tipo'); if(ti) ti.value=tipo;
   const mc=qs('#mmov_cat'); if(mc) mc.value=CATS[tipo]||'otro';
+  const msc=qs('#mmov_subcat'); if(msc) msc.value='';
+  // Pre-seleccionar subcategoría según tipo
+  if(msc){
+    if(tipo==='compra') msc.value='insumos';
+    else if(tipo==='retiro') msc.value='';
+  }
+  onMmovCatChange();
   const mf=qs('#mmov_fecha'); if(mf) mf.value=hoyLocal();
   const mm=qs('#mmov_monto'); if(mm) mm.value='';
   const mn=qs('#mmov_nota'); if(mn) mn.value='';
@@ -8654,6 +8892,16 @@ function mmovSeleccionarPedido(){
   }
 }
 
+function onMmovCatChange(){
+  const cat = qs('#mmov_cat')?.value || '';
+  const row = qs('#mmov_subcat_row');
+  if(!row) return;
+  // Mostrar subcategoría solo cuando es gasto o compra
+  const mostrar = (cat==='gasto' || cat==='compra');
+  row.style.display = mostrar ? '' : 'none';
+  if(!mostrar){ const msc=qs('#mmov_subcat'); if(msc) msc.value=''; }
+}
+
 function guardarMovimiento(){
   const monto=parseEU(qs('#mmov_monto').value); if(monto<=0){ toast('Ingresa un monto válido','warn'); return; }
   const tipo=qs('#mmov_tipo').value||'ingreso';
@@ -8688,6 +8936,7 @@ function guardarMovimiento(){
 
   const mov={
     id:Date.now(), tipo, categoria:qs('#mmov_cat').value,
+    subcategoria: (qs('#mmov_subcat')?.value || ''),
     monto, moneda, tasa:tasaPar,
     monto_bs:montoBs, monto_usd: (tipo==='abono' && _mmovPedidoVinculado) ? montoUsdParaPedido : montoUsdGen,
     metodo:qs('#mmov_metodo')?.value||'efectivo_bs',
@@ -8906,7 +9155,7 @@ function renderCaja(){
         <div style="text-align:right">
           <div style="font-weight:700;font-size:14px;color:${esIng?'var(--ok)':'var(--danger)'}">${esIng?'＋':'−'}${montoFmt}</div>
         </div>
-        <button style="background:none;border:none;cursor:pointer;color:var(--danger);padding:4px;flex-shrink:0" onclick="eliminarMovimiento(${i},${JSON.stringify(fil).length})"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+        <button style="background:none;border:none;cursor:pointer;color:var(--danger);padding:4px;flex-shrink:0" aria-label="Eliminar movimiento" onclick="eliminarMovimiento(${i},${JSON.stringify(fil).length})"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
       </div>
     </div>`;
   }).join('');
@@ -9786,7 +10035,7 @@ function renderPedidos(){
       </div>
       <div style="display:flex;gap:6px;flex-shrink:0" onclick="event.stopPropagation()">
         <button class="btn btn-brand btn-sm" onclick="verPedido(${ri})">Ver</button>
-        <button class="btn btn-sm" onclick="abrirEditarPedido(${ri})"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="btn btn-sm" onclick="abrirEditarPedido(${ri})" aria-label="Editar pedido"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
       </div>`;
     c.appendChild(item);
   });
@@ -9855,11 +10104,11 @@ function mostrarKpiDetalle(grupo, titulo){
     bg.onclick=e=>{ if(e.target===bg) bg.style.display='none'; };
     document.body.appendChild(bg);
   }
-  bg.innerHTML=`<div class="modal" style="max-width:520px;max-height:80vh;overflow-y:auto">
+  bg.innerHTML=`<div class="modal" tabindex="-1" style="max-width:520px;max-height:80vh;overflow-y:auto">
     <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid #f0f0f5">
       <h3 style="margin:0;font-size:16px">${titulo} <span style="color:var(--muted);font-weight:400">(${pedidos.length})</span></h3>
       <div style="display:flex;gap:8px;align-items:center">
-        <button onclick="imprimirKpiDetalle('${grupo}','${titulo}')" class="btn btn-sm" style="padding:5px 10px" title="Imprimir"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
+        <button onclick="imprimirKpiDetalle('${grupo}','${titulo}')" class="btn btn-sm" style="padding:5px 10px" title="Imprimir" aria-label="Imprimir"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></button>
         <button onclick="qs('#kpi-detalle-bg').style.display='none'" style="background:none;border:none;font-size:20px;cursor:pointer;color:var(--muted)">✕</button>
       </div>
     </div>
@@ -9986,6 +10235,76 @@ function imprimirListaPedidos(){
   const win=window.open('','_blank','width=900,height=600');
   win.document.write(html);win.document.close();win.focus();
   setTimeout(()=>win.print(),400);
+}
+
+/* ═══ Imprimir rango de pedidos (V14_34) ═══ */
+function abrirImprimirRangoPedidos(){
+  const de=qs('#mirang_desde'), ha=qs('#mirang_hasta'), prev=qs('#mirang_preview');
+  if(de) de.value='';
+  if(ha) ha.value='';
+  if(prev) prev.innerHTML='';
+  // Sugerir rango: primer y último pedido existente
+  const all=loadPed();
+  if(all.length){
+    const nums=all.map(p=>parseInt((p.numero||'PED-0000').replace('PED-',''))||0).filter(n=>n>0);
+    if(nums.length){
+      const min=Math.min(...nums), max=Math.max(...nums);
+      if(de) de.setAttribute('placeholder', String(min).padStart(4,'0'));
+      if(ha) ha.setAttribute('placeholder', String(max).padStart(4,'0'));
+    }
+  }
+  // Live preview on input
+  if(de) de.oninput=_previsualizarRangoPedidos;
+  if(ha) ha.oninput=_previsualizarRangoPedidos;
+  openModal('m-imprimir-rango-ped');
+}
+
+function _parseNumPed(val){
+  // Acepta "0009", "9", "PED-0009" → retorna 9
+  if(!val) return 0;
+  val=String(val).trim().toUpperCase().replace('PED-','').replace('#','');
+  return parseInt(val, 10) || 0;
+}
+
+function _previsualizarRangoPedidos(){
+  const desde=_parseNumPed(qs('#mirang_desde')?.value);
+  const hasta=_parseNumPed(qs('#mirang_hasta')?.value);
+  const prev=qs('#mirang_preview');
+  if(!prev) return;
+  if(!desde && !hasta){ prev.innerHTML=''; return; }
+  if(desde && hasta && desde > hasta){ prev.innerHTML='<span style="color:var(--danger)">⚠ El número inicial debe ser menor o igual al final</span>'; return; }
+  const all=loadPed();
+  const fil=all.filter(p=>{
+    const n=parseInt((p.numero||'PED-0000').replace('PED-',''))||0;
+    return (desde ? n >= desde : true) && (hasta ? n <= hasta : true);
+  });
+  if(!fil.length){ prev.innerHTML='<span style="color:var(--warn)">No se encontraron pedidos en ese rango</span>'; return; }
+  prev.innerHTML=`<span style="color:var(--ok);font-weight:600">✓ ${fil.length} pedido${fil.length>1?'s':''} encontrado${fil.length>1?'s':''}</span> — PED-${String(Math.min(...fil.map(p=>parseInt(p.numero.replace('PED-',''))||0))).padStart(4,'0')} a PED-${String(Math.max(...fil.map(p=>parseInt(p.numero.replace('PED-',''))||0))).padStart(4,'0')}`;
+}
+
+function ejecutarImprimirRangoPedidos(){
+  const desde=_parseNumPed(qs('#mirang_desde')?.value);
+  const hasta=_parseNumPed(qs('#mirang_hasta')?.value);
+  if(!desde && !hasta){ toast('Ingresa al menos un número de pedido','warn'); return; }
+  if(desde && hasta && desde > hasta){ toast('El número inicial debe ser menor o igual al final','warn'); return; }
+  const all=loadPed();
+  const fil=all.filter(p=>{
+    const n=parseInt((p.numero||'PED-0000').replace('PED-',''))||0;
+    return (desde ? n >= desde : true) && (hasta ? n <= hasta : true);
+  }).sort((a,b)=>{
+    const na=parseInt(a.numero.replace('PED-',''))||0;
+    const nb=parseInt(b.numero.replace('PED-',''))||0;
+    return na-nb;
+  });
+  if(!fil.length){ toast('No se encontraron pedidos en ese rango','warn'); return; }
+  const desdeStr=String(desde||fil[0]?.numero?.replace('PED-','')||0).padStart(4,'0');
+  const hastaStr=String(hasta||fil[fil.length-1]?.numero?.replace('PED-','')||0).padStart(4,'0');
+  const titulo=`Pedidos #${desdeStr} al #${hastaStr}`;
+  const html=_generarHtmlListaPedidos(fil, titulo);
+  const win=window.open('','_blank','width=900,height=600');
+  win.document.write(html);win.document.close();win.focus();
+  setTimeout(()=>win.print(),400);
+  closeModal('m-imprimir-rango-ped');
 }
 
 function imprimirKpiDetalle(grupo, titulo){
@@ -10919,7 +11238,7 @@ function renderTerminados(){
         <button class="btn btn-ok btn-sm" onclick="_quickMovTer(${ri},'entrada')" title="Entrada">＋ Entrada</button>
         <button class="btn btn-sm" onclick="_quickMovTer(${ri},'salida')" title="Salida">− Salida</button>
         <button class="btn btn-sm" style="background:#e8efff;color:#1e40af" onclick="abrirTraslado(${ri},'terminado')" title="Trasladar">⇄</button>
-        <button class="btn btn-brand btn-sm" onclick="editarTerminado(${ri})"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+        <button class="btn btn-brand btn-sm" onclick="editarTerminado(${ri})" aria-label="Editar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
       </div>`;
     c.appendChild(el);
   });
@@ -11201,6 +11520,7 @@ function renderDashInv(){
 /* ══════════ VIEWS meta ══════════ */
 VIEWS['inventario']={ title:'Inventario', sub:'Control de insumos y productos terminados' };
 VIEWS['reportes']={ title:'Reportes', sub:'Análisis del negocio por período' };
+VIEWS['finanzas']={ title:'Finanzas', sub:'Cuentas por cobrar, P&L, flujo proyectado y riesgo cambiario' };
 
 /* ════════════════════════════════════════════
    REPORTES
@@ -11969,11 +12289,1143 @@ function exportReportesCSV(){
   toast('Reporte CSV exportado','ok');
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   FINANZAS — V14_33
+   Cuentas por Cobrar (CxC con aging), Estado de Resultados (P&L),
+   Flujo de Caja Proyectado y Riesgo Cambiario.
+══════════════════════════════════════════════════════════════════ */
+
+const LS_GASTOS_REC = 'POS.gastos_recurrentes';
+
+let _finDesde = '';
+let _finHasta = '';
+let _finFlujoHorizonte = 15;
+
+/* ── Categorías de gasto y sus etiquetas ── */
+const SUBCAT_GASTO_LABEL = {
+  alquiler:      'Alquiler / Local',
+  servicios:     'Servicios (luz, agua, internet)',
+  sueldos:       'Sueldos / Personal',
+  insumos:       'Insumos / Materia prima',
+  marketing:     'Marketing / Publicidad',
+  mantenimiento: 'Mantenimiento / Reparaciones',
+  transporte:    'Transporte / Delivery',
+  impuestos:     'Impuestos / Tributos',
+  comisiones:    'Comisiones bancarias',
+  empaque:       'Empaque / Embalaje',
+  capex:         'Inversión / Equipos (CAPEX)',
+  otros:         'Otros gastos operativos',
+  '':            'Sin categorizar'
+};
+const SUBCAT_GASTO_COLOR = {
+  alquiler:'#8b5cf6', servicios:'#3b82f6', sueldos:'#ec4899', insumos:'#f59e0b',
+  marketing:'#10b981', mantenimiento:'#6366f1', transporte:'#14b8a6',
+  impuestos:'#ef4444', comisiones:'#f97316', empaque:'#a855f7',
+  capex:'#0ea5e9', otros:'#6b7280', '':'#9ca3af'
+};
+
+/* ── Helpers de fechas ── */
+function _finDiasEntre(d1ISO, d2ISO){
+  if(!d1ISO || !d2ISO) return 0;
+  const d1 = new Date(d1ISO.slice(0,10)+'T00:00:00');
+  const d2 = new Date(d2ISO.slice(0,10)+'T00:00:00');
+  return Math.round((d2 - d1) / 86400000);
+}
+function _finFmtDias(n){
+  if(n===0) return 'Hoy';
+  if(n===1) return '1 día';
+  if(n===-1) return 'Ayer';
+  if(n<0) return Math.abs(n)+' días atrás';
+  return n+' días';
+}
+function _finInRango(fechaISO){
+  const f = (fechaISO||'').slice(0,10);
+  return (!_finDesde || f >= _finDesde) && (!_finHasta || f <= _finHasta);
+}
+
+/* ── Período global ── */
+function setFinPeriodo(p, btn){
+  document.querySelectorAll('#fin-hoy-btn,#fin-sem-btn,#fin-mes-btn,#fin-mes3-btn,#fin-anio-btn').forEach(b=>{ if(b) b.classList.remove('btn-brand'); });
+  if(btn) btn.classList.add('btn-brand');
+  const hoy = new Date();
+  const fmt = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  if(p==='hoy'){ _finDesde = _finHasta = fmt(hoy); }
+  else if(p==='semana'){ const d = new Date(hoy); d.setDate(d.getDate()-6); _finDesde = fmt(d); _finHasta = fmt(hoy); }
+  else if(p==='mes'){ _finDesde = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-01`; _finHasta = fmt(hoy); }
+  else if(p==='mes3'){ const d = new Date(hoy); d.setMonth(d.getMonth()-3); _finDesde = fmt(d); _finHasta = fmt(hoy); }
+  else if(p==='anio'){ _finDesde = `${hoy.getFullYear()}-01-01`; _finHasta = fmt(hoy); }
+  else { _finDesde = qs('#fin_desde')?.value || ''; _finHasta = qs('#fin_hasta')?.value || ''; }
+  const rd = qs('#fin_desde'); if(rd) rd.value = _finDesde;
+  const rh = qs('#fin_hasta'); if(rh) rh.value = _finHasta;
+  renderFinanzas();
+}
+
+/* ── Tab switching ── */
+function finTab(tab, btn){
+  document.querySelectorAll('#fin-tabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#view-finanzas .tab-panel').forEach(p=>p.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const panel = qs('#fin-tab-'+tab); if(panel) panel.classList.add('active');
+  const fns = { cxc:renderFinCxC, pyl:renderFinPyL, flujo:renderFinFlujo, cambiario:renderFinCambiario };
+  if(fns[tab]) fns[tab]();
+}
+
+/* ── Render principal: KPIs ejecutivos + tab activo ── */
+function renderFinanzas(){
+  if(!_finDesde && !_finHasta){
+    // Default: este mes
+    const hoy = new Date();
+    _finDesde = `${hoy.getFullYear()}-${String(hoy.getMonth()+1).padStart(2,'0')}-01`;
+    _finHasta = hoy.getFullYear()+'-'+String(hoy.getMonth()+1).padStart(2,'0')+'-'+String(hoy.getDate()).padStart(2,'0');
+    const rd = qs('#fin_desde'); if(rd) rd.value = _finDesde;
+    const rh = qs('#fin_hasta'); if(rh) rh.value = _finHasta;
+  }
+  renderFinKpisEjecutivos();
+  const activeTab = qs('#fin-tabs .tab-btn.active');
+  if(!activeTab) return;
+  const txt = activeTab.textContent.trim();
+  const tabId = txt.includes('Cobrar') ? 'cxc' :
+                txt.includes('Result')  ? 'pyl' :
+                txt.includes('Flujo')   ? 'flujo' :
+                txt.includes('Cambiar') ? 'cambiario' : 'cxc';
+  const fns = { cxc:renderFinCxC, pyl:renderFinPyL, flujo:renderFinFlujo, cambiario:renderFinCambiario };
+  if(fns[tabId]) fns[tabId]();
+}
+
+/* ══════════════════════════════════════════
+   KPIs EJECUTIVOS (siempre visibles)
+══════════════════════════════════════════ */
+function renderFinKpisEjecutivos(){
+  const wrap = qs('#fin-kpis'); if(!wrap) return;
+
+  // Ingresos del período (ventas no anuladas)
+  const ven = loadVen().filter(v => v.estado!=='anulada' && _finInRango(v.fecha));
+  const ingresos = ven.reduce((a,v)=>a+(v.total||0), 0);
+  const utilBruta = ven.reduce((a,v)=>a+(v.utilidad||0), 0);
+
+  // Gastos del período (movimientos de caja con tipo gasto/compra/retiro)
+  const movs = loadCajaMov().filter(m => _finInRango(m.fecha));
+  const gastosTodo = movs
+    .filter(m => ['gasto','compra'].includes(m.tipo))
+    .reduce((a,m)=>a+(m.monto_usd||0), 0);
+
+  const utilNeta = utilBruta - gastosTodo;
+  const margenNeto = ingresos>0 ? (utilNeta/ingresos*100) : 0;
+
+  // CxC total (no depende del período: es saldo actual)
+  const cxc = calcularCxCTotales();
+
+  wrap.innerHTML = `
+    <div class="kpi c-green">
+      <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div>
+      <div class="kpi-lbl">Ingresos</div>
+      <div class="kpi-val">${euro(ingresos)}</div>
+      <div class="kpi-sub">${ven.length} ventas</div>
+    </div>
+    <div class="kpi ${utilNeta>=0?'c-teal':'c-red'}">
+      <div class="kpi-ico"><div class="kpi-ico-pill" style="background:${utilNeta>=0?'#E1F5EE':'#FCEBEB'}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${utilNeta>=0?'#0F6E56':'#A32D2D'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></div></div>
+      <div class="kpi-lbl">Utilidad neta</div>
+      <div class="kpi-val" style="color:${utilNeta>=0?'var(--ok)':'var(--danger)'}">${euro(utilNeta)}</div>
+      <div class="kpi-sub">Margen ${margenNeto.toFixed(1)}%</div>
+    </div>
+    <div class="kpi c-amber">
+      <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div></div>
+      <div class="kpi-lbl">Gastos</div>
+      <div class="kpi-val">${euro(gastosTodo)}</div>
+      <div class="kpi-sub">${movs.filter(m=>['gasto','compra'].includes(m.tipo)).length} movimientos</div>
+    </div>
+    <div class="kpi ${cxc.totalUsd>0?'c-coral':'c-blue'}">
+      <div class="kpi-ico"><div class="kpi-ico-pill" style="background:${cxc.totalUsd>0?'#FFE4E1':'#E0F2FE'}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${cxc.totalUsd>0?'#C2410C':'#0369A1'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div></div>
+      <div class="kpi-lbl">Por cobrar</div>
+      <div class="kpi-val">${euro(cxc.totalUsd)}</div>
+      <div class="kpi-sub">${cxc.cantPedidos} pedidos · ${cxc.cantClientes} clientes</div>
+    </div>
+  `;
+}
+
+/* ══════════════════════════════════════════
+   CALCULADORA DE CxC
+══════════════════════════════════════════ */
+function calcularCxCTotales(){
+  const peds = loadPed().filter(p => p.estado !== 'cancelado' && p.estado !== 'anulado');
+  let totalUsd = 0;
+  const clientesMap = {};
+  let cantPedidos = 0;
+  peds.forEach(p => {
+    const total = p.total || 0;
+    const pagado = (p.pagos||[]).reduce((a,pg)=>a+(pg.monto||0), 0);
+    const saldo = Math.max(0, total - pagado);
+    if(saldo > 0.01){
+      totalUsd += saldo;
+      cantPedidos++;
+      const cliKey = p.cliente?.id || p.cliente?.documento || p.cliente?.nombre || 'sin_cliente';
+      clientesMap[cliKey] = true;
+    }
+  });
+  return { totalUsd, cantPedidos, cantClientes: Object.keys(clientesMap).length };
+}
+
+/* Calcula el aging de un pedido a partir de su fecha de entrega o creación */
+function calcularAgingPedido(p){
+  const total = p.total || 0;
+  const pagado = (p.pagos||[]).reduce((a,pg)=>a+(pg.monto||0), 0);
+  const saldo = Math.max(0, total - pagado);
+  if(saldo <= 0.01) return null;
+  const hoy = hoyLocal();
+  // Usamos fecha de entrega como vencimiento; si no, fecha de creación
+  const fechaVenc = (p.fecha_entrega || p.fecha_creado || hoy).slice(0,10);
+  const diasVencido = _finDiasEntre(fechaVenc, hoy); // positivo = vencido, negativo = aún por vencer
+  let bucket;
+  if(diasVencido <= 0) bucket = 'vigente';
+  else if(diasVencido <= 15) bucket = 'b1_15';
+  else if(diasVencido <= 30) bucket = 'b16_30';
+  else if(diasVencido <= 60) bucket = 'b31_60';
+  else bucket = 'b60mas';
+  return { saldo, diasVencido, bucket, fechaVenc };
+}
+
+/* ══════════════════════════════════════════
+   TAB 1 — CUENTAS POR COBRAR
+══════════════════════════════════════════ */
+function renderFinCxC(){
+  const peds = loadPed().filter(p => p.estado !== 'cancelado' && p.estado !== 'anulado');
+  const conSaldo = [];
+  peds.forEach(p => {
+    const ag = calcularAgingPedido(p);
+    if(ag) conSaldo.push({ ped: p, ...ag });
+  });
+
+  // ── Aging cards ──
+  const buckets = { vigente:0, b1_15:0, b16_30:0, b31_60:0, b60mas:0 };
+  const bucketsCant = { vigente:0, b1_15:0, b16_30:0, b31_60:0, b60mas:0 };
+  conSaldo.forEach(x => { buckets[x.bucket] += x.saldo; bucketsCant[x.bucket]++; });
+  const totalCxC = Object.values(buckets).reduce((a,b)=>a+b, 0);
+  const vencidoTotal = buckets.b1_15 + buckets.b16_30 + buckets.b31_60 + buckets.b60mas;
+
+  const aging = qs('#fin-cxc-aging');
+  if(aging) aging.innerHTML = `
+    <div class="kpi c-blue">
+      <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E0F2FE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0369A1" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div>
+      <div class="kpi-lbl">Vigente</div>
+      <div class="kpi-val">${euro(buckets.vigente)}</div>
+      <div class="kpi-sub">${bucketsCant.vigente} pedidos · sin vencer</div>
+    </div>
+    <div class="kpi c-amber">
+      <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div>
+      <div class="kpi-lbl">1–15 días vencido</div>
+      <div class="kpi-val">${euro(buckets.b1_15)}</div>
+      <div class="kpi-sub">${bucketsCant.b1_15} pedidos</div>
+    </div>
+    <div class="kpi c-coral">
+      <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FFE4E1"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#C2410C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg></div></div>
+      <div class="kpi-lbl">16–60 días vencido</div>
+      <div class="kpi-val">${euro(buckets.b16_30 + buckets.b31_60)}</div>
+      <div class="kpi-sub">${bucketsCant.b16_30 + bucketsCant.b31_60} pedidos</div>
+    </div>
+    <div class="kpi c-red">
+      <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div></div>
+      <div class="kpi-lbl">+60 días vencido</div>
+      <div class="kpi-val">${euro(buckets.b60mas)}</div>
+      <div class="kpi-sub">${bucketsCant.b60mas} pedidos · crítico</div>
+    </div>
+  `;
+
+  // ── Gráfico de barras de buckets ──
+  const chart = qs('#fin-cxc-buckets-chart');
+  if(chart){
+    const data = [
+      { label:'Vigente',         v:buckets.vigente,  c:bucketsCant.vigente,  color:'#3b82f6' },
+      { label:'1–15 días',       v:buckets.b1_15,    c:bucketsCant.b1_15,    color:'#f59e0b' },
+      { label:'16–30 días',      v:buckets.b16_30,   c:bucketsCant.b16_30,   color:'#fb923c' },
+      { label:'31–60 días',      v:buckets.b31_60,   c:bucketsCant.b31_60,   color:'#f97316' },
+      { label:'+60 días',        v:buckets.b60mas,   c:bucketsCant.b60mas,   color:'#dc2626' }
+    ];
+    const max = Math.max(...data.map(d=>d.v), 0.01);
+    chart.innerHTML = data.map(d => `
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
+        <div style="width:10px;height:10px;border-radius:50%;background:${d.color};flex-shrink:0"></div>
+        <div style="flex:1;font-weight:600">${d.label}</div>
+        <div style="flex:2;background:#f3f4f6;border-radius:6px;height:16px;overflow:hidden"><div style="height:100%;width:${(d.v/max*100).toFixed(1)}%;background:${d.color};opacity:.85;border-radius:6px"></div></div>
+        <div style="min-width:80px;text-align:right;font-weight:700">${euro(d.v)}</div>
+        <div style="min-width:30px;text-align:right;color:var(--muted)">${d.c}</div>
+      </div>
+    `).join('') || '<p style="font-size:12px;color:var(--muted)">Sin saldos pendientes ✓</p>';
+  }
+
+  // ── Indicadores ──
+  // DSO: Día Promedio de Cobro = (CxC promedio / Ventas a crédito) × días
+  // Aproximación: usamos ventas del último mes
+  const ind = qs('#fin-cxc-indicadores');
+  if(ind){
+    const hoy = new Date();
+    const hace30 = new Date(hoy); hace30.setDate(hace30.getDate()-30);
+    const fmtD = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const pedRecientes = loadPed().filter(p => (p.fecha_creado||'').slice(0,10) >= fmtD(hace30));
+    const ventas30 = pedRecientes.reduce((a,p)=>a+(p.total||0), 0);
+    const dso = ventas30 > 0 ? Math.round((totalCxC / ventas30) * 30) : 0;
+
+    // % vencido
+    const pctVencido = totalCxC > 0 ? (vencidoTotal/totalCxC*100) : 0;
+
+    // Cliente con mayor saldo
+    const porCliente = {};
+    conSaldo.forEach(x => {
+      const key = x.ped.cliente?.id || x.ped.cliente?.documento || nombreClientePedido(x.ped) || 'Sin cliente';
+      const nombre = nombreClientePedido(x.ped) || 'Sin cliente';
+      if(!porCliente[key]) porCliente[key] = { nombre, saldo:0, pedidos:0 };
+      porCliente[key].saldo += x.saldo;
+      porCliente[key].pedidos++;
+    });
+    const top = Object.values(porCliente).sort((a,b)=>b.saldo-a.saldo)[0];
+
+    ind.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:14px;font-size:13px">
+        <div>
+          <div style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Días Promedio de Cobro (DPC)</div>
+          <div style="font-size:22px;font-weight:700;color:${dso>30?'var(--danger)':dso>15?'var(--warn)':'var(--ok)'}">${dso} días</div>
+          <div style="color:var(--muted);font-size:11px;margin-top:2px">${dso>30?'⚠ Crítico — cobranza muy lenta':dso>15?'Aceptable — vigilar':'Saludable'}</div>
+        </div>
+        <div>
+          <div style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">% de cartera vencida</div>
+          <div style="font-size:22px;font-weight:700;color:${pctVencido>30?'var(--danger)':pctVencido>15?'var(--warn)':'var(--ok)'}">${pctVencido.toFixed(1)}%</div>
+          <div style="color:var(--muted);font-size:11px;margin-top:2px">${euro(vencidoTotal)} de ${euro(totalCxC)}</div>
+        </div>
+        ${top ? `
+        <div>
+          <div style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Mayor deudor</div>
+          <div style="font-weight:700">${esc(top.nombre)}</div>
+          <div style="color:var(--brand);font-weight:700">${euro(top.saldo)}</div>
+          <div style="color:var(--muted);font-size:11px">${top.pedidos} pedido${top.pedidos>1?'s':''}</div>
+        </div>` : ''}
+      </div>
+    `;
+  }
+
+  // ── Tabla por cliente ──
+  const orden = qs('#fin_cxc_orden')?.value || 'saldo';
+  const filtro = qs('#fin_cxc_filtro')?.value || 'todos';
+  const porCliente = {};
+  conSaldo.forEach(x => {
+    if(filtro==='vigente' && x.bucket!=='vigente') return;
+    if(filtro==='vencido' && x.bucket==='vigente') return;
+    const key = x.ped.cliente?.id || x.ped.cliente?.documento || nombreClientePedido(x.ped) || 'Sin cliente';
+    const nombre = nombreClientePedido(x.ped) || 'Sin cliente';
+    const tel = x.ped.cliente?.telefono || '';
+    if(!porCliente[key]) porCliente[key] = { nombre, tel, saldo:0, pedidos:[], maxDias:-Infinity };
+    porCliente[key].saldo += x.saldo;
+    porCliente[key].pedidos.push(x);
+    if(x.diasVencido > porCliente[key].maxDias) porCliente[key].maxDias = x.diasVencido;
+  });
+  const lista = Object.values(porCliente);
+  if(orden==='saldo') lista.sort((a,b)=>b.saldo-a.saldo);
+  else if(orden==='dias') lista.sort((a,b)=>b.maxDias-a.maxDias);
+  else lista.sort((a,b)=>a.nombre.localeCompare(b.nombre));
+
+  const cont = qs('#fin-cxc-clientes');
+  if(cont){
+    if(!lista.length){
+      cont.innerHTML = '<div class="empty" style="padding:30px"><p>No hay saldos pendientes con ese filtro ✓</p></div>';
+    } else {
+      cont.innerHTML = lista.map((cli,i) => {
+        const colorBucket = cli.maxDias <= 0 ? '#3b82f6' : cli.maxDias <= 15 ? '#f59e0b' : cli.maxDias <= 60 ? '#f97316' : '#dc2626';
+        const lblBucket = cli.maxDias <= 0 ? 'Vigente' : `${cli.maxDias}d vencido`;
+        const telLimpio = (cli.tel||'').replace(/\D/g,'');
+        return `
+        <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fafafa;cursor:pointer" onclick="toggleFinCxCCliente(${i})">
+            <div style="width:8px;height:36px;border-radius:3px;background:${colorBucket};flex-shrink:0"></div>
+            <div style="flex:1;min-width:0">
+              <div style="font-weight:700;font-size:13px">${esc(cli.nombre)}</div>
+              <div style="font-size:11px;color:var(--muted)">${cli.pedidos.length} pedido${cli.pedidos.length>1?'s':''} · ${esc(lblBucket)}${cli.tel?' · '+esc(cli.tel):''}</div>
+            </div>
+            <div style="text-align:right">
+              <div style="font-weight:700;color:var(--brand);font-size:14px">${euro(cli.saldo)}</div>
+            </div>
+            ${telLimpio ? `<button class="btn btn-sm" style="font-size:11px;padding:4px 8px" onclick="event.stopPropagation();finCxCWhatsApp(${i})" title="Recordatorio WhatsApp"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="display:inline-block;vertical-align:middle"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></button>` : ''}
+            <span id="fincxc-arr-${i}" style="color:var(--muted);font-size:14px">▼</span>
+          </div>
+          <div id="fincxc-det-${i}" style="display:none;padding:10px 12px;border-top:1px solid var(--border);background:#fff">
+            ${cli.pedidos.sort((a,b)=>b.diasVencido-a.diasVencido).map(x => `
+              <div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;border-bottom:1px solid #f3f4f6">
+                <div style="font-weight:600;min-width:80px"><a href="#" onclick="event.preventDefault();closeAllModals();nav('pedidos',document.querySelector('[data-v=pedidos]'));setTimeout(()=>{const inp=qs('#ped_q');if(inp){inp.value='${esc(x.ped.numero)}';inp.dispatchEvent(new Event('input'));}},100)" style="color:var(--brand);text-decoration:none">${esc(x.ped.numero)}</a></div>
+                <div style="flex:1;color:var(--muted);font-size:11px">Vence: ${esc(x.fechaVenc)} · ${x.diasVencido<=0?'Vigente':_finFmtDias(x.diasVencido)+' vencido'}</div>
+                <div style="font-weight:700">${euro(x.saldo)}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        `;
+      }).join('');
+      // Guardar referencia para el botón whatsapp
+      window._finCxCLista = lista;
+    }
+  }
+
+  // ── Pedidos vencidos sin cobrar ──
+  const venc = qs('#fin-cxc-vencidos');
+  if(venc){
+    const vencidos = conSaldo.filter(x => x.diasVencido > 0).sort((a,b)=>b.diasVencido-a.diasVencido);
+    if(!vencidos.length){
+      venc.innerHTML = '<div class="empty" style="padding:24px"><p>No hay pedidos vencidos ✓</p></div>';
+    } else {
+      venc.innerHTML = `
+        <div style="overflow-x:auto">
+          <table style="width:100%;font-size:12px;border-collapse:collapse">
+            <thead>
+              <tr style="background:#fafafa;text-align:left">
+                <th style="padding:8px 10px">#</th>
+                <th style="padding:8px 10px">Cliente</th>
+                <th style="padding:8px 10px">Vence</th>
+                <th style="padding:8px 10px;text-align:center">Días</th>
+                <th style="padding:8px 10px;text-align:right">Saldo</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${vencidos.slice(0, 30).map(x => {
+                const color = x.diasVencido <= 15 ? 'var(--warn)' : x.diasVencido <= 60 ? '#f97316' : 'var(--danger)';
+                return `<tr style="border-bottom:1px solid var(--border)">
+                  <td style="padding:6px 10px;font-weight:600">${esc(x.ped.numero)}</td>
+                  <td style="padding:6px 10px">${esc(nombreClientePedido(x.ped) || 'Sin cliente')}</td>
+                  <td style="padding:6px 10px;color:var(--muted)">${esc(x.fechaVenc)}</td>
+                  <td style="padding:6px 10px;text-align:center;color:${color};font-weight:700">${x.diasVencido}d</td>
+                  <td style="padding:6px 10px;text-align:right;font-weight:700">${euro(x.saldo)}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+          ${vencidos.length>30?`<p style="text-align:center;color:var(--muted);font-size:11px;margin-top:8px">+${vencidos.length-30} más…</p>`:''}
+        </div>
+      `;
+    }
+  }
+}
+
+function toggleFinCxCCliente(i){
+  const det = qs('#fincxc-det-'+i);
+  const arr = qs('#fincxc-arr-'+i);
+  if(!det) return;
+  const open = det.style.display !== 'none';
+  det.style.display = open ? 'none' : '';
+  if(arr) arr.textContent = open ? '▼' : '▲';
+}
+
+function finCxCWhatsApp(i){
+  const cli = (window._finCxCLista || [])[i];
+  if(!cli || !cli.tel) return;
+  const negocio = (typeof CFG_NEG==='object' && CFG_NEG?.nombre) ? CFG_NEG.nombre : 'GestioMada';
+  const lineas = cli.pedidos.sort((a,b)=>b.diasVencido-a.diasVencido).map(x =>
+    `• ${x.ped.numero} — ${euro(x.saldo)}${x.diasVencido>0?' ('+x.diasVencido+'d vencido)':''}`
+  ).join('\n');
+  const msg = `Hola ${cli.nombre}, te escribimos de ${negocio}. Solo te recordamos amablemente que tienes saldos pendientes:\n\n${lineas}\n\nSaldo total: ${euro(cli.saldo)}\n\n¿Cuándo podemos coordinar el pago? ¡Muchas gracias!`;
+  const tel = cli.tel.replace(/\D/g,'');
+  const waNum = tel.length === 10 ? '58'+tel.replace(/^0/,'') : tel;
+  window.open(`https://wa.me/${waNum}?text=${encodeURIComponent(msg)}`, '_blank');
+}
+
+function exportFinCxCCSV(){
+  const peds = loadPed().filter(p => p.estado !== 'cancelado' && p.estado !== 'anulado');
+  const rows = [['Pedido','Cliente','Teléfono','Fecha creación','Fecha entrega','Total','Pagado','Saldo','Días vencido','Estado']];
+  peds.forEach(p => {
+    const ag = calcularAgingPedido(p);
+    if(!ag) return;
+    const total = p.total||0;
+    const pagado = (p.pagos||[]).reduce((a,pg)=>a+(pg.monto||0), 0);
+    rows.push([
+      p.numero, nombreClientePedido(p)||'Sin cliente', p.cliente?.telefono||'',
+      (p.fecha_creado||'').slice(0,10), (p.fecha_entrega||'').slice(0,10),
+      total.toFixed(2), pagado.toFixed(2), ag.saldo.toFixed(2),
+      ag.diasVencido, ag.bucket==='vigente'?'Vigente':ag.bucket
+    ]);
+  });
+  const csv = rows.map(r => r.map(x => { const s=String(x==null?'':x); return /[",;\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(';')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = 'cuentas-por-cobrar-'+hoyLocal()+'.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Exportado','ok');
+}
+
+/* ══════════════════════════════════════════
+   TAB 2 — ESTADO DE RESULTADOS (P&L)
+══════════════════════════════════════════ */
+function renderFinPyL(){
+  const ven = loadVen().filter(v => v.estado!=='anulada' && _finInRango(v.fecha));
+  const ingresos = ven.reduce((a,v)=>a+(v.total||0), 0);
+  const cmv = ven.reduce((a,v)=>a+(v.costo_total||0), 0);
+  const utilBruta = ingresos - cmv;
+  const margenBruto = ingresos > 0 ? (utilBruta/ingresos*100) : 0;
+
+  // Gastos por subcategoría (excluye CAPEX y retiros)
+  const movs = loadCajaMov().filter(m => _finInRango(m.fecha));
+  const gastosOper = movs.filter(m => ['gasto','compra'].includes(m.tipo));
+
+  // Agrupar por subcategoría
+  const porSubcat = {};
+  let sinCategorizar = 0;
+  let capex = 0;
+  gastosOper.forEach(m => {
+    const sub = m.subcategoria || '';
+    const monto = m.monto_usd || 0;
+    if(sub === 'capex'){ capex += monto; return; }
+    if(!sub){ sinCategorizar += monto; }
+    if(!porSubcat[sub]) porSubcat[sub] = 0;
+    porSubcat[sub] += monto;
+  });
+
+  const totalGastosOper = Object.entries(porSubcat)
+    .filter(([k]) => k !== 'capex')
+    .reduce((a,[,v])=>a+v, 0);
+
+  const utilOperativa = utilBruta - totalGastosOper;
+  const margenOper = ingresos > 0 ? (utilOperativa/ingresos*100) : 0;
+
+  // Retiros (no son gastos pero salen de caja)
+  const retiros = movs.filter(m => m.tipo==='retiro').reduce((a,m)=>a+(m.monto_usd||0), 0);
+
+  // Aviso de gastos sin categorizar
+  const warn = qs('#fin-pyl-sincat-warn');
+  if(warn){
+    if(sinCategorizar > 0.01){
+      warn.innerHTML = ` <strong style="color:#854F0B">Hay ${euro(sinCategorizar)} sin categorizar.</strong>`;
+    } else {
+      warn.innerHTML = '';
+    }
+  }
+
+  // Construir el reporte P&L
+  const cont = qs('#fin-pyl-content');
+  if(!cont) return;
+
+  const subcatRows = Object.entries(porSubcat)
+    .filter(([k,v]) => v > 0.01)
+    .sort(([,a],[,b])=>b-a)
+    .map(([k,v]) => {
+      const pct = ingresos>0 ? (v/ingresos*100).toFixed(1) : '0';
+      const color = SUBCAT_GASTO_COLOR[k] || '#6b7280';
+      return `<tr style="border-bottom:1px solid #f3f4f6">
+        <td style="padding:8px 12px;padding-left:32px;color:var(--muted);font-size:12px">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px"></span>
+          ${esc(SUBCAT_GASTO_LABEL[k] || k)}
+        </td>
+        <td style="padding:8px 12px;text-align:right;font-size:12px;color:var(--muted)">(${pct}%)</td>
+        <td style="padding:8px 12px;text-align:right;font-weight:600">${euro(v)}</td>
+      </tr>`;
+    }).join('');
+
+  cont.innerHTML = `
+    <div class="card" style="margin-bottom:14px">
+      <div class="card-title" style="margin-bottom:14px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> Estado de Resultados — ${esc(_finDesde||'inicio')} → ${esc(_finHasta||'hoy')}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:13px">
+        <tbody>
+          <tr style="background:#EAF3DE">
+            <td style="padding:10px 12px;font-weight:700">📈 Ingresos por ventas</td>
+            <td style="padding:10px 12px;text-align:right;color:var(--muted);font-size:12px">100.0%</td>
+            <td style="padding:10px 12px;text-align:right;font-weight:700;color:var(--ok)">${euro(ingresos)}</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px 12px;padding-left:32px;color:var(--muted);font-size:12px">Costo de mercancía vendida (CMV)</td>
+            <td style="padding:8px 12px;text-align:right;font-size:12px;color:var(--muted)">(${ingresos>0?(cmv/ingresos*100).toFixed(1):'0'}%)</td>
+            <td style="padding:8px 12px;text-align:right">−${euro(cmv)}</td>
+          </tr>
+          <tr style="background:#E1F5EE;border-top:2px solid #0F6E56">
+            <td style="padding:10px 12px;font-weight:700">💰 Utilidad bruta</td>
+            <td style="padding:10px 12px;text-align:right;font-weight:600">${margenBruto.toFixed(1)}%</td>
+            <td style="padding:10px 12px;text-align:right;font-weight:700">${euro(utilBruta)}</td>
+          </tr>
+          <tr><td colspan="3" style="padding:8px 12px;font-weight:700;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em">Gastos operativos</td></tr>
+          ${subcatRows || '<tr><td colspan="3" style="padding:14px 12px;text-align:center;color:var(--muted);font-style:italic;font-size:12px">Sin gastos operativos en el período</td></tr>'}
+          <tr style="background:#fafafa;border-top:1px solid var(--border)">
+            <td style="padding:10px 12px;font-weight:700">Total gastos operativos</td>
+            <td style="padding:10px 12px;text-align:right;font-weight:600">(${ingresos>0?(totalGastosOper/ingresos*100).toFixed(1):'0'}%)</td>
+            <td style="padding:10px 12px;text-align:right;font-weight:700">−${euro(totalGastosOper)}</td>
+          </tr>
+          <tr style="background:${utilOperativa>=0?'#E1F5EE':'#FCEBEB'};border-top:2px solid ${utilOperativa>=0?'#0F6E56':'#A32D2D'}">
+            <td style="padding:12px;font-weight:700;font-size:14px">${utilOperativa>=0?'✅':'⚠️'} Utilidad operativa (EBITDA)</td>
+            <td style="padding:12px;text-align:right;font-weight:700">${margenOper.toFixed(1)}%</td>
+            <td style="padding:12px;text-align:right;font-weight:700;font-size:14px;color:${utilOperativa>=0?'var(--ok)':'var(--danger)'}">${euro(utilOperativa)}</td>
+          </tr>
+          ${capex > 0.01 ? `
+          <tr><td colspan="3" style="padding:8px 12px;font-weight:700;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em">Inversiones (no afectan utilidad)</td></tr>
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px 12px;padding-left:32px;color:var(--muted);font-size:12px">CAPEX (compra de equipos)</td>
+            <td style="padding:8px 12px"></td>
+            <td style="padding:8px 12px;text-align:right">${euro(capex)}</td>
+          </tr>` : ''}
+          ${retiros > 0.01 ? `
+          <tr style="border-bottom:1px solid var(--border)">
+            <td style="padding:8px 12px;padding-left:32px;color:var(--muted);font-size:12px">Retiros del dueño</td>
+            <td style="padding:8px 12px"></td>
+            <td style="padding:8px 12px;text-align:right">${euro(retiros)}</td>
+          </tr>` : ''}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="grid g2">
+      <div class="card">
+        <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> Estructura de gastos</div>
+        ${(() => {
+          const total = totalGastosOper || 1;
+          return Object.entries(porSubcat)
+            .filter(([k,v]) => k !== 'capex' && v > 0.01)
+            .sort(([,a],[,b])=>b-a)
+            .map(([k,v]) => {
+              const pct = (v/total*100).toFixed(1);
+              const color = SUBCAT_GASTO_COLOR[k] || '#6b7280';
+              return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
+                <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></div>
+                <div style="flex:1;font-weight:600">${esc(SUBCAT_GASTO_LABEL[k] || k)}</div>
+                <div style="flex:2;background:#f3f4f6;border-radius:6px;height:14px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${color};opacity:.85"></div></div>
+                <div style="min-width:80px;text-align:right;font-weight:700">${euro(v)}</div>
+                <div style="min-width:38px;text-align:right;color:var(--muted)">${pct}%</div>
+              </div>`;
+            }).join('') || '<p style="font-size:12px;color:var(--muted);padding:14px 0">Sin gastos clasificados aún</p>';
+        })()}
+      </div>
+      <div class="card">
+        <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg> Salud financiera</div>
+        <div style="display:flex;flex-direction:column;gap:14px;font-size:13px">
+          <div>
+            <div style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Margen bruto</div>
+            <div style="font-size:22px;font-weight:700;color:${margenBruto>40?'var(--ok)':margenBruto>20?'var(--warn)':'var(--danger)'}">${margenBruto.toFixed(1)}%</div>
+            <div style="color:var(--muted);font-size:11px">${margenBruto>40?'Saludable':margenBruto>20?'Aceptable':'Bajo — revisar precios o costos'}</div>
+          </div>
+          <div>
+            <div style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Margen operativo</div>
+            <div style="font-size:22px;font-weight:700;color:${margenOper>15?'var(--ok)':margenOper>0?'var(--warn)':'var(--danger)'}">${margenOper.toFixed(1)}%</div>
+            <div style="color:var(--muted);font-size:11px">${margenOper>15?'Excelente':margenOper>0?'Positivo — mejorable':'Negativo — el negocio está perdiendo dinero'}</div>
+          </div>
+          <div>
+            <div style="color:var(--muted);font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Carga de gastos operativos</div>
+            <div style="font-size:22px;font-weight:700;color:${ingresos>0&&totalGastosOper/ingresos<0.5?'var(--ok)':'var(--warn)'}">${ingresos>0?(totalGastosOper/ingresos*100).toFixed(1):'0'}%</div>
+            <div style="color:var(--muted);font-size:11px">de los ingresos</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/* ══════════════════════════════════════════
+   TAB 3 — FLUJO PROYECTADO
+══════════════════════════════════════════ */
+function loadGastosRec(){ try{ return JSON.parse(localStorage.getItem(LS_GASTOS_REC)||'[]'); }catch(e){ return []; } }
+function saveGastosRec(a){ _lsSet(LS_GASTOS_REC, JSON.stringify(a)); }
+
+function setFlujoHorizonte(dias, btn){
+  document.querySelectorAll('#fin-flu-7-btn,#fin-flu-15-btn,#fin-flu-30-btn,#fin-flu-60-btn').forEach(b=>{ if(b) b.classList.remove('btn-brand'); });
+  if(btn) btn.classList.add('btn-brand');
+  _finFlujoHorizonte = dias;
+  renderFinFlujo();
+}
+
+function renderFinFlujo(){
+  const dias = _finFlujoHorizonte;
+  const hoy = new Date();
+  hoy.setHours(0,0,0,0);
+  const fmtD = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+
+  // Saldo actual de caja: suma de movimientos en USD
+  const allMovs = loadCajaMov();
+  const saldoActual = allMovs.reduce((a,m)=>{
+    const signo = (m.signo!=null) ? m.signo : (['ingreso','abono','venta'].includes(m.tipo)||['ingreso','abono','venta'].includes(m.categoria) ? 1 : -1);
+    return a + signo * (m.monto_usd||0);
+  }, 0);
+
+  // Cobros esperados: pedidos no entregados/cancelados con saldo, agrupados por fecha de entrega
+  const peds = loadPed().filter(p => p.estado !== 'cancelado' && p.estado !== 'anulado' && p.estado !== 'entregado');
+  const cobrosPorDia = {};
+  let cobrosVencidosNoIncluidos = 0;
+  peds.forEach(p => {
+    const total = p.total||0;
+    const pagado = (p.pagos||[]).reduce((a,pg)=>a+(pg.monto||0), 0);
+    const saldo = Math.max(0, total - pagado);
+    if(saldo <= 0.01) return;
+    const fechaVenc = (p.fecha_entrega || p.fecha_creado || fmtD(hoy)).slice(0,10);
+    const diff = _finDiasEntre(fmtD(hoy), fechaVenc);
+    if(diff < 0){
+      // Vencido: lo cobramos hoy (asunción optimista) o lo dejamos fuera
+      cobrosVencidosNoIncluidos += saldo;
+      return;
+    }
+    if(diff > dias) return;
+    if(!cobrosPorDia[fechaVenc]) cobrosPorDia[fechaVenc] = { monto:0, pedidos:[] };
+    cobrosPorDia[fechaVenc].monto += saldo;
+    cobrosPorDia[fechaVenc].pedidos.push({ numero:p.numero, cliente:nombreClientePedido(p)||'Sin cliente', monto:saldo });
+  });
+
+  // Gastos recurrentes: aplicarlos a sus días del mes dentro del horizonte
+  const gastosRec = loadGastosRec();
+  const egresosPorDia = {};
+  for(let i=0; i<=dias; i++){
+    const d = new Date(hoy); d.setDate(d.getDate()+i);
+    const dia = d.getDate();
+    gastosRec.forEach(g => {
+      if(g.dia === dia){
+        const key = fmtD(d);
+        if(!egresosPorDia[key]) egresosPorDia[key] = { monto:0, items:[] };
+        egresosPorDia[key].monto += (g.monto||0);
+        egresosPorDia[key].items.push({ nombre:g.nombre, monto:g.monto });
+      }
+    });
+  }
+
+  // Construir tabla día a día
+  const filas = [];
+  let saldoAcum = saldoActual;
+  let totalCobros = 0;
+  let totalEgresos = 0;
+  let saldoMin = saldoActual;
+  let diaCriticoSaldo = null;
+
+  for(let i=0; i<=dias; i++){
+    const d = new Date(hoy); d.setDate(d.getDate()+i);
+    const key = fmtD(d);
+    const ingreso = cobrosPorDia[key]?.monto || 0;
+    const egreso = egresosPorDia[key]?.monto || 0;
+    saldoAcum += ingreso - egreso;
+    totalCobros += ingreso;
+    totalEgresos += egreso;
+    if(saldoAcum < saldoMin){ saldoMin = saldoAcum; diaCriticoSaldo = key; }
+    if(ingreso > 0 || egreso > 0 || i === 0 || i === dias){
+      filas.push({ fecha:key, ingreso, egreso, saldo:saldoAcum, dayIdx:i, pedidos:cobrosPorDia[key]?.pedidos||[], egresoItems:egresosPorDia[key]?.items||[] });
+    }
+  }
+  const saldoFinal = saldoAcum;
+
+  // KPIs
+  const kpis = qs('#fin-flujo-kpis');
+  if(kpis) kpis.innerHTML = `
+    <div class="kpi ${saldoActual>=0?'c-teal':'c-red'}">
+      <div class="kpi-ico"><div class="kpi-ico-pill" style="background:${saldoActual>=0?'#E1F5EE':'#FCEBEB'}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${saldoActual>=0?'#0F6E56':'#A32D2D'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg></div></div>
+      <div class="kpi-lbl">Saldo actual</div>
+      <div class="kpi-val" style="color:${saldoActual>=0?'var(--ok)':'var(--danger)'}">${euro(saldoActual)}</div>
+      <div class="kpi-sub">en caja hoy</div>
+    </div>
+    <div class="kpi c-green">
+      <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div>
+      <div class="kpi-lbl">Cobros esperados</div>
+      <div class="kpi-val">${euro(totalCobros)}</div>
+      <div class="kpi-sub">en próximos ${dias}d ${cobrosVencidosNoIncluidos>0?'· '+euro(cobrosVencidosNoIncluidos)+' vencido':''}</div>
+    </div>
+    <div class="kpi c-amber">
+      <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/></svg></div></div>
+      <div class="kpi-lbl">Egresos esperados</div>
+      <div class="kpi-val">${euro(totalEgresos)}</div>
+      <div class="kpi-sub">${gastosRec.length} gastos recurrentes</div>
+    </div>
+    <div class="kpi ${saldoFinal>=0?'c-teal':'c-red'}">
+      <div class="kpi-ico"><div class="kpi-ico-pill" style="background:${saldoFinal>=0?'#E1F5EE':'#FCEBEB'}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${saldoFinal>=0?'#0F6E56':'#A32D2D'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${saldoFinal>=0?'<polyline points="20 6 9 17 4 12"/>':'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>'}</svg></div></div>
+      <div class="kpi-lbl">Saldo proyectado</div>
+      <div class="kpi-val" style="color:${saldoFinal>=0?'var(--ok)':'var(--danger)'}">${euro(saldoFinal)}</div>
+      <div class="kpi-sub">${saldoFinal>=0?'al día '+dias:'⚠ Déficit proyectado'}</div>
+    </div>
+  `;
+
+  // Tabla día a día
+  const tabla = qs('#fin-flujo-tabla');
+  if(tabla){
+    tabla.innerHTML = `
+      <div style="overflow-x:auto">
+        <table style="width:100%;font-size:12px;border-collapse:collapse">
+          <thead>
+            <tr style="background:#fafafa;text-align:left">
+              <th style="padding:8px 10px">Día</th>
+              <th style="padding:8px 10px">Fecha</th>
+              <th style="padding:8px 10px;text-align:right">+ Cobros</th>
+              <th style="padding:8px 10px;text-align:right">− Egresos</th>
+              <th style="padding:8px 10px;text-align:right">Saldo proyectado</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${filas.map(f => {
+              const negativo = f.saldo < 0;
+              const esCritico = f.fecha === diaCriticoSaldo && saldoMin < 0;
+              return `<tr style="border-bottom:1px solid var(--border)${esCritico?';background:#FCEBEB':''}">
+                <td style="padding:6px 10px;font-weight:600">${f.dayIdx===0?'Hoy':'+'+f.dayIdx+'d'}</td>
+                <td style="padding:6px 10px;color:var(--muted)">${esc(f.fecha)}</td>
+                <td style="padding:6px 10px;text-align:right;color:${f.ingreso>0?'var(--ok)':'var(--muted)'}">${f.ingreso>0?'+ '+euro(f.ingreso):'—'}</td>
+                <td style="padding:6px 10px;text-align:right;color:${f.egreso>0?'var(--danger)':'var(--muted)'}">${f.egreso>0?'− '+euro(f.egreso):'—'}</td>
+                <td style="padding:6px 10px;text-align:right;font-weight:700;color:${negativo?'var(--danger)':'var(--ink)'}">${euro(f.saldo)}${esCritico?' ⚠':''}</td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+      ${saldoMin < 0 ? `<div style="margin-top:10px;padding:10px 12px;background:#FCEBEB;border-left:3px solid var(--danger);border-radius:6px;font-size:12px;color:#5c1a1a">⚠ <strong>Alerta de liquidez:</strong> el saldo proyectado caerá a ${euro(saldoMin)} el ${esc(diaCriticoSaldo)}. Necesitas conseguir ${euro(Math.abs(saldoMin))} adicionales o adelantar cobros.</div>` : ''}
+    `;
+  }
+
+  // Cobros esperados (lista detallada)
+  const cob = qs('#fin-flujo-cobros');
+  if(cob){
+    const todosCobros = [];
+    Object.entries(cobrosPorDia).forEach(([fecha, info]) => {
+      info.pedidos.forEach(p => todosCobros.push({ ...p, fecha }));
+    });
+    todosCobros.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+    if(!todosCobros.length){
+      cob.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:12px 0">No hay cobros proyectados en el horizonte.</p>';
+    } else {
+      cob.innerHTML = todosCobros.slice(0, 12).map(c => `
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;border-bottom:1px solid #f3f4f6">
+          <div style="font-weight:600;color:var(--brand);min-width:74px">${esc(c.numero)}</div>
+          <div style="flex:1">${esc(c.cliente)}</div>
+          <div style="color:var(--muted);font-size:11px">${esc(c.fecha)}</div>
+          <div style="font-weight:700">${euro(c.monto)}</div>
+        </div>
+      `).join('') + (todosCobros.length>12?`<p style="text-align:center;color:var(--muted);font-size:11px;margin-top:6px">+${todosCobros.length-12} más</p>`:'');
+    }
+  }
+
+  // Recurrentes
+  const rec = qs('#fin-flujo-recurrentes');
+  if(rec){
+    if(!gastosRec.length){
+      rec.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:12px 0">Aún no hay gastos recurrentes definidos. Agrégalos para que el flujo proyectado sea más preciso.</p>';
+    } else {
+      const totalMes = gastosRec.reduce((a,g)=>a+(g.monto||0), 0);
+      rec.innerHTML = gastosRec.sort((a,b)=>a.dia-b.dia).map((g,i) => {
+        const color = SUBCAT_GASTO_COLOR[g.cat] || '#6b7280';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;border-bottom:1px solid #f3f4f6">
+          <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></div>
+          <div style="flex:1">
+            <div style="font-weight:600">${esc(g.nombre)}</div>
+            <div style="color:var(--muted);font-size:11px">Día ${g.dia} · ${esc(SUBCAT_GASTO_LABEL[g.cat]||g.cat)}</div>
+          </div>
+          <div style="font-weight:700">${euro(g.monto)}</div>
+          <button class="btn btn-sm" style="font-size:10px;padding:2px 6px;background:transparent;color:var(--danger);border:1px solid var(--danger)" onclick="eliminarGastoRecurrente(${i})">✕</button>
+        </div>`;
+      }).join('') + `<div style="margin-top:8px;padding-top:8px;border-top:2px solid var(--border);font-size:12px;display:flex;justify-content:space-between"><strong>Total mensual</strong><strong>${euro(totalMes)}</strong></div>`;
+    }
+  }
+}
+
+function abrirGastoRecurrente(){
+  qs('#mgrec_nombre').value = '';
+  qs('#mgrec_monto').value = '';
+  qs('#mgrec_cat').value = 'alquiler';
+  qs('#mgrec_dia').value = '1';
+  openModal('m-gasto-recurrente');
+}
+
+function guardarGastoRecurrente(){
+  const nombre = (qs('#mgrec_nombre')?.value||'').trim();
+  const monto = parseEU(qs('#mgrec_monto')?.value||'0');
+  const cat = qs('#mgrec_cat')?.value||'otros';
+  const dia = Math.max(1, Math.min(28, parseInt(qs('#mgrec_dia')?.value||'1', 10)));
+  if(!nombre){ toast('Indica un concepto','warn'); return; }
+  if(monto <= 0){ toast('Monto inválido','warn'); return; }
+  const all = loadGastosRec();
+  all.push({ id:Date.now(), nombre, monto, cat, dia });
+  saveGastosRec(all);
+  closeModal('m-gasto-recurrente');
+  renderFinFlujo();
+  toast('Gasto recurrente agregado','ok');
+}
+
+function eliminarGastoRecurrente(idx){
+  if(!confirm('¿Eliminar este gasto recurrente?')) return;
+  const all = loadGastosRec();
+  all.splice(idx, 1);
+  saveGastosRec(all);
+  renderFinFlujo();
+  toast('Eliminado','ok');
+}
+
+/* ══════════════════════════════════════════
+   TAB 4 — RIESGO CAMBIARIO
+══════════════════════════════════════════ */
+function renderFinCambiario(){
+  const peds = loadPed();
+  const bcvHoy = getTasaBCV();
+
+  // === Pérdida cambiaria realizada ===
+  // Cuando hay un pago en Bs con tasa_bcv_pago distinta a la tasa_bcv_creacion del pedido,
+  // hay una diferencia entre el USD que valía el monto en Bs en cada momento.
+  let perdidaRealizada = 0;
+  let gananciaRealizada = 0;
+  let pagosAfectados = 0;
+
+  peds.forEach(p => {
+    if(!p.fecha_creado) return;
+    if(!_finInRango(p.fecha_creado)) return;
+    const tasaCreacion = p.tasa_bcv_creacion || p.tasa_bcv || null;
+    if(!tasaCreacion || tasaCreacion <= 0) return;
+    (p.pagos||[]).forEach(pg => {
+      if(!pg.monto_bs_ingresado) return; // solo aplica a pagos Bs
+      const tasaPago = pg.tasa_bcv_pago || tasaCreacion;
+      if(tasaPago === tasaCreacion) return;
+      const usdAlCrear = pg.monto_bs_ingresado / tasaCreacion;
+      const usdAlCobrar = pg.monto_bs_ingresado / tasaPago;
+      const dif = usdAlCobrar - usdAlCrear;
+      if(dif < 0){ perdidaRealizada += Math.abs(dif); pagosAfectados++; }
+      else if(dif > 0){ gananciaRealizada += dif; pagosAfectados++; }
+    });
+  });
+
+  // === Exposición cambiaria activa ===
+  // Pedidos con saldo pendiente, donde el cliente ya pactó un precio (en Bs implícito al ingresar)
+  // Si el cliente paga tarde, el USD efectivo recibido será menor.
+  const expuestos = [];
+  peds.forEach(p => {
+    if(p.estado === 'cancelado' || p.estado === 'anulado' || p.estado === 'entregado') return;
+    const total = p.total || 0;
+    const pagado = (p.pagos||[]).reduce((a,pg)=>a+(pg.monto||0), 0);
+    const saldo = Math.max(0, total - pagado);
+    if(saldo <= 0.01) return;
+    const tasaCreacion = p.tasa_bcv_creacion || p.tasa_bcv || bcvHoy;
+    if(!tasaCreacion || tasaCreacion <= 0) return;
+    // Si el cliente piensa pagar el saldo en Bs al precio acordado:
+    const saldoBsCongelado = saldo * tasaCreacion;
+    const saldoUsdSiPagaHoy = bcvHoy > 0 ? saldoBsCongelado / bcvHoy : saldo;
+    const expoUsd = saldo - saldoUsdSiPagaHoy; // si bcvHoy > tasaCreacion → expoUsd > 0 (perdería)
+    expuestos.push({
+      ped: p,
+      saldo, saldoBsCongelado, saldoUsdSiPagaHoy,
+      tasaCreacion,
+      bcvHoy,
+      perdidaPotencial: expoUsd,
+      diasPasados: _finDiasEntre(p.fecha_creado, hoyLocal())
+    });
+  });
+
+  const exposicionTotal = expuestos.reduce((a,e)=>a+(e.perdidaPotencial>0?e.perdidaPotencial:0), 0);
+  const saldoExpuestoUsd = expuestos.reduce((a,e)=>a+e.saldo, 0);
+
+  // KPIs
+  const kpis = qs('#fin-cam-kpis');
+  if(kpis){
+    const balance = gananciaRealizada - perdidaRealizada;
+    kpis.innerHTML = `
+      <div class="kpi c-red">
+        <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/></svg></div></div>
+        <div class="kpi-lbl">Pérdida cambiaria</div>
+        <div class="kpi-val" style="color:var(--danger)">${euro(perdidaRealizada)}</div>
+        <div class="kpi-sub">${pagosAfectados} pagos afectados</div>
+      </div>
+      <div class="kpi c-green">
+        <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div></div>
+        <div class="kpi-lbl">Ganancia cambiaria</div>
+        <div class="kpi-val" style="color:var(--ok)">${euro(gananciaRealizada)}</div>
+        <div class="kpi-sub">si la tasa bajó</div>
+      </div>
+      <div class="kpi ${balance>=0?'c-teal':'c-coral'}">
+        <div class="kpi-ico"><div class="kpi-ico-pill" style="background:${balance>=0?'#E1F5EE':'#FFE4E1'}"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="${balance>=0?'#0F6E56':'#C2410C'}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div></div>
+        <div class="kpi-lbl">Balance cambiario</div>
+        <div class="kpi-val" style="color:${balance>=0?'var(--ok)':'var(--danger)'}">${euro(balance)}</div>
+        <div class="kpi-sub">${balance>=0?'A favor':'En contra'} en el período</div>
+      </div>
+      <div class="kpi c-amber">
+        <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/></svg></div></div>
+        <div class="kpi-lbl">Exposición activa</div>
+        <div class="kpi-val" style="color:${exposicionTotal>0?'var(--warn)':'var(--ink)'}">${euro(exposicionTotal)}</div>
+        <div class="kpi-sub">${expuestos.length} pedidos · ${euro(saldoExpuestoUsd)} en saldos</div>
+      </div>
+    `;
+  }
+
+  // Evolución de la tasa
+  const evo = qs('#fin-cam-evolucion');
+  if(evo){
+    // Recolectar tasas históricas: del campo tasa_bcv_creacion de pedidos
+    const tasas = [];
+    peds.forEach(p => {
+      if(p.fecha_creado && (p.tasa_bcv_creacion || p.tasa_bcv)){
+        tasas.push({ fecha: p.fecha_creado.slice(0,10), tasa: p.tasa_bcv_creacion || p.tasa_bcv });
+      }
+      (p.pagos||[]).forEach(pg => {
+        if(pg.tasa_bcv_pago && pg.fecha){
+          tasas.push({ fecha: pg.fecha.slice(0,10), tasa: pg.tasa_bcv_pago });
+        }
+      });
+    });
+    // Hoy
+    if(bcvHoy > 0) tasas.push({ fecha: hoyLocal(), tasa: bcvHoy });
+
+    // Quedarse con la última tasa de cada día y filtrar por rango
+    const porDia = {};
+    tasas.forEach(t => { if(_finInRango(t.fecha)) porDia[t.fecha] = t.tasa; });
+    const ordenadas = Object.entries(porDia).sort(([a],[b])=>a.localeCompare(b));
+
+    if(ordenadas.length < 2){
+      evo.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:12px 0">Datos insuficientes para mostrar evolución (se necesitan al menos 2 tasas en el período).</p>';
+    } else {
+      const tasasArr = ordenadas.map(([,t])=>t);
+      const min = Math.min(...tasasArr);
+      const max = Math.max(...tasasArr);
+      const variacion = ((tasasArr[tasasArr.length-1] - tasasArr[0]) / tasasArr[0] * 100);
+      // Mini gráfico de barras
+      evo.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;font-size:12px">
+          <div><span style="color:var(--muted)">Inicial:</span> <strong>Bs ${fmtBs(tasasArr[0])}</strong></div>
+          <div><span style="color:var(--muted)">Final:</span> <strong>Bs ${fmtBs(tasasArr[tasasArr.length-1])}</strong></div>
+          <div style="color:${variacion>0?'var(--danger)':variacion<0?'var(--ok)':'var(--muted)'};font-weight:700">${variacion>0?'▲':variacion<0?'▼':'='} ${Math.abs(variacion).toFixed(2)}%</div>
+        </div>
+        <div style="display:flex;align-items:flex-end;gap:2px;height:80px;padding:0 4px;border-bottom:1px solid var(--border)">
+          ${ordenadas.map(([f,t]) => {
+            const h = max>min ? ((t-min)/(max-min)*100) : 50;
+            return `<div title="${f}: Bs ${fmtBs(t)}" style="flex:1;background:linear-gradient(180deg,var(--brand) 0%,#a78bfa 100%);height:${Math.max(h,3)}%;border-radius:2px 2px 0 0;cursor:pointer"></div>`;
+          }).join('')}
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px">
+          <span>${esc(ordenadas[0][0])}</span>
+          <span>${esc(ordenadas[ordenadas.length-1][0])}</span>
+        </div>
+      `;
+    }
+  }
+
+  // Pedidos expuestos
+  const exp = qs('#fin-cam-expuestos');
+  if(exp){
+    const conRiesgo = expuestos.filter(e => e.perdidaPotencial > 0.01).sort((a,b)=>b.perdidaPotencial-a.perdidaPotencial);
+    if(!conRiesgo.length){
+      exp.innerHTML = '<div class="empty" style="padding:24px"><p>No hay pedidos con exposición cambiaria activa ✓</p></div>';
+    } else {
+      exp.innerHTML = `
+        <div style="overflow-x:auto">
+          <table style="width:100%;font-size:12px;border-collapse:collapse">
+            <thead>
+              <tr style="background:#fafafa;text-align:left">
+                <th style="padding:8px 10px">Pedido</th>
+                <th style="padding:8px 10px">Cliente</th>
+                <th style="padding:8px 10px;text-align:right">Saldo USD</th>
+                <th style="padding:8px 10px;text-align:right">Tasa pacto</th>
+                <th style="padding:8px 10px;text-align:right">Tasa hoy</th>
+                <th style="padding:8px 10px;text-align:right">Pérdida potencial</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${conRiesgo.slice(0, 20).map(e => `
+                <tr style="border-bottom:1px solid var(--border)">
+                  <td style="padding:6px 10px;font-weight:600">${esc(e.ped.numero)}</td>
+                  <td style="padding:6px 10px">${esc(nombreClientePedido(e.ped) || 'Sin cliente')}</td>
+                  <td style="padding:6px 10px;text-align:right">${euro(e.saldo)}</td>
+                  <td style="padding:6px 10px;text-align:right;color:var(--muted)">Bs ${fmtBs(e.tasaCreacion)}</td>
+                  <td style="padding:6px 10px;text-align:right;color:var(--muted)">Bs ${fmtBs(e.bcvHoy)}</td>
+                  <td style="padding:6px 10px;text-align:right;color:var(--danger);font-weight:700">−${euro(e.perdidaPotencial)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          ${conRiesgo.length>20?`<p style="text-align:center;color:var(--muted);font-size:11px;margin-top:8px">+${conRiesgo.length-20} más…</p>`:''}
+        </div>
+      `;
+    }
+  }
+}
+
+/* ══════════════════════════════════════════
+   KPIs financieros del Dashboard (V14_33)
+   Solo se muestran si el usuario tiene el permiso 'finanzas'
+══════════════════════════════════════════ */
+function renderDashFinanzas(){
+  const row = qs('#d-finanzas-row');
+  if(!row) return;
+
+  // Mostrar solo si el usuario actual puede ver finanzas
+  const puedeVer = (typeof can==='function') ? can('finanzas') : (typeof canView==='function' ? canView('finanzas') : true);
+  if(!puedeVer){ row.style.display = 'none'; return; }
+  row.style.display = '';
+
+  // ── Por cobrar (CxC) ──
+  const peds = loadPed().filter(p => p.estado !== 'cancelado' && p.estado !== 'anulado');
+  let cxcTotal = 0, vencidoTotal = 0;
+  let cantPed = 0, cantVencidos = 0;
+  const hoy = hoyLocal();
+  peds.forEach(p => {
+    const total = p.total||0;
+    const pagado = (p.pagos||[]).reduce((a,pg)=>a+(pg.monto||0), 0);
+    const saldo = Math.max(0, total - pagado);
+    if(saldo <= 0.01) return;
+    cxcTotal += saldo;
+    cantPed++;
+    const fechaVenc = (p.fecha_entrega || p.fecha_creado || hoy).slice(0,10);
+    if(fechaVenc < hoy){ vencidoTotal += saldo; cantVencidos++; }
+  });
+
+  const dCxc = qs('#d-fin-cxc'); if(dCxc) dCxc.textContent = euro(cxcTotal);
+  const dCxcSub = qs('#d-fin-cxc-sub'); if(dCxcSub) dCxcSub.textContent = `${cantPed} pedido${cantPed!==1?'s':''}`;
+  const dVenc = qs('#d-fin-vencido'); if(dVenc){ dVenc.textContent = euro(vencidoTotal); dVenc.style.color = vencidoTotal>0 ? 'var(--danger)' : ''; }
+  const dVencSub = qs('#d-fin-vencido-sub'); if(dVencSub) dVencSub.textContent = `${cantVencidos} pedido${cantVencidos!==1?'s':''} vencido${cantVencidos!==1?'s':''}`;
+
+  // ── Pérdida cambiaria del mes en curso ──
+  const ahora = new Date();
+  const desdeMes = `${ahora.getFullYear()}-${String(ahora.getMonth()+1).padStart(2,'0')}-01`;
+  let perdidaMes = 0;
+  let gananciaMes = 0;
+  loadPed().forEach(p => {
+    if(!p.fecha_creado) return;
+    const tasaCre = p.tasa_bcv_creacion || p.tasa_bcv || 0;
+    if(tasaCre <= 0) return;
+    (p.pagos||[]).forEach(pg => {
+      if(!pg.monto_bs_ingresado) return;
+      if(!pg.fecha) return;
+      if(pg.fecha.slice(0,10) < desdeMes) return;
+      const tasaPg = pg.tasa_bcv_pago || tasaCre;
+      if(tasaPg === tasaCre) return;
+      const dif = (pg.monto_bs_ingresado/tasaPg) - (pg.monto_bs_ingresado/tasaCre);
+      if(dif < 0) perdidaMes += Math.abs(dif);
+      else gananciaMes += dif;
+    });
+  });
+  const balance = gananciaMes - perdidaMes;
+  const dFx = qs('#d-fin-fx');
+  if(dFx){
+    dFx.textContent = euro(Math.abs(balance));
+    dFx.style.color = balance < 0 ? 'var(--danger)' : (balance > 0 ? 'var(--ok)' : '');
+  }
+  const dFxSub = qs('#d-fin-fx-sub');
+  if(dFxSub){
+    if(Math.abs(balance) < 0.01) dFxSub.textContent = 'sin movimiento';
+    else if(balance < 0) dFxSub.textContent = 'pérdida este mes';
+    else dFxSub.textContent = 'ganancia este mes';
+  }
+
+  // ── Saldo proyectado a 15 días ──
+  const allMovs = loadCajaMov();
+  const saldoActual = allMovs.reduce((a,m)=>{
+    const signo = (m.signo!=null) ? m.signo : (['ingreso','abono','venta'].includes(m.tipo)||['ingreso','abono','venta'].includes(m.categoria) ? 1 : -1);
+    return a + signo * (m.monto_usd||0);
+  }, 0);
+  const horizonte = 15;
+  const fmtD = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  const hoyD = new Date(); hoyD.setHours(0,0,0,0);
+  const limiteFut = new Date(hoyD); limiteFut.setDate(limiteFut.getDate()+horizonte);
+  let cobros = 0;
+  loadPed().forEach(p => {
+    if(p.estado === 'cancelado' || p.estado === 'anulado' || p.estado === 'entregado') return;
+    const total = p.total||0;
+    const pagado = (p.pagos||[]).reduce((a,pg)=>a+(pg.monto||0), 0);
+    const saldo = Math.max(0, total - pagado);
+    if(saldo <= 0.01) return;
+    const fv = (p.fecha_entrega || p.fecha_creado || fmtD(hoyD)).slice(0,10);
+    if(fv >= fmtD(hoyD) && fv <= fmtD(limiteFut)) cobros += saldo;
+  });
+  // Egresos recurrentes en horizonte
+  let egresos = 0;
+  const gastosRec = loadGastosRec();
+  for(let i=0;i<=horizonte;i++){
+    const d = new Date(hoyD); d.setDate(d.getDate()+i);
+    gastosRec.forEach(g => { if(g.dia === d.getDate()) egresos += (g.monto||0); });
+  }
+  const proyectado = saldoActual + cobros - egresos;
+  const dFlu = qs('#d-fin-flujo');
+  if(dFlu){
+    dFlu.textContent = euro(proyectado);
+    dFlu.style.color = proyectado < 0 ? 'var(--danger)' : '';
+  }
+  const dFluSub = qs('#d-fin-flujo-sub');
+  if(dFluSub) dFluSub.textContent = proyectado < 0 ? '⚠ déficit en 15d' : 'en 15 días';
+}
+
 </script>
 
 <!-- ══ MODAL: Insumo ══ -->
-<div class="modal-bg" id="m-insumo">
-  <div class="modal" style="max-width:520px">
+<div class="modal-bg" id="m-insumo" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:520px">
     <button class="modal-close" onclick="closeModal('m-insumo')">✕</button>
     <div class="modal-title" id="mins-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 3h6M9 3v7l-4 9h14L15 10V3"/><line x1="6" y1="14" x2="18" y2="14"/></svg> Nuevo Insumo</div>
     <div class="frow">
@@ -12029,8 +13481,8 @@ function exportReportesCSV(){
 </div>
 
 <!-- ══ MODAL: Producto terminado ══ -->
-<div class="modal-bg" id="m-terminado">
-  <div class="modal" style="max-width:480px">
+<div class="modal-bg" id="m-terminado" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:480px">
     <button class="modal-close" onclick="closeModal('m-terminado')">✕</button>
     <div class="modal-title" id="mter-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2l9 4.5v11L12 22 3 17.5V6.5L12 2z"/><polyline points="3 6.5 12 11 21 6.5"/><line x1="12" y1="11" x2="12" y2="22"/></svg> Stock de Producto Terminado</div>
     <div class="fg"><label>Producto del catálogo *</label>
@@ -12053,8 +13505,8 @@ function exportReportesCSV(){
 </div>
 
 <!-- ══ MODAL: Movimiento de inventario ══ -->
-<div class="modal-bg" id="m-inv-mov">
-  <div class="modal" style="max-width:480px">
+<div class="modal-bg" id="m-inv-mov" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:480px">
     <button class="modal-close" onclick="closeModal('m-inv-mov')">✕</button>
     <div class="modal-title" id="minvmov-title">Registrar movimiento</div>
     <div class="fg"><label>Ítem *</label><input type="text" id="invmov_item_nombre" readonly style="background:#f0f0f8"/></div>
@@ -12087,8 +13539,8 @@ function exportReportesCSV(){
 </div>
 
 <!-- ══ MODAL: Detalle Insumo ══ -->
-<div class="modal-bg" id="m-ver-ins">
-  <div class="modal" style="max-width:520px">
+<div class="modal-bg" id="m-ver-ins" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:520px">
     <button class="modal-close" onclick="closeModal('m-ver-ins')">✕</button>
     <div class="modal-title" id="mverins-title">Insumo</div>
     <div id="mverins-body"></div>
@@ -12097,7 +13549,7 @@ function exportReportesCSV(){
       <button class="btn btn-sm" onclick="invMovDesde('salida')"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg> Salida</button>
       <button class="btn btn-sm" onclick="invMovDesde('ajuste')"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="3" x2="12" y2="21"/><path d="M3 6h18M3 18h18"/></svg> Ajuste</button>
       <button class="btn btn-brand btn-sm" onclick="editarInsumo()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Editar</button>
-      <button class="btn btn-danger btn-sm" onclick="eliminarInsumo()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
+      <button class="btn btn-danger btn-sm" onclick="eliminarInsumo()" aria-label="Eliminar insumo"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
       <button class="btn btn-sm" onclick="closeModal('m-ver-ins')">Cerrar</button>
     </div>
   </div>
@@ -12106,8 +13558,8 @@ function exportReportesCSV(){
 
 
 <!-- ══ MODAL: Venta Confirmada (POS) ══ -->
-<div class="modal-bg" id="m-venta-confirmada">
-  <div class="modal" style="max-width:420px">
+<div class="modal-bg" id="m-venta-confirmada" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:420px">
     <button class="modal-close" onclick="closeModal('m-venta-confirmada')">✕</button>
     <div style="text-align:center;padding:8px 0 16px">
       <div style="width:52px;height:52px;border-radius:50%;background:#dcfce7;display:flex;align-items:center;justify-content:center;margin:0 auto 12px">
@@ -12146,8 +13598,8 @@ function exportReportesCSV(){
 </div>
 
 <!-- ══ MODAL: Nueva Venta ══ -->
-<div class="modal-bg" id="m-venta">
-  <div class="modal" style="max-width:640px">
+<div class="modal-bg" id="m-venta" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:640px">
     <button class="modal-close" onclick="closeModal('m-venta')">✕</button>
     <div class="modal-title" id="mv-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Nueva Venta</div>
 
@@ -12245,8 +13697,8 @@ function exportReportesCSV(){
 </div>
 
 <!-- ══ MODAL: Movimiento de Caja ══ -->
-<div class="modal-bg" id="m-movimiento">
-  <div class="modal" style="max-width:560px">
+<div class="modal-bg" id="m-movimiento" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:560px">
     <button class="modal-close" onclick="closeModal('m-movimiento')">✕</button>
     <div class="modal-title" id="mmov-title">Registrar movimiento</div>
     <input type="hidden" id="mmov_tipo"/>
@@ -12304,7 +13756,7 @@ function exportReportesCSV(){
     </div>
     <div class="frow">
       <div class="fg"><label>Categoría</label>
-        <select id="mmov_cat">
+        <select id="mmov_cat" onchange="onMmovCatChange()">
           <option value="otro">Otro</option>
           <option value="venta">Venta</option>
           <option value="abono">Abono</option>
@@ -12315,6 +13767,25 @@ function exportReportesCSV(){
       </div>
       <div class="fg" style="flex:2"><label>Descripción / Nota</label><input type="text" id="mmov_nota" placeholder="Detalle adicional…"/></div>
     </div>
+    <div class="frow" id="mmov_subcat_row" style="display:none">
+      <div class="fg" style="flex:1"><label>Subcategoría <span style="color:var(--muted);font-weight:400">(para Estado de Resultados)</span></label>
+        <select id="mmov_subcat">
+          <option value="">Sin categorizar</option>
+          <option value="alquiler">Alquiler / Local</option>
+          <option value="servicios">Servicios (luz, agua, internet)</option>
+          <option value="sueldos">Sueldos / Personal</option>
+          <option value="insumos">Insumos / Materia prima</option>
+          <option value="marketing">Marketing / Publicidad</option>
+          <option value="mantenimiento">Mantenimiento / Reparaciones</option>
+          <option value="transporte">Transporte / Delivery</option>
+          <option value="impuestos">Impuestos / Tributos</option>
+          <option value="comisiones">Comisiones bancarias</option>
+          <option value="empaque">Empaque / Embalaje</option>
+          <option value="capex">Inversión / Equipos (CAPEX)</option>
+          <option value="otros">Otros gastos operativos</option>
+        </select>
+      </div>
+    </div>
     <div class="btn-row" style="margin-top:12px">
       <button class="btn btn-brand" onclick="guardarMovimiento()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar</button>
       <button class="btn" onclick="closeModal('m-movimiento')">Cancelar</button>
@@ -12322,9 +13793,65 @@ function exportReportesCSV(){
   </div>
 </div>
 
+<!-- ══ MODAL: Gasto Recurrente (V14_33) ══ -->
+<div class="modal-bg" id="m-gasto-recurrente" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:480px">
+    <button class="modal-close" onclick="closeModal('m-gasto-recurrente')">✕</button>
+    <div class="modal-title" id="mgrec-title">Gasto recurrente</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:12px">Estos gastos mensuales se usan para proyectar el flujo de caja y para el cálculo del punto de equilibrio. <strong>No</strong> se registran automáticamente en Caja: solo informan la proyección.</p>
+    <div class="frow">
+      <div class="fg" style="flex:2"><label>Concepto</label><input type="text" id="mgrec_nombre" placeholder="Ej. Alquiler local, Internet, Sueldo Juan…"/></div>
+      <div class="fg" style="flex:1"><label>Monto USD/mes</label><input type="text" id="mgrec_monto" placeholder="0,00" inputmode="decimal"/></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Categoría</label>
+        <select id="mgrec_cat">
+          <option value="alquiler">Alquiler / Local</option>
+          <option value="servicios">Servicios (luz, agua, internet)</option>
+          <option value="sueldos">Sueldos / Personal</option>
+          <option value="marketing">Marketing / Publicidad</option>
+          <option value="mantenimiento">Mantenimiento</option>
+          <option value="impuestos">Impuestos / Tributos</option>
+          <option value="otros">Otros</option>
+        </select>
+      </div>
+      <div class="fg"><label>Día del mes</label><input type="number" id="mgrec_dia" min="1" max="28" value="1"/></div>
+    </div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-brand" onclick="guardarGastoRecurrente()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg> Guardar</button>
+      <button class="btn" onclick="closeModal('m-gasto-recurrente')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Imprimir rango de pedidos (V14_34) ══ -->
+<div class="modal-bg" id="m-imprimir-rango-ped" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:420px">
+    <button class="modal-close" onclick="closeModal('m-imprimir-rango-ped')">✕</button>
+    <div class="modal-title"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:6px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir rango de pedidos</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Ingresa el número de pedido inicial y final. Se imprimirán todos los pedidos dentro de ese rango, sin importar su estado actual.</p>
+    <div class="frow">
+      <div class="fg">
+        <label>Desde #</label>
+        <input type="text" id="mirang_desde" placeholder="Ej. 0009" inputmode="numeric" style="text-align:center;font-weight:700;font-size:15px;letter-spacing:1px"/>
+      </div>
+      <div style="display:flex;align-items:center;padding-top:20px;color:var(--muted);font-size:18px;font-weight:700">→</div>
+      <div class="fg">
+        <label>Hasta #</label>
+        <input type="text" id="mirang_hasta" placeholder="Ej. 0040" inputmode="numeric" style="text-align:center;font-weight:700;font-size:15px;letter-spacing:1px"/>
+      </div>
+    </div>
+    <div id="mirang_preview" style="margin-top:10px;font-size:12px;color:var(--muted);min-height:20px"></div>
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-brand" onclick="ejecutarImprimirRangoPedidos()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>
+      <button class="btn" onclick="closeModal('m-imprimir-rango-ped')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL: Ver Venta ══ -->
-<div class="modal-bg" id="m-ver-ven">
-  <div class="modal" style="max-width:520px">
+<div class="modal-bg" id="m-ver-ven" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:520px">
     <button class="modal-close" onclick="closeModal('m-ver-ven')">✕</button>
     <div class="modal-title" id="mvven-title">Venta</div>
     <div id="mvven-body"></div>
@@ -12480,8 +14007,8 @@ window.addEventListener('popstate',e=>{
 
 
 <!-- ══ MODAL: Reprogramar Fechas de Entrega ══ -->
-<div class="modal-bg" id="m-reprog">
-  <div class="modal" style="max-width:520px">
+<div class="modal-bg" id="m-reprog" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:520px">
     <button class="modal-close" onclick="closeModal('m-reprog')">✕</button>
     <div class="modal-title">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
@@ -12540,8 +14067,8 @@ window.addEventListener('popstate',e=>{
 </div>
 
 <!-- ══ MODAL: Traslado entre locaciones ══ -->
-<div class="modal-bg" id="m-traslado">
-  <div class="modal" style="max-width:420px">
+<div class="modal-bg" id="m-traslado" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:420px">
     <button class="modal-close" onclick="closeModal('m-traslado')">✕</button>
     <div class="modal-title">⇄ Trasladar entre locaciones</div>
     <input type="hidden" id="traslado_item_id"/>
@@ -12582,7 +14109,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_29';
+  const APP_VERSION = 'v14_34';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -12591,7 +14118,7 @@ window.addEventListener('popstate',e=>{
   let _regPromise = null;
   function registerSW(){
     if(!hasSW()) return;
-    _regPromise = navigator.serviceWorker.register('./sw.js?v=v14_29', { updateViaCache: 'none' })
+    _regPromise = navigator.serviceWorker.register('./sw.js?v=v14_32', { updateViaCache: 'none' })
       .then(function(reg){
         console.log('[PWA] SW registrado scope:', reg.scope);
         return reg;
@@ -13123,12 +14650,106 @@ function imprimirEtiquetaEnvio(idx){
     // Por si el nav ya está inicializado
   });
 })();
+
+// ── Tests de regresión — cálculos financieros ──
+// Se ejecuta al cargar solo si URL tiene ?test o localStorage._gm_tests=1
+function _runFinancialTests(){
+  const t0=performance.now();
+  let pass=0, fail=0;
+  function assert(cond, msg){ if(cond){pass++;}else{fail++;console.error('[TEST FAIL]',msg);} }
+
+  // round2
+  assert(round2(1.005)===1, 'round2(1.005)===1');
+  assert(round2(1.015)===1.02, 'round2(1.015)===1.02');
+  assert(round2(0)===0, 'round2(0)===0');
+  assert(round2(null)===0, 'round2(null)===0');
+  assert(round2('')===0, "round2('')===0");
+  assert(round2(99.999)===100, 'round2(99.999)===100');
+  assert(round2(-5.555)===-5.56, 'round2(-5.555)===-5.56');
+
+  // parseEU
+  assert(parseEU('1.234,56')===1234.56, "parseEU('1.234,56')===1234.56");
+  assert(parseEU('100')===100, "parseEU('100')===100");
+  assert(parseEU('')===0, "parseEU('')===0");
+  assert(parseEU(null)===0, "parseEU(null)===0");
+  assert(parseEU('abc')===0, "parseEU('abc')===0");
+  assert(parseEU('12,5')===12.5, "parseEU('12,5')===12.5");
+
+  // safeNum
+  assert(safeNum(42)===42, 'safeNum(42)===42');
+  assert(safeNum('abc')===0, "safeNum('abc')===0");
+  assert(safeNum(NaN, 5)===5, 'safeNum(NaN,5)===5');
+  assert(safeNum(Infinity, 0)===0, 'safeNum(Infinity,0)===0');
+  assert(safeNum('1.234,56')===1234.56, "safeNum('1.234,56')===1234.56");
+
+  // euro formatting
+  assert(euro(0)===(CFG.moneda||'$')+' 0,00', 'euro(0) format');
+  assert(euro(1234.5)===(CFG.moneda||'$')+' 1234,50', 'euro(1234.5) format');
+
+  // fmtBs
+  assert(fmtBs(0)==='0,00', 'fmtBs(0)');
+  assert(fmtBs(1234567.89)==='1.234.567,89', 'fmtBs(1234567.89)');
+  assert(fmtBs(99.1)==='99,10', 'fmtBs(99.1)');
+
+  // pedidoTotalCDifCalc — with known inputs
+  const testPed = {
+    subtotal: 100, descuento: 10,
+    delivery_usd: 5, envio_usd: 3, diseno_usd: 2, extras_usd: 0,
+    items: [], pagos: []
+  };
+  // With dif=1.05: productos=(100-10)*1.05=94.5, extras=10, total=104.5
+  const r1 = pedidoTotalCDifCalc(testPed, 1.05);
+  assert(r1===104.5, 'pedidoTotalCDifCalc dif=1.05 → 104.5, got '+r1);
+  // With dif=1: productos=90, extras=10, total=100
+  const r2 = pedidoTotalCDifCalc(testPed, 1);
+  assert(r2===100, 'pedidoTotalCDifCalc dif=1 → 100, got '+r2);
+
+  // pedidoSaldoCDif — with payments
+  const testPed2 = {
+    subtotal: 50, descuento: 0,
+    delivery_usd: 0, envio_usd: 0, diseno_usd: 0, extras_usd: 0,
+    items: [], pagos: [{monto:20, metodo:'usd'}], abono: 0
+  };
+  // dif=1: total=50, pagado=20*1=20, saldo=30
+  const s1 = pedidoSaldoCDif(testPed2, 1);
+  assert(s1===30, 'pedidoSaldoCDif saldo=30, got '+s1);
+  // dif=1.1: total=50*1.1=55, pagado=20*1.1=22, saldo=33
+  const s2 = pedidoSaldoCDif(testPed2, 1.1);
+  assert(s2===33, 'pedidoSaldoCDif dif=1.1 saldo=33, got '+s2);
+
+  // Fully paid order
+  const testPed3 = {
+    subtotal: 100, descuento: 0,
+    delivery_usd: 0, envio_usd: 0, diseno_usd: 0, extras_usd: 0,
+    items: [], pagos: [{monto:100, metodo:'usd'}], abono: 0
+  };
+  const s3 = pedidoSaldoCDif(testPed3, 1);
+  assert(s3===0, 'pedidoSaldoCDif fully paid → 0, got '+s3);
+
+  // esc() — XSS prevention
+  assert(esc('<script>')===  '&lt;script&gt;', 'esc escapes <script>');
+  assert(esc('"hello"')==='&quot;hello&quot;', 'esc escapes quotes');
+  assert(esc(null)==='', 'esc(null) → empty');
+
+  const elapsed = Math.round(performance.now()-t0);
+  const total = pass+fail;
+  if(fail===0){
+    console.log('%c[TESTS] '+pass+'/'+total+' pasaron ('+elapsed+'ms) ✓', 'color:#22c55e;font-weight:bold');
+  } else {
+    console.warn('[TESTS] '+fail+'/'+total+' FALLARON ('+pass+' pasaron, '+elapsed+'ms)');
+  }
+  return {pass, fail, total, elapsed};
+}
+// Auto-run if ?test in URL or localStorage flag
+if(location.search.includes('test') || localStorage.getItem('_gm_tests')==='1'){
+  document.addEventListener('DOMContentLoaded', ()=> setTimeout(_runFinancialTests, 1000));
+}
 </script>
 
 
 <!-- Modal Changelog (lazy) -->
-<div class="modal-bg" id="m-changelog" onclick="if(event.target===this)closeModal('m-changelog')">
-  <div class="modal" style="max-width:680px;max-height:80vh;overflow-y:auto">
+<div class="modal-bg" id="m-changelog" onclick="if(event.target===this)closeModal('m-changelog')" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:680px;max-height:80vh;overflow-y:auto">
     <div class="modal-hd">
       <h3 style="font-size:16px;font-weight:600">Historial de cambios</h3>
       <button class="modal-x" onclick="closeModal('m-changelog')" aria-label="Cerrar">&times;</button>
