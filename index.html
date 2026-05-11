@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_34">
+<html lang="es" data-app-version="GestioMada_V14_35">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -2692,7 +2692,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.32: Arquitectura — 17 CSS design tokens (--sp-xs a --sp-2xl, --r-sm a --r-pill, --fs-xs a --fs-2xl, --font, --transition). Aplicados a .btn, .modal, .card y body como convención. Suite de tests de regresión para cálculos financieros: 28 assertions cubriendo round2, parseEU, safeNum, euro, fmtBs, pedidoTotalCDifCalc, pedidoSaldoCDif, esc. Se activan con ?test en URL o localStorage._gm_tests=1. v14.31: Accesibilidad — role="dialog" y aria-modal="true" en los 21 modales. aria-label en 10 botones de solo ícono (editar, duplicar, eliminar, anular, imprimir). tabindex="-1" en contenedores .modal para recibir foco al abrir. openModal() ahora enfoca el modal abierto. Contraste dark mode verificado (7.4:1 y 6.9:1 — supera WCAG AA). v14.30: Migración agresiva de fotos base64 — al cargar, sube fotos pendientes a Supabase Storage y limpia base64 del localStorage. Monitor de almacenamiento mejorado con desglose de las 3 keys más pesadas y botón de limpieza manual. SW resiliente: install ya no falla si un ícono o manifest no se descarga. Mensajes de error de actualización PWA más descriptivos. v14.29: Resiliencia y UX — openModal/closeModal mejorados con stack de modales, scroll lock del body, y cierre con Escape (closeTopModal). Modal de usuarios unificado al sistema centralizado. Nuevo helper safeNum(v, fallback) para validar inputs numéricos de forma segura (NaN/Infinity → fallback). v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.35: Limpieza profunda de localStorage — _migrarFotosBase64() ahora cubre 3 fuentes de peso oculto: (1) fotos base64 dentro del campo calculo embebido en productos del catálogo (POS.cat), (2) fotos base64 en productos personalizables del editor (POS.pers), (3) fotos directas del catálogo (ya existente). Al crear producto desde el editor, calculo.foto se limpia preventivamente para no duplicar base64 en localStorage. Botón de limpieza manual renombrado a "Limpiar fotos base64 (catálogo + editor)". v14.32: Arquitectura — 17 CSS design tokens (--sp-xs a --sp-2xl, --r-sm a --r-pill, --fs-xs a --fs-2xl, --font, --transition). Aplicados a .btn, .modal, .card y body como convención. Suite de tests de regresión para cálculos financieros: 28 assertions cubriendo round2, parseEU, safeNum, euro, fmtBs, pedidoTotalCDifCalc, pedidoSaldoCDif, esc. Se activan con ?test en URL o localStorage._gm_tests=1. v14.31: Accesibilidad — role="dialog" y aria-modal="true" en los 21 modales. aria-label en 10 botones de solo ícono (editar, duplicar, eliminar, anular, imprimir). tabindex="-1" en contenedores .modal para recibir foco al abrir. openModal() ahora enfoca el modal abierto. Contraste dark mode verificado (7.4:1 y 6.9:1 — supera WCAG AA). v14.30: Migración agresiva de fotos base64 — al cargar, sube fotos pendientes a Supabase Storage y limpia base64 del localStorage. Monitor de almacenamiento mejorado con desglose de las 3 keys más pesadas y botón de limpieza manual. SW resiliente: install ya no falla si un ícono o manifest no se descarga. Mensajes de error de actualización PWA más descriptivos. v14.29: Resiliencia y UX — openModal/closeModal mejorados con stack de modales, scroll lock del body, y cierre con Escape (closeTopModal). Modal de usuarios unificado al sistema centralizado. Nuevo helper safeNum(v, fallback) para validar inputs numéricos de forma segura (NaN/Infinity → fallback). v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
         </div>
       </div>
 
@@ -4369,43 +4369,70 @@ function _offlineInit(){
 // Fase A: eliminar base64 de productos que ya tienen foto_url en Supabase
 // Fase B: subir a Supabase Storage las fotos que solo existen como base64, luego limpiar
 async function _migrarFotosBase64(){
+  let limpiados=0, subidos=0;
+  // ── 1. POS.cat: fotos directas + fotos ocultas dentro de calculo ──
   try{
     const raw=localStorage.getItem('POS.cat');
-    if(!raw) return;
-    const cat=JSON.parse(raw);
-    let limpiados=0, subidos=0;
-    // Fase A: limpiar base64 redundantes (ya tienen foto_url)
-    cat.forEach(p=>{
-      if(p.foto && p.foto.startsWith('data:') && p.foto_url && p.foto_url.startsWith('http')){
-        p.foto=''; limpiados++;
-      }
-    });
-    // Fase B: subir fotos que solo existen como base64 (si hay Supabase)
-    if(window._supaConectado && typeof subirFotoStorage==='function'){
-      const pendientes=cat.filter(p=>p.foto && p.foto.startsWith('data:') && (!p.foto_url || !p.foto_url.startsWith('http')));
-      for(const p of pendientes){
-        try{
-          const url=await subirFotoStorage(p.foto, 'prod_'+p.id);
-          if(url){
-            p.foto_url=url; p.foto=''; subidos++;
-            // Sync al servidor
-            if(typeof syncProductoAhora==='function') syncProductoAhora(p);
-          }
-        }catch(e){ console.warn('[Migración] No se pudo subir foto de',p.nombre,e); }
-      }
-    }
-    // Si no hay Supabase, limpiar base64 de todas formas (la foto se pierde pero se libera espacio)
-    if(!window._supaConectado){
+    if(raw){
+      const cat=JSON.parse(raw);
+      // Fase A: limpiar base64 redundantes (ya tienen foto_url)
       cat.forEach(p=>{
-        if(p.foto && p.foto.startsWith('data:')){ p.foto=''; limpiados++; }
+        if(p.foto && p.foto.startsWith('data:') && p.foto_url && p.foto_url.startsWith('http')){
+          p.foto=''; limpiados++;
+        }
+        // Limpiar foto base64 oculta dentro de calculo (editor embebido)
+        if(p.calculo && typeof p.calculo==='object' && p.calculo.foto && p.calculo.foto.startsWith('data:')){
+          p.calculo.foto=''; limpiados++;
+        }
       });
+      // Fase B: subir fotos que solo existen como base64 (si hay Supabase)
+      if(window._supaConectado && typeof subirFotoStorage==='function'){
+        const pendientes=cat.filter(p=>p.foto && p.foto.startsWith('data:') && (!p.foto_url || !p.foto_url.startsWith('http')));
+        for(const p of pendientes){
+          try{
+            const url=await subirFotoStorage(p.foto, 'prod_'+p.id);
+            if(url){
+              p.foto_url=url; p.foto=''; subidos++;
+              if(p.calculo && typeof p.calculo==='object') p.calculo.foto='';
+              if(typeof syncProductoAhora==='function') syncProductoAhora(p);
+            }
+          }catch(e){ console.warn('[Migración] No se pudo subir foto de',p.nombre,e); }
+        }
+      }
+      // Sin Supabase: limpiar base64 de todas formas
+      if(!window._supaConectado){
+        cat.forEach(p=>{
+          if(p.foto && p.foto.startsWith('data:')){ p.foto=''; limpiados++; }
+          if(p.calculo && typeof p.calculo==='object' && p.calculo.foto && p.calculo.foto.startsWith('data:')){ p.calculo.foto=''; limpiados++; }
+        });
+      }
+      if(limpiados>0||subidos>0){
+        localStorage.setItem('POS.cat', JSON.stringify(cat));
+      }
     }
-    if(limpiados>0||subidos>0){
-      localStorage.setItem('POS.cat', JSON.stringify(cat));
-      console.log('[Migración] Fotos base64: '+limpiados+' eliminadas, '+subidos+' subidas a Storage');
-      if(subidos>0) toast(subidos+' foto(s) migrada(s) a la nube','ok');
+  }catch(e){ console.warn('[Migración] Error limpiando fotos POS.cat',e); }
+  // ── 2. POS.pers: fotos base64 de productos personalizables ──
+  try{
+    const rawP=localStorage.getItem('POS.pers');
+    if(rawP){
+      const pers=JSON.parse(rawP);
+      let persLimpiados=0;
+      pers.forEach(p=>{
+        if(p.foto && typeof p.foto==='string' && p.foto.startsWith('data:')){
+          p.foto=''; persLimpiados++;
+        }
+      });
+      if(persLimpiados>0){
+        localStorage.setItem('POS.pers', JSON.stringify(pers));
+        limpiados+=persLimpiados;
+        console.log('[Migración] POS.pers: '+persLimpiados+' fotos base64 eliminadas');
+      }
     }
-  }catch(e){ console.warn('[Migración] Error limpiando fotos base64',e); }
+  }catch(e){ console.warn('[Migración] Error limpiando fotos POS.pers',e); }
+  if(limpiados>0||subidos>0){
+    console.log('[Migración] Total fotos base64: '+limpiados+' eliminadas, '+subidos+' subidas a Storage');
+    if(subidos>0) toast(subidos+' foto(s) migrada(s) a la nube','ok');
+  }
 }
 
 // ── Monitor de uso de localStorage ──
@@ -4426,7 +4453,7 @@ function renderLsMonitor(){
   try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); const sz=Math.round((k.length+(localStorage.getItem(k)||'').length)*2/1024); items.push({k,sz}); } }catch(e){}
   items.sort((a,b)=>b.sz-a.sz);
   const top3=items.slice(0,3).map(i=>i.k.replace('POS.','')+'&nbsp;('+i.sz+'&nbsp;KB)').join(', ');
-  el.innerHTML='<span style="font-size:12px;color:var(--muted)">Almacenamiento local: <strong>'+kb+' KB</strong> de ~5.120 KB ('+pct+'%)</span><div class="ls-meter"><div class="ls-meter-fill" style="width:'+pct+'%;background:'+color+'"></div></div><div style="font-size:11px;color:var(--muted);margin-top:4px">Mayor uso: '+top3+'</div>'+(pct>60?'<button class="btn btn-sm" style="margin-top:6px;font-size:11px" onclick="_limpiarFotosBase64Manual()">Limpiar fotos base64 del catálogo</button>':'');
+  el.innerHTML='<span style="font-size:12px;color:var(--muted)">Almacenamiento local: <strong>'+kb+' KB</strong> de ~5.120 KB ('+pct+'%)</span><div class="ls-meter"><div class="ls-meter-fill" style="width:'+pct+'%;background:'+color+'"></div></div><div style="font-size:11px;color:var(--muted);margin-top:4px">Mayor uso: '+top3+'</div>'+(pct>60?'<button class="btn btn-sm" style="margin-top:6px;font-size:11px" onclick="_limpiarFotosBase64Manual()">Limpiar fotos base64 (catálogo + editor)</button>':'');
 }
 async function _limpiarFotosBase64Manual(){
   toast('Limpiando fotos base64…','info');
@@ -5078,6 +5105,8 @@ function confirmarCatalogo(){
   const fotoLocal = fotoPendienteStorage ? '' : _foto3;
   const fotoUrlExistente = ei>=0 ? (cat[ei].foto_url||'') : '';
   const nuevo={ id:prodId, nombre:nom, sku:skuFinal, categoria:qs('#mc_cat').value, foto:fotoLocal, foto_url:fotoPendienteStorage?'':fotoUrlExistente, costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, modo_inventario:modoInv, inv_loc:invLoc, moneda_prod:monedaProd, insumos_receta:receta, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
+  // No embeber foto base64 dentro de calculo — ocupa MB redundantes en localStorage
+  if(nuevo.calculo && typeof nuevo.calculo==='object' && nuevo.calculo.foto && nuevo.calculo.foto.startsWith('data:')) nuevo.calculo.foto='';
   let _prodSyncEd;
   if(ei>=0){ if(!confirm('Ya existe "'+nom+'". ¿Actualizar?')) return; cat[ei]={...cat[ei],...nuevo,id:cat[ei].id}; _prodSyncEd=cat[ei]; }
   else{ cat.push(nuevo); _prodSyncEd=nuevo; }
@@ -14109,7 +14138,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_34';
+  const APP_VERSION = 'v14_35';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
