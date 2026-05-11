@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_36">
+<html lang="es" data-app-version="GestioMada_V14_38">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -5642,7 +5642,7 @@ function verCliente(idx){
     </div>
     ${pagosPendientesCli(c)}
     ${historialCli(c)}
-    <p class="muted" style="margin-top:10px;font-size:11px">Registrado: ${new Date(c.fecha).toLocaleDateString('es-ES')}</p>`;
+    <p class="muted" style="margin-top:10px;font-size:11px">Registrado: ${cliFechaTxt(c.fecha)}</p>`;
   openModal('m-ver-cli');
 }
 function editarCliente(){
@@ -5658,46 +5658,60 @@ function editarCliente2(idx){ _cliIdx=idx; editarCliente(); }
 function eliminarCliente(){ if(_cliIdx===null) return; eliminarCliente2(_cliIdx); closeModal('m-ver-cli'); }
 async function eliminarCliente2(idx){ const all=loadCli(); if(!confirm('¿Eliminar a "'+esc(all[idx].nombre)+'"?')) return; const _id=all[idx].id; all.splice(idx,1); _lsSet(LS_CLI,JSON.stringify(all)); await deleteFromSupabase('clientes',_id); saveCli(all); renderClientes(); renderDash(); toast('Cliente eliminado','ok'); _cliIdx=null; }
 
+function cliIdEq(a,b){ return String(a ?? '') === String(b ?? ''); }
+function cliMovFecha(o){
+  return (o && (o.fecha || o.fecha_pedido || o.fecha_entrega || o.fecha_creado || o.created_at)) || '';
+}
+function cliFechaVal(v){
+  const t = Date.parse(v || '');
+  return Number.isFinite(t) ? t : 0;
+}
+function cliFechaTxt(v, opts){
+  const t = cliFechaVal(v);
+  return t ? new Date(t).toLocaleDateString('es-ES', opts || undefined) : '—';
+}
 function calcTotalCli(c){
-  const vens=loadVen().filter(v=>v.cliente&&v.cliente.id===c.id&&v.estado!=='anulada');
-  const peds=loadPed().filter(p=>p.cliente&&p.cliente.id===c.id);
-  const totalV=vens.reduce((s,v)=>s+(v.total||0),0);
-  const totalP=peds.reduce((s,p)=>s+(p.pagado||0),0);
+  const cid = c && c.id;
+  const vens=loadVen().filter(v=>v.cliente&&cliIdEq(v.cliente.id,cid)&&v.estado!=='anulada');
+  const peds=loadPed().filter(p=>p.cliente&&cliIdEq(p.cliente.id,cid));
+  const totalV=vens.reduce((s,v)=>s+(parseFloat(v.total)||0),0);
+  const totalP=peds.reduce((s,p)=>s+((p.pagos||[]).reduce((a,pg)=>a+(parseFloat(pg.monto)||0),0)+(parseFloat(p.abono)||0)),0);
   return totalV+totalP;
 }
 function ultimaCompraCli(c){
-  const vens=loadVen().filter(v=>v.cliente&&v.cliente.id===c.id&&v.estado!=='anulada');
-  const peds=loadPed().filter(p=>p.cliente&&p.cliente.id===c.id);
-  const fechas=[...vens.map(v=>v.fecha),...peds.map(p=>p.fecha)].filter(Boolean).sort().reverse();
+  const cid = c && c.id;
+  const vens=loadVen().filter(v=>v.cliente&&cliIdEq(v.cliente.id,cid)&&v.estado!=='anulada');
+  const peds=loadPed().filter(p=>p.cliente&&cliIdEq(p.cliente.id,cid));
+  const fechas=[...vens.map(cliMovFecha),...peds.map(cliMovFecha)].filter(Boolean).sort((a,b)=>cliFechaVal(b)-cliFechaVal(a));
   if(!fechas.length) return '—';
-  return new Date(fechas[0]).toLocaleDateString('es-ES');
+  return cliFechaTxt(fechas[0]);
 }
 function verHistorialCompleto(cliId){
-  const all=loadCli(); const idx=all.findIndex(c=>c.id===cliId); if(idx<0) return;
+  const all=loadCli(); const idx=all.findIndex(c=>cliIdEq(c.id,cliId)); if(idx<0) return;
   const c=all[idx];
-  const allVens=loadVen().filter(v=>v.cliente&&v.cliente.id===c.id&&v.estado!=='anulada');
-  const allPeds=loadPed().filter(p=>p.cliente&&p.cliente.id===c.id);
+  const allVens=loadVen().filter(v=>v.cliente&&cliIdEq(v.cliente.id,c.id)&&v.estado!=='anulada');
+  const allPeds=loadPed().filter(p=>p.cliente&&cliIdEq(p.cliente.id,c.id));
   const items=[
-    ...allPeds.map(p=>({tipo:'pedido',fecha:p.fecha,numero:p.numero,estado:p.estado,total:p.total||0,id:p.id})),
-    ...allVens.map(v=>({tipo:'venta',fecha:v.fecha,numero:v.numero,estado:'completada',total:v.total||0,id:v.id}))
-  ].sort((a,b)=>b.fecha.localeCompare(a.fecha));
-  const CHIP_COLOR={pendiente:'chip-warn',produccion:'chip-info',impresion:'chip-info',listo:'chip-ok',entregado:'chip-ok',cancelado:'chip-danger',completada:'chip-ok'};
+    ...allPeds.map(p=>({tipo:'pedido',fecha:cliMovFecha(p),numero:p.numero||'',estado:p.estado||'',total:parseFloat(p.total)||0,id:p.id})),
+    ...allVens.map(v=>({tipo:'venta',fecha:cliMovFecha(v),numero:v.numero||'',estado:'completada',total:parseFloat(v.total)||0,id:v.id}))
+  ].sort((a,b)=>cliFechaVal(b.fecha)-cliFechaVal(a.fecha));
   const LABEL={pendiente:'Pendiente',produccion:'En prod.',impresion:'Impresión',listo:'Listo',entregado:'Entregado',cancelado:'Cancelado',completada:'Completada'};
   const win=window.open('','_blank','width=520,height=700');
+  if(!win){ toast('No se pudo abrir el historial. Revisa el bloqueador de ventanas.','warn'); return; }
   const rows=items.map(it=>{
-    const fecha=new Date(it.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    const fecha=cliFechaTxt(it.fecha,{day:'2-digit',month:'2-digit',year:'2-digit'});
     const esPed=it.tipo==='pedido';
     return `<tr style="border-bottom:1px solid #eee">
       <td style="padding:7px 4px;font-size:12px;color:#888">${fecha}</td>
-      <td style="padding:7px 4px;font-weight:600;font-size:13px">${esPed?'Pedido':'Venta'} ${it.numero}</td>
-      <td style="padding:7px 4px"><span style="background:${it.estado==='completada'||it.estado==='entregado'||it.estado==='listo'?'#dcfce7':'#fef3c7'};color:${it.estado==='cancelado'?'#991b1b':'#1a6b3c'};border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700">${LABEL[it.estado]||it.estado}</span></td>
+      <td style="padding:7px 4px;font-weight:600;font-size:13px">${esPed?'Pedido':'Venta'} ${esc(it.numero)}</td>
+      <td style="padding:7px 4px"><span style="background:${it.estado==='completada'||it.estado==='entregado'||it.estado==='listo'?'#dcfce7':'#fef3c7'};color:${it.estado==='cancelado'?'#991b1b':'#1a6b3c'};border-radius:999px;padding:2px 8px;font-size:10px;font-weight:700">${LABEL[it.estado]||esc(it.estado)||'—'}</span></td>
       <td style="padding:7px 4px;text-align:right;font-weight:700">${euro(it.total)}</td>
     </tr>`;
   }).join('');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Historial ${c.nombre}</title>
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Historial ${esc(c.nombre||'Cliente')}</title>
   <style>body{font-family:Arial,sans-serif;padding:20px;font-size:13px;color:#111}h2{margin:0 0 4px}p{color:#666;margin:0 0 16px}table{width:100%;border-collapse:collapse}th{font-size:10px;text-transform:uppercase;color:#888;text-align:left;padding:6px 4px;border-bottom:2px solid #ddd}td{vertical-align:middle}tfoot td{font-weight:700;font-size:14px;padding-top:10px;border-top:2px solid #ddd}@media print{body{padding:0}}</style></head>
-  <body><h2>${c.nombre} ${c.apellido||''}</h2>
-  <p>${c.cedula||''} ${c.telefono?'· '+c.telefono:''} · ${items.length} movimientos</p>
+  <body><h2>${esc(c.nombre||'')} ${esc(c.apellido||'')}</h2>
+  <p>${esc(c.cedula||'')} ${c.telefono?'· '+esc(c.telefono):''} · ${items.length} movimientos</p>
   <table><thead><tr><th>Fecha</th><th>Referencia</th><th>Estado</th><th style="text-align:right">Total</th></tr></thead>
   <tbody>${rows}</tbody>
   <tfoot><tr><td colspan="3">Total acumulado</td><td style="text-align:right">${euro(items.reduce((s,i)=>s+i.total,0))}</td></tr></tfoot>
@@ -5705,30 +5719,32 @@ function verHistorialCompleto(cliId){
   win.document.close();
 }
 function pagosPendientesCli(c){
+  const cid = c && c.id;
   const pedsPend = loadPed().filter(p =>
-    p.cliente && p.cliente.id === c.id &&
+    p.cliente && cliIdEq(p.cliente.id,cid) &&
     p.estado !== 'cancelado' && p.estado !== 'entregado'
   ).filter(p => {
-    const pagado = (p.pagos||[]).reduce((a,pg)=>a+pg.monto,0) + (p.abono||0);
-    return (typeof pedidoSaldoCDif==='function' ? pedidoSaldoCDif(p) : Math.max(0, (p.total||0) - pagado)) > 0;
+    const pagado = (p.pagos||[]).reduce((a,pg)=>a+(parseFloat(pg.monto)||0),0) + (parseFloat(p.abono)||0);
+    return (typeof pedidoSaldoCDif==='function' ? pedidoSaldoCDif(p) : Math.max(0, (parseFloat(p.total)||0) - pagado)) > 0;
   });
   if(!pedsPend.length) return '';
 
   const html = pedsPend.map(p => {
-    const pagado = (p.pagos||[]).reduce((a,pg)=>a+pg.monto,0) + (p.abono||0);
-    const restante = Math.max(0, (p.total||0) - pagado);
-    const pct = p.total > 0 ? Math.round((pagado/p.total)*100) : 0;
+    const pagado = (p.pagos||[]).reduce((a,pg)=>a+(parseFloat(pg.monto)||0),0) + (parseFloat(p.abono)||0);
+    const restante = (typeof pedidoSaldoCDif==='function') ? pedidoSaldoCDif(p) : Math.max(0, (parseFloat(p.total)||0) - pagado);
+    const total = parseFloat(p.total)||0;
+    const pct = total > 0 ? Math.max(0,Math.min(100,Math.round((pagado/total)*100))) : 0;
     const ESTADO_COLOR = {pendiente:'#f59e0b',produccion:'#3b82f6',impresion:'#8b5cf6',listo:'#22c55e'};
     return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border)">
       <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:700">${p.numero}</div>
+        <div style="font-size:12px;font-weight:700">${esc(p.numero||'Pedido')}</div>
         <div style="font-size:11px;color:var(--muted)">${p.fecha_entrega?'Entrega: '+fmtFecha(p.fecha_entrega):''}</div>
         <div style="margin-top:4px;height:4px;border-radius:2px;background:var(--border);overflow:hidden">
           <div style="height:100%;width:${pct}%;background:${ESTADO_COLOR[p.estado]||'var(--brand)'};border-radius:2px;transition:width .3s"></div>
         </div>
       </div>
       <div style="text-align:right;flex-shrink:0">
-        <div style="font-size:11px;color:var(--muted)">Total ${euro(p.total||0)}</div>
+        <div style="font-size:11px;color:var(--muted)">Total ${euro(total)}</div>
         <div style="font-size:13px;font-weight:700;color:var(--danger)">Debe ${euro(restante)}</div>
       </div>
     </div>`;
@@ -5744,14 +5760,14 @@ function pagosPendientesCli(c){
   <div class="sep"></div>`;
 }
 function historialCli(c){
-  const allVens=loadVen().filter(v=>v.cliente&&v.cliente.id===c.id&&v.estado!=='anulada');
-  const allPeds=loadPed().filter(p=>p.cliente&&p.cliente.id===c.id);
+  const cid = c && c.id;
+  const allVens=loadVen().filter(v=>v.cliente&&cliIdEq(v.cliente.id,cid)&&v.estado!=='anulada');
+  const allPeds=loadPed().filter(p=>p.cliente&&cliIdEq(p.cliente.id,cid));
   if(!allVens.length&&!allPeds.length) return '<p style="font-size:12px;color:var(--muted);margin-top:6px">Sin historial de compras aún.</p>';
-  // Unir y ordenar por fecha desc
   const items=[
-    ...allPeds.map(p=>({tipo:'pedido',fecha:p.fecha,numero:p.numero,estado:p.estado,total:p.total||0,id:p.id})),
-    ...allVens.map(v=>({tipo:'venta',fecha:v.fecha,numero:v.numero,estado:'completada',total:v.total||0,id:v.id}))
-  ].sort((a,b)=>b.fecha.localeCompare(a.fecha));
+    ...allPeds.map(p=>({tipo:'pedido',fecha:cliMovFecha(p),numero:p.numero||'',estado:p.estado||'',total:parseFloat(p.total)||0,id:p.id})),
+    ...allVens.map(v=>({tipo:'venta',fecha:cliMovFecha(v),numero:v.numero||'',estado:'completada',total:parseFloat(v.total)||0,id:v.id}))
+  ].sort((a,b)=>cliFechaVal(b.fecha)-cliFechaVal(a.fecha));
   const CHIP_COLOR={pendiente:'chip-warn',produccion:'chip-info',impresion:'chip-info',listo:'chip-ok',entregado:'chip-ok',cancelado:'chip-danger',completada:'chip-ok'};
   const LABEL={pendiente:'Pendiente',produccion:'En prod.',impresion:'Impresión',listo:'Listo',entregado:'Entregado',cancelado:'Cancelado',completada:'Completada'};
   const mostrar=items.slice(0,10);
@@ -5759,15 +5775,15 @@ function historialCli(c){
   let html=`<div style="margin-top:8px">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <label style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)">Historial de compras (${items.length})</label>
-      ${hayMas?`<button class="btn btn-sm" style="font-size:11px" onclick="this.closest('[id]');verHistorialCompleto(${JSON.stringify(c.id)})">Ver todos</button>`:''}
+      ${hayMas?`<button class="btn btn-sm" style="font-size:11px" onclick="verHistorialCompleto(${JSON.stringify(c.id)})">Ver todos</button>`:''}
     </div>`;
   mostrar.forEach(it=>{
-    const fecha=new Date(it.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'2-digit'});
+    const fecha=cliFechaTxt(it.fecha,{day:'2-digit',month:'2-digit',year:'2-digit'});
     const esPed=it.tipo==='pedido';
     html+=`<div style="display:flex;align-items:center;gap:8px;font-size:12px;padding:6px 0;border-bottom:0.5px solid var(--border)">
       <span style="color:var(--muted);white-space:nowrap;min-width:52px">${fecha}</span>
-      <span style="flex:1;font-weight:600">${esPed?'Ped.':'Vta.'} ${it.numero}</span>
-      <span class="chip ${CHIP_COLOR[it.estado]||''}" style="font-size:10px">${LABEL[it.estado]||it.estado}</span>
+      <span style="flex:1;font-weight:600">${esPed?'Ped.':'Vta.'} ${esc(it.numero)}</span>
+      <span class="chip ${CHIP_COLOR[it.estado]||''}" style="font-size:10px">${LABEL[it.estado]||esc(it.estado)||'—'}</span>
       <span style="font-weight:700;text-align:right;min-width:60px">${euro(it.total)}</span>
       <button class="btn btn-sm" style="font-size:10px;padding:2px 6px" onclick="closeModal('m-ver-cli');nav('${esPed?'pedidos':'ventas'}',document.querySelector('[data-v=${esPed?'pedidos':'ventas'}]'))">Ver</button>
     </div>`;
@@ -12690,15 +12706,30 @@ function renderFinKpisEjecutivos(){
 /* ══════════════════════════════════════════
    CALCULADORA DE CxC
 ══════════════════════════════════════════ */
+function finPedidoActivoCxC(p){
+  const estado = String(p && p.estado || '').toLowerCase();
+  return !['cancelado','anulado','entregado'].includes(estado);
+}
+function finSaldoPedidoCxC(p){
+  // Usar el mismo motor de Reportes/Pedidos para evitar diferencias entre módulos.
+  if(typeof repRestantePedido === 'function') return repRestantePedido(p);
+  const total = (typeof repTotalPedido === 'function') ? repTotalPedido(p) : (parseFloat(p && p.total)||0);
+  const pagado = (typeof repPagadoPedido === 'function') ? repPagadoPedido(p) : ((p && p.pagos || []).reduce((a,pg)=>a+(parseFloat(pg.monto)||0),0));
+  return Math.max(0, total - pagado);
+}
+function finPagadoPedidoCxC(p){
+  return (typeof repPagadoPedido === 'function') ? repPagadoPedido(p) : ((p && p.pagos || []).reduce((a,pg)=>a+(parseFloat(pg.monto)||0),0));
+}
+function finTotalPedidoCxC(p){
+  return (typeof repTotalPedido === 'function') ? repTotalPedido(p) : (parseFloat(p && p.total)||0);
+}
 function calcularCxCTotales(){
-  const peds = loadPed().filter(p => p.estado !== 'cancelado' && p.estado !== 'anulado');
+  const peds = loadPed().filter(finPedidoActivoCxC);
   let totalUsd = 0;
   const clientesMap = {};
   let cantPedidos = 0;
   peds.forEach(p => {
-    const total = p.total || 0;
-    const pagado = (p.pagos||[]).reduce((a,pg)=>a+(pg.monto||0), 0);
-    const saldo = Math.max(0, total - pagado);
+    const saldo = finSaldoPedidoCxC(p);
     if(saldo > 0.01){
       totalUsd += saldo;
       cantPedidos++;
@@ -12711,9 +12742,7 @@ function calcularCxCTotales(){
 
 /* Calcula el aging de un pedido a partir de su fecha de entrega o creación */
 function calcularAgingPedido(p){
-  const total = p.total || 0;
-  const pagado = (p.pagos||[]).reduce((a,pg)=>a+(pg.monto||0), 0);
-  const saldo = Math.max(0, total - pagado);
+  const saldo = finSaldoPedidoCxC(p);
   if(saldo <= 0.01) return null;
   const hoy = hoyLocal();
   // Usamos fecha de entrega como vencimiento; si no, fecha de creación
@@ -12732,7 +12761,7 @@ function calcularAgingPedido(p){
    TAB 1 — CUENTAS POR COBRAR
 ══════════════════════════════════════════ */
 function renderFinCxC(){
-  const peds = loadPed().filter(p => p.estado !== 'cancelado' && p.estado !== 'anulado');
+  const peds = loadPed().filter(finPedidoActivoCxC);
   const conSaldo = [];
   peds.forEach(p => {
     const ag = calcularAgingPedido(p);
@@ -12805,7 +12834,7 @@ function renderFinCxC(){
     const hace30 = new Date(hoy); hace30.setDate(hace30.getDate()-30);
     const fmtD = d => d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
     const pedRecientes = loadPed().filter(p => (p.fecha_creado||'').slice(0,10) >= fmtD(hace30));
-    const ventas30 = pedRecientes.reduce((a,p)=>a+(p.total||0), 0);
+    const ventas30 = pedRecientes.filter(finPedidoActivoCxC).reduce((a,p)=>a+finTotalPedidoCxC(p), 0);
     const dso = ventas30 > 0 ? Math.round((totalCxC / ventas30) * 30) : 0;
 
     // % vencido
@@ -12967,13 +12996,13 @@ function finCxCWhatsApp(i){
 }
 
 function exportFinCxCCSV(){
-  const peds = loadPed().filter(p => p.estado !== 'cancelado' && p.estado !== 'anulado');
+  const peds = loadPed().filter(finPedidoActivoCxC);
   const rows = [['Pedido','Cliente','Teléfono','Fecha creación','Fecha entrega','Total','Pagado','Saldo','Días vencido','Estado']];
   peds.forEach(p => {
     const ag = calcularAgingPedido(p);
     if(!ag) return;
-    const total = p.total||0;
-    const pagado = (p.pagos||[]).reduce((a,pg)=>a+(pg.monto||0), 0);
+    const total = finTotalPedidoCxC(p);
+    const pagado = finPagadoPedidoCxC(p);
     rows.push([
       p.numero, nombreClientePedido(p)||'Sin cliente', p.cliente?.telefono||'',
       (p.fecha_creado||'').slice(0,10), (p.fecha_entrega||'').slice(0,10),
@@ -13182,8 +13211,8 @@ function renderFinFlujo(){
   const cobrosPorDia = {};
   let cobrosVencidosNoIncluidos = 0;
   peds.forEach(p => {
-    const total = p.total||0;
-    const pagado = (p.pagos||[]).reduce((a,pg)=>a+(pg.monto||0), 0);
+    const total = finTotalPedidoCxC(p);
+    const pagado = finPagadoPedidoCxC(p);
     const saldo = Math.max(0, total - pagado);
     if(saldo <= 0.01) return;
     const fechaVenc = (p.fecha_entrega || p.fecha_creado || fmtD(hoy)).slice(0,10);
@@ -13575,13 +13604,13 @@ function renderDashFinanzas(){
   row.style.display = '';
 
   // ── Por cobrar (CxC) ──
-  const peds = loadPed().filter(p => p.estado !== 'cancelado' && p.estado !== 'anulado');
+  const peds = loadPed().filter(finPedidoActivoCxC);
   let cxcTotal = 0, vencidoTotal = 0;
   let cantPed = 0, cantVencidos = 0;
   const hoy = hoyLocal();
   peds.forEach(p => {
-    const total = p.total||0;
-    const pagado = (p.pagos||[]).reduce((a,pg)=>a+(pg.monto||0), 0);
+    const total = finTotalPedidoCxC(p);
+    const pagado = finPagadoPedidoCxC(p);
     const saldo = Math.max(0, total - pagado);
     if(saldo <= 0.01) return;
     cxcTotal += saldo;
@@ -13641,8 +13670,8 @@ function renderDashFinanzas(){
   let cobros = 0;
   loadPed().forEach(p => {
     if(p.estado === 'cancelado' || p.estado === 'anulado' || p.estado === 'entregado') return;
-    const total = p.total||0;
-    const pagado = (p.pagos||[]).reduce((a,pg)=>a+(pg.monto||0), 0);
+    const total = finTotalPedidoCxC(p);
+    const pagado = finPagadoPedidoCxC(p);
     const saldo = Math.max(0, total - pagado);
     if(saldo <= 0.01) return;
     const fv = (p.fecha_entrega || p.fecha_creado || fmtD(hoyD)).slice(0,10);
