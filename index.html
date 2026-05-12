@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_44">
+<html lang="es" data-app-version="GestioMada_V14_46">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -654,6 +654,7 @@ async function initSupabaseSync(){
   if(typeof renderDash==='function') renderDash();
   if(typeof updateBadges==='function') updateBadges();
   if(typeof cargarConfigNegocioDesdeNube==='function') cargarConfigNegocioDesdeNube();
+  if(typeof _cargarSesionDesdeNube==='function') _cargarSesionDesdeNube();
   iniciarRealtime();
 }
 
@@ -2739,6 +2740,14 @@ body.dark .pos-prod-img-ph{background:#23283a}
             </div>
             <div style="font-size:11px;color:var(--muted);margin-top:6px">Estos porcentajes se usan para calcular la comisión por producto vendido según su tipo de venta.</div>
           </div>
+          <!-- Auto-apertura de caja -->
+          <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;cursor:pointer;padding:10px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--border);margin-top:10px">
+            <input type="checkbox" id="cfg_caja_auto_apertura" style="margin-top:2px" onchange="guardarConfig()" checked/>
+            <div>
+              <div style="font-weight:600">Auto-apertura de caja</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Si la caja está cerrada y se registra una venta, abono o pago, la caja se abre automáticamente usando los saldos de la última sesión. Desactiva esta opción si prefieres abrir la caja siempre de forma manual.</div>
+            </div>
+          </label>
         </div>
         <!-- Categorías de productos -->
         <div class="card">
@@ -3955,7 +3964,7 @@ const LS_CLI  = 'POS.cli';
 const LS_CFG  = 'POS.cfg';
 
 // ── CONFIG ──
-let CFG = { moneda:'$', negocio:'', telefono:'', tasa_global:0, tasa_bcv:0, tasa_paralela:0, metodos_activos:['efectivo_bs','efectivo_usd','pago_movil','transferencia','zelle'], dif_bloqueado:false, dif_congelado:0, restante_usd_puro:false, tipos_venta_on:false, comision_detal:5, comision_mayor:2 };
+let CFG = { moneda:'$', negocio:'', telefono:'', tasa_global:0, tasa_bcv:0, tasa_paralela:0, metodos_activos:['efectivo_bs','efectivo_usd','pago_movil','transferencia','zelle'], dif_bloqueado:false, dif_congelado:0, restante_usd_puro:false, tipos_venta_on:false, comision_detal:5, comision_mayor:2, caja_auto_apertura:true };
 function loadCfg(){
   try{ CFG = Object.assign(CFG, JSON.parse(localStorage.getItem(LS_CFG)||'{}')); }catch(e){}
   qs('#cfg_neg').value = CFG.negocio||'';
@@ -3985,6 +3994,7 @@ function loadCfg(){
   if(qs('#cfg_tipos_venta_on')) qs('#cfg_tipos_venta_on').checked=CFG.tipos_venta_on||false;
   if(qs('#cfg_comision_detal')) qs('#cfg_comision_detal').value=CFG.comision_detal!=null?String(CFG.comision_detal):'5';
   if(qs('#cfg_comision_mayor')) qs('#cfg_comision_mayor').value=CFG.comision_mayor!=null?String(CFG.comision_mayor):'2';
+  if(qs('#cfg_caja_auto_apertura')) qs('#cfg_caja_auto_apertura').checked=CFG.caja_auto_apertura!==false;
   _aplicarTiposVentaUI();
   // Aplicar categorías dinámicas
   aplicarCategorias();
@@ -4101,7 +4111,7 @@ async function cargarConfigNegocioDesdeNube(){
     let changed = false;
     // Todos los campos que se sincronizan via tabla config
     const camposSyncables = ['negocio','rif','telefono','instagram','direccion','slogan','nota_recibo','logo_url',
-      'dif_bloqueado','dif_congelado','restante_usd_puro','tipos_venta_on','comision_detal','comision_mayor',
+      'dif_bloqueado','dif_congelado','restante_usd_puro','tipos_venta_on','comision_detal','comision_mayor','caja_auto_apertura',
       'tasa_auto','tasa_bcv','tasa_paralela','imp_on','imp_pct','metodos_activos','categorias','moneda','moneda2'];
     data.forEach(row => {
       if(camposSyncables.includes(row.clave)){
@@ -4191,6 +4201,7 @@ function _aplicarConfigEnUI(){
   if(qs('#cfg_tipos_venta_on')) qs('#cfg_tipos_venta_on').checked = CFG.tipos_venta_on || false;
   if(qs('#cfg_comision_detal')) qs('#cfg_comision_detal').value = CFG.comision_detal!=null?String(CFG.comision_detal):'5';
   if(qs('#cfg_comision_mayor')) qs('#cfg_comision_mayor').value = CFG.comision_mayor!=null?String(CFG.comision_mayor):'2';
+  if(qs('#cfg_caja_auto_apertura')) qs('#cfg_caja_auto_apertura').checked = CFG.caja_auto_apertura!==false;
   _aplicarTiposVentaUI();
   // Categorías
   if(typeof aplicarCategorias === 'function') aplicarCategorias();
@@ -4226,6 +4237,16 @@ function _aplicarTiposVentaUI(){
 function _aplicarConfigRemota(clave, valorRaw){
   try {
     const val = JSON.parse(valorRaw);
+    if(clave === 'sesion_caja'){
+      try{ _lsSet(LS_SESION,JSON.stringify(val)); _verificarCierreAutomatico(); if(typeof renderSesionBar==='function') renderSesionBar(); if(typeof renderSaldosMoneda==='function') renderSaldosMoneda(); }catch(e){}
+      console.log('[Config Realtime] sesion_caja actualizada');
+      return;
+    }
+    if(clave === 'sesiones_hist'){
+      try{ _lsSet(LS_SESIONES_HIST,JSON.stringify(val)); }catch(e){}
+      console.log('[Config Realtime] sesiones_hist actualizado');
+      return;
+    }
     if(clave === 'tasa_auto'){
       const cur = localStorage.getItem(LS_TASA_AUTO)==='1';
       if(val !== cur){
@@ -4268,6 +4289,7 @@ async function _sincConfigCompletaSupa(){
       { clave:'tipos_venta_on',   valor: JSON.stringify(CFG.tipos_venta_on||false) },
       { clave:'comision_detal',   valor: JSON.stringify(CFG.comision_detal||5) },
       { clave:'comision_mayor',   valor: JSON.stringify(CFG.comision_mayor||2) },
+      { clave:'caja_auto_apertura',valor: JSON.stringify(CFG.caja_auto_apertura!==false) },
     ];
     await SUPA.from('config').upsert(campos, { onConflict:'clave' });
     console.log('[Config] Configuración completa sincronizada a Supabase');
@@ -4297,6 +4319,7 @@ function guardarConfig(){
   CFG.tipos_venta_on=qs('#cfg_tipos_venta_on')?.checked||false;
   CFG.comision_detal=parseFloat((qs('#cfg_comision_detal')?.value||'5').replace(',','.'))||5;
   CFG.comision_mayor=parseFloat((qs('#cfg_comision_mayor')?.value||'2').replace(',','.'))||2;
+  CFG.caja_auto_apertura=qs('#cfg_caja_auto_apertura')?.checked!==false;
   aplicarMetodosActivos();
   _lsSet(LS_CFG, JSON.stringify(CFG));
   const tbm2=qs('#tb-mon'); if(tbm2) tbm2.textContent=CFG.moneda+' Moneda';
@@ -6803,6 +6826,8 @@ document.addEventListener('DOMContentLoaded',()=>{
     renderDash();
     aplicarMetodosActivos();
     renderCfgPins();
+    // Verificar cierre automático de caja (sesión de día anterior)
+    _verificarCierreAutomatico();
     // Verificar sesión activa (válida y no expirada)
     const sesion = sesionValida();
     if(sesion && ROLES[sesion.rol]){
@@ -7276,9 +7301,115 @@ function _mpmActualizarMonedaInfo(){
 /* Info del selector de moneda en modal editor */
 /* ---- Sesión de caja ---- */
 function loadSesion(){ try{ return JSON.parse(localStorage.getItem(LS_SESION)||'null'); }catch(e){ return null; } }
-function saveSesion(s){ _lsSet(LS_SESION, JSON.stringify(s)); }
+function saveSesion(s){ _lsSet(LS_SESION, JSON.stringify(s)); _syncSesionSupa(s); }
 function loadSesionesHist(){ try{ return JSON.parse(localStorage.getItem(LS_SESIONES_HIST)||'[]'); }catch(e){ return []; } }
-function saveSesionesHist(a){ _lsSet(LS_SESIONES_HIST, JSON.stringify(a)); }
+function saveSesionesHist(a){ _lsSet(LS_SESIONES_HIST, JSON.stringify(a)); _syncHistSupa(a); }
+
+/* ── Sync sesión de caja a Supabase via tabla config ── */
+async function _syncSesionSupa(s){
+  if(!window._supaConectado) return;
+  try{ await SUPA.from('config').upsert({clave:'sesion_caja',valor:JSON.stringify(s)},{onConflict:'clave'}); }catch(e){ console.warn('[Sesion] sync error',e); }
+}
+async function _syncHistSupa(a){
+  if(!window._supaConectado) return;
+  try{ await SUPA.from('config').upsert({clave:'sesiones_hist',valor:JSON.stringify(a)},{onConflict:'clave'}); }catch(e){ console.warn('[SesionHist] sync error',e); }
+}
+async function _cargarSesionDesdeNube(){
+  if(!window._supaConectado) return;
+  try{
+    const {data}=await SUPA.from('config').select('clave,valor').in('clave',['sesion_caja','sesiones_hist']);
+    if(!data) return;
+    data.forEach(row=>{
+      try{
+        const val=JSON.parse(row.valor);
+        if(row.clave==='sesion_caja'){ _lsSet(LS_SESION,JSON.stringify(val)); }
+        if(row.clave==='sesiones_hist'){ _lsSet(LS_SESIONES_HIST,JSON.stringify(val)); }
+      }catch(e){}
+    });
+    // Después de cargar de nube, verificar cierre automático
+    _verificarCierreAutomatico();
+    if(typeof renderSesionBar==='function') renderSesionBar();
+    if(typeof renderSaldosMoneda==='function') renderSaldosMoneda();
+  }catch(e){ console.warn('[Sesion] carga nube error',e); }
+}
+
+/* ── Cierre automático — se ejecuta al cargar la app o al registrar un movimiento ── */
+function _verificarCierreAutomatico(){
+  const ses=loadSesion();
+  if(!ses||ses.estado!=='abierta') return;
+  // Verificar si la sesión pertenece a un día anterior al actual
+  const hoy=hoyLocal();
+  const diaApertura=(ses.abierta_en||'').slice(0,10);
+  // Convertir a fecha local para comparar
+  let diaAperturaLocal=diaApertura;
+  try{ const d=new Date(ses.abierta_en); diaAperturaLocal=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }catch(e){}
+  if(diaAperturaLocal>=hoy) return; // Sesión de hoy, no cerrar
+  // Cerrar automáticamente la sesión del día anterior
+  _ejecutarCierreAutomatico(ses, diaAperturaLocal);
+}
+function _ejecutarCierreAutomatico(ses, diaOriginal){
+  const mov=loadCajaMov().filter(m=>m.fecha===diaOriginal);
+  const INGRESOS=['ingreso','abono','venta'];
+  const ingBs=mov.filter(m=>INGRESOS.includes(m.categoria||m.tipo)&&(m.moneda==='bs'||!m.moneda)).reduce((a,m)=>a+m.monto,0);
+  const ingUsd=mov.filter(m=>INGRESOS.includes(m.categoria||m.tipo)&&m.moneda==='usd').reduce((a,m)=>a+m.monto,0);
+  const gasBs=mov.filter(m=>!INGRESOS.includes(m.categoria||m.tipo)&&(m.moneda==='bs'||!m.moneda)).reduce((a,m)=>a+m.monto,0);
+  const gasUsd=mov.filter(m=>!INGRESOS.includes(m.categoria||m.tipo)&&m.moneda==='usd').reduce((a,m)=>a+m.monto,0);
+  const saldoBs=(ses.apertura_bs||0)+ingBs-gasBs;
+  const saldoUsd=(ses.apertura_usd||0)+ingUsd-gasUsd;
+  ses.estado='cerrada';
+  ses.cerrada_en=diaOriginal+'T23:59:59';
+  ses.cierre_auto=true;
+  ses.resumen={ingBs,ingUsd,gasBs,gasUsd,saldo_bs:saldoBs,saldo_usd:saldoUsd,saldo_manana_bs:saldoBs,saldo_manana_usd:saldoUsd,nota_cierre:'Cierre automático'};
+  const hist=loadSesionesHist(); hist.unshift(ses);
+  if(hist.length>60) hist.length=60;
+  saveSesionesHist(hist);
+  saveSesion(ses);
+  if(typeof renderSesionBar==='function') renderSesionBar();
+  if(typeof renderSaldosMoneda==='function') renderSaldosMoneda();
+  console.log('[Caja] Cierre automático del',diaOriginal);
+}
+
+/* ── Obtener saldos de la última sesión cerrada ── */
+function _saldosUltimaSesion(){
+  // Primero buscar en la sesión actual si está cerrada
+  const ses=loadSesion();
+  if(ses&&ses.estado==='cerrada'&&ses.resumen){
+    return { bs: ses.resumen.saldo_manana_bs||ses.resumen.saldo_bs||0, usd: ses.resumen.saldo_manana_usd||ses.resumen.saldo_usd||0 };
+  }
+  // Si no, buscar en historial
+  const hist=loadSesionesHist();
+  if(hist.length>0&&hist[0].resumen){
+    const r=hist[0].resumen;
+    return { bs: r.saldo_manana_bs||r.saldo_bs||0, usd: r.saldo_manana_usd||r.saldo_usd||0 };
+  }
+  return { bs:0, usd:0 };
+}
+
+/* ── Auto-apertura de caja cuando se registra un movimiento ── */
+function _asegurarCajaAbierta(){
+  const ses=loadSesion();
+  if(ses&&ses.estado==='abierta'){
+    // Verificar que sea del día actual
+    const hoy=hoyLocal();
+    let diaAperturaLocal='';
+    try{ const d=new Date(ses.abierta_en); diaAperturaLocal=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }catch(e){}
+    if(diaAperturaLocal===hoy) return; // ya está abierta hoy
+    // Sesión de otro día — cerrar primero, luego abrir nueva
+    _verificarCierreAutomatico();
+  }
+  // Si auto-apertura está desactivada, no abrir
+  if(CFG.caja_auto_apertura===false) return;
+  // Abrir automáticamente con saldos de la última sesión
+  const saldos=_saldosUltimaSesion();
+  const tasa=CFG.tasa_bcv||loadTasa()||0;
+  const nueva={estado:'abierta',abierta_en:new Date().toISOString(),apertura_bs:saldos.bs,apertura_usd:saldos.usd,tasa:tasa,auto_apertura:true};
+  saveSesion(nueva);
+  if(typeof renderSesionBar==='function') renderSesionBar();
+  if(typeof renderSaldosMoneda==='function') renderSaldosMoneda();
+  const fBs=fmtBs(saldos.bs), fUsd=saldos.usd.toFixed(2).replace('.',',');
+  toast('Caja abierta automáticamente — Bs '+fBs+' / $ '+fUsd,'ok');
+  console.log('[Caja] Apertura automática con saldos Bs:',saldos.bs,'USD:',saldos.usd);
+}
 
 function renderSesionBar(){
   const bar=qs('#caja-sesion-bar'); if(!bar) return;
@@ -7291,8 +7422,8 @@ function renderSesionBar(){
           <div style="font-size:12px;color:var(--muted)">Abre la caja para comenzar a registrar movimientos del día.</div>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
-          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Saldo inicial Bs</label><input type="text" id="apertura_bs" placeholder="0,00" style="width:110px"/></div>
-          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Saldo inicial USD</label><input type="text" id="apertura_usd" placeholder="0,00" style="width:110px"/></div>
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Saldo inicial Bs</label><input type="text" id="apertura_bs" placeholder="0,00" style="width:110px" value="${(()=>{const s=_saldosUltimaSesion();return s.bs>0?fmtBs(s.bs):'';})()}"/></div>
+          <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Saldo inicial USD</label><input type="text" id="apertura_usd" placeholder="0,00" style="width:110px" value="${(()=>{const s=_saldosUltimaSesion();return s.usd>0?s.usd.toFixed(2).replace('.',','):'';})()}"/></div>
           <div><label style="font-size:11px;color:var(--muted);display:block;margin-bottom:3px">Tasa BCV (Bs/$)</label><input type="text" id="apertura_tasa" placeholder="0,00" style="width:110px" value="${CFG.tasa_bcv>0?String(CFG.tasa_bcv).replace('.',','):(loadTasa()>0?String(loadTasa()).replace('.',','):'')}"
            oninput="saveTasa(parseEU(this.value))"/></div>
           <button class="btn btn-brand" onclick="abrirSesion()">Abrir caja</button>
@@ -8355,6 +8486,7 @@ function posCobrar(){
     ref_id: venta.id, ref_tipo:'venta',
     fecha: hoyLocal()
   };
+  _asegurarCajaAbierta();
   const cajaAll = loadCajaMov(); cajaAll.push(mov); saveCajaMov(cajaAll);
   upsertCajaMov(mov); // ← solo este movimiento
 
@@ -8671,6 +8803,7 @@ function guardarVenta(){
     ref_id:venta.id, ref_tipo:'venta',
     fecha:hoyLocal()
   };
+  _asegurarCajaAbierta();
   const cajaAll=loadCajaMov(); cajaAll.push(mov); saveCajaMov(cajaAll);
   upsertCajaMov(mov); // ← solo este movimiento
 
@@ -9229,6 +9362,7 @@ function guardarMovimiento(){
     mov.pedido_numero = ped.numero;
   }
 
+  _asegurarCajaAbierta();
   const all=loadCajaMov(); all.push(mov); saveCajaMov(all);
   upsertCajaMov(mov); // ← solo este movimiento
 
@@ -10135,6 +10269,7 @@ function guardarPedido(){
 
   // Si es pedido nuevo y tiene abono → registrar en Caja
   if(esNuevo && abono>0){
+    _asegurarCajaAbierta();
     const cajaAll=loadCajaMov();
     const _metAb=qs('#mp_metodo').value;
     const _mm2=cajaMonedaMonto(_metAb,abono,getTasaBCV(),getDiferencial());
@@ -10946,6 +11081,7 @@ function cobrarYEntregar(){
   upsertPedido(p);
 
   // 3. Registrar pago restante en Caja usando el saldo c/dif exacto
+  _asegurarCajaAbierta();
   const cajaAll = loadCajaMov();
   const _mmE = esBs && bcvHoy>0
     ? { moneda:'bs', monto:restanteBs, monto_bs:restanteBs, monto_usd:restanteUsdBase, tasa:bcvHoy, tasa_paralela:bcvHoy*multHoy }
@@ -11089,6 +11225,7 @@ function registrarPago(){
   upsertPedido(p); // ← solo este pedido
 
   // Registrar en Caja con BCV del día
+  _asegurarCajaAbierta();
   const cajaAll=loadCajaMov();
   const epActual=estadoPago(p);
   const _mmP=cajaMonedaMonto(metodo,montoUsd,bcvHoy,difHoy);
@@ -14489,7 +14626,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_44';
+  const APP_VERSION = 'v14_46';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
