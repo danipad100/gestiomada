@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_43">
+<html lang="es" data-app-version="GestioMada_V14_44">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -4101,7 +4101,7 @@ async function cargarConfigNegocioDesdeNube(){
     let changed = false;
     // Todos los campos que se sincronizan via tabla config
     const camposSyncables = ['negocio','rif','telefono','instagram','direccion','slogan','nota_recibo','logo_url',
-      'dif_bloqueado','dif_congelado','restante_usd_puro',
+      'dif_bloqueado','dif_congelado','restante_usd_puro','tipos_venta_on','comision_detal','comision_mayor',
       'tasa_auto','tasa_bcv','tasa_paralela','imp_on','imp_pct','metodos_activos','categorias','moneda','moneda2'];
     data.forEach(row => {
       if(camposSyncables.includes(row.clave)){
@@ -14489,7 +14489,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_43';
+  const APP_VERSION = 'v14_44';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
