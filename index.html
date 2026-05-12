@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_42">
+<html lang="es" data-app-version="GestioMada_V14_43">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -254,7 +254,7 @@ const upsertComision = r => upsertFila('comisiones', r);
 const LS_COMISIONES = 'POS.comisiones';
 function loadComisiones(){ try{ return JSON.parse(localStorage.getItem(LS_COMISIONES)||'[]'); }catch(e){ return []; } }
 function saveComisiones(a){ _lsSet(LS_COMISIONES, JSON.stringify(a)); }
-const COMISION_PCT = { detal: 5, mayor: 2 };
+function getComisionPct(tipo){ return tipo==='mayor'?(CFG.comision_mayor||2):(CFG.comision_detal||5); }
 
 function generarComisionesVenta(venta){
   // Solo generar si el usuario activo es vendedor
@@ -264,6 +264,8 @@ function generarComisionesVenta(venta){
   // Verificar si el usuario tiene rol vendedor
   const esVendedor = (usr.rol === 'vendedor');
   if(!esVendedor) return;
+  // Si tipos de venta está desactivado, no calcular comisiones
+  if(!CFG.tipos_venta_on) return;
   // Solo para ventas rápidas (no abonos/pagos restantes)
   if(venta.tipo !== 'venta_rapida') return;
 
@@ -275,7 +277,7 @@ function generarComisionesVenta(venta){
     // Buscar el producto en catálogo para obtener tipo_venta
     const prod = cat.find(p => String(p.id) === String(it.id_prod));
     const tipoVenta = prod ? (prod.tipo_venta || 'detal') : 'detal';
-    const pct = COMISION_PCT[tipoVenta] || 5;
+    const pct = getComisionPct(tipoVenta);
     const montoItem = (it.precio_unit || 0) * (it.cant || 1);
     const montoComision = parseFloat((montoItem * pct / 100).toFixed(4));
 
@@ -2365,6 +2367,12 @@ body.dark .pos-prod-img-ph{background:#23283a}
               <div class="frow" style="gap:10px;flex-wrap:wrap;margin-top:4px">
                 <div class="fg" style="min-width:150px;flex:1"><label>Precio manual de venta</label><input type="text" id="pers_precio_manual" placeholder="0,00" oninput="persActualizarMargen()"/></div>
                 <div class="fg" style="min-width:150px;flex:1"><label>Margen real</label><input type="text" id="pers_margen_display" readonly style="color:var(--ok);font-weight:600"/></div>
+                <div class="fg" style="min-width:150px;flex:1"><label>Tipo de venta</label>
+                  <select id="pers_tipo_venta">
+                    <option value="detal">Al detal (5% comisión)</option>
+                    <option value="mayor">Al mayor (2% comisión)</option>
+                  </select>
+                </div>
               </div>
               <div class="fg" style="margin-top:4px"><label>Notas internas</label><textarea id="pers_notas_int" rows="2" placeholder="Instrucciones de producción, materiales, observaciones..."></textarea></div>
             </div>
@@ -2709,6 +2717,28 @@ body.dark .pos-prod-img-ph{background:#23283a}
               <div style="font-size:11px;color:var(--muted);margin-top:2px">Cuando el cliente abona en USD Efectivo o Zelle/Binance, el restante se muestra solo en dólar paralelo (sin diferencial ni equivalente en Bs). Útil para negocios que manejan el restante directamente en dólares.</div>
             </div>
           </label>
+          <!-- Tipos de venta y comisiones -->
+          <label style="display:flex;align-items:flex-start;gap:10px;font-size:13px;cursor:pointer;padding:10px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--border);margin-top:10px">
+            <input type="checkbox" id="cfg_tipos_venta_on" style="margin-top:2px" onchange="guardarConfig();_aplicarTiposVentaUI()"/>
+            <div>
+              <div style="font-weight:600">Activar tipos de venta (Detal / Mayor)</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Permite asignar tipo de venta (detal o mayor) a cada producto con comisión diferenciada. Si está desactivado, todos los productos se tratan igual sin comisión.</div>
+            </div>
+          </label>
+          <div id="cfg_tipos_venta_opts" style="display:none;margin-top:8px;padding:10px 12px;border-radius:10px;background:var(--bg);border:1px solid var(--border)">
+            <div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:8px">Porcentajes de comisión</div>
+            <div class="frow" style="gap:12px;flex-wrap:wrap">
+              <div class="fg" style="min-width:140px;max-width:200px;margin-bottom:0">
+                <label>Detal (%)</label>
+                <input type="text" id="cfg_comision_detal" placeholder="5" value="5"/>
+              </div>
+              <div class="fg" style="min-width:140px;max-width:200px;margin-bottom:0">
+                <label>Mayor (%)</label>
+                <input type="text" id="cfg_comision_mayor" placeholder="2" value="2"/>
+              </div>
+            </div>
+            <div style="font-size:11px;color:var(--muted);margin-top:6px">Estos porcentajes se usan para calcular la comisión por producto vendido según su tipo de venta.</div>
+          </div>
         </div>
         <!-- Categorías de productos -->
         <div class="card">
@@ -3925,7 +3955,7 @@ const LS_CLI  = 'POS.cli';
 const LS_CFG  = 'POS.cfg';
 
 // ── CONFIG ──
-let CFG = { moneda:'$', negocio:'', telefono:'', tasa_global:0, tasa_bcv:0, tasa_paralela:0, metodos_activos:['efectivo_bs','efectivo_usd','pago_movil','transferencia','zelle'], dif_bloqueado:false, dif_congelado:0, restante_usd_puro:false };
+let CFG = { moneda:'$', negocio:'', telefono:'', tasa_global:0, tasa_bcv:0, tasa_paralela:0, metodos_activos:['efectivo_bs','efectivo_usd','pago_movil','transferencia','zelle'], dif_bloqueado:false, dif_congelado:0, restante_usd_puro:false, tipos_venta_on:false, comision_detal:5, comision_mayor:2 };
 function loadCfg(){
   try{ CFG = Object.assign(CFG, JSON.parse(localStorage.getItem(LS_CFG)||'{}')); }catch(e){}
   qs('#cfg_neg').value = CFG.negocio||'';
@@ -3952,6 +3982,10 @@ function loadCfg(){
   const mets=CFG.metodos_activos||['efectivo_bs','efectivo_usd','pago_movil','transferencia','zelle'];
   ['efectivo_bs','efectivo_usd','pago_movil','transferencia','zelle'].forEach(m=>{ const el=qs('#cfg_met_'+m); if(el) el.checked=mets.includes(m); });
   if(qs('#cfg_restante_usd_puro')) qs('#cfg_restante_usd_puro').checked=CFG.restante_usd_puro||false;
+  if(qs('#cfg_tipos_venta_on')) qs('#cfg_tipos_venta_on').checked=CFG.tipos_venta_on||false;
+  if(qs('#cfg_comision_detal')) qs('#cfg_comision_detal').value=CFG.comision_detal!=null?String(CFG.comision_detal):'5';
+  if(qs('#cfg_comision_mayor')) qs('#cfg_comision_mayor').value=CFG.comision_mayor!=null?String(CFG.comision_mayor):'2';
+  _aplicarTiposVentaUI();
   // Aplicar categorías dinámicas
   aplicarCategorias();
   // Migración: convertir productos con moneda_prod 'bs' a 'usd' (precio ya se almacena en USD)
@@ -4153,10 +4187,39 @@ function _aplicarConfigEnUI(){
   aplicarMetodosActivos();
   // Regla restante USD puro
   if(qs('#cfg_restante_usd_puro')) qs('#cfg_restante_usd_puro').checked = CFG.restante_usd_puro || false;
+  // Tipos de venta
+  if(qs('#cfg_tipos_venta_on')) qs('#cfg_tipos_venta_on').checked = CFG.tipos_venta_on || false;
+  if(qs('#cfg_comision_detal')) qs('#cfg_comision_detal').value = CFG.comision_detal!=null?String(CFG.comision_detal):'5';
+  if(qs('#cfg_comision_mayor')) qs('#cfg_comision_mayor').value = CFG.comision_mayor!=null?String(CFG.comision_mayor):'2';
+  _aplicarTiposVentaUI();
   // Categorías
   if(typeof aplicarCategorias === 'function') aplicarCategorias();
   // Persistir tasa BCV
   if(CFG.tasa_bcv > 0) saveTasa(CFG.tasa_bcv);
+}
+
+function _aplicarTiposVentaUI(){
+  const on=CFG.tipos_venta_on||false;
+  const optsPanel=qs('#cfg_tipos_venta_opts'); if(optsPanel) optsPanel.style.display=on?'block':'none';
+  // Show/hide tipo_venta selects in product modals and editor
+  const pctD=CFG.comision_detal||5, pctM=CFG.comision_mayor||2;
+  const lblD='Al detal ('+pctD+'% comisión)', lblM='Al mayor ('+pctM+'% comisión)';
+  ['mpm_tipo_venta','pers_tipo_venta'].forEach(id=>{
+    const sel=qs('#'+id); if(!sel) return;
+    const wrap=sel.closest('.fg'); if(wrap) wrap.style.display=on?'':'none';
+    // Update option labels with current percentages
+    const opts=sel.querySelectorAll('option');
+    opts.forEach(o=>{ if(o.value==='detal') o.textContent=lblD; if(o.value==='mayor') o.textContent=lblM; });
+  });
+  // Update labels in catalog card badges and reportes filter too
+  document.querySelectorAll('option[value="detal"]').forEach(o=>{
+    if(o.closest('#cfg_tipos_venta_opts')) return;
+    const t=o.textContent; if(t.includes('comisión')||t.includes('%')) o.textContent=lblD;
+  });
+  document.querySelectorAll('option[value="mayor"]').forEach(o=>{
+    if(o.closest('#cfg_tipos_venta_opts')) return;
+    const t=o.textContent; if(t.includes('comisión')||t.includes('%')) o.textContent=lblM;
+  });
 }
 
 // ── Aplicar un cambio de config individual recibido por Realtime ──
@@ -4202,6 +4265,9 @@ async function _sincConfigCompletaSupa(){
       { clave:'restante_usd_puro',valor: JSON.stringify(CFG.restante_usd_puro||false) },
       { clave:'dif_bloqueado',    valor: JSON.stringify(CFG.dif_bloqueado||false) },
       { clave:'dif_congelado',    valor: JSON.stringify(CFG.dif_congelado||0) },
+      { clave:'tipos_venta_on',   valor: JSON.stringify(CFG.tipos_venta_on||false) },
+      { clave:'comision_detal',   valor: JSON.stringify(CFG.comision_detal||5) },
+      { clave:'comision_mayor',   valor: JSON.stringify(CFG.comision_mayor||2) },
     ];
     await SUPA.from('config').upsert(campos, { onConflict:'clave' });
     console.log('[Config] Configuración completa sincronizada a Supabase');
@@ -4228,6 +4294,9 @@ function guardarConfig(){
   const mets=[]; ['efectivo_bs','efectivo_usd','pago_movil','transferencia','zelle'].forEach(m=>{ const el=qs('#cfg_met_'+m); if(el&&el.checked) mets.push(m); });
   CFG.metodos_activos=mets.length?mets:['efectivo_bs'];
   CFG.restante_usd_puro=qs('#cfg_restante_usd_puro')?.checked||false;
+  CFG.tipos_venta_on=qs('#cfg_tipos_venta_on')?.checked||false;
+  CFG.comision_detal=parseFloat((qs('#cfg_comision_detal')?.value||'5').replace(',','.'))||5;
+  CFG.comision_mayor=parseFloat((qs('#cfg_comision_mayor')?.value||'2').replace(',','.'))||2;
   aplicarMetodosActivos();
   _lsSet(LS_CFG, JSON.stringify(CFG));
   const tbm2=qs('#tb-mon'); if(tbm2) tbm2.textContent=CFG.moneda+' Moneda';
@@ -4997,7 +5066,7 @@ function persUpdate(){
 
 function persToJSON(){
   const fotoEl=qs('#pers_foto_img'); const foto=fotoEl&&fotoEl.style.display!=='none'?fotoEl.src:'';
-  const d={name:pName.value.trim()||'Producto sin nombre',sku:(qs('#pers_sku')?.value||'').trim(),categoria:(qs('#pers_categoria')?.value||'').trim(),estado:qs('#pers_estado')?.value||'activo',precio_manual:(qs('#pers_precio_manual')?.value||'').trim(),notas_int:(qs('#pers_notas_int')?.value||'').trim(),foto:foto,directos:[],materiales_area:[],depreciacion:[],indirectos:{},mo:{},gi:{}};
+  const d={name:pName.value.trim()||'Producto sin nombre',sku:(qs('#pers_sku')?.value||'').trim(),categoria:(qs('#pers_categoria')?.value||'').trim(),estado:qs('#pers_estado')?.value||'activo',tipo_venta:qs('#pers_tipo_venta')?.value||'detal',precio_manual:(qs('#pers_precio_manual')?.value||'').trim(),notas_int:(qs('#pers_notas_int')?.value||'').trim(),foto:foto,directos:[],materiales_area:[],depreciacion:[],indirectos:{},mo:{},gi:{}};
   pDir.querySelectorAll('.row').forEach(r=>d.directos.push({desc:qs('.p-dir-desc',r)?.value||'',cant:qs('.p-dir-cant',r)?.value||'',precio:qs('.p-dir-precio',r)?.value||'',utilcant:qs('.p-dir-util',r)?.value||''}));
   if(pAreaList) pAreaList.querySelectorAll('.p-area-row').forEach(r=>d.materiales_area.push({nombre:qs('.p-ar-name',r)?.value||'',modo:qs('.p-ar-mode',r)?.value||'cm2',precio_cm2:qs('.p-ar-pcm2',r)?.value||'',precio_rollo:qs('.p-ar-prollo',r)?.value||'',ancho_rollo:qs('.p-ar-ancho',r)?.value||'',largo_rollo:qs('.p-ar-largo',r)?.value||'',ancho_uso:qs('.p-ar-ua',r)?.value||'',alto_uso:qs('.p-ar-uh',r)?.value||'',cantidad:qs('.p-ar-cant',r)?.value||'',merma:qs('.p-ar-merma',r)?.value||''}));
   pDep.querySelectorAll('.row').forEach(r=>{ const m=qs('.p-dep-modo',r)?.value||'vida'; const item={desc:qs('.p-dep-desc',r)?.value||'',precio:qs('.p-dep-precio',r)?.value||'',modo:m,usos:qs('.p-dep-usos',r)?.value||''}; if(m==='vida') item.vida=qs('.p-dep-vida',r)?.value||''; else{ item.meses=qs('.p-dep-meses',r)?.value||''; item.capacidad=qs('.p-dep-cap',r)?.value||''; } d.depreciacion.push(item); });
@@ -5016,6 +5085,7 @@ function persFill(data){
   const skuEl=qs('#pers_sku'); if(skuEl) skuEl.value=data.sku||'';
   const catEl=qs('#pers_categoria'); if(catEl){ const catVal=data.categoria||''; if(catVal&&![...catEl.options].some(o=>o.value===catVal)){ const opt=document.createElement('option'); opt.value=catVal; opt.textContent=catVal; catEl.appendChild(opt); } catEl.value=catVal; }
   const estEl=qs('#pers_estado'); if(estEl) estEl.value=data.estado||'activo';
+  const tvEl=qs('#pers_tipo_venta'); if(tvEl) tvEl.value=data.tipo_venta||'detal';
   const pmEl=qs('#pers_precio_manual'); if(pmEl) pmEl.value=data.precio_manual||'';
   const notEl=qs('#pers_notas_int'); if(notEl) notEl.value=data.notas_int||'';
   const fImg=qs('#pers_foto_img'), fPh=qs('#pers_foto_ph'), fDel=qs('#pers_foto_del');
@@ -5070,6 +5140,7 @@ function persReset(){
   const _sk=qs('#pers_sku'); if(_sk) _sk.value='';
   const _ca=qs('#pers_categoria'); if(_ca) _ca.value='';
   const _es=qs('#pers_estado'); if(_es) _es.value='activo';
+  const _tv=qs('#pers_tipo_venta'); if(_tv) _tv.value='detal';
   const _pm=qs('#pers_precio_manual'); if(_pm) _pm.value='';
   const _ni=qs('#pers_notas_int'); if(_ni) _ni.value='';
   const _fi=qs('#pers_foto_img'),_fp=qs('#pers_foto_ph'),_fd=qs('#pers_foto_del');
@@ -5220,7 +5291,7 @@ function confirmarCatalogo(){
   const fotoPendienteStorage = _foto3 && _foto3.startsWith('data:') && window._supaConectado;
   const fotoLocal = fotoPendienteStorage ? '' : _foto3;
   const fotoUrlExistente = ei>=0 ? (cat[ei].foto_url||'') : '';
-  const nuevo={ id:prodId, nombre:nom, sku:skuFinal, categoria:qs('#mc_cat').value, foto:fotoLocal, foto_url:fotoPendienteStorage?'':fotoUrlExistente, costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, modo_inventario:modoInv, inv_loc:invLoc, moneda_prod:monedaProd, insumos_receta:receta, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
+  const nuevo={ id:prodId, nombre:nom, sku:skuFinal, categoria:qs('#mc_cat').value, foto:fotoLocal, foto_url:fotoPendienteStorage?'':fotoUrlExistente, costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, tipo_venta:qs('#pers_tipo_venta')?.value||'detal', modo_inventario:modoInv, inv_loc:invLoc, moneda_prod:monedaProd, insumos_receta:receta, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
   // No embeber foto base64 dentro de calculo — ocupa MB redundantes en localStorage
   if(nuevo.calculo && typeof nuevo.calculo==='object' && nuevo.calculo.foto && nuevo.calculo.foto.startsWith('data:')) nuevo.calculo.foto='';
   let _prodSyncEd;
@@ -5401,7 +5472,7 @@ function renderCatalogo(){
       <div class="prod-card-body">
         <div class="prod-card-name" title="${p.nombre}">${p.nombre}</div>
         <div class="prod-card-meta">${p.sku?'SKU: '+p.sku+' · ':''}${p.categoria||'Sin categoría'}</div>
-        <div class="prod-card-meta" style="margin-top:2px;display:flex;gap:4px;align-items:center">${(()=>{ const m={ninguno:'Sin control',terminado:'Stock terminado',insumos:'Receta insumos'}[p.modo_inventario||'ninguno']||''; const l=p.inv_loc==='local'?'Local':'Depósito'; return m&&m!=='Sin control'?m+' · '+l:m; })()}${p.tipo_venta==='mayor'?'<span style="font-size:9px;background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:10px;font-weight:600;margin-left:4px">MAYOR</span>':'<span style="font-size:9px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:10px;font-weight:600;margin-left:4px">DETAL</span>'}</div>
+        <div class="prod-card-meta" style="margin-top:2px;display:flex;gap:4px;align-items:center">${(()=>{ const m={ninguno:'Sin control',terminado:'Stock terminado',insumos:'Receta insumos'}[p.modo_inventario||'ninguno']||''; const l=p.inv_loc==='local'?'Local':'Depósito'; return m&&m!=='Sin control'?m+' · '+l:m; })()}${CFG.tipos_venta_on?(p.tipo_venta==='mayor'?'<span style="font-size:9px;background:#dbeafe;color:#1e40af;padding:1px 6px;border-radius:10px;font-weight:600;margin-left:4px">MAYOR</span>':'<span style="font-size:9px;background:#fef3c7;color:#92400e;padding:1px 6px;border-radius:10px;font-weight:600;margin-left:4px">DETAL</span>'):''}</div>
         <div class="prod-card-prices">
           <div class="prod-card-cost">Costo: ${euro(p.costo)}${mg!==null?' · Margen: '+mg+'%':''}</div>
           ${(()=>{
@@ -5493,7 +5564,7 @@ function verProd(idx){
           ${p.sku?`<div><label>SKU</label><strong>${p.sku}</strong></div>`:''}
           <div><label>Categoría</label><strong>${p.categoria||'Sin categoría'}</strong></div>
           <div><label>Estado</label><span class="chip ${p.estado==='activo'?'chip-ok':'chip-warn'}">${p.estado}</span></div>
-          <div><label>Tipo venta</label><span class="chip" style="font-size:10px;${p.tipo_venta==='mayor'?'background:#dbeafe;color:#1e40af':'background:#fef3c7;color:#92400e'}">${p.tipo_venta==='mayor'?'Al mayor (2%)':'Al detal (5%)'}</span></div>
+          ${CFG.tipos_venta_on?`<div><label>Tipo venta</label><span class="chip" style="font-size:10px;${p.tipo_venta==='mayor'?'background:#dbeafe;color:#1e40af':'background:#fef3c7;color:#92400e'}">${p.tipo_venta==='mayor'?'Al mayor ('+getComisionPct('mayor')+'%)':'Al detal ('+getComisionPct('detal')+'%)'}</span></div>`:''}
           <div><label>Control inv.</label><span style="font-size:12px">${(()=>{ const m={ninguno:'Sin control',insumos:'Receta insumos',terminado:'Stock terminado'}[p.modo_inventario||'ninguno']||'Sin control'; const l=p.inv_loc==='local'?'Local':'Depósito'; return m!=='Sin control'?m+' · '+l:m; })()}</span></div>
         </div>
         <div class="frow" style="flex-wrap:wrap;gap:8px">
@@ -5539,7 +5610,7 @@ function editarProd(idx){
     abrirProdManual(idx);
   } else {
     // Producto del editor — cargar cálculo y navegar al editor
-    persFill(p.calculo); nav('editor',document.querySelector('[data-v=editor]')); toast('Producto cargado en el editor','ok');
+    persFill(p.calculo); const _tvFromProd=qs('#pers_tipo_venta'); if(_tvFromProd) _tvFromProd.value=p.tipo_venta||p.calculo?.tipo_venta||'detal'; nav('editor',document.querySelector('[data-v=editor]')); toast('Producto cargado en el editor','ok');
   }
 }
 function duplicarProd(idx){
@@ -11193,8 +11264,8 @@ function renderRepComisiones(){
   if(kpiWrap) kpiWrap.innerHTML = `
     <div class="kpi c-green"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div><div class="kpi-lbl">Comisiones activas</div><div class="kpi-val">${euro(montoTotal)}</div><div class="kpi-sub">${totalActivas.length} comisiones por pagar</div></div>
     <div class="kpi c-red"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div></div><div class="kpi-lbl">Desactivadas</div><div class="kpi-val">${euro(montoInactivas)}</div><div class="kpi-sub">${totalInactivas.length} comisiones anuladas</div></div>
-    <div class="kpi c-amber"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div></div><div class="kpi-lbl">Detal (5%)</div><div class="kpi-val">${ventasDetal.length}</div><div class="kpi-sub">${euro(ventasDetal.filter(c=>c.activa).reduce((a,c)=>a+c.monto_comision,0))} activas</div></div>
-    <div class="kpi c-blue"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E6F1FB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div></div><div class="kpi-lbl">Mayor (2%)</div><div class="kpi-val">${ventasMayor.length}</div><div class="kpi-sub">${euro(ventasMayor.filter(c=>c.activa).reduce((a,c)=>a+c.monto_comision,0))} activas</div></div>`;
+    <div class="kpi c-amber"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div></div><div class="kpi-lbl">Detal (${getComisionPct('detal')}%)</div><div class="kpi-val">${ventasDetal.length}</div><div class="kpi-sub">${euro(ventasDetal.filter(c=>c.activa).reduce((a,c)=>a+c.monto_comision,0))} activas</div></div>
+    <div class="kpi c-blue"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E6F1FB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div></div><div class="kpi-lbl">Mayor (${getComisionPct('mayor')}%)</div><div class="kpi-val">${ventasMayor.length}</div><div class="kpi-sub">${euro(ventasMayor.filter(c=>c.activa).reduce((a,c)=>a+c.monto_comision,0))} activas</div></div>`;
 
   // Lista
   const wrap = qs('#rep-com-list'); if(!wrap) return;
@@ -14418,7 +14489,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_42';
+  const APP_VERSION = 'v14_43';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
