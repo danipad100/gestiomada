@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_38">
+<html lang="es" data-app-version="GestioMada_V14_40">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -8567,7 +8567,9 @@ function guardarVenta(){
     subtotal:sub, descuento:desc, total,
     recibido:recUsdMv, vuelto:Math.max(0,recUsdMv-total),
     costo_total, utilidad:total-costo_total,
-    tipo, metodo:qs('#mv_metodo').value,
+    tipo,
+    canal: _mvPedidoVinculado ? normalizarCanalVenta(_mvPedidoVinculado.canal) : 'local',
+    metodo:qs('#mv_metodo').value,
     notas:[notaBase, notaPedido].filter(Boolean).join(' | '),
     fecha:new Date().toISOString(), estado:'completada',
     pedido_ref: _mvPedidoVinculado?.id || null,
@@ -10799,6 +10801,7 @@ function _ejecutarEntregaPedido(all, idx){
     costo_total: (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
     utilidad:    p.total - (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
     metodo:      (p.pagos&&p.pagos.length?p.pagos[p.pagos.length-1].metodo:'efectivo_bs'),
+    canal:       normalizarCanalVenta(p.canal),
     notas:       'Pedido '+p.numero+(p.notas?' — '+p.notas:''),
     fecha:       new Date().toISOString(),
     estado:      'completada',
@@ -10900,6 +10903,7 @@ function cobrarYEntregar(){
     costo_total: (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
     utilidad:    p.total - (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
     metodo:      metodo,
+    canal:       normalizarCanalVenta(p.canal),
     notas:       'Pedido '+p.numero+(p.notas?' — '+p.notas:''),
     fecha:       new Date().toISOString(),
     estado:      'completada',
@@ -11923,6 +11927,21 @@ function renderRepKpis(){
     </div>`;
 }
 
+
+function repVentaCanal(v){
+  let canal = normalizarCanalVenta(v && v.canal);
+  // Compatibilidad con ventas antiguas creadas desde pedidos sin guardar canal:
+  // si la venta está vinculada a un pedido, usar el canal real del pedido.
+  const pid = v && (v.pedido_id || v.pedido_ref);
+  if(pid){
+    try{
+      const ped = loadPed().find(p=>String(p.id)===String(pid));
+      if(ped && ped.canal) canal = normalizarCanalVenta(ped.canal);
+    }catch(e){}
+  }
+  return canal || 'local';
+}
+
 /* ══════════ TAB VENTAS ══════════ */
 function renderRepVentas(){
   const ven = loadVen().filter(v=>v.estado!=='anulada'&&repInRango(v.fecha));
@@ -11969,7 +11988,7 @@ function renderRepVentas(){
 
   // Por canal de venta
   const byCan = {};
-  ven.forEach(v=>{ const c=normalizarCanalVenta(v.canal); byCan[c]=(byCan[c]||0)+repVentaTotal(v); });
+  ven.forEach(v=>{ const c=repVentaCanal(v); byCan[c]=(byCan[c]||0)+repVentaTotal(v); });
   const CANAL_COLORS_REP = { local:'#22c55e', whatsapp:'#25D366', online:'#3b82f6' };
   const CANAL_LABEL_REP  = { local:'🏪 Local', whatsapp:'📱 WhatsApp', online:'🌐 Online' };
   const canWrap = qs('#rep-chart-canales');
@@ -11981,7 +12000,7 @@ function renderRepVentas(){
     } else {
       // Barras horizontales + resumen de transacciones
       const byCanCount = {};
-      ven.forEach(v=>{ const c=normalizarCanalVenta(v.canal); byCanCount[c]=(byCanCount[c]||0)+1; });
+      ven.forEach(v=>{ const c=repVentaCanal(v); byCanCount[c]=(byCanCount[c]||0)+1; });
       canWrap.innerHTML =
         // Mini KPIs de canal
         `<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">` +
@@ -12037,7 +12056,7 @@ function renderRepVentas(){
                 <td style="padding:8px;color:var(--muted)">${repDate(v.fecha)}</td>
                 <td style="padding:8px">${repClienteNombre(v.cliente,'Venta rápida')}</td>
                 <td style="padding:8px"><span class="chip chip-info" style="font-size:10px">${METODOS_LABEL[v.metodo]||v.metodo}</span></td>
-                <td style="padding:8px"><span class="chip" style="font-size:10px;${CANALES_COLOR[normalizarCanalVenta(v.canal)]||CANALES_COLOR.local}">${CANALES_LABEL[normalizarCanalVenta(v.canal)]||CANALES_LABEL.local}</span></td>
+                <td style="padding:8px"><span class="chip" style="font-size:10px;${CANALES_COLOR[repVentaCanal(v)]||CANALES_COLOR.local}">${CANALES_LABEL[repVentaCanal(v)]||CANALES_LABEL.local}</span></td>
                 <td style="padding:8px;text-align:right;font-weight:700">${euro(repVentaTotal(v))}</td>
                 <td style="padding:8px;text-align:right;color:var(--muted)">${euro(repVentaCosto(v))}</td>
                 <td style="padding:8px;text-align:right;font-weight:700;color:${repVentaUtil(v)>=0?'var(--ok)':'var(--danger)'}">${euro(repVentaUtil(v))}</td>
