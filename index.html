@@ -10823,8 +10823,10 @@ function cobrarYEntregar(){
   const all=loadPed(), p=all[_pedIdx];
   if(!p) return;
 
-  const saldo = pedidoSaldoCDif(p);
-  if(saldo <= 0){
+  // El restante visible del modal está en dólar c/dif. Esta debe ser la fuente de verdad
+  // para la confirmación, el pago que se agrega al pedido, Caja y la Venta creada.
+  const saldoCDif = round2(pedidoSaldoCDif(p));
+  if(saldoCDif <= 0){
     // Ya está pagado, solo entregar
     _ejecutarEntregaPedido(all, _pedIdx);
     return;
@@ -10834,25 +10836,27 @@ function cobrarYEntregar(){
   const metodo = qs('#mvped_metodo').value || 'efectivo_bs';
   const bcvHoy = getTasaBCV();
   const difHoy = getDiferencial();
-  const parHoy = bcvHoy*(difHoy>0?difHoy:1);
+  const multHoy = difHoy>0 ? difHoy : 1;
   const esBs = !['efectivo_usd','zelle'].includes(metodo);
 
-  // Calcular monto restante en USD base
-  const restanteUsd = Math.max(0, p.total - totalPagado(p));
+  // Convertir el saldo c/dif a USD base solo para mantener compatible el historial interno.
+  const restanteUsdBase = round2(saldoCDif / multHoy);
+  const restanteBs = bcvHoy>0 ? usdToBs(saldoCDif, bcvHoy) : 0;
 
-  // Mostrar confirmación con el monto que se va a cobrar
-  const montoMostrar = esBs && parHoy>0 ? 'Bs '+fmtBs(restanteUsd*parHoy) : euro(restanteUsd);
+  // Mostrar exactamente el mismo monto que se ve en "A BCV del día".
+  const montoMostrar = esBs && bcvHoy>0 ? 'Bs '+fmtBs(restanteBs) : '$ '+saldoCDif.toFixed(2).replace('.',',')+' c/dif';
   const metLbl = METODOS_LABEL[metodo] || metodo;
   if(!confirm('¿Cobrar '+montoMostrar+' ('+metLbl+') y marcar como entregado?')) return;
 
   // 1. Registrar pago en el pedido
   p.pagos = p.pagos || [];
   p.pagos.push({
-    id: Date.now(), monto: restanteUsd,
-    monto_bs_ingresado: esBs ? Math.round(restanteUsd*parHoy) : null,
+    id: Date.now(), monto: restanteUsdBase,
+    monto_cdif: saldoCDif,
+    monto_bs_ingresado: esBs ? restanteBs : null,
     metodo, nota: 'Pago final al entregar',
     fecha: new Date().toISOString(),
-    tasa_bcv_pago: bcvHoy, tasa_par_pago: parHoy
+    tasa_bcv_pago: bcvHoy, tasa_par_pago: bcvHoy*multHoy
   });
 
   // 2. Marcar entregado
@@ -10861,13 +10865,16 @@ function cobrarYEntregar(){
   savePed(all);
   upsertPedido(p);
 
-  // 3. Registrar pago restante en Caja
+  // 3. Registrar pago restante en Caja usando el saldo c/dif exacto
   const cajaAll = loadCajaMov();
-  const _mmE = cajaMonedaMonto(metodo, restanteUsd, bcvHoy, difHoy);
+  const _mmE = esBs && bcvHoy>0
+    ? { moneda:'bs', monto:restanteBs, monto_bs:restanteBs, monto_usd:restanteUsdBase, tasa:bcvHoy, tasa_paralela:bcvHoy*multHoy }
+    : { moneda:'usd', monto:saldoCDif, monto_bs:0, monto_usd:saldoCDif, tasa:bcvHoy };
   const cliNomE = p.cliente ? ' — '+p.cliente.nombre+' '+(p.cliente.apellido||'') : '';
   const _movE = {
     id: Date.now()+1, tipo:'ingreso', categoria:'venta',
     monto:_mmE.monto, moneda:_mmE.moneda, monto_bs:_mmE.monto_bs, monto_usd:_mmE.monto_usd, tasa:_mmE.tasa,
+    monto_cdif: saldoCDif,
     metodo,
     nota: 'Pago final y entrega '+p.numero+cliNomE,
     ref_id: p.id, ref_tipo:'pedido',
