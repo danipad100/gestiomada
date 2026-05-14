@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_46">
+<html lang="es" data-app-version="GestioMada_V14_47">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -245,10 +245,11 @@ const upsertEnvio   = r => upsertFila('envios', r);
 const upsertComision = r => upsertFila('comisiones', r);
 
 /* ══════════════════════════════════════════
-   COMISIONES — Sistema de comisiones por vendedor
-   Se genera automáticamente al completar una venta si el usuario
-   activo tiene rol "vendedor". Cada item genera su propia comisión
-   según el tipo_venta del producto (detal=5%, mayor=2%).
+   COMISIONES — Sistema de comisiones por usuario
+   Se genera automáticamente al completar una venta (rápida o entrega
+   de pedido) si el usuario activo tiene el flag "genera_comision".
+   Cada item genera su propia comisión según el tipo_venta del
+   producto (detal=5%, mayor=2%).
    Las comisiones se guardan en POS.comisiones y se sincronizan.
 ══════════════════════════════════════════ */
 const LS_COMISIONES = 'POS.comisiones';
@@ -257,17 +258,13 @@ function saveComisiones(a){ _lsSet(LS_COMISIONES, JSON.stringify(a)); }
 function getComisionPct(tipo){ return tipo==='mayor'?(CFG.comision_mayor||2):(CFG.comision_detal||5); }
 
 function generarComisionesVenta(venta){
-  // Solo generar si el usuario activo es vendedor
+  // Solo generar si hay usuario activo con flag genera_comision
   if(!CURRENT_USR_ID) return;
   const usr = loadUsuarios().find(u => u.id === CURRENT_USR_ID);
   if(!usr) return;
-  // Verificar si el usuario tiene rol vendedor
-  const esVendedor = (usr.rol === 'vendedor');
-  if(!esVendedor) return;
+  if(!usr.genera_comision) return;
   // Si tipos de venta está desactivado, no calcular comisiones
   if(!CFG.tipos_venta_on) return;
-  // Solo para ventas rápidas (no abonos/pagos restantes)
-  if(venta.tipo !== 'venta_rapida') return;
 
   const cat = loadCat();
   const comisiones = loadComisiones();
@@ -503,6 +500,7 @@ function mapearParaSupa(tabla, d){
     nombre:   d.nombre || '',
     rol:      d.rol || 'empleado',
     estado:   d.estado || 'activo',
+    genera_comision: d.genera_comision || false,
     pin:      d.pin || '',
     vistas:   d.vistas || [],
     puede:    d.puede || [],
@@ -655,6 +653,8 @@ async function initSupabaseSync(){
   if(typeof updateBadges==='function') updateBadges();
   if(typeof cargarConfigNegocioDesdeNube==='function') cargarConfigNegocioDesdeNube();
   if(typeof _cargarSesionDesdeNube==='function') _cargarSesionDesdeNube();
+  // Re-render lock screen con usuarios reales recién cargados de Supabase
+  if(typeof renderLockScreen==='function' && qs('#lock-screen')?.classList.contains('visible')) renderLockScreen();
   iniciarRealtime();
 }
 
@@ -2066,6 +2066,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="fg" style="flex:1;min-width:100px"><label>Rol base</label><select id="musr_rol" onchange="musrAplicarRolBase()"><option value="admin">Admin</option><option value="empleado" selected>Empleado</option><option value="produccion">Producción</option><option value="lectura">Solo lectura</option></select></div>
         <div class="fg" style="flex:0 0 100px"><label>Estado</label><select id="musr_estado"><option value="activo">Activo</option><option value="inactivo">Inactivo</option></select></div>
       </div>
+      <label class="musr-chk" style="margin:8px 0 0"><input type="checkbox" id="musr_genera_comision"><span class="musr-chk-box"></span><span class="musr-chk-text">Genera comisión por venta</span></label>
       <div class="frow" style="gap:12px">
         <div class="fg" style="flex:1"><label>PIN (4 dígitos) *</label><input type="password" id="musr_pin" maxlength="4" placeholder="••••" inputmode="numeric" autocomplete="new-password" style="letter-spacing:6px;text-align:center;font-size:18px;font-weight:700;padding:8px 12px"/></div>
         <div class="fg" style="flex:1"><label>Confirmar PIN *</label><input type="password" id="musr_pin2" maxlength="4" placeholder="••••" inputmode="numeric" autocomplete="new-password" style="letter-spacing:6px;text-align:center;font-size:18px;font-weight:700;padding:8px 12px"/></div>
@@ -6027,7 +6028,6 @@ function rolIcoSvg(ico, w=18, h=18){
 
 const ROLES = {
   admin:     { label:'Admin',        ico:'user', desc:'Acceso completo al sistema.',                         vistas:['dashboard','editor','catalogo','clientes','pedidos','envios','ventas','caja','inventario','reportes','finanzas','config'], puede:['crear','editar','eliminar','ver','exportar','config','reportes','caja','limpiar','finanzas'] },
-  vendedor:  { label:'Vendedor',     ico:'user', desc:'Ventas con comisiones. Ve su reporte de comisiones.', vistas:['dashboard','catalogo','clientes','pedidos','envios','ventas','reportes'],                                                puede:['crear','editar','ver','reportes'] },
   empleado:  { label:'Empleado',     ico:'users', desc:'Ventas, pedidos y clientes. Sin caja ni config.',    vistas:['dashboard','catalogo','clientes','pedidos','envios','ventas'],                                                puede:['crear','editar','ver'] },
   produccion:{ label:'Producción',   ico:'factory', desc:'Pedidos e inventario. Sin ventas ni caja.',           vistas:['dashboard','pedidos','envios','inventario'],                                                                  puede:['ver','editar'] },
   lectura:   { label:'Solo lectura', ico:'eye', desc:'Consulta catálogo, clientes y reportes. Solo lectura.',vistas:['dashboard','catalogo','clientes','reportes'],                                                       puede:['ver'] }
@@ -6569,6 +6569,7 @@ function abrirNuevoUsuario(){
   qs('#musr_pin').value = '';
   qs('#musr_pin2').value = '';
   qs('#musr_estado').value = 'activo';
+  qs('#musr_genera_comision').checked = false;
   qs('#musr-avatar').textContent = '?';
   qs('#musr-btn-del').style.display = 'none';
   musrAplicarRolBase();
@@ -6587,6 +6588,7 @@ function editarUsuario(idx){
   qs('#musr_pin').value = '';
   qs('#musr_pin2').value = '';
   qs('#musr_estado').value = u.estado || 'activo';
+  qs('#musr_genera_comision').checked = !!u.genera_comision;
   musrActualizarAvatar();
   qs('#musr-btn-del').style.display = '';
   musrRenderPermisos(u.rol, u.vistas, u.puede);
@@ -6665,7 +6667,7 @@ function guardarUsuario(){
   const usrs = loadUsuarios();
   if(_musrEditIdx === null){
     // Nuevo usuario
-    usrs.push({ id: Date.now(), nombre, rol, estado, pin: pinHash, vistas, puede, fecha: new Date().toISOString() });
+    usrs.push({ id: Date.now(), nombre, rol, estado, genera_comision: qs('#musr_genera_comision')?.checked||false, pin: pinHash, vistas, puede, fecha: new Date().toISOString() });
     toast('Usuario creado: '+nombre,'ok');
   } else {
     // Editar existente
@@ -6673,6 +6675,7 @@ function guardarUsuario(){
     u.nombre  = nombre;
     u.rol     = rol;
     u.estado  = estado;
+    u.genera_comision = qs('#musr_genera_comision')?.checked||false;
     u.vistas  = vistas;
     u.puede   = puede;
     if(pinHash) u.pin = pinHash;
@@ -11025,6 +11028,7 @@ function _ejecutarEntregaPedido(all, idx){
   };
   venAll.push(venta); saveVen(venAll);
   upsertVenta(venta);
+  generarComisionesVenta(venta); // ← comisiones automáticas si aplica
 
   // Descontar inventario
   descontarInventarioDeItems(p.items||[], 'Entrega pedido '+p.numero);
@@ -11128,6 +11132,7 @@ function cobrarYEntregar(){
   };
   venAll.push(venta); saveVen(venAll);
   upsertVenta(venta);
+  generarComisionesVenta(venta); // ← comisiones automáticas si aplica
 
   // 5. Descontar inventario
   descontarInventarioDeItems(p.items||[], 'Entrega pedido '+p.numero);
@@ -14626,7 +14631,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_46';
+  const APP_VERSION = 'v14_47';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
