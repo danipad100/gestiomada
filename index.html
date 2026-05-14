@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_50">
+<html lang="es" data-app-version="GestioMada_V14_51">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -538,6 +538,8 @@ function mapearParaSupa(tabla, d){
     porcentaje:     parseFloat(d.porcentaje)||0,
     monto_comision: parseFloat(d.monto_comision)||0,
     activa:         d.activa !== false,
+    pagada:         d.pagada || false,
+    fecha_pago:     d.fecha_pago || null,
     notas:          d.notas || '',
     fecha:          d.fecha || new Date().toISOString(),
   };
@@ -3481,7 +3483,10 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="tab-panel" id="rep-tab-comisiones">
           <div class="grid g4" id="rep-com-kpis" style="margin-bottom:14px"></div>
           <div class="card" style="margin-bottom:14px">
-            <div class="card-title" style="margin-bottom:12px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Listado de comisiones</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+              <div class="card-title" style="margin:0"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Listado de comisiones</div>
+              <button class="btn btn-sm" id="btn-pagar-todas-com" onclick="pagarTodasComisiones()" style="background:#0F6E56;color:#fff;border:none;display:none"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg> Pagar todas las pendientes</button>
+            </div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
               <select id="rep_com_vendedor" onchange="renderRepComisiones()" style="min-width:160px">
                 <option value="">Todos los vendedores</option>
@@ -3495,6 +3500,11 @@ body.dark .pos-prod-img-ph{background:#23283a}
                 <option value="">Todas</option>
                 <option value="activa">Activas</option>
                 <option value="inactiva">Desactivadas</option>
+              </select>
+              <select id="rep_com_pago" onchange="renderRepComisiones()" style="min-width:140px">
+                <option value="">Pagadas y pendientes</option>
+                <option value="pendiente">Pendientes de pago</option>
+                <option value="pagada">Pagadas</option>
               </select>
             </div>
             <div id="rep-com-list"></div>
@@ -11394,6 +11404,7 @@ function renderRepComisiones(){
   const vendedorF = qs('#rep_com_vendedor')?.value||'';
   const tipoF = qs('#rep_com_tipo')?.value||'';
   const estadoF = qs('#rep_com_estado')?.value||'';
+  const pagoF = qs('#rep_com_pago')?.value||'';
 
   // Poblar selector de vendedores
   const vendSel = qs('#rep_com_vendedor');
@@ -11406,29 +11417,37 @@ function renderRepComisiones(){
     });
   }
 
-  // Filtrar por rango de fecha de reportes + filtros
+  // Filtrar
   const fil = all.filter(c => {
     if(!repInRango(c.fecha)) return false;
     if(vendedorF && c.vendedor_nom !== vendedorF) return false;
     if(tipoF && c.tipo_venta !== tipoF) return false;
     if(estadoF === 'activa' && !c.activa) return false;
     if(estadoF === 'inactiva' && c.activa) return false;
+    if(pagoF === 'pendiente' && c.pagada) return false;
+    if(pagoF === 'pagada' && !c.pagada) return false;
     return true;
   }).sort((a,b) => String(b.fecha||'').localeCompare(String(a.fecha||'')));
 
   // KPIs
-  const totalActivas = fil.filter(c=>c.activa);
-  const totalInactivas = fil.filter(c=>!c.activa);
-  const montoTotal = totalActivas.reduce((a,c)=>a+c.monto_comision,0);
-  const montoInactivas = totalInactivas.reduce((a,c)=>a+c.monto_comision,0);
-  const ventasDetal = fil.filter(c=>c.tipo_venta==='detal');
-  const ventasMayor = fil.filter(c=>c.tipo_venta==='mayor');
+  const activasAll = fil.filter(c=>c.activa);
+  const pendientes = activasAll.filter(c=>!c.pagada);
+  const pagadas = activasAll.filter(c=>c.pagada);
+  const desactivadas = fil.filter(c=>!c.activa);
+  const montoPendiente = pendientes.reduce((a,c)=>a+c.monto_comision,0);
+  const montoPagado = pagadas.reduce((a,c)=>a+c.monto_comision,0);
+  const montoDesactivado = desactivadas.reduce((a,c)=>a+c.monto_comision,0);
+
   const kpiWrap = qs('#rep-com-kpis');
-  if(kpiWrap) kpiWrap.innerHTML = `
-    <div class="kpi c-green"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div><div class="kpi-lbl">Comisiones activas</div><div class="kpi-val">${euro(montoTotal)}</div><div class="kpi-sub">${totalActivas.length} comisiones por pagar</div></div>
-    <div class="kpi c-red"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div></div><div class="kpi-lbl">Desactivadas</div><div class="kpi-val">${euro(montoInactivas)}</div><div class="kpi-sub">${totalInactivas.length} comisiones anuladas</div></div>
-    <div class="kpi c-amber"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div></div><div class="kpi-lbl">Detal (${getComisionPct('detal')}%)</div><div class="kpi-val">${ventasDetal.length}</div><div class="kpi-sub">${euro(ventasDetal.filter(c=>c.activa).reduce((a,c)=>a+c.monto_comision,0))} activas</div></div>
-    <div class="kpi c-blue"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E6F1FB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div></div><div class="kpi-lbl">Mayor (${getComisionPct('mayor')}%)</div><div class="kpi-val">${ventasMayor.length}</div><div class="kpi-sub">${euro(ventasMayor.filter(c=>c.activa).reduce((a,c)=>a+c.monto_comision,0))} activas</div></div>`;
+  if(kpiWrap) kpiWrap.innerHTML = ''
+    + '<div class="kpi c-amber"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div></div><div class="kpi-lbl">Pendientes de pago</div><div class="kpi-val">' + euro(montoPendiente) + '</div><div class="kpi-sub">' + pendientes.length + ' comisiones</div></div>'
+    + '<div class="kpi c-green"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div></div><div class="kpi-lbl">Pagadas</div><div class="kpi-val">' + euro(montoPagado) + '</div><div class="kpi-sub">' + pagadas.length + ' comisiones</div></div>'
+    + '<div class="kpi c-red"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div></div><div class="kpi-lbl">Desactivadas</div><div class="kpi-val">' + euro(montoDesactivado) + '</div><div class="kpi-sub">' + desactivadas.length + ' comisiones</div></div>'
+    + '<div class="kpi c-blue"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E6F1FB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div><div class="kpi-lbl">Total activas</div><div class="kpi-val">' + euro(montoPendiente+montoPagado) + '</div><div class="kpi-sub">' + activasAll.length + ' comisiones</div></div>';
+
+  // Mostrar/ocultar botón "Pagar todas"
+  const btnPagarTodas = qs('#btn-pagar-todas-com');
+  if(btnPagarTodas) btnPagarTodas.style.display = pendientes.length > 0 ? '' : 'none';
 
   // Lista
   const wrap = qs('#rep-com-list'); if(!wrap) return;
@@ -11437,35 +11456,80 @@ function renderRepComisiones(){
     return;
   }
 
-  wrap.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
-    <thead><tr style="border-bottom:2px solid var(--border)">
-      <th style="padding:7px;text-align:center;color:var(--muted);font-weight:600;width:50px">Estado</th>
-      <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Fecha</th>
-      <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Vendedor</th>
-      <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Producto</th>
-      <th style="padding:7px;text-align:center;color:var(--muted);font-weight:600">Tipo</th>
-      <th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Venta</th>
-      <th style="padding:7px;text-align:center;color:var(--muted);font-weight:600">%</th>
-      <th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Comisión</th>
-      <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Venta #</th>
-    </tr></thead>
-    <tbody>${fil.map(c => {
-      const fechaFmt = c.fecha ? new Date(c.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}) : '—';
-      const tipoBg = c.tipo_venta==='mayor' ? 'background:#dbeafe;color:#1e40af' : 'background:#fef3c7;color:#92400e';
-      const checked = c.activa ? 'checked' : '';
-      return `<tr style="border-bottom:1px solid #f3f3f8;${!c.activa?'opacity:0.5':''}">
-        <td style="padding:7px;text-align:center"><label class="gm-toggle-mini"><input type="checkbox" ${checked} onchange="toggleComision('${c.id}',this.checked)"/><span class="gm-toggle-track"><span class="gm-toggle-thumb"></span></span></label></td>
-        <td style="padding:7px">${fechaFmt}</td>
-        <td style="padding:7px;font-weight:600">${c.vendedor_nom||'—'}</td>
-        <td style="padding:7px">${c.producto_nom||'—'}</td>
-        <td style="padding:7px;text-align:center"><span class="chip" style="font-size:10px;${tipoBg}">${c.tipo_venta==='mayor'?'Mayor':'Detal'}</span></td>
-        <td style="padding:7px;text-align:right">${euro(c.monto_venta)}</td>
-        <td style="padding:7px;text-align:center;font-weight:600">${c.porcentaje}%</td>
-        <td style="padding:7px;text-align:right;font-weight:700;color:${c.activa?'var(--ok)':'var(--muted)'}">${euro(c.monto_comision)}</td>
-        <td style="padding:7px;font-size:11px;color:var(--muted)">${c.venta_numero||'—'}</td>
-      </tr>`;
-    }).join('')}</tbody>
-  </table></div>`;
+  let rows = '';
+  fil.forEach(c => {
+    const fechaFmt = c.fecha ? new Date(c.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+    const tipoBg = c.tipo_venta==='mayor' ? 'background:#dbeafe;color:#1e40af' : 'background:#fef3c7;color:#92400e';
+    const checked = c.activa ? 'checked' : '';
+    let pagadaChip = '';
+    if(!c.activa){
+      pagadaChip = '<span class="chip" style="font-size:10px;background:#f3f3f8;color:var(--muted)">—</span>';
+    } else if(c.pagada){
+      pagadaChip = '<span class="chip" style="font-size:10px;background:#EAF3DE;color:#3B6D11;cursor:pointer" onclick="togglePagadaComision(\'' + c.id + '\',false)" title="Clic para marcar como pendiente">Pagada</span>';
+    } else {
+      pagadaChip = '<span class="chip" style="font-size:10px;background:#FAEEDA;color:#854F0B;cursor:pointer" onclick="togglePagadaComision(\'' + c.id + '\',true)" title="Clic para marcar como pagada">Pendiente</span>';
+    }
+    const fechaPagoTip = c.pagada && c.fecha_pago ? '<div style="font-size:10px;color:var(--muted)">Pagada: '+new Date(c.fecha_pago).toLocaleDateString('es-ES',{day:'2-digit',month:'short'})+'</div>' : '';
+    const rowBg = c.pagada && c.activa ? 'background:#f8fdf5' : '';
+    const comColor = c.activa ? (c.pagada ? 'var(--ok)' : '#854F0B') : 'var(--muted)';
+    rows += '<tr style="border-bottom:1px solid #f3f3f8;' + (!c.activa?'opacity:0.5;':'') + rowBg + '">'
+      + '<td style="padding:7px;text-align:center"><label class="gm-toggle-mini"><input type="checkbox" ' + checked + ' onchange="toggleComision(\'' + c.id + '\',this.checked)"/><span class="gm-toggle-track"><span class="gm-toggle-thumb"></span></span></label></td>'
+      + '<td style="padding:7px">' + fechaFmt + '</td>'
+      + '<td style="padding:7px;font-weight:600">' + (c.vendedor_nom||'—') + '</td>'
+      + '<td style="padding:7px">' + (c.producto_nom||'—') + fechaPagoTip + '</td>'
+      + '<td style="padding:7px;text-align:center"><span class="chip" style="font-size:10px;' + tipoBg + '">' + (c.tipo_venta==='mayor'?'Mayor':'Detal') + '</span></td>'
+      + '<td style="padding:7px;text-align:right">' + euro(c.monto_venta) + '</td>'
+      + '<td style="padding:7px;text-align:center;font-weight:600">' + c.porcentaje + '%</td>'
+      + '<td style="padding:7px;text-align:right;font-weight:700;color:' + comColor + '">' + euro(c.monto_comision) + '</td>'
+      + '<td style="padding:7px;text-align:center">' + pagadaChip + '</td>'
+      + '<td style="padding:7px;font-size:11px;color:var(--muted)">' + (c.venta_numero||'—') + '</td>'
+      + '</tr>';
+  });
+
+  wrap.innerHTML = '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">'
+    + '<thead><tr style="border-bottom:2px solid var(--border)">'
+    + '<th style="padding:7px;text-align:center;color:var(--muted);font-weight:600;width:50px">Activa</th>'
+    + '<th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Fecha</th>'
+    + '<th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Vendedor</th>'
+    + '<th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Producto</th>'
+    + '<th style="padding:7px;text-align:center;color:var(--muted);font-weight:600">Tipo</th>'
+    + '<th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Venta</th>'
+    + '<th style="padding:7px;text-align:center;color:var(--muted);font-weight:600">%</th>'
+    + '<th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Comisión</th>'
+    + '<th style="padding:7px;text-align:center;color:var(--muted);font-weight:600">Pago</th>'
+    + '<th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Venta #</th>'
+    + '</tr></thead>'
+    + '<tbody>' + rows + '</tbody>'
+    + '</table></div>';
+}
+
+function togglePagadaComision(comisionId, pagada){
+  const all = loadComisiones();
+  const idx = all.findIndex(c => String(c.id) === String(comisionId));
+  if(idx < 0) return;
+  all[idx].pagada = pagada;
+  all[idx].fecha_pago = pagada ? new Date().toISOString() : null;
+  saveComisiones(all);
+  upsertComision(all[idx]);
+  renderRepComisiones();
+  toast(pagada ? 'Comisión marcada como pagada' : 'Comisión marcada como pendiente', pagada ? 'ok' : 'warn');
+}
+
+function pagarTodasComisiones(){
+  const all = loadComisiones();
+  const pendientes = all.filter(c => c.activa && !c.pagada);
+  if(!pendientes.length){ toast('No hay comisiones pendientes','warn'); return; }
+  const total = pendientes.reduce((a,c)=>a+c.monto_comision,0);
+  if(!confirm('¿Marcar ' + pendientes.length + ' comisiones como pagadas por ' + euro(total) + '?')) return;
+  const ahora = new Date().toISOString();
+  pendientes.forEach(c => {
+    c.pagada = true;
+    c.fecha_pago = ahora;
+    upsertComision(c);
+  });
+  saveComisiones(all);
+  renderRepComisiones();
+  toast(pendientes.length + ' comisiones marcadas como pagadas','ok');
 }
 
 function toggleComision(comisionId, activa){
@@ -11473,6 +11537,7 @@ function toggleComision(comisionId, activa){
   const idx = all.findIndex(c => String(c.id) === String(comisionId));
   if(idx < 0) return;
   all[idx].activa = activa;
+  if(!activa){ all[idx].pagada = false; all[idx].fecha_pago = null; }
   saveComisiones(all);
   upsertComision(all[idx]);
   renderRepComisiones();
@@ -14652,7 +14717,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_50';
+  const APP_VERSION = 'v14_51';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
