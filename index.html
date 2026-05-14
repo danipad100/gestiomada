@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_48">
+<html lang="es" data-app-version="GestioMada_V14_49">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -10960,6 +10960,13 @@ function verPedido(idx){
   const pagoCard=qs('#mvped-pago-card');
   pagoCard.style.display=(p.estado==='cancelado'||ep==='pagado')?'none':'block';
   qs('#mvped_monto').value=''; qs('#mvped_nota').value='';
+  // Pre-seleccionar método de pago del último abono registrado
+  const _ultimoPago = (p.pagos && p.pagos.length > 0) ? p.pagos[p.pagos.length - 1] : null;
+  const _metSel = qs('#mvped_metodo');
+  if(_metSel && _ultimoPago && _ultimoPago.metodo){
+    _metSel.value = _ultimoPago.metodo;
+  }
+  if(typeof mvpedActualizarLabel === 'function') mvpedActualizarLabel();
 
   openModal('m-ver-ped');
 }
@@ -11058,20 +11065,32 @@ function cobrarYEntregar(){
   const multHoy = difHoy>0 ? difHoy : 1;
   const esBs = !['efectivo_usd','zelle'].includes(metodo);
 
-  // Convertir el saldo c/dif a USD base solo para mantener compatible el historial interno.
-  const restanteUsdBase = round2(saldoCDif / multHoy);
-  const restanteBs = bcvHoy>0 ? usdToBs(saldoCDif, bcvHoy) : 0;
+  // Calcular restante según método de pago:
+  // - USD: restante en dólar base (sin diferencial)
+  // - Bs: restante con diferencial, convertido a Bs
+  const restanteUsdBase = round2(Math.max(0, (p.total||0) - totalPagado(p)));
+  const saldoCDifFull = round2(pedidoSaldoCDif(p));
+  const restanteBs = bcvHoy>0 ? usdToBs(saldoCDifFull, bcvHoy) : 0;
 
-  // Mostrar exactamente el mismo monto que se ve en "A BCV del día".
-  const montoMostrar = esBs && bcvHoy>0 ? 'Bs '+fmtBs(restanteBs) : '$ '+saldoCDif.toFixed(2).replace('.',',')+' c/dif';
+  // Monto a cobrar y mostrar según moneda
+  let montoMostrar, montoPago, montoCDif;
+  if(esBs){
+    montoMostrar = bcvHoy>0 ? 'Bs '+fmtBs(restanteBs) : '$ '+saldoCDifFull.toFixed(2).replace('.',',')+' c/dif';
+    montoPago = restanteUsdBase;
+    montoCDif = saldoCDifFull;
+  } else {
+    montoMostrar = '$ '+restanteUsdBase.toFixed(2).replace('.',',')+' USD';
+    montoPago = restanteUsdBase;
+    montoCDif = saldoCDifFull;
+  }
   const metLbl = METODOS_LABEL[metodo] || metodo;
   if(!confirm('¿Cobrar '+montoMostrar+' ('+metLbl+') y marcar como entregado?')) return;
 
   // 1. Registrar pago en el pedido
   p.pagos = p.pagos || [];
   p.pagos.push({
-    id: Date.now(), monto: restanteUsdBase,
-    monto_cdif: saldoCDif,
+    id: Date.now(), monto: montoPago,
+    monto_cdif: montoCDif,
     monto_bs_ingresado: esBs ? restanteBs : null,
     metodo, nota: 'Pago final al entregar',
     fecha: new Date().toISOString(),
@@ -11089,7 +11108,7 @@ function cobrarYEntregar(){
   const cajaAll = loadCajaMov();
   const _mmE = esBs && bcvHoy>0
     ? { moneda:'bs', monto:restanteBs, monto_bs:restanteBs, monto_usd:restanteUsdBase, tasa:bcvHoy, tasa_paralela:bcvHoy*multHoy }
-    : { moneda:'usd', monto:saldoCDif, monto_bs:0, monto_usd:saldoCDif, tasa:bcvHoy };
+    : { moneda:'usd', monto:restanteUsdBase, monto_bs:0, monto_usd:restanteUsdBase, tasa:bcvHoy };
   const cliNomE = p.cliente ? ' — '+p.cliente.nombre+' '+(p.cliente.apellido||'') : '';
   const _movE = {
     id: Date.now()+1, tipo:'ingreso', categoria:'venta',
@@ -14631,7 +14650,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_48';
+  const APP_VERSION = 'v14_49';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
