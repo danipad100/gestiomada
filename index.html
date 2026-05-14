@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_47">
+<html lang="es" data-app-version="GestioMada_V14_48">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -591,8 +591,8 @@ async function initSupabaseSync(){
     if(remoto.length === 0) continue; // ambos vacíos, nada que hacer
 
     // ── Supabase tiene datos ──
-    if(t.supa === 'caja_movimientos' || t.supa === 'pedidos' || t.supa === 'productos'){
-      // Caja, Pedidos y Productos: Supabase es fuente de verdad absoluta
+    if(t.supa === 'caja_movimientos' || t.supa === 'pedidos' || t.supa === 'productos' || t.supa === 'usuarios'){
+      // Caja, Pedidos, Productos y Usuarios: Supabase es fuente de verdad absoluta
       // Las eliminaciones y cambios se propagan — no se restauran registros borrados
       const normalizado = t.supa === 'pedidos' ? remoto.map(r => normalizarPedidoImportado(r)).filter(r => !_esBorrado(t.supa, r.id)) : t.supa === 'productos' ? remoto.map(r => {
         // Preservar foto base64 local SOLO si Supabase no tiene foto_url
@@ -14631,7 +14631,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_47';
+  const APP_VERSION = 'v14_48';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
