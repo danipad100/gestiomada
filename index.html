@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_49">
+<html lang="es" data-app-version="GestioMada_V14_50">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -258,13 +258,14 @@ function saveComisiones(a){ _lsSet(LS_COMISIONES, JSON.stringify(a)); }
 function getComisionPct(tipo){ return tipo==='mayor'?(CFG.comision_mayor||2):(CFG.comision_detal||5); }
 
 function generarComisionesVenta(venta){
+  console.log('[COMISIONES] Inicio — venta:', venta?.numero, 'usr:', CURRENT_USR_ID);
   // Solo generar si hay usuario activo con flag genera_comision
-  if(!CURRENT_USR_ID) return;
+  if(!CURRENT_USR_ID){ console.log('[COMISIONES] ABORT: no hay usuario activo'); return; }
   const usr = loadUsuarios().find(u => u.id === CURRENT_USR_ID);
-  if(!usr) return;
-  if(!usr.genera_comision) return;
+  if(!usr){ console.log('[COMISIONES] ABORT: usuario no encontrado en lista'); return; }
+  if(!usr.genera_comision){ console.log('[COMISIONES] ABORT: usuario',usr.nombre,'no tiene genera_comision activado. Valor:', usr.genera_comision); return; }
   // Si tipos de venta está desactivado, no calcular comisiones
-  if(!CFG.tipos_venta_on) return;
+  if(!CFG.tipos_venta_on){ console.log('[COMISIONES] ABORT: tipos_venta_on está desactivado. Valor:', CFG.tipos_venta_on); return; }
 
   const cat = loadCat();
   const comisiones = loadComisiones();
@@ -300,6 +301,7 @@ function generarComisionesVenta(venta){
   });
 
   saveComisiones(comisiones);
+  console.log('[COMISIONES] Generadas:', comisiones.length, 'total. Últimas:', comisiones.slice(-items.length));
 }
 
 // Sync inmediato de UN solo producto — propaga el cambio al instante a todos los dispositivos
@@ -14650,7 +14652,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_49';
+  const APP_VERSION = 'v14_50';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
