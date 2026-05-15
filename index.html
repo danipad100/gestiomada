@@ -3067,7 +3067,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
                         <input type="checkbox" id="pos_envio_chk" onchange="posToggleExtra('envio')"/> Envío
                       </label>
                       <div style="display:flex;align-items:center;gap:4px;margin-top:3px">
-                        <input type="number" id="pos_envio_monto" value="2" min="0" step="0.01" oninput="posRecalc();posWaActualizar()" style="text-align:right;font-size:12px"/>
+                        <input type="number" id="pos_envio_monto" value="3" min="0" step="0.01" oninput="posRecalc();posWaActualizar()" style="text-align:right;font-size:12px"/>
                         <span style="font-size:10px;color:var(--muted)">USD</span>
                       </div>
                     </div>
@@ -3106,8 +3106,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
                         <div style="flex:2;min-width:130px">
                           <label>Modo de cotización</label>
                           <select id="pos_wa_modo" onchange="posWaActualizar()">
-                            <option value="usd">Solo USD</option>
-                            <option value="bs">Bs + ancla USD</option>
+                            <option value="usd">Solo Dolares</option>
+                            <option value="bs">Bolivares</option>
                           </select>
                         </div>
                         <div style="flex:2;min-width:120px">
@@ -8266,7 +8266,7 @@ function posWaActualizar(){
       return `• ${it.cant}x ${it.nombre}\n  $${it.pvAnclaUsd.toFixed(2).replace('.',',')}/u → Bs ${pvBsStr}/u = Bs ${totBsStr}`;
     }).join('\n');
     if(deliveryUsd>0){ const dBs=fmtBs(usdToBs(deliveryUsd, bcv)); txt+=`\nDelivery: Bs ${dBs} ($${deliveryUsd.toFixed(2).replace('.',',')})`; }
-    if(envioUsd>0){    const eBs=fmtBs(usdToBs(envioUsd, bcv));    txt+=`\nEnvío: Bs ${eBs} ($${envioUsd.toFixed(2).replace('.',',')})`; }
+    if(envioUsd>0){    const eBs=fmtBs(usdToBs(envioUsd, bcv));    txt+=`\nEmbalaje: Bs ${eBs} ($${envioUsd.toFixed(2).replace('.',',')})`; }
     if(disenoUsd>0){   const nBs=fmtBs(usdToBs(disenoUsd, bcv));  txt+=`\nDiseño: Bs ${nBs} ($${disenoUsd.toFixed(2).replace('.',',')})`; }
     if(extrasUsd>0){   const xBs=fmtBs(usdToBs(extrasUsd, bcv));  txt+=`\nExtras: Bs ${xBs} ($${extrasUsd.toFixed(2).replace('.',',')})`; }
     txt+=`\n\n*Total: Bs ${fmtBs(totalBs)}*`;
@@ -8282,7 +8282,7 @@ function posWaActualizar(){
       return `• ${it.cant}x ${it.nombre}\n  $${it.pvCotUsd.toFixed(2).replace('.',',')}/u → $${totU}`;
     }).join('\n');
     if(deliveryUsd>0) txt+=`\nDelivery: $${deliveryUsd.toFixed(2).replace('.',',')}`;
-    if(envioUsd>0)    txt+=`\nEnvío: $${envioUsd.toFixed(2).replace('.',',')}`;
+    if(envioUsd>0)    txt+=`\nEmbalaje: $${envioUsd.toFixed(2).replace('.',',')}`;
     if(disenoUsd>0)   txt+=`\nDiseño: $${disenoUsd.toFixed(2).replace('.',',')}`;
     if(extrasUsd>0)   txt+=`\nExtras: $${extrasUsd.toFixed(2).replace('.',',')}`;
     txt+=`\n\n*Total: $${totalUsdDirecto.toFixed(2).replace('.',',')}*`;
