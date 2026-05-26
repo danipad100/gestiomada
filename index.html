@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_51">
+<html lang="es" data-app-version="GestioMada_V14_53">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -4271,6 +4271,37 @@ function _aplicarConfigRemota(clave, valorRaw){
       }
       return;
     }
+    // ── Tasas recibidas de otro dispositivo: aplicar y marcar como recientes ──
+    if(clave === 'tasa_bcv' || clave === 'tasa_paralela'){
+      if(val === CFG[clave]) return;
+      CFG[clave] = val;
+      _lsSet(LS_CFG, JSON.stringify(CFG));
+      if(clave === 'tasa_bcv' && val > 0) saveTasa(val);
+      // Marcar como actualizado recientemente para evitar que el auto-fetch local sobreescriba
+      _lsSet(LS_TASA_LAST_OK, String(Date.now()));
+      _aplicarConfigEnUI();
+      console.log('[Config Realtime]', clave, '→', val, '(throttle renovado)');
+      return;
+    }
+    // ── Diferencial congelado: manejo especial para evitar race conditions ──
+    // Cuando otro dispositivo descongela, necesitamos forzar un fetch de tasas reales
+    if(clave === 'dif_bloqueado' || clave === 'dif_congelado'){
+      const oldBloq = CFG.dif_bloqueado;
+      CFG[clave] = val;
+      _lsSet(LS_CFG, JSON.stringify(CFG));
+      _aplicarConfigEnUI();
+      console.log('[Config Realtime]', clave, '→', val);
+      // Si se descongeló desde otro dispositivo, forzar fetch de tasa paralela real
+      if(clave === 'dif_bloqueado' && oldBloq && !val){
+        console.log('[Config Realtime] Diferencial descongelado remotamente — forzando fetch de tasas reales');
+        // Limpiar throttle para que el fetch se ejecute
+        localStorage.removeItem(LS_TASA_LAST_OK);
+        if(localStorage.getItem(LS_TASA_AUTO)==='1' && typeof fetchTasasGM === 'function'){
+          setTimeout(()=> fetchTasasGM(true), 500);
+        }
+      }
+      return;
+    }
     // Arrays/objects: comparar JSON
     if(typeof val === 'object' && JSON.stringify(val) === JSON.stringify(CFG[clave])) return;
     if(val === CFG[clave]) return;
@@ -6932,9 +6963,9 @@ function pedidoTotalCDifCanonico(p, dif){
 }
 
 function _actualizarDiferencial(){
-  const bcv=parseEU(qs('#cfg_tasa_bcv')?.value||'0');
-  const par=parseEU(qs('#cfg_tasa_paralela')?.value||'0');
-  const el=qs('#cfg_diferencial'); if(!el) return;
+  const bcv=parseEU(qs('#cfg_tasa_bcv')?.value||'0') || CFG.tasa_bcv || 0;
+  const par=parseEU(qs('#cfg_tasa_paralela')?.value||'0') || CFG.tasa_paralela || 0;
+  const el=qs('#cfg_diferencial');
   if(CFG.dif_bloqueado && CFG.dif_congelado>0){
     if(bcv>0){
       const parCalc=bcv*CFG.dif_congelado;
@@ -6942,32 +6973,27 @@ function _actualizarDiferencial(){
       const pEl=qs('#cfg_tasa_paralela'); if(pEl) pEl.value=parCalc.toFixed(2).replace('.',',');
       saveTasa(bcv); _lsSet(LS_CFG,JSON.stringify(CFG));
     }
-    el.textContent='[=] ×'+CFG.dif_congelado.toFixed(4);
-    el.style.color='#e67e22';
+    if(el){ el.textContent='[=] ×'+CFG.dif_congelado.toFixed(4); el.style.color='#e67e22'; }
     return;
   }
   if(bcv>0 && par>0){
     const dif=(par/bcv).toFixed(4);
-    el.textContent='× '+dif;
-    el.style.color='var(--brand)';
+    if(el){ el.textContent='× '+dif; el.style.color='var(--brand)'; }
     CFG.tasa_bcv=bcv; CFG.tasa_paralela=par;
     // Persistir inmediatamente sin esperar al botón Guardar
     saveTasa(bcv);
     _lsSet(LS_CFG, JSON.stringify(CFG));
   } else if(bcv>0){
-    el.textContent='—';
-    el.style.color='var(--muted)';
+    if(el){ el.textContent='—'; el.style.color='var(--muted)'; }
     CFG.tasa_bcv=bcv;
     saveTasa(bcv);
     _lsSet(LS_CFG, JSON.stringify(CFG));
   } else if(par>0){
-    el.textContent='—';
-    el.style.color='var(--muted)';
+    if(el){ el.textContent='—'; el.style.color='var(--muted)'; }
     CFG.tasa_paralela=par;
     _lsSet(LS_CFG, JSON.stringify(CFG));
   } else {
-    el.textContent='—';
-    el.style.color='var(--muted)';
+    if(el){ el.textContent='—'; el.style.color='var(--muted)'; }
   }
 }
 
@@ -14717,7 +14743,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_51';
+  const APP_VERSION = 'v14_53';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
