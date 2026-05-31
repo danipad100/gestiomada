@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_53">
+<html lang="es" data-app-version="GestioMada_V14_55">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -4274,27 +4274,39 @@ function _aplicarConfigRemota(clave, valorRaw){
     // ── Tasas recibidas de otro dispositivo: aplicar y marcar como recientes ──
     if(clave === 'tasa_bcv' || clave === 'tasa_paralela'){
       if(val === CFG[clave]) return;
+      // Si este dispositivo tiene diferencial congelado y llega tasa_paralela externa,
+      // ignorarla — la paralela se deriva de BCV × dif_congelado, no del mercado
+      if(clave === 'tasa_paralela' && CFG.dif_bloqueado && CFG.dif_congelado > 0){
+        console.log('[Config Realtime] tasa_paralela ignorada (dif_congelado activo)');
+        _actualizarDiferencial();
+        return;
+      }
       CFG[clave] = val;
       _lsSet(LS_CFG, JSON.stringify(CFG));
-      if(clave === 'tasa_bcv' && val > 0) saveTasa(val);
+      if(clave === 'tasa_bcv' && val > 0){
+        saveTasa(val);
+        // Si hay diferencial congelado, recalcular paralela con la nueva BCV
+        if(CFG.dif_bloqueado && CFG.dif_congelado > 0) _actualizarDiferencial();
+      }
       // Marcar como actualizado recientemente para evitar que el auto-fetch local sobreescriba
       _lsSet(LS_TASA_LAST_OK, String(Date.now()));
       _aplicarConfigEnUI();
       console.log('[Config Realtime]', clave, '→', val, '(throttle renovado)');
       return;
     }
-    // ── Diferencial congelado: manejo especial para evitar race conditions ──
-    // Cuando otro dispositivo descongela, necesitamos forzar un fetch de tasas reales
+    // ── Diferencial congelado: fuente de verdad global ──
+    // Congelar/descongelar en cualquier dispositivo se propaga a todos
     if(clave === 'dif_bloqueado' || clave === 'dif_congelado'){
       const oldBloq = CFG.dif_bloqueado;
       CFG[clave] = val;
       _lsSet(LS_CFG, JSON.stringify(CFG));
+      // Recalcular paralela inmediatamente con el nuevo estado del diferencial
+      _actualizarDiferencial();
       _aplicarConfigEnUI();
       console.log('[Config Realtime]', clave, '→', val);
-      // Si se descongeló desde otro dispositivo, forzar fetch de tasa paralela real
+      // Si se descongeló desde otro dispositivo, buscar tasa paralela real del mercado
       if(clave === 'dif_bloqueado' && oldBloq && !val){
         console.log('[Config Realtime] Diferencial descongelado remotamente — forzando fetch de tasas reales');
-        // Limpiar throttle para que el fetch se ejecute
         localStorage.removeItem(LS_TASA_LAST_OK);
         if(localStorage.getItem(LS_TASA_AUTO)==='1' && typeof fetchTasasGM === 'function'){
           setTimeout(()=> fetchTasasGM(true), 500);
@@ -7103,13 +7115,13 @@ async function _sincTasasAutoSupa(){
     const campos = [
       { clave:'tasa_bcv',      valor: JSON.stringify(CFG.tasa_bcv||0) },
       { clave:'tasa_paralela', valor: JSON.stringify(CFG.tasa_paralela||0) },
+      // Siempre incluir estado del diferencial para que los demás dispositivos
+      // puedan decidir si ignorar tasa_paralela o no
+      { clave:'dif_bloqueado', valor: JSON.stringify(CFG.dif_bloqueado||false) },
+      { clave:'dif_congelado', valor: JSON.stringify(CFG.dif_congelado||0) },
     ];
-    if(CFG.dif_bloqueado){
-      campos.push({ clave:'dif_bloqueado', valor: JSON.stringify(true) });
-      campos.push({ clave:'dif_congelado', valor: JSON.stringify(CFG.dif_congelado) });
-    }
     await SUPA.from('config').upsert(campos, { onConflict:'clave' });
-    console.log('[Config] Tasas auto sincronizadas:', CFG.tasa_bcv, CFG.tasa_paralela);
+    console.log('[Config] Tasas auto sincronizadas:', CFG.tasa_bcv, CFG.tasa_paralela, 'dif_bloqueado:', CFG.dif_bloqueado);
   } catch(e){ console.warn('[Config] Error sincronizando tasas auto:', e.message); }
 }
 
@@ -14743,7 +14755,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_53';
+  const APP_VERSION = 'v14_55';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
