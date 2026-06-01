@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_55">
+<html lang="es" data-app-version="GestioMada_V14_56">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -1286,6 +1286,19 @@ label.btn{cursor:pointer}
   transition:box-shadow .2s,transform .15s;cursor:pointer;
 }
 .prod-card:hover{box-shadow:0 14px 30px rgba(255,122,162,.13);transform:translateY(-2px)}
+.prod-card.drag-over{outline:2px dashed var(--brand);outline-offset:2px;background:var(--brand-light,#fff0f5)}
+.prod-card.dragging{opacity:0.4;transform:scale(0.97)}
+.cat-reorder-btn{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:5px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);color:var(--muted);cursor:pointer;transition:all .15s}
+.cat-reorder-btn.active{border-color:var(--brand);color:var(--brand);background:var(--brand-light,#fff0f5)}
+.cat-reorder-hint{font-size:11px;color:var(--muted);padding:6px 10px;background:var(--bg2);border-radius:8px;display:none}
+.cat-reorder-hint.visible{display:block}
+#pers_load_wrap{position:relative;display:inline-flex;align-items:center;gap:4px;min-width:190px}
+#pers_search{width:100%;border-radius:12px;font-size:13px;padding:6px 10px;border:1.5px solid var(--border);background:var(--bg);color:var(--ink);display:none}
+#pers_search.visible{display:block}
+#pers_search_results{position:absolute;top:100%;left:0;right:0;z-index:999;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.12);display:none}
+#pers_search_results.visible{display:block}
+#pers_search_results div{padding:8px 12px;cursor:pointer;font-size:13px;color:var(--ink)}
+#pers_search_results div:hover{background:var(--brand-light,#fff0f5);color:var(--brand)}
 .prod-card-img{
   width:100%;height:140px;
   background:linear-gradient(135deg,#ffe3ee 0%,#e8efff 100%);
@@ -2338,9 +2351,10 @@ body.dark .pos-prod-img-ph{background:#23283a}
               <label>&nbsp;</label>
               <div class="btn-row">
                 <button class="btn btn-ok" id="pers_save"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar</button>
-                <select id="pers_load" style="min-width:190px;border-radius:12px">
-                  <option value="">— Cargar guardado —</option>
-                </select>
+                <div id="pers_load_wrap" style="position:relative;display:inline-flex;flex-direction:column;min-width:190px">
+                  <input type="text" id="pers_search" class="visible" placeholder="🔍 Buscar producto…" autocomplete="off" oninput="persSearchFilter(this.value)" onfocus="persSearchFilter(this.value)" onblur="setTimeout(()=>{ const r=qs('#pers_search_results'); if(r) r.classList.remove('visible'); },180)"/>
+                  <div id="pers_search_results"></div>
+                </div>
                 <button class="btn btn-danger btn-sm" id="pers_delete" aria-label="Eliminar personalización"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>
               </div>
             </div>
@@ -2563,11 +2577,13 @@ body.dark .pos-prod-img-ph{background:#23283a}
           </select>
           <select id="cat_fest" onchange="renderCatalogo()">
             <option value="">Todos los estados</option>
-            <option value="activo">Activos</option><option value="inactivo">Inactivos</option>
+            <option value="activo" selected>Activos</option><option value="inactivo">Inactivos</option>
           </select>
+          <button id="btn_cat_reorder" class="cat-reorder-btn" onclick="toggleModoReorden()" title="Arrastrar para cambiar el orden"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg> Reordenar</button>
           <button class="btn btn-brand btn-sm" onclick="abrirProdManual()">＋ Nuevo producto</button>
           <button class="btn btn-sm" onclick="nav('editor',document.querySelector('[data-v=editor]'))" title="Crear con cálculo de costos"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg> Con cálculo</button>
         </div>
+        <div id="cat-reorder-hint" class="cat-reorder-hint" style="margin-bottom:10px">✦ Modo reordenar activo — arrastra las tarjetas para cambiar el orden. El orden se sincroniza con todos los dispositivos.</div>
         <div id="cat-container"></div>
       </div>
 
@@ -4124,7 +4140,7 @@ async function cargarConfigNegocioDesdeNube(){
     let changed = false;
     // Todos los campos que se sincronizan via tabla config
     const camposSyncables = ['negocio','rif','telefono','instagram','direccion','slogan','nota_recibo','logo_url',
-      'dif_bloqueado','dif_congelado','restante_usd_puro','tipos_venta_on','comision_detal','comision_mayor','caja_auto_apertura',
+      'dif_bloqueado','dif_congelado','restante_usd_puro','tipos_venta_on','comision_detal','comision_mayor','caja_auto_apertura','cat_order',
       'tasa_auto','tasa_bcv','tasa_paralela','imp_on','imp_pct','metodos_activos','categorias','moneda','moneda2'];
     data.forEach(row => {
       if(camposSyncables.includes(row.clave)){
@@ -4134,6 +4150,11 @@ async function cargarConfigNegocioDesdeNube(){
           if(row.clave === 'tasa_auto'){
             const cur = localStorage.getItem(LS_TASA_AUTO)==='1';
             if(val !== cur){ _lsSet(LS_TASA_AUTO, val ? '1' : '0'); changed = true; }
+            return;
+          }
+          // cat_order se guarda en localStorage propio, no en CFG
+          if(row.clave === 'cat_order'){
+            try{ _lsSet(LS_CAT_ORDER, JSON.stringify(val)); }catch(e){}
             return;
           }
           if(val !== undefined && val !== null && val !== CFG[row.clave]){
@@ -4274,44 +4295,39 @@ function _aplicarConfigRemota(clave, valorRaw){
     // ── Tasas recibidas de otro dispositivo: aplicar y marcar como recientes ──
     if(clave === 'tasa_bcv' || clave === 'tasa_paralela'){
       if(val === CFG[clave]) return;
-      // Si este dispositivo tiene diferencial congelado y llega tasa_paralela externa,
-      // ignorarla — la paralela se deriva de BCV × dif_congelado, no del mercado
-      if(clave === 'tasa_paralela' && CFG.dif_bloqueado && CFG.dif_congelado > 0){
-        console.log('[Config Realtime] tasa_paralela ignorada (dif_congelado activo)');
-        _actualizarDiferencial();
-        return;
-      }
       CFG[clave] = val;
       _lsSet(LS_CFG, JSON.stringify(CFG));
-      if(clave === 'tasa_bcv' && val > 0){
-        saveTasa(val);
-        // Si hay diferencial congelado, recalcular paralela con la nueva BCV
-        if(CFG.dif_bloqueado && CFG.dif_congelado > 0) _actualizarDiferencial();
-      }
+      if(clave === 'tasa_bcv' && val > 0) saveTasa(val);
       // Marcar como actualizado recientemente para evitar que el auto-fetch local sobreescriba
       _lsSet(LS_TASA_LAST_OK, String(Date.now()));
       _aplicarConfigEnUI();
       console.log('[Config Realtime]', clave, '→', val, '(throttle renovado)');
       return;
     }
-    // ── Diferencial congelado: fuente de verdad global ──
-    // Congelar/descongelar en cualquier dispositivo se propaga a todos
+    // ── Diferencial congelado: manejo especial para evitar race conditions ──
+    // Cuando otro dispositivo descongela, necesitamos forzar un fetch de tasas reales
     if(clave === 'dif_bloqueado' || clave === 'dif_congelado'){
       const oldBloq = CFG.dif_bloqueado;
       CFG[clave] = val;
       _lsSet(LS_CFG, JSON.stringify(CFG));
-      // Recalcular paralela inmediatamente con el nuevo estado del diferencial
-      _actualizarDiferencial();
       _aplicarConfigEnUI();
       console.log('[Config Realtime]', clave, '→', val);
-      // Si se descongeló desde otro dispositivo, buscar tasa paralela real del mercado
+      // Si se descongeló desde otro dispositivo, forzar fetch de tasa paralela real
       if(clave === 'dif_bloqueado' && oldBloq && !val){
         console.log('[Config Realtime] Diferencial descongelado remotamente — forzando fetch de tasas reales');
+        // Limpiar throttle para que el fetch se ejecute
         localStorage.removeItem(LS_TASA_LAST_OK);
         if(localStorage.getItem(LS_TASA_AUTO)==='1' && typeof fetchTasasGM === 'function'){
           setTimeout(()=> fetchTasasGM(true), 500);
         }
       }
+      return;
+    }
+    // cat_order: aplicar orden recibido y rerenderizar catálogo
+    if(clave === 'cat_order'){
+      if(Array.isArray(val)){ _lsSet(LS_CAT_ORDER, JSON.stringify(val)); }
+      if(typeof renderCatalogo === 'function') renderCatalogo();
+      console.log('[Config Realtime] cat_order actualizado →', val?.length, 'items');
       return;
     }
     // Arrays/objects: comparar JSON
@@ -4880,7 +4896,7 @@ function updateBadges(){
 let pName, pDir, pAreaOn, pAreaList, pAreaTotal, pAreaAdd,
     pDep, pAddDir, pAddDep, pIndOn, pIndMen, pIndUni,
     pMoOn, pMoList, pMoAdd, pGMode, pGOn, pGPct, pIOn, pIPct,
-    pPills={}, pLoader, pImport, pImportCat, pImportMode;
+    pPills={}, pImport, pImportCat, pImportMode;
 
 function makeDirRow(d={}){
   const r=document.createElement('div');
@@ -4973,7 +4989,7 @@ function initEditor(){
   pMoOn=qs('#pers_mo_on'); pMoList=qs('#pers_mo_list'); pMoAdd=qs('#pers_mo_add');
   pGMode=qs('#pers_gmode'); pGOn=qs('#pers_g_on'); pGPct=qs('#pers_g_pct');
   pIOn=qs('#pers_i_on'); pIPct=qs('#pers_i_pct');
-  pLoader=qs('#pers_load'); pImport=qs('#pers_import');
+  pImport=qs('#pers_import');
   pImportCat=qs('#pers_import_catalog'); pImportMode=qs('#pers_import_mode');
   pPills={ dir:qs('#pers_pill_dir'),dep:qs('#pers_pill_dep'),ind:qs('#pers_pill_ind'),mo:qs('#pers_pill_mo'),sub:qs('#pers_pill_sub'),g:qs('#pers_pill_g'),i:qs('#pers_pill_i'),pv:qs('#pers_pv'),indUd:qs('#pers_ind_ud'),moUd:qs('#pers_mo_ud') };
 
@@ -5187,9 +5203,33 @@ function persFill(data){
 }
 
 function persRefreshLoader(){
+  // pLoader ya no existe — ahora usamos el buscador de texto
+  // Solo actualizamos el placeholder para reflejar cuántos hay
   const all=loadPers();
-  pLoader.innerHTML='<option value="">— Cargar guardado —</option>'+all.map((p,i)=>`<option value="${i}">${esc(p.name)}</option>`).join('');
-  pLoader.onchange=()=>{ const i=parseInt(pLoader.value); if(!isNaN(i)) persFill(all[i]); };
+  const inp=qs('#pers_search');
+  if(inp) inp.placeholder='🔍 Buscar entre '+all.length+' producto'+(all.length!==1?'s':'')+'…';
+}
+
+function persSearchFilter(q){
+  const all=loadPers();
+  const res=qs('#pers_search_results'); if(!res) return;
+  const term=(q||'').toLowerCase().trim();
+  // Sin texto: mostrar todos (para revisar la lista completa igual que el select anterior)
+  const matches = term ? all.filter(p=>(p.name||'').toLowerCase().includes(term)) : all;
+  if(!matches.length){ res.classList.remove('visible'); return; }
+  res.innerHTML=matches.slice(0,30).map(p=>{
+    const idx=all.indexOf(p);
+    return '<div onmousedown="persLoadFromSearch('+idx+')">' + esc(p.name) + '</div>';
+  }).join('');
+  res.classList.add('visible');
+}
+
+function persLoadFromSearch(idx){
+  const all=loadPers(); if(!all[idx]) return;
+  persFill(all[idx]);
+  const inp=qs('#pers_search'); if(inp) inp.value=all[idx].name||'';
+  const res=qs('#pers_search_results'); if(res) res.classList.remove('visible');
+  toast('Producto cargado: '+all[idx].name,'ok');
 }
 
 function persSave(){
@@ -5537,15 +5577,99 @@ function guardarProdManual(){
   }
   _mpmIdx=null;
 }
+/* ═══════════════════════════════════════
+   REORDENAR CATÁLOGO (Drag & Drop)
+════════════════════════════════════════ */
+const LS_CAT_ORDER = 'POS.cat_order';
+let _catReorderMode = false;
+
+function _getCatOrder(){ try{ return JSON.parse(localStorage.getItem(LS_CAT_ORDER)||'[]'); }catch(e){ return []; } }
+function _saveCatOrder(ids){
+  _lsSet(LS_CAT_ORDER, JSON.stringify(ids));
+  // Sync al array del catálogo directamente (reordenar el array)
+  const cat = loadCat();
+  const ordered = [];
+  ids.forEach(id=>{ const p=cat.find(x=>String(x.id)===String(id)); if(p) ordered.push(p); });
+  // Agregar cualquier producto que no estuviera en el orden guardado al final
+  cat.forEach(p=>{ if(!ids.includes(String(p.id))) ordered.push(p); });
+  // Asignar campo orden a cada producto
+  ordered.forEach((p,i)=>{ p.orden=i; });
+  localStorage.setItem(LS_CAT, JSON.stringify(ordered));
+  updateBadges();
+  // Sync el orden a Supabase: upsert cada producto con su nuevo campo orden
+  if(window._supaConectado){
+    const updates = ordered.map(p=>({ id:p.id, orden:p.orden }));
+    SUPA.from('productos').upsert(updates, { onConflict:'id' }).catch(e=>console.warn('[Orden] Sync error:', e.message));
+    // También guardar orden en config para propagación rápida
+    SUPA.from('config').upsert([{ clave:'cat_order', valor: JSON.stringify(ids) }], { onConflict:'clave' }).catch(()=>{});
+  }
+}
+
+function _applyCatOrder(cat){
+  const order = _getCatOrder();
+  if(!order.length) return cat;
+  const map = {};
+  cat.forEach(p=>{ map[String(p.id)]=p; });
+  const ordered = [];
+  order.forEach(id=>{ if(map[String(id)]) ordered.push(map[String(id)]); });
+  cat.forEach(p=>{ if(!order.includes(String(p.id))) ordered.push(p); });
+  return ordered;
+}
+
+function toggleModoReorden(){
+  _catReorderMode = !_catReorderMode;
+  const btn = qs('#btn_cat_reorder');
+  const hint = qs('#cat-reorder-hint');
+  if(btn) btn.classList.toggle('active', _catReorderMode);
+  if(hint) hint.classList.toggle('visible', _catReorderMode);
+  renderCatalogo();
+}
+
+function _setupDragDrop(grid){
+  let dragSrc = null;
+  grid.querySelectorAll('.prod-card').forEach(card=>{
+    card.draggable = true;
+    card.addEventListener('dragstart', e=>{
+      dragSrc = card;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+    });
+    card.addEventListener('dragend', ()=>{ card.classList.remove('dragging'); grid.querySelectorAll('.prod-card').forEach(c=>c.classList.remove('drag-over')); });
+    card.addEventListener('dragover', e=>{ e.preventDefault(); e.dataTransfer.dropEffect='move'; card.classList.add('drag-over'); });
+    card.addEventListener('dragleave', ()=>card.classList.remove('drag-over'));
+    card.addEventListener('drop', e=>{
+      e.preventDefault();
+      card.classList.remove('drag-over');
+      if(!dragSrc || dragSrc===card) return;
+      // Reorder in DOM
+      const cards = [...grid.querySelectorAll('.prod-card')];
+      const srcIdx = cards.indexOf(dragSrc);
+      const dstIdx = cards.indexOf(card);
+      if(srcIdx < dstIdx) grid.insertBefore(dragSrc, card.nextSibling);
+      else grid.insertBefore(dragSrc, card);
+      // Persist new order
+      const newOrder = [...grid.querySelectorAll('.prod-card')].map(c=>c.dataset.prodId).filter(Boolean);
+      _saveCatOrder(newOrder);
+    });
+  });
+}
+
 function renderCatalogo(){
-  const cat=loadCat(), q=(qs('#cat_q')?.value||'').toLowerCase(), fc=qs('#cat_fcat')?.value||'', fe=qs('#cat_fest')?.value||'';
-  const fil=cat.filter(p=>(!q||p.nombre.toLowerCase().includes(q)||(p.sku||'').toLowerCase().includes(q))&&(!fc||p.categoria===fc)&&(!fe||p.estado===fe));
+  // Aplicar orden guardado antes de filtrar
+  const catRaw=loadCat();
+  const catOrdenado=_applyCatOrder(catRaw);
+  const q=(qs('#cat_q')?.value||'').toLowerCase(), fc=qs('#cat_fcat')?.value||'', fe=qs('#cat_fest')?.value||'';
+  const matchBase=p=>(!q||p.nombre.toLowerCase().includes(q)||(p.sku||'').toLowerCase().includes(q))&&(!fc||p.categoria===fc);
+  const activos   = fe==='inactivo' ? [] : catOrdenado.filter(p=>p.estado!=='inactivo'&&matchBase(p));
+  const inactivos = fe==='activo'   ? [] : catOrdenado.filter(p=>p.estado==='inactivo'&&matchBase(p));
   const c=qs('#cat-container');
-  if(!fil.length){ c.innerHTML=`<div class="empty"><div class="empty-ico"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div><h3>${cat.length?'Sin resultados':'Catálogo vacío'}</h3><p>${cat.length?'Prueba otros filtros.':'Crea tu primer producto en el Editor.'}</p><button class="btn btn-brand btn-sm" onclick="nav('editor',document.querySelector('[data-v=editor]'))">＋ Crear producto</button></div>`; return; }
-  const grid=document.createElement('div'); grid.className='prod-grid';
-  fil.forEach(p=>{
-    const ri=cat.indexOf(p); const mg=p.precio_venta&&p.costo?((p.precio_venta-p.costo)/p.precio_venta*100).toFixed(1):null;
-    const card=document.createElement('div'); card.className='prod-card';
+  if(!activos.length&&!inactivos.length){
+    c.innerHTML=`<div class="empty"><div class="empty-ico"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div><h3>${catRaw.length?'Sin resultados':'Catálogo vacío'}</h3><p>${catRaw.length?'Prueba otros filtros.':'Crea tu primer producto en el Editor.'}</p><button class="btn btn-brand btn-sm" onclick="nav('editor',document.querySelector('[data-v=editor]'))">＋ Crear producto</button></div>`;
+    return;
+  }
+  function buildCard(p){
+    const ri=catRaw.indexOf(p); const mg=p.precio_venta&&p.costo?((p.precio_venta-p.costo)/p.precio_venta*100).toFixed(1):null;
+    const card=document.createElement('div'); card.className='prod-card'; card.dataset.prodId=String(p.id);
     card.innerHTML=`
       <div class="prod-card-img" style="${getFoto(p)?'padding:0;overflow:hidden':''}">${getFoto(p)?`<img src="${getFoto(p)}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit" alt="${p.nombre}"/>`:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>'}<div class="status-dot ${p.estado==='inactivo'?'off':''}"></div></div>
       <div class="prod-card-body">
@@ -5555,24 +5679,12 @@ function renderCatalogo(){
         <div class="prod-card-prices">
           <div class="prod-card-cost">Costo: ${euro(p.costo)}${mg!==null?' · Margen: '+mg+'%':''}</div>
           ${(()=>{
-            const bcv=getTasaBCV();
-            const pvUsd=p.precio_venta||0;
-            const dif=getDiferencial();
-            const hasDif=dif>1.001;
-            const pvUsdDif=pvUsd*dif;
-            const pvBsDif=usdToBs(pvUsdDif, bcv);
-            // 1. Precio base USD — siempre negro
+            const bcv=getTasaBCV(); const pvUsd=p.precio_venta||0; const dif=getDiferencial(); const hasDif=dif>1.001;
+            const pvUsdDif=pvUsd*dif; const pvBsDif=usdToBs(pvUsdDif, bcv);
             let html=`<div class="prod-card-pv">${euro(pvUsd)}</div>`;
             if(bcv>0){
-              if(hasDif){
-                // 2. Con diferencial (rosado) — sin texto extra
-                html+=`<div style="font-size:13px;color:var(--brand);font-weight:700">$ ${pvUsdDif.toFixed(2).replace('.',',')}</div>`;
-                // 3. En Bs (negro)
-                html+=`<div style="font-size:13px;font-weight:700;color:var(--ink)">Bs ${pvBsDif.toFixed(2).replace('.',',')}</div>`;
-              } else {
-                // Sin diferencial: solo Bs
-                html+=`<div style="font-size:13px;font-weight:700;color:var(--ink)">Bs ${usdToBs(pvUsd, bcv).toFixed(2).replace('.',',')}</div>`;
-              }
+              if(hasDif){ html+=`<div style="font-size:13px;color:var(--brand);font-weight:700">$ ${pvUsdDif.toFixed(2).replace('.',',')}</div>`; html+=`<div style="font-size:13px;font-weight:700;color:var(--ink)">Bs ${pvBsDif.toFixed(2).replace('.',',')}</div>`; }
+              else { html+=`<div style="font-size:13px;font-weight:700;color:var(--ink)">Bs ${usdToBs(pvUsd, bcv).toFixed(2).replace('.',',')}</div>`; }
             }
             return html;
           })()}
@@ -5584,9 +5696,23 @@ function renderCatalogo(){
         <button class="btn btn-sm" onclick="duplicarProd(${ri})" title="Duplicar" aria-label="Duplicar"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></button>
         <button class="btn btn-danger btn-sm" onclick="eliminarProd(${ri})">✕</button>
       </div>`;
-    grid.appendChild(card);
-  });
-  c.innerHTML=''; c.appendChild(grid);
+    return card;
+  }
+  c.innerHTML='';
+  if(activos.length){
+    const grid=document.createElement('div'); grid.className='prod-grid';
+    activos.forEach(p=>grid.appendChild(buildCard(p)));
+    if(_catReorderMode) _setupDragDrop(grid);
+    c.appendChild(grid);
+  }
+  if(inactivos.length){
+    const sec=document.createElement('div'); sec.style.cssText='margin-top:28px';
+    sec.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><div style="height:1px;flex:1;background:var(--border)"></div><div style="display:flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;background:#f3f4f6;border:1.5px solid var(--border)"><div style="width:8px;height:8px;border-radius:50%;background:#d1d5db;flex-shrink:0"></div><span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Inactivos (${inactivos.length})</span></div><div style="height:1px;flex:1;background:var(--border)"></div></div>`;
+    const grid=document.createElement('div'); grid.className='prod-grid'; grid.style.cssText='opacity:0.55;filter:grayscale(30%)';
+    inactivos.forEach(p=>grid.appendChild(buildCard(p)));
+    if(_catReorderMode) _setupDragDrop(grid);
+    sec.appendChild(grid); c.appendChild(sec);
+  }
 }
 function verProd(idx){
   const cat=loadCat(), p=cat[idx]; if(!p) return;
@@ -7115,13 +7241,13 @@ async function _sincTasasAutoSupa(){
     const campos = [
       { clave:'tasa_bcv',      valor: JSON.stringify(CFG.tasa_bcv||0) },
       { clave:'tasa_paralela', valor: JSON.stringify(CFG.tasa_paralela||0) },
-      // Siempre incluir estado del diferencial para que los demás dispositivos
-      // puedan decidir si ignorar tasa_paralela o no
-      { clave:'dif_bloqueado', valor: JSON.stringify(CFG.dif_bloqueado||false) },
-      { clave:'dif_congelado', valor: JSON.stringify(CFG.dif_congelado||0) },
     ];
+    if(CFG.dif_bloqueado){
+      campos.push({ clave:'dif_bloqueado', valor: JSON.stringify(true) });
+      campos.push({ clave:'dif_congelado', valor: JSON.stringify(CFG.dif_congelado) });
+    }
     await SUPA.from('config').upsert(campos, { onConflict:'clave' });
-    console.log('[Config] Tasas auto sincronizadas:', CFG.tasa_bcv, CFG.tasa_paralela, 'dif_bloqueado:', CFG.dif_bloqueado);
+    console.log('[Config] Tasas auto sincronizadas:', CFG.tasa_bcv, CFG.tasa_paralela);
   } catch(e){ console.warn('[Config] Error sincronizando tasas auto:', e.message); }
 }
 
@@ -14755,7 +14881,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_55';
+  const APP_VERSION = 'v14_56';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
