@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_57">
+<html lang="es" data-app-version="GestioMada_V14_58">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -191,11 +191,13 @@ function iniciarRealtime(){
     .on('postgres_changes', { event: '*', schema: 'public', table: 'config' },
       payload => {
         const reg = payload.new;
+        console.log('[Realtime config] raw payload:', JSON.stringify({clave: reg?.clave, valorType: typeof reg?.valor, valor: reg?.valor}).slice(0,200));
         if(!reg || !reg.clave) return;
         _aplicarConfigRemota(reg.clave, reg.valor);
       }
     )
     .subscribe(status => {
+      console.log('[Realtime config] status:', status);
       if(status === 'SUBSCRIBED') console.log('[Realtime] Escuchando: config');
     });
 }
@@ -4145,9 +4147,11 @@ async function cargarConfigNegocioDesdeNube(){
     data.forEach(row => {
       if(camposSyncables.includes(row.clave)){
         try {
-          // row.valor es jsonb: el cliente Supabase JS lo devuelve ya parseado (objeto/array/primitivo)
-          // Si por algún motivo viene como string, lo parseamos igual
-          const val = (typeof row.valor === 'string') ? JSON.parse(row.valor) : row.valor;
+          // row.valor es jsonb. Supabase JS lo devuelve ya parseado.
+          // Pero los valores guardados son strings JSON (ej: "true", "[]"), así que hay que parsearlos de nuevo.
+          let val = row.valor;
+          if(typeof val === 'string'){ try{ val = JSON.parse(val); }catch(e){} }
+          else if(typeof val === 'object' && val !== null && !Array.isArray(val) && Object.keys(val).length === 0){ val = null; }
           // Para tasa_auto, guardar en localStorage dedicado
           if(row.clave === 'tasa_auto'){
             const cur = localStorage.getItem(LS_TASA_AUTO)==='1';
@@ -4272,8 +4276,22 @@ function _aplicarTiposVentaUI(){
 // ── Aplicar un cambio de config individual recibido por Realtime ──
 function _aplicarConfigRemota(clave, valorRaw){
   try {
-    // valorRaw puede ser string JSON (desde cargarConfigNegocioDesdeNube) o valor ya parseado (desde Realtime con columna jsonb)
-    const val = (typeof valorRaw === 'string') ? JSON.parse(valorRaw) : valorRaw;
+    // valorRaw desde Realtime: para jsonb, el cliente Supabase devuelve el valor ya parseado
+    // Si es string lo parseamos, si ya es objeto/array lo usamos directo
+    let val;
+    if(typeof valorRaw === 'string'){
+      try{ val = JSON.parse(valorRaw); }catch(e){ val = valorRaw; }
+    } else {
+      // jsonb ya parseado por Supabase JS client: para cat_order llegará como array
+      // pero el valor interno puede ser un string JSON (doble encoded)
+      if(typeof valorRaw === 'object' && !Array.isArray(valorRaw) && valorRaw !== null){
+        val = valorRaw;
+      } else if(Array.isArray(valorRaw)){
+        val = valorRaw;
+      } else {
+        val = valorRaw;
+      }
+    }
     if(clave === 'sesion_caja'){
       try{ _lsSet(LS_SESION,JSON.stringify(val)); _verificarCierreAutomatico(); if(typeof renderSesionBar==='function') renderSesionBar(); if(typeof renderSaldosMoneda==='function') renderSaldosMoneda(); }catch(e){}
       console.log('[Config Realtime] sesion_caja actualizada');
@@ -5588,26 +5606,29 @@ let _catReorderMode = false;
 
 function _getCatOrder(){ try{ return JSON.parse(localStorage.getItem(LS_CAT_ORDER)||'[]'); }catch(e){ return []; } }
 function _saveCatOrder(ids){
+  // Guardar localmente
   _lsSet(LS_CAT_ORDER, JSON.stringify(ids));
-  // Sync al array del catálogo directamente (reordenar el array)
+  // Reordenar array local del catálogo
   const cat = loadCat();
+  const map = {};
+  cat.forEach(p=>{ map[String(p.id)]=p; });
   const ordered = [];
-  ids.forEach(id=>{ const p=cat.find(x=>String(x.id)===String(id)); if(p) ordered.push(p); });
-  // Agregar cualquier producto que no estuviera en el orden guardado al final
+  ids.forEach(id=>{ if(map[id]) ordered.push(map[id]); });
   cat.forEach(p=>{ if(!ids.includes(String(p.id))) ordered.push(p); });
-  // Asignar campo orden a cada producto
   ordered.forEach((p,i)=>{ p.orden=i; });
   localStorage.setItem(LS_CAT, JSON.stringify(ordered));
   updateBadges();
-  // Sync el orden a Supabase: upsert cada producto con su nuevo campo orden
+  // Sync a Supabase — igual que el resto de config: valor como string JSON
   if(window._supaConectado){
-    const updates = ordered.map(p=>({ id:p.id, orden:p.orden }));
-    SUPA.from('productos').upsert(updates, { onConflict:'id' }).catch(e=>console.warn('[Orden] Sync error:', e.message));
-    // También guardar orden en config para propagación rápida
-    // valor debe ser el array directamente (columna jsonb), no un string
-    SUPA.from('config').upsert([{ clave:'cat_order', valor: ids }], { onConflict:'clave' })
-      .then(({error})=>{ if(error) console.warn('[Orden] Sync config error:', error.message); else console.log('[Orden] cat_order sincronizado:', ids.length, 'items'); })
-      .catch(e=>console.warn('[Orden] Sync error:', e.message));
+    const valorStr = JSON.stringify(ids);
+    console.log('[Orden] Sincronizando cat_order a Supabase, ids:', ids.length);
+    SUPA.from('config')
+      .upsert([{ clave:'cat_order', valor: valorStr }], { onConflict:'clave' })
+      .then(res=>{
+        if(res.error) console.warn('[Orden] Error sync config:', res.error.message, res.error);
+        else console.log('[Orden] cat_order OK en Supabase');
+      })
+      .catch(e=>console.warn('[Orden] catch error:', e.message));
   }
 }
 
@@ -14887,7 +14908,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_57';
+  const APP_VERSION = 'v14_58';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
