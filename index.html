@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_56">
+<html lang="es" data-app-version="GestioMada_V14_57">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -4145,7 +4145,9 @@ async function cargarConfigNegocioDesdeNube(){
     data.forEach(row => {
       if(camposSyncables.includes(row.clave)){
         try {
-          const val = JSON.parse(row.valor);
+          // row.valor es jsonb: el cliente Supabase JS lo devuelve ya parseado (objeto/array/primitivo)
+          // Si por algún motivo viene como string, lo parseamos igual
+          const val = (typeof row.valor === 'string') ? JSON.parse(row.valor) : row.valor;
           // Para tasa_auto, guardar en localStorage dedicado
           if(row.clave === 'tasa_auto'){
             const cur = localStorage.getItem(LS_TASA_AUTO)==='1';
@@ -4270,7 +4272,8 @@ function _aplicarTiposVentaUI(){
 // ── Aplicar un cambio de config individual recibido por Realtime ──
 function _aplicarConfigRemota(clave, valorRaw){
   try {
-    const val = JSON.parse(valorRaw);
+    // valorRaw puede ser string JSON (desde cargarConfigNegocioDesdeNube) o valor ya parseado (desde Realtime con columna jsonb)
+    const val = (typeof valorRaw === 'string') ? JSON.parse(valorRaw) : valorRaw;
     if(clave === 'sesion_caja'){
       try{ _lsSet(LS_SESION,JSON.stringify(val)); _verificarCierreAutomatico(); if(typeof renderSesionBar==='function') renderSesionBar(); if(typeof renderSaldosMoneda==='function') renderSaldosMoneda(); }catch(e){}
       console.log('[Config Realtime] sesion_caja actualizada');
@@ -5601,7 +5604,10 @@ function _saveCatOrder(ids){
     const updates = ordered.map(p=>({ id:p.id, orden:p.orden }));
     SUPA.from('productos').upsert(updates, { onConflict:'id' }).catch(e=>console.warn('[Orden] Sync error:', e.message));
     // También guardar orden en config para propagación rápida
-    SUPA.from('config').upsert([{ clave:'cat_order', valor: JSON.stringify(ids) }], { onConflict:'clave' }).catch(()=>{});
+    // valor debe ser el array directamente (columna jsonb), no un string
+    SUPA.from('config').upsert([{ clave:'cat_order', valor: ids }], { onConflict:'clave' })
+      .then(({error})=>{ if(error) console.warn('[Orden] Sync config error:', error.message); else console.log('[Orden] cat_order sincronizado:', ids.length, 'items'); })
+      .catch(e=>console.warn('[Orden] Sync error:', e.message));
   }
 }
 
@@ -14881,7 +14887,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_56';
+  const APP_VERSION = 'v14_57';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
