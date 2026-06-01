@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_58">
+<html lang="es" data-app-version="GestioMada_V14_60">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -191,13 +191,11 @@ function iniciarRealtime(){
     .on('postgres_changes', { event: '*', schema: 'public', table: 'config' },
       payload => {
         const reg = payload.new;
-        console.log('[Realtime config] raw payload:', JSON.stringify({clave: reg?.clave, valorType: typeof reg?.valor, valor: reg?.valor}).slice(0,200));
         if(!reg || !reg.clave) return;
         _aplicarConfigRemota(reg.clave, reg.valor);
       }
     )
     .subscribe(status => {
-      console.log('[Realtime config] status:', status);
       if(status === 'SUBSCRIBED') console.log('[Realtime] Escuchando: config');
     });
 }
@@ -7265,16 +7263,16 @@ async function _sincTasaAutoSupa(auto){
 async function _sincTasasAutoSupa(){
   if(!window._supaConectado) return;
   try {
+    // Siempre subir dif_bloqueado y dif_congelado — Supabase es fuente de verdad
+    // No condicionar al estado local del dispositivo que hace el fetch
     const campos = [
       { clave:'tasa_bcv',      valor: JSON.stringify(CFG.tasa_bcv||0) },
       { clave:'tasa_paralela', valor: JSON.stringify(CFG.tasa_paralela||0) },
+      { clave:'dif_bloqueado', valor: JSON.stringify(CFG.dif_bloqueado||false) },
+      { clave:'dif_congelado', valor: JSON.stringify(CFG.dif_congelado||0) },
     ];
-    if(CFG.dif_bloqueado){
-      campos.push({ clave:'dif_bloqueado', valor: JSON.stringify(true) });
-      campos.push({ clave:'dif_congelado', valor: JSON.stringify(CFG.dif_congelado) });
-    }
     await SUPA.from('config').upsert(campos, { onConflict:'clave' });
-    console.log('[Config] Tasas auto sincronizadas:', CFG.tasa_bcv, CFG.tasa_paralela);
+    console.log('[Config] Tasas sincronizadas — dif_bloqueado:', CFG.dif_bloqueado, 'dif_congelado:', CFG.dif_congelado);
   } catch(e){ console.warn('[Config] Error sincronizando tasas auto:', e.message); }
 }
 
@@ -14908,7 +14906,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_58';
+  const APP_VERSION = 'v14_60';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
