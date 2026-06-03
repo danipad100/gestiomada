@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_63">
+<html lang="es" data-app-version="GestioMada_V14_64">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -672,7 +672,7 @@ SUPA.from('productos').select('id').limit(1)
     window._supaConectado = !error;
     if(window._supaConectado){
       console.log('[Supabase] Conectado ✓ — iniciando sync + Realtime');
-      initSupabaseSync().then(() => { _procesarColaSyncProd(); _migrarFotosBase64(); });
+      initSupabaseSync().then(() => { _procesarColaSyncProd(); _migrarFotosBase64(); _dedupPers(); });
     } else {
       console.warn('[Supabase] Error de conexión:', error?.message);
     }
@@ -2844,7 +2844,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.63: FIX handler roto closeAllModals — al hacer clic en un número de pedido desde la búsqueda global lanzaba ReferenceError (la función no existía), por lo que ni cerraba el modal ni navegaba al pedido. Ahora closeAllModals() cierra todos los modales abiertos del stack. Limpieza: eliminada una definición duplicada de bnMas (código muerto; se conserva la versión con soporte del botón Atrás de Android). v14.62: FIX CRÍTICO sobreescritura de producto en catálogo — al editar un producto del catálogo, cargar luego un producto guardado distinto desde el buscador y registrarlo, el nuevo producto sobreescribía al anterior porque el ID de edición (_editCatProdId) quedaba "pegado". Dos correcciones: (1) persLoadFromSearch e importación de JSON ahora limpian _editCatProdId al cargar un producto guardado (cargar ≠ editar la entrada del catálogo por ID). (2) confirmarCatalogo ahora usa el SKU como identidad: si el ID de edición apunta a un producto cuyo SKU no coincide con el ingresado, se descarta ese ID; el emparejado es por SKU exacto y el nombre solo se usa como último recurso cuando no hay SKU. Resultado: un SKU distinto nunca sobreescribe otro producto. v14.61: FIX registros dobles en editor de producto personalizable — ahora usa _editCatProdId (ID original) como criterio primario al guardar, evitando duplicados al renombrar el producto. v14.42: FIX Inventario — el descuento de stock no funcionaba al vender ni al entregar pedidos. Tres problemas corregidos: (1) descontarInventarioDeItems usaba _registrarMovInv que aplicaba doble descuento de stock (ella misma resta + _registrarMovInv también resta y guarda); cambiado a _soloLogMovInv que solo logea el movimiento sin tocar stock. (2) Flag _modificado nunca se asignaba, así que los upserts a Supabase no se ejecutaban — los cambios de stock no se sincronizaban entre dispositivos. (3) Solo descontaba si modo_inventario era 'terminado' o 'insumos'; ahora también descuenta automáticamente si modo_inventario es 'ninguno' pero existe un registro en terminados vinculado al producto. Logs de depuración agregados en consola para rastrear cada descuento. v14.41: FIX Dashboard — KPIs de finanzas desaparecían tras cargar porque can() no tenía fallback al rol para permisos nuevos. Ahora can() replica el patrón de canView(). FIX APP_VERSION desincronizada. v14.35: Limpieza profunda de localStorage — _migrarFotosBase64() ahora cubre 3 fuentes de peso oculto: (1) fotos base64 dentro del campo calculo embebido en productos del catálogo (POS.cat), (2) fotos base64 en productos personalizables del editor (POS.pers), (3) fotos directas del catálogo (ya existente). Al crear producto desde el editor, calculo.foto se limpia preventivamente para no duplicar base64 en localStorage. Botón de limpieza manual renombrado a "Limpiar fotos base64 (catálogo + editor)". v14.32: Arquitectura — 17 CSS design tokens (--sp-xs a --sp-2xl, --r-sm a --r-pill, --fs-xs a --fs-2xl, --font, --transition). Aplicados a .btn, .modal, .card y body como convención. Suite de tests de regresión para cálculos financieros: 28 assertions cubriendo round2, parseEU, safeNum, euro, fmtBs, pedidoTotalCDifCalc, pedidoSaldoCDif, esc. Se activan con ?test en URL o localStorage._gm_tests=1. v14.31: Accesibilidad — role="dialog" y aria-modal="true" en los 21 modales. aria-label en 10 botones de solo ícono (editar, duplicar, eliminar, anular, imprimir). tabindex="-1" en contenedores .modal para recibir foco al abrir. openModal() ahora enfoca el modal abierto. Contraste dark mode verificado (7.4:1 y 6.9:1 — supera WCAG AA). v14.30: Migración agresiva de fotos base64 — al cargar, sube fotos pendientes a Supabase Storage y limpia base64 del localStorage. Monitor de almacenamiento mejorado con desglose de las 3 keys más pesadas y botón de limpieza manual. SW resiliente: install ya no falla si un ícono o manifest no se descarga. Mensajes de error de actualización PWA más descriptivos. v14.29: Resiliencia y UX — openModal/closeModal mejorados con stack de modales, scroll lock del body, y cierre con Escape (closeTopModal). Modal de usuarios unificado al sistema centralizado. Nuevo helper safeNum(v, fallback) para validar inputs numéricos de forma segura (NaN/Infinity → fallback). v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.64: FIX CRÍTICO duplicados al guardar producto del editor — cada "Guardar" creaba un registro nuevo en lugar de actualizar el existente, porque persToJSON() no asignaba un id estable y mapearParaSupa generaba un Date.now() distinto en cada upsert (insertaba fila nueva en Supabase y Realtime la bajaba). Correcciones: (1) persSave ahora resuelve un id estable (producto cargado vía _editPersId → mismo SKU+nombre → mismo nombre) y conserva el id existente, de modo que el upsert ACTUALIZA la misma fila. (2) persLoadFromSearch recuerda el id del producto cargado; persReset e importación lo limpian. (3) Nueva _dedupPers() que al arrancar colapsa los productos personalizables duplicados (mismo nombre+SKU) conservando el más reciente y poniendo los extras en lista negra para que la sincronización no los reviva. v14.63: FIX handler roto closeAllModals — al hacer clic en un número de pedido desde la búsqueda global lanzaba ReferenceError (la función no existía), por lo que ni cerraba el modal ni navegaba al pedido. Ahora closeAllModals() cierra todos los modales abiertos del stack. Limpieza: eliminada una definición duplicada de bnMas (código muerto; se conserva la versión con soporte del botón Atrás de Android). v14.62: FIX CRÍTICO sobreescritura de producto en catálogo — al editar un producto del catálogo, cargar luego un producto guardado distinto desde el buscador y registrarlo, el nuevo producto sobreescribía al anterior porque el ID de edición (_editCatProdId) quedaba "pegado". Dos correcciones: (1) persLoadFromSearch e importación de JSON ahora limpian _editCatProdId al cargar un producto guardado (cargar ≠ editar la entrada del catálogo por ID). (2) confirmarCatalogo ahora usa el SKU como identidad: si el ID de edición apunta a un producto cuyo SKU no coincide con el ingresado, se descarta ese ID; el emparejado es por SKU exacto y el nombre solo se usa como último recurso cuando no hay SKU. Resultado: un SKU distinto nunca sobreescribe otro producto. v14.61: FIX registros dobles en editor de producto personalizable — ahora usa _editCatProdId (ID original) como criterio primario al guardar, evitando duplicados al renombrar el producto. v14.42: FIX Inventario — el descuento de stock no funcionaba al vender ni al entregar pedidos. Tres problemas corregidos: (1) descontarInventarioDeItems usaba _registrarMovInv que aplicaba doble descuento de stock (ella misma resta + _registrarMovInv también resta y guarda); cambiado a _soloLogMovInv que solo logea el movimiento sin tocar stock. (2) Flag _modificado nunca se asignaba, así que los upserts a Supabase no se ejecutaban — los cambios de stock no se sincronizaban entre dispositivos. (3) Solo descontaba si modo_inventario era 'terminado' o 'insumos'; ahora también descuenta automáticamente si modo_inventario es 'ninguno' pero existe un registro en terminados vinculado al producto. Logs de depuración agregados en consola para rastrear cada descuento. v14.41: FIX Dashboard — KPIs de finanzas desaparecían tras cargar porque can() no tenía fallback al rol para permisos nuevos. Ahora can() replica el patrón de canView(). FIX APP_VERSION desincronizada. v14.35: Limpieza profunda de localStorage — _migrarFotosBase64() ahora cubre 3 fuentes de peso oculto: (1) fotos base64 dentro del campo calculo embebido en productos del catálogo (POS.cat), (2) fotos base64 en productos personalizables del editor (POS.pers), (3) fotos directas del catálogo (ya existente). Al crear producto desde el editor, calculo.foto se limpia preventivamente para no duplicar base64 en localStorage. Botón de limpieza manual renombrado a "Limpiar fotos base64 (catálogo + editor)". v14.32: Arquitectura — 17 CSS design tokens (--sp-xs a --sp-2xl, --r-sm a --r-pill, --fs-xs a --fs-2xl, --font, --transition). Aplicados a .btn, .modal, .card y body como convención. Suite de tests de regresión para cálculos financieros: 28 assertions cubriendo round2, parseEU, safeNum, euro, fmtBs, pedidoTotalCDifCalc, pedidoSaldoCDif, esc. Se activan con ?test en URL o localStorage._gm_tests=1. v14.31: Accesibilidad — role="dialog" y aria-modal="true" en los 21 modales. aria-label en 10 botones de solo ícono (editar, duplicar, eliminar, anular, imprimir). tabindex="-1" en contenedores .modal para recibir foco al abrir. openModal() ahora enfoca el modal abierto. Contraste dark mode verificado (7.4:1 y 6.9:1 — supera WCAG AA). v14.30: Migración agresiva de fotos base64 — al cargar, sube fotos pendientes a Supabase Storage y limpia base64 del localStorage. Monitor de almacenamiento mejorado con desglose de las 3 keys más pesadas y botón de limpieza manual. SW resiliente: install ya no falla si un ícono o manifest no se descarga. Mensajes de error de actualización PWA más descriptivos. v14.29: Resiliencia y UX — openModal/closeModal mejorados con stack de modales, scroll lock del body, y cierre con Escape (closeTopModal). Modal de usuarios unificado al sistema centralizado. Nuevo helper safeNum(v, fallback) para validar inputs numéricos de forma segura (NaN/Infinity → fallback). v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
         </div>
       </div>
 
@@ -4880,6 +4880,29 @@ function savePers(a){
   _lsSet(LS_PERS, JSON.stringify(a));
   if(window._supaConectado) syncToSupabase('productos_pers', a);
 }
+// ── Limpieza de productos personalizables duplicados (mismo nombre + SKU) ──
+// Conserva el registro más reciente (id mayor) de cada grupo y pone los extras
+// en lista negra para que la sincronización no los vuelva a bajar.
+function _dedupPers(){
+  try{
+    const all=loadPers();
+    if(!Array.isArray(all) || all.length<2) return 0;
+    const sorted=[...all].sort((a,b)=>(Number(b.id)||0)-(Number(a.id)||0)); // más reciente primero
+    const seen={}, keep=[], removed=[];
+    sorted.forEach(p=>{
+      const k=((p.name||'').toLowerCase().trim())+'|'+((p.sku||'').toLowerCase().trim());
+      if(seen[k]){ if(p.id!=null) removed.push(p.id); return; }
+      seen[k]=true; keep.push(p);
+    });
+    if(!removed.length) return 0;
+    keep.sort((a,b)=>(Number(a.id)||0)-(Number(b.id)||0)); // restaurar orden estable por id
+    removed.forEach(id=>{ try{ _addBorrado('productos_pers', id); }catch(e){} });
+    _lsSet(LS_PERS, JSON.stringify(keep));
+    console.log('[Dedup] productos_pers: '+all.length+' → '+keep.length+' ('+removed.length+' duplicados eliminados)');
+    if(typeof persRefreshLoader==='function') persRefreshLoader();
+    return removed.length;
+  }catch(e){ console.warn('[Dedup] error', e); return 0; }
+}
 function loadCat()  { try{ return JSON.parse(localStorage.getItem(LS_CAT)||'[]'); }catch(e){ return []; } }
 function saveCat(a) {
   try{
@@ -5252,6 +5275,7 @@ function persLoadFromSearch(idx){
   // Cargar un producto guardado NO es editar una entrada del catálogo por su ID:
   // limpiar el ID de edición previo para no sobreescribir otro producto al registrar.
   window._editCatProdId=null;
+  window._editPersId=all[idx].id||null; // recordar el id para que Guardar ACTUALICE este registro
   persFill(all[idx]);
   const inp=qs('#pers_search'); if(inp) inp.value=all[idx].name||'';
   const res=qs('#pers_search_results'); if(res) res.classList.remove('visible');
@@ -5259,8 +5283,24 @@ function persLoadFromSearch(idx){
 }
 
 function persSave(){
-  const d=persToJSON(), all=loadPers(), idx=all.findIndex(p=>(p.name||'').toLowerCase()===d.name.toLowerCase());
-  if(idx>=0){ if(!confirm('Ya existe "'+d.name+'". ¿Reemplazar?')) return; all[idx]=d; }else{ all.push(d); }
+  const d=persToJSON(), all=loadPers();
+  const nameL=(d.name||'').toLowerCase().trim(), skuL=(d.sku||'').toLowerCase().trim();
+  // ── Resolver un ID ESTABLE para no crear un registro nuevo en cada guardado ──
+  // 1) Producto cargado en el editor (id recordado al cargarlo).
+  let idx = (window._editPersId!=null) ? all.findIndex(p=>String(p.id)===String(window._editPersId)) : -1;
+  // 2) Mismo SKU + mismo nombre.
+  if(idx<0 && skuL) idx=all.findIndex(p=>(p.sku||'').toLowerCase()===skuL && (p.name||'').toLowerCase()===nameL);
+  // 3) Mismo nombre (compatibilidad con productos sin SKU).
+  if(idx<0) idx=all.findIndex(p=>(p.name||'').toLowerCase()===nameL);
+  if(idx>=0){
+    if(!confirm('Ya existe "'+d.name+'". ¿Reemplazar?')) return;
+    d.id=all[idx].id;            // conservar el id existente → upsert ACTUALIZA la misma fila
+    all[idx]={...all[idx],...d};
+  } else {
+    d.id=Date.now();             // id nuevo solo para un producto realmente nuevo
+    all.push(d);
+  }
+  window._editPersId=d.id;        // recordar el id para los próximos guardados
   savePers(all); persRefreshLoader();
   if(typeof upsertPers==='function') upsertPers(d);
   registrarVersionCosto(d.name, window._lastSub||0, window._lastPV||0);
@@ -5282,6 +5322,7 @@ function persDel(){
 function persReset(){
   if(!confirm('¿Resetear el editor?')) return;
   window._editCatProdId=null; // Limpiar ID de edición al resetear
+  window._editPersId=null;
   pName.value='';
   const _sk=qs('#pers_sku'); if(_sk) _sk.value='';
   const _ca=qs('#pers_categoria'); if(_ca) _ca.value='';
@@ -5308,7 +5349,7 @@ function persExportJSON(){ const d=persToJSON(); dl(JSON.stringify(d,null,2),'ap
 function persExportCSV(){ const d=persToJSON(); const rows=[['Tipo','Desc','Cant','Precio','Vida','Meses','Cap','On','Val']]; (d.directos||[]).forEach(x=>rows.push(['Directo',x.desc,x.cant,x.precio,'','','','',''])); const csv=rows.map(r=>r.map(x=>{ const s=String(x==null?'':x); return /[",;\n]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(';')).join('\n'); dl(csv,'text/csv','producto-'+(d.name||'x')+'.csv'); }
 function persExportCatJSON(){ dl(JSON.stringify(loadPers(),null,2),'application/json','catalogo-pers.json'); }
 function persExportCatCSV(){ const all=loadPers(); const lines=[['name','directos','depreciacion','indirectos','mo','gi'].join(';')]; all.forEach(p=>{ lines.push([p.name,JSON.stringify(p.directos||[]),JSON.stringify(p.depreciacion||[]),JSON.stringify(p.indirectos||{}),JSON.stringify(p.mo||{}),JSON.stringify(p.gi||{})].map(x=>{ const s=String(x==null?'':x); return /[";]/.test(s)?'"'+s.replace(/"/g,'""')+'"':s; }).join(';')); }); dl(lines.join('\n'),'text/csv','catalogo-pers.csv'); }
-function persImport(e){ const f=e.target.files[0]; if(!f) return; const reader=new FileReader(); reader.onload=ev=>{ try{ window._editCatProdId=null; persFill(JSON.parse(ev.target.result)); toast('Producto importado','ok'); }catch(err){ toast('Error al importar','err'); } }; reader.readAsText(f); e.target.value=''; }
+function persImport(e){ const f=e.target.files[0]; if(!f) return; const reader=new FileReader(); reader.onload=ev=>{ try{ window._editCatProdId=null; window._editPersId=null; persFill(JSON.parse(ev.target.result)); toast('Producto importado','ok'); }catch(err){ toast('Error al importar','err'); } }; reader.readAsText(f); e.target.value=''; }
 function persImportCat(e){
   const f=e.target.files[0]; if(!f) return;
   const mode=pImportMode?.value||'merge';
@@ -14923,7 +14964,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_63';
+  const APP_VERSION = 'v14_64';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
