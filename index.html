@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_65">
+<html lang="es" data-app-version="GestioMada_V14_66">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -35,6 +35,7 @@ const SUPA_TABLAS = [
   { supa: 'usuarios',                ls: 'POS.usuarios',    render: 'usuarios'   },
   { supa: 'envios',                  ls: 'POS.envios',      render: 'envios'     },
   { supa: 'comisiones',               ls: 'POS.comisiones',  render: 'comisiones' },
+  { supa: 'cotizaciones',            ls: 'POS.cot',         render: 'cotizaciones' },
 ];
 
 // ── Lista negra de registros eliminados (evita restauración por Realtime o upsert) ──
@@ -165,6 +166,7 @@ function aplicarCambioRealtime(tabla, tipo, registro){
     inventario:()=>{ if(typeof renderInsumos==='function') renderInsumos(); },
     editor:    ()=>{ if(typeof persRefreshLoader==='function') persRefreshLoader(); },
     usuarios:  ()=>{ if(typeof renderCfgPins==='function') renderCfgPins(); if(typeof renderLockScreen==='function') renderLockScreen(); },
+    cotizaciones: ()=>{ if(typeof renderCotizaciones==='function') renderCotizaciones(); },
   };
   if(t.render && renders[t.render]) renders[t.render]();
   if(typeof updateBadges==='function') updateBadges();
@@ -173,7 +175,7 @@ function aplicarCambioRealtime(tabla, tipo, registro){
 
 // ── Activar Realtime en todas las tablas operativas ──
 function iniciarRealtime(){
-  const tablasRealtime = ['ventas','pedidos','productos','clientes','caja_movimientos','inventario_insumos','productos_pers','usuarios','comisiones'];
+  const tablasRealtime = ['ventas','pedidos','productos','clientes','caja_movimientos','inventario_insumos','productos_pers','usuarios','comisiones','cotizaciones'];
   tablasRealtime.forEach(tabla => {
     SUPA.channel('rt-' + tabla)
       .on('postgres_changes', { event: '*', schema: 'public', table: tabla },
@@ -240,6 +242,7 @@ const upsertCajaMov = r => upsertFila('caja_movimientos', r);
 const upsertInsumo  = r => upsertFila('inventario_insumos', r);
 const upsertTerminado = r => upsertFila('inventario_terminados', r);
 const upsertUsuario = r => upsertFila('usuarios', r);
+const upsertCotizacion = r => upsertFila('cotizaciones', r);
 const upsertPers    = r => upsertFila('productos_pers', r);
 const upsertEnvio   = r => upsertFila('envios', r);
 const upsertComision = r => upsertFila('comisiones', r);
@@ -544,6 +547,26 @@ function mapearParaSupa(tabla, d){
     fecha:          d.fecha || new Date().toISOString(),
   };
 
+  if(tabla === 'cotizaciones') return {
+    id,
+    cliente_nom:  d.cliente_nom || '',
+    cliente_tel:  d.cliente_tel || '',
+    cliente:      d.cliente || null,
+    items:        d.items || [],
+    extras:       d.extras || {},
+    wa_modo:      d.wa_modo || 'usd',
+    wa_texto:     d.wa_texto || '',
+    abono_pct:    parseInt(d.abono_pct) || 50,
+    total_usd:    parseFloat(d.total_usd) || 0,
+    total_cdif:   parseFloat(d.total_cdif) || 0,
+    total_bs:     parseFloat(d.total_bs) || 0,
+    dif:          parseFloat(d.dif) || 1,
+    tasa_bcv:     parseFloat(d.tasa_bcv) || 0,
+    notas:        d.notas || '',
+    fecha_creado: d.fecha_creado || new Date().toISOString(),
+    expires_at:   d.expires_at || new Date(Date.now() + 7*24*60*60*1000).toISOString(),
+  };
+
   // Fallback: solo campos seguros
   return { id };
 }
@@ -657,6 +680,8 @@ async function initSupabaseSync(){
   if(typeof updateBadges==='function') updateBadges();
   if(typeof cargarConfigNegocioDesdeNube==='function') cargarConfigNegocioDesdeNube();
   if(typeof _cargarSesionDesdeNube==='function') _cargarSesionDesdeNube();
+  // Purgar cotizaciones vencidas (>7 días) local y en Supabase
+  if(typeof purgarCotizacionesExpiradas==='function') purgarCotizacionesExpiradas();
   // Re-render lock screen con usuarios reales recién cargados de Supabase
   if(typeof renderLockScreen==='function' && qs('#lock-screen')?.classList.contains('visible')) renderLockScreen();
   iniciarRealtime();
@@ -2844,7 +2869,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.65: FIX regresión de V14_64 — al crear dos variantes seguidas (p.ej. "Termo Skinny Detal" y "Termo Skinny Mayor") sin resetear el editor, una sobreescribía a la otra porque _editPersId conservaba el id del producto anterior sin validar el SKU. Ahora persSave aplica la misma guarda por SKU del catálogo: si el id recordado apunta a un producto con SKU distinto al ingresado, se descarta y se emparejan por SKU exacto (el nombre solo se usa cuando no hay SKU). Resultado: con SKUs distintos, cada variante se guarda como producto independiente. v14.64: FIX CRÍTICO duplicados al guardar producto del editor — cada "Guardar" creaba un registro nuevo en lugar de actualizar el existente, porque persToJSON() no asignaba un id estable y mapearParaSupa generaba un Date.now() distinto en cada upsert (insertaba fila nueva en Supabase y Realtime la bajaba). Correcciones: (1) persSave ahora resuelve un id estable (producto cargado vía _editPersId → mismo SKU+nombre → mismo nombre) y conserva el id existente, de modo que el upsert ACTUALIZA la misma fila. (2) persLoadFromSearch recuerda el id del producto cargado; persReset e importación lo limpian. (3) Nueva _dedupPers() que al arrancar colapsa los productos personalizables duplicados (mismo nombre+SKU) conservando el más reciente y poniendo los extras en lista negra para que la sincronización no los reviva. v14.63: FIX handler roto closeAllModals — al hacer clic en un número de pedido desde la búsqueda global lanzaba ReferenceError (la función no existía), por lo que ni cerraba el modal ni navegaba al pedido. Ahora closeAllModals() cierra todos los modales abiertos del stack. Limpieza: eliminada una definición duplicada de bnMas (código muerto; se conserva la versión con soporte del botón Atrás de Android). v14.62: FIX CRÍTICO sobreescritura de producto en catálogo — al editar un producto del catálogo, cargar luego un producto guardado distinto desde el buscador y registrarlo, el nuevo producto sobreescribía al anterior porque el ID de edición (_editCatProdId) quedaba "pegado". Dos correcciones: (1) persLoadFromSearch e importación de JSON ahora limpian _editCatProdId al cargar un producto guardado (cargar ≠ editar la entrada del catálogo por ID). (2) confirmarCatalogo ahora usa el SKU como identidad: si el ID de edición apunta a un producto cuyo SKU no coincide con el ingresado, se descarta ese ID; el emparejado es por SKU exacto y el nombre solo se usa como último recurso cuando no hay SKU. Resultado: un SKU distinto nunca sobreescribe otro producto. v14.61: FIX registros dobles en editor de producto personalizable — ahora usa _editCatProdId (ID original) como criterio primario al guardar, evitando duplicados al renombrar el producto. v14.42: FIX Inventario — el descuento de stock no funcionaba al vender ni al entregar pedidos. Tres problemas corregidos: (1) descontarInventarioDeItems usaba _registrarMovInv que aplicaba doble descuento de stock (ella misma resta + _registrarMovInv también resta y guarda); cambiado a _soloLogMovInv que solo logea el movimiento sin tocar stock. (2) Flag _modificado nunca se asignaba, así que los upserts a Supabase no se ejecutaban — los cambios de stock no se sincronizaban entre dispositivos. (3) Solo descontaba si modo_inventario era 'terminado' o 'insumos'; ahora también descuenta automáticamente si modo_inventario es 'ninguno' pero existe un registro en terminados vinculado al producto. Logs de depuración agregados en consola para rastrear cada descuento. v14.41: FIX Dashboard — KPIs de finanzas desaparecían tras cargar porque can() no tenía fallback al rol para permisos nuevos. Ahora can() replica el patrón de canView(). FIX APP_VERSION desincronizada. v14.35: Limpieza profunda de localStorage — _migrarFotosBase64() ahora cubre 3 fuentes de peso oculto: (1) fotos base64 dentro del campo calculo embebido en productos del catálogo (POS.cat), (2) fotos base64 en productos personalizables del editor (POS.pers), (3) fotos directas del catálogo (ya existente). Al crear producto desde el editor, calculo.foto se limpia preventivamente para no duplicar base64 en localStorage. Botón de limpieza manual renombrado a "Limpiar fotos base64 (catálogo + editor)". v14.32: Arquitectura — 17 CSS design tokens (--sp-xs a --sp-2xl, --r-sm a --r-pill, --fs-xs a --fs-2xl, --font, --transition). Aplicados a .btn, .modal, .card y body como convención. Suite de tests de regresión para cálculos financieros: 28 assertions cubriendo round2, parseEU, safeNum, euro, fmtBs, pedidoTotalCDifCalc, pedidoSaldoCDif, esc. Se activan con ?test en URL o localStorage._gm_tests=1. v14.31: Accesibilidad — role="dialog" y aria-modal="true" en los 21 modales. aria-label en 10 botones de solo ícono (editar, duplicar, eliminar, anular, imprimir). tabindex="-1" en contenedores .modal para recibir foco al abrir. openModal() ahora enfoca el modal abierto. Contraste dark mode verificado (7.4:1 y 6.9:1 — supera WCAG AA). v14.30: Migración agresiva de fotos base64 — al cargar, sube fotos pendientes a Supabase Storage y limpia base64 del localStorage. Monitor de almacenamiento mejorado con desglose de las 3 keys más pesadas y botón de limpieza manual. SW resiliente: install ya no falla si un ícono o manifest no se descarga. Mensajes de error de actualización PWA más descriptivos. v14.29: Resiliencia y UX — openModal/closeModal mejorados con stack de modales, scroll lock del body, y cierre con Escape (closeTopModal). Modal de usuarios unificado al sistema centralizado. Nuevo helper safeNum(v, fallback) para validar inputs numéricos de forma segura (NaN/Infinity → fallback). v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.66: Ventas — nuevo módulo "Cotizaciones guardadas". Tercera pestaña en Ventas (junto a Nueva Venta e Historial) para guardar presupuestos antes de que el cliente abone. (1) Botón "Guardar cotización" en el panel Cotizar/WhatsApp: abre un modal con nombre y teléfono del cliente (precargados si ya hay cliente seleccionado), guarda el carrito completo (productos, extras, modo USD/Bs, % abono, totales) y copia el texto de WhatsApp al portapapeles en un solo paso. (2) Pestaña con buscador por nombre o teléfono. Cada tarjeta muestra cliente, fecha, ítems, total y días restantes hasta el vencimiento. (3) Botón "Editar" que restaura el carrito del POS con todos los datos de la cotización para modificarla y volver a guardarla (actualiza la misma, no duplica — id estable). (4) Botón "Crear pedido" que abre el formulario de pedido pre-llenado con ítems, cliente y extras; al guardar el pedido la cotización se elimina automáticamente. (5) Sincronización con Supabase desde el inicio (tabla cotizaciones, Realtime, merge seguro entre dispositivos). (6) Auto-eliminación a los 7 días: cada cotización lleva expires_at; al abrir la app se purgan las vencidas local y en la nube. v14.65: FIX regresión de V14_64 — al crear dos variantes seguidas (p.ej. "Termo Skinny Detal" y "Termo Skinny Mayor") sin resetear el editor, una sobreescribía a la otra porque _editPersId conservaba el id del producto anterior sin validar el SKU. Ahora persSave aplica la misma guarda por SKU del catálogo: si el id recordado apunta a un producto con SKU distinto al ingresado, se descarta y se emparejan por SKU exacto (el nombre solo se usa cuando no hay SKU). Resultado: con SKUs distintos, cada variante se guarda como producto independiente. v14.64: FIX CRÍTICO duplicados al guardar producto del editor — cada "Guardar" creaba un registro nuevo en lugar de actualizar el existente, porque persToJSON() no asignaba un id estable y mapearParaSupa generaba un Date.now() distinto en cada upsert (insertaba fila nueva en Supabase y Realtime la bajaba). Correcciones: (1) persSave ahora resuelve un id estable (producto cargado vía _editPersId → mismo SKU+nombre → mismo nombre) y conserva el id existente, de modo que el upsert ACTUALIZA la misma fila. (2) persLoadFromSearch recuerda el id del producto cargado; persReset e importación lo limpian. (3) Nueva _dedupPers() que al arrancar colapsa los productos personalizables duplicados (mismo nombre+SKU) conservando el más reciente y poniendo los extras en lista negra para que la sincronización no los reviva. v14.63: FIX handler roto closeAllModals — al hacer clic en un número de pedido desde la búsqueda global lanzaba ReferenceError (la función no existía), por lo que ni cerraba el modal ni navegaba al pedido. Ahora closeAllModals() cierra todos los modales abiertos del stack. Limpieza: eliminada una definición duplicada de bnMas (código muerto; se conserva la versión con soporte del botón Atrás de Android). v14.62: FIX CRÍTICO sobreescritura de producto en catálogo — al editar un producto del catálogo, cargar luego un producto guardado distinto desde el buscador y registrarlo, el nuevo producto sobreescribía al anterior porque el ID de edición (_editCatProdId) quedaba "pegado". Dos correcciones: (1) persLoadFromSearch e importación de JSON ahora limpian _editCatProdId al cargar un producto guardado (cargar ≠ editar la entrada del catálogo por ID). (2) confirmarCatalogo ahora usa el SKU como identidad: si el ID de edición apunta a un producto cuyo SKU no coincide con el ingresado, se descarta ese ID; el emparejado es por SKU exacto y el nombre solo se usa como último recurso cuando no hay SKU. Resultado: un SKU distinto nunca sobreescribe otro producto. v14.61: FIX registros dobles en editor de producto personalizable — ahora usa _editCatProdId (ID original) como criterio primario al guardar, evitando duplicados al renombrar el producto. v14.42: FIX Inventario — el descuento de stock no funcionaba al vender ni al entregar pedidos. Tres problemas corregidos: (1) descontarInventarioDeItems usaba _registrarMovInv que aplicaba doble descuento de stock (ella misma resta + _registrarMovInv también resta y guarda); cambiado a _soloLogMovInv que solo logea el movimiento sin tocar stock. (2) Flag _modificado nunca se asignaba, así que los upserts a Supabase no se ejecutaban — los cambios de stock no se sincronizaban entre dispositivos. (3) Solo descontaba si modo_inventario era 'terminado' o 'insumos'; ahora también descuenta automáticamente si modo_inventario es 'ninguno' pero existe un registro en terminados vinculado al producto. Logs de depuración agregados en consola para rastrear cada descuento. v14.41: FIX Dashboard — KPIs de finanzas desaparecían tras cargar porque can() no tenía fallback al rol para permisos nuevos. Ahora can() replica el patrón de canView(). FIX APP_VERSION desincronizada. v14.35: Limpieza profunda de localStorage — _migrarFotosBase64() ahora cubre 3 fuentes de peso oculto: (1) fotos base64 dentro del campo calculo embebido en productos del catálogo (POS.cat), (2) fotos base64 en productos personalizables del editor (POS.pers), (3) fotos directas del catálogo (ya existente). Al crear producto desde el editor, calculo.foto se limpia preventivamente para no duplicar base64 en localStorage. Botón de limpieza manual renombrado a "Limpiar fotos base64 (catálogo + editor)". v14.32: Arquitectura — 17 CSS design tokens (--sp-xs a --sp-2xl, --r-sm a --r-pill, --fs-xs a --fs-2xl, --font, --transition). Aplicados a .btn, .modal, .card y body como convención. Suite de tests de regresión para cálculos financieros: 28 assertions cubriendo round2, parseEU, safeNum, euro, fmtBs, pedidoTotalCDifCalc, pedidoSaldoCDif, esc. Se activan con ?test en URL o localStorage._gm_tests=1. v14.31: Accesibilidad — role="dialog" y aria-modal="true" en los 21 modales. aria-label en 10 botones de solo ícono (editar, duplicar, eliminar, anular, imprimir). tabindex="-1" en contenedores .modal para recibir foco al abrir. openModal() ahora enfoca el modal abierto. Contraste dark mode verificado (7.4:1 y 6.9:1 — supera WCAG AA). v14.30: Migración agresiva de fotos base64 — al cargar, sube fotos pendientes a Supabase Storage y limpia base64 del localStorage. Monitor de almacenamiento mejorado con desglose de las 3 keys más pesadas y botón de limpieza manual. SW resiliente: install ya no falla si un ícono o manifest no se descarga. Mensajes de error de actualización PWA más descriptivos. v14.29: Resiliencia y UX — openModal/closeModal mejorados con stack de modales, scroll lock del body, y cierre con Escape (closeTopModal). Modal de usuarios unificado al sistema centralizado. Nuevo helper safeNum(v, fallback) para validar inputs numéricos de forma segura (NaN/Infinity → fallback). v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
         </div>
       </div>
 
@@ -2920,6 +2945,10 @@ body.dark .pos-prod-img-ph{background:#23283a}
           <button class="pos-tab-btn" id="pos-tab-hist" onclick="posSwitchTab('hist')">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
             Historial
+          </button>
+          <button class="pos-tab-btn" id="pos-tab-cot" onclick="posSwitchTab('cot')">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:5px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            Cotizaciones
           </button>
         </div>
 
@@ -3151,6 +3180,9 @@ body.dark .pos-prod-img-ph{background:#23283a}
                           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:3px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Enviar WA
                         </a>
                       </div>
+                      <button class="btn btn-sm" onclick="abrirGuardarCotizacion()" style="width:100%;margin-top:7px;background:var(--brand);color:#fff;border:none">
+                        <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:4px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Guardar cotización
+                      </button>
                     </div>
                   </div>
 
@@ -3204,6 +3236,14 @@ body.dark .pos-prod-img-ph{background:#23283a}
           <div class="grid g4" style="margin-bottom:14px" id="ven-kpis"></div>
           <div id="ven-container"></div>
         </div><!-- /pos-panel-hist -->
+
+        <!-- ══ PANEL COTIZACIONES GUARDADAS ══ -->
+        <div id="pos-panel-cot" style="display:none">
+          <div class="search-bar" style="margin-bottom:12px">
+            <input type="text" id="cot_q" placeholder="Buscar por nombre o teléfono del cliente…" oninput="renderCotizaciones()"/>
+          </div>
+          <div id="cot-container"></div>
+        </div><!-- /pos-panel-cot -->
 
       </div>
 
@@ -3871,6 +3911,31 @@ body.dark .pos-prod-img-ph{background:#23283a}
     <div class="btn-row">
       <button class="btn btn-brand" onclick="guardarPedido()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar Pedido</button>
       <button class="btn" onclick="closeModal('m-pedido')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Guardar Cotización ══ -->
+<div class="modal-bg" id="m-cot-guardar" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:420px">
+    <button class="modal-close" onclick="closeModal('m-cot-guardar')">✕</button>
+    <div class="modal-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar cotización</div>
+    <p style="font-size:12px;color:var(--muted);margin:0 0 12px">Se guardará el carrito actual y se copiará el texto de la cotización. Se elimina automáticamente a los 7 días si no se convierte en pedido.</p>
+    <div class="fg">
+      <label>Nombre del cliente *</label>
+      <input type="text" id="cot_g_nombre" placeholder="Nombre del cliente"/>
+    </div>
+    <div class="fg">
+      <label>Teléfono / WhatsApp</label>
+      <input type="tel" id="cot_g_tel" placeholder="584120000000"/>
+    </div>
+    <div class="fg">
+      <label>Nota interna (opcional)</label>
+      <input type="text" id="cot_g_notas" placeholder="Ej: cliente pidió por Instagram"/>
+    </div>
+    <div class="btn-row" style="margin-top:10px">
+      <button class="btn btn-brand" onclick="cotGuardar()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar y copiar</button>
+      <button class="btn" onclick="closeModal('m-cot-guardar')">Cancelar</button>
     </div>
   </div>
 </div>
@@ -8148,10 +8213,13 @@ function posSwitchTab(tab){
   _posTabActual = tab;
   qs('#pos-panel-pos').style.display = tab === 'pos' ? '' : 'none';
   qs('#pos-panel-hist').style.display = tab === 'hist' ? '' : 'none';
+  const cotPanel = qs('#pos-panel-cot'); if(cotPanel) cotPanel.style.display = tab === 'cot' ? '' : 'none';
   qs('#pos-tab-pos').classList.toggle('active', tab === 'pos');
   qs('#pos-tab-hist').classList.toggle('active', tab === 'hist');
+  const cotTab = qs('#pos-tab-cot'); if(cotTab) cotTab.classList.toggle('active', tab === 'cot');
   if(tab === 'hist'){ renderVentas(); renderKpisVentas(); }
   if(tab === 'pos'){ posInicializar(); }
+  if(tab === 'cot'){ renderCotizaciones(); }
 }
 
 function posInicializar(){
@@ -8338,6 +8406,7 @@ function posQuitarItem(i){
 function posLimpiarCarrito(){
   if(!_posItems.length) return;
   _posItems = [];
+  _cotEditId = null;
   posRenderProductos();
   posRenderCarrito();
   posRecalc();
@@ -8565,6 +8634,299 @@ function posWaCopiar(){
   const txt=qs('#pos_wa_preview')?.textContent||'';
   if(!txt||txt.startsWith('Agrega')){ toast('No hay cotización generada','warn'); return; }
   navigator.clipboard.writeText(txt).then(()=>toast('Cotización copiada','ok')).catch(()=>toast('No se pudo copiar','err'));
+}
+
+/* ════════════════════════════════════════════
+   COTIZACIONES GUARDADAS
+   - Sincronizadas con Supabase (merge seguro)
+   - Auto-eliminación a los 7 días (expires_at)
+════════════════════════════════════════════ */
+const LS_COT = 'POS.cot';
+let _cotEditId = null; // id de la cotización en edición (null = nueva)
+let _cotOrigenPedido = null; // id de cotización que originó el pedido en curso
+
+function loadCot(){ try{ return JSON.parse(localStorage.getItem(LS_COT)||'[]'); }catch(e){ return []; } }
+function saveCot(a){ try{ _lsSet(LS_COT, JSON.stringify(a)); }catch(e){ localStorage.setItem(LS_COT, JSON.stringify(a)); } }
+
+// Lee los extras (delivery/envío/diseño/extras) actualmente activos en el POS
+function _cotLeerExtras(){
+  return {
+    delivery: (qs('#pos_delivery_chk')?.checked ? parseFloat(qs('#pos_delivery_monto')?.value||0) : 0),
+    envio:    (qs('#pos_envio_chk')?.checked    ? parseFloat(qs('#pos_envio_monto')?.value||0)    : 0),
+    diseno:   (qs('#pos_diseno_chk')?.checked   ? parseFloat(qs('#pos_diseno_monto')?.value||0)   : 0),
+    extras:   (qs('#pos_extras_chk')?.checked   ? parseFloat(qs('#pos_extras_monto')?.value||0)   : 0),
+  };
+}
+
+// Abre el modal de confirmación, precargando nombre y teléfono si existen
+function abrirGuardarCotizacion(){
+  if(!_posItems.length){ toast('Agrega productos al carrito primero','warn'); return; }
+  const nom = _posCliSel ? (_posCliSel.nombre+(_posCliSel.apellido?' '+_posCliSel.apellido:'')).trim() : '';
+  const tel = (qs('#pos_wa_tel')?.value||'').trim() || (_posCliSel?.telefono||'');
+  qs('#cot_g_nombre').value = nom;
+  qs('#cot_g_tel').value = tel;
+  qs('#cot_g_notas').value = '';
+  openModal('m-cot-guardar');
+  setTimeout(()=>qs('#cot_g_nombre')?.focus(), 100);
+}
+
+// Guarda la cotización (nueva o actualización) + copia el texto WA
+function cotGuardar(){
+  const nombre = (qs('#cot_g_nombre')?.value||'').trim();
+  const tel    = (qs('#cot_g_tel')?.value||'').trim();
+  const notas  = (qs('#cot_g_notas')?.value||'').trim();
+  if(!nombre){ toast('Ingresa el nombre del cliente','warn'); return; }
+  if(!_posItems.length){ toast('No hay productos en el carrito','warn'); return; }
+
+  // Asegurar que el texto WA esté actualizado
+  posWaActualizar();
+  const waTexto = qs('#pos_wa_preview')?.textContent || '';
+
+  // Calcular totales con la misma lógica del carrito POS
+  const sub = _posItems.reduce((a,it)=> a + ((it.precio_usd||it.precio_unit||0) * it.cant), 0);
+  const desc = parseEU(qs('#pos_descuento')?.value || '0');
+  const ex = _cotLeerExtras();
+  const extrasVal = ex.delivery + ex.envio + ex.diseno + ex.extras;
+  const dif = getDiferencial();
+  const bcv = getTasaBCV();
+  const subProductos = Math.max(0, sub - desc);
+  const totalUsd  = round2(subProductos + extrasVal);
+  const totalCDif = round2((subProductos * (dif>0?dif:1)) + extrasVal);
+  const totalBs   = bcv>0 ? round2(totalCDif * bcv) : 0;
+  const aboPct = Math.min(100, Math.max(1, parseInt(qs('#pos_wa_abono_pct')?.value||50)));
+
+  const all = loadCot();
+  const esEdicion = _cotEditId !== null;
+  let cot = null;
+
+  if(esEdicion){
+    const idxEd = all.findIndex(c => String(c.id) === String(_cotEditId));
+    cot = idxEd >= 0 ? all[idxEd] : null;
+  }
+  if(!cot){
+    cot = { id: Date.now(), fecha_creado: new Date().toISOString() };
+  }
+
+  cot.cliente_nom = nombre;
+  cot.cliente_tel = tel;
+  cot.cliente     = _posCliSel || cot.cliente || null;
+  cot.items       = JSON.parse(JSON.stringify(_posItems));
+  cot.extras      = ex;
+  cot.wa_modo     = qs('#pos_wa_modo')?.value || 'usd';
+  cot.wa_texto    = waTexto;
+  cot.abono_pct   = aboPct;
+  cot.total_usd   = totalUsd;
+  cot.total_cdif  = totalCDif;
+  cot.total_bs    = totalBs;
+  cot.dif         = dif;
+  cot.tasa_bcv    = bcv;
+  cot.notas       = notas;
+  cot.expires_at  = new Date(Date.now() + 7*24*60*60*1000).toISOString();
+
+  const idx = all.findIndex(c => String(c.id) === String(cot.id));
+  if(idx >= 0){ all[idx] = cot; } else { all.push(cot); }
+  saveCot(all);
+  upsertCotizacion(cot); // sync a Supabase
+
+  _cotEditId = null;
+  closeModal('m-cot-guardar');
+
+  // Copiar el texto al portapapeles
+  if(waTexto && !waTexto.startsWith('Agrega')){
+    navigator.clipboard.writeText(waTexto).then(()=>{
+      toast((esEdicion?'Cotización actualizada y copiada':'Cotización guardada y copiada'),'ok');
+    }).catch(()=>toast((esEdicion?'Cotización actualizada':'Cotización guardada'),'ok'));
+  } else {
+    toast((esEdicion?'Cotización actualizada':'Cotización guardada'),'ok');
+  }
+
+  if(typeof renderCotizaciones==='function') renderCotizaciones();
+}
+
+// Elimina cotizaciones con expires_at vencido (local y Supabase)
+function purgarCotizacionesExpiradas(){
+  const all = loadCot();
+  if(!all.length) return;
+  const ahora = Date.now();
+  const vivas = [], muertas = [];
+  all.forEach(c => {
+    const exp = c.expires_at ? new Date(c.expires_at).getTime() : (new Date(c.fecha_creado||0).getTime() + 7*24*60*60*1000);
+    if(exp && exp < ahora) muertas.push(c); else vivas.push(c);
+  });
+  if(!muertas.length) return;
+  saveCot(vivas);
+  muertas.forEach(c => {
+    _addBorrado('cotizaciones', c.id);
+    deleteFromSupabase('cotizaciones', c.id);
+  });
+  console.log('[Cotizaciones] Purgadas '+muertas.length+' vencidas');
+  if(typeof renderCotizaciones==='function') renderCotizaciones();
+}
+
+// Días restantes hasta el vencimiento
+function _cotDiasRestantes(c){
+  const exp = c.expires_at ? new Date(c.expires_at).getTime() : (new Date(c.fecha_creado||0).getTime() + 7*24*60*60*1000);
+  return Math.max(0, Math.ceil((exp - Date.now()) / (24*60*60*1000)));
+}
+
+// Lista de cotizaciones con buscador
+function renderCotizaciones(){
+  const cont = qs('#cot-container'); if(!cont) return;
+  const q = (qs('#cot_q')?.value||'').toLowerCase().trim();
+  let all = loadCot();
+  // Orden: más recientes primero
+  all.sort((a,b)=> new Date(b.fecha_creado||0) - new Date(a.fecha_creado||0));
+  if(q){
+    all = all.filter(c =>
+      (c.cliente_nom||'').toLowerCase().includes(q) ||
+      (c.cliente_tel||'').toLowerCase().includes(q)
+    );
+  }
+  if(!all.length){
+    cont.innerHTML = `<div style="text-align:center;padding:40px 20px;color:var(--muted)">
+      <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" style="opacity:.3;margin-bottom:8px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+      <p style="font-size:13px;margin:0">${q?'Sin cotizaciones que coincidan':'No hay cotizaciones guardadas'}</p>
+      ${q?'':'<p style="font-size:11px;margin-top:4px">Guarda una desde el panel &quot;Cotizar / WhatsApp&quot;</p>'}
+    </div>`;
+    return;
+  }
+  cont.innerHTML = all.map(c => {
+    const dias = _cotDiasRestantes(c);
+    const fecha = c.fecha_creado ? new Date(c.fecha_creado).toLocaleDateString('es-VE',{day:'2-digit',month:'short'}) : '';
+    const nItems = (c.items||[]).reduce((a,it)=>a+(it.cant||1),0);
+    const itemsPrev = (c.items||[]).slice(0,3).map(it=>`${it.cant}× ${esc(it.nombre||'')}`).join(', ') + ((c.items||[]).length>3?'…':'');
+    const totalStr = c.wa_modo==='bs' && c.total_bs>0
+      ? 'Bs '+fmtBs(c.total_bs)+' · $'+(c.total_cdif||0).toFixed(2).replace('.',',')
+      : '$'+(c.total_cdif||c.total_usd||0).toFixed(2).replace('.',',');
+    const diasColor = dias<=1 ? 'var(--danger)' : (dias<=2 ? '#d97706' : 'var(--muted)');
+    return `<div class="card" style="margin-bottom:10px;padding:12px 14px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap">
+        <div style="min-width:0;flex:1">
+          <div style="font-weight:700;font-size:14px">${esc(c.cliente_nom||'Sin nombre')}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:1px">
+            ${c.cliente_tel?esc(c.cliente_tel)+' · ':''}${fecha} · ${nItems} ${nItems===1?'ítem':'ítems'}
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">${itemsPrev||'—'}</div>
+          ${c.notas?`<div style="font-size:11px;color:var(--muted);margin-top:3px;font-style:italic">📝 ${esc(c.notas)}</div>`:''}
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-weight:700;font-size:14px;color:var(--brand)">${totalStr}</div>
+          <div style="font-size:10px;color:${diasColor};margin-top:2px">${dias===0?'Vence hoy':'Vence en '+dias+(dias===1?' día':' días')}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="cotEditar(${c.id})" style="flex:1;min-width:90px">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:3px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>Editar
+        </button>
+        <button class="btn btn-sm btn-brand" onclick="cotCrearPedido(${c.id})" style="flex:1;min-width:110px">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:3px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Crear pedido
+        </button>
+        <button class="btn btn-sm" onclick="cotEliminar(${c.id})" aria-label="Eliminar cotización" style="flex-shrink:0;color:var(--danger)">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Editar: restaura el carrito POS con los datos de la cotización
+function cotEditar(id){
+  const c = loadCot().find(x => String(x.id) === String(id));
+  if(!c){ toast('Cotización no encontrada','warn'); return; }
+  _cotEditId = c.id;
+
+  // Restaurar items
+  _posItems = JSON.parse(JSON.stringify(c.items||[]));
+
+  // Restaurar cliente
+  _posCliSel = c.cliente || null;
+  if(_posCliSel){
+    const ini = ((_posCliSel.nombre||'?')[0]||'?').toUpperCase() + (_posCliSel.apellido?_posCliSel.apellido[0].toUpperCase():'');
+    const iniEl=qs('#pos_cli_ini'); if(iniEl) iniEl.textContent = ini;
+    const nomEl=qs('#pos_cli_nombre'); if(nomEl) nomEl.textContent = (_posCliSel.nombre||'')+' '+(_posCliSel.apellido||'');
+    const metaEl=qs('#pos_cli_meta'); if(metaEl) metaEl.textContent = (_posCliSel.cedula||'')+(_posCliSel.telefono?' · '+_posCliSel.telefono:'');
+    const selEl=qs('#pos_cli_sel'); if(selEl) selEl.style.display = 'block';
+  } else {
+    const selEl=qs('#pos_cli_sel'); if(selEl) selEl.style.display = 'none';
+  }
+
+  // Restaurar extras
+  const ex = c.extras || {};
+  [['delivery',ex.delivery],['envio',ex.envio],['diseno',ex.diseno],['extras',ex.extras]].forEach(([k,val])=>{
+    const chk=qs('#pos_'+k+'_chk'); const monto=qs('#pos_'+k+'_monto');
+    if(chk) chk.checked = (val||0) > 0;
+    if(monto && (val||0) > 0) monto.value = val;
+  });
+
+  // Restaurar modo WA / teléfono / abono
+  const modoEl=qs('#pos_wa_modo'); if(modoEl) modoEl.value = c.wa_modo || 'usd';
+  const telEl=qs('#pos_wa_tel'); if(telEl) telEl.value = c.cliente_tel || '';
+  const aboEl=qs('#pos_wa_abono_pct'); if(aboEl) aboEl.value = c.abono_pct || 50;
+
+  // Ir a la tab POS y desplegar el panel WA
+  posSwitchTab('pos');
+  posRenderProductos(); posRenderCarrito(); posRecalc();
+  const wb=qs('#pos_wa_body'); if(wb){ wb.classList.remove('collapsed'); const chev=qs('#pos_wa_chev'); if(chev) chev.classList.add('open'); }
+  posWaActualizar();
+  toast('Cotización cargada en el carrito — edita y vuelve a guardar','info');
+}
+
+// Crear pedido: abre el modal de pedido pre-llenado con los datos de la cotización
+function cotCrearPedido(id){
+  const c = loadCot().find(x => String(x.id) === String(id));
+  if(!c){ toast('Cotización no encontrada','warn'); return; }
+  if(!(c.items||[]).length){ toast('La cotización no tiene productos','warn'); return; }
+
+  // Resetear el formulario de pedido a su estado base
+  abrirNuevoPedido();
+
+  // Cargar items (compatibles con la estructura de pedido)
+  _pedItems = (c.items||[]).map(it => ({
+    tipo: it.tipo || 'catalogo',
+    nombre: it.nombre || '',
+    precio_unit: it.precio_usd || it.precio_unit || 0,
+    costo_unit: it.costo_unit || 0,
+    cant: it.cant || 1,
+    id_prod: it.id_prod || null,
+    moneda_prod: 'usd'
+  }));
+
+  // Cargar cliente
+  _pedCliSel = c.cliente || null;
+  if(_pedCliSel){
+    mostrarClienteSeleccionado(_pedCliSel);
+  }
+
+  // Cargar extras
+  const ex = c.extras || {};
+  [['delivery',ex.delivery],['envio',ex.envio],['diseno',ex.diseno],['extras',ex.extras]].forEach(([k,val])=>{
+    const chk=qs('#mp_'+k+'_chk'); const monto=qs('#mp_'+k+'_monto');
+    if(chk) chk.checked = (val||0) > 0;
+    if(monto && (val||0) > 0) monto.value = val;
+  });
+
+  // Nota de origen
+  const notasEl=qs('#mp_notas'); if(notasEl && c.notas) notasEl.value = c.notas;
+
+  // Guardar referencia a la cotización de origen para eliminarla al guardar el pedido
+  _cotOrigenPedido = c.id;
+
+  renderItemsFormulario();
+  recalcPedido();
+  toast('Cotización cargada — completa el abono y guarda el pedido','info');
+}
+
+// Eliminar cotización
+function cotEliminar(id){
+  const c = loadCot().find(x => String(x.id) === String(id));
+  if(!c) return;
+  if(!confirm('¿Eliminar la cotización de '+(c.cliente_nom||'este cliente')+'?')) return;
+  _addBorrado('cotizaciones', id);
+  deleteFromSupabase('cotizaciones', id);
+  const all = loadCot().filter(x => String(x.id) !== String(id));
+  saveCot(all);
+  renderCotizaciones();
+  toast('Cotización eliminada','ok');
 }
 
 function posRecalc(){
@@ -10012,7 +10374,7 @@ function updateBadgesPed(){
 
 // ── Abrir formulario nuevo ──
 function abrirNuevoPedido(){
-  _pedIdx = null; _pedItems = []; _pedCliSel = null;
+  _pedIdx = null; _pedItems = []; _pedCliSel = null; _cotOrigenPedido = null;
   qs('#mp-title').textContent = 'Nuevo Pedido';
   qs('#mp_cli_q').value = '';
   qs('#mp_cli_results').innerHTML = '';
@@ -10044,6 +10406,7 @@ function abrirNuevoPedido(){
 function abrirEditarPedido(idx){
   const all = loadPed(), p = all[idx];
   if(!p) return;
+  _cotOrigenPedido = null;
   _pedIdx = idx; _pedItems = JSON.parse(JSON.stringify(p.items||[])); _pedCliSel = p.cliente||null;
   qs('#mp-title').textContent = 'Editar Pedido ' + p.numero;
   // Cliente
@@ -10566,6 +10929,18 @@ function guardarPedido(){
 
   closeModal('m-pedido'); renderPedidos(); renderDash();
   toast((esNuevo?'Pedido creado: ':'Pedido actualizado: ')+ped.numero, 'ok');
+
+  // Si el pedido nació de una cotización guardada, eliminar esa cotización
+  if(esNuevo && _cotOrigenPedido !== null){
+    const cotId = _cotOrigenPedido;
+    _cotOrigenPedido = null;
+    if(typeof _addBorrado==='function') _addBorrado('cotizaciones', cotId);
+    if(typeof deleteFromSupabase==='function') deleteFromSupabase('cotizaciones', cotId);
+    const cotAll = loadCot().filter(x => String(x.id) !== String(cotId));
+    saveCot(cotAll);
+    if(typeof renderCotizaciones==='function') renderCotizaciones();
+  }
+
   _pedIdx=null;
 }
 
@@ -14972,7 +15347,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_65';
+  const APP_VERSION = 'v14_66';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
