@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_67">
+<html lang="es" data-app-version="GestioMada_V14_69">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -2869,7 +2869,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.67: Cotizaciones — nombre del cliente ahora es opcional. Solo se requiere al menos nombre o teléfono (si el cliente llama sin dar nombre, el teléfono es suficiente para buscarla luego). Las tarjetas muestran el teléfono como título cuando no hay nombre. v14.66: Ventas — nuevo módulo "Cotizaciones guardadas". Tercera pestaña en Ventas (junto a Nueva Venta e Historial) para guardar presupuestos antes de que el cliente abone. (1) Botón "Guardar cotización" en el panel Cotizar/WhatsApp: abre un modal con nombre y teléfono del cliente (precargados si ya hay cliente seleccionado), guarda el carrito completo (productos, extras, modo USD/Bs, % abono, totales) y copia el texto de WhatsApp al portapapeles en un solo paso. (2) Pestaña con buscador por nombre o teléfono. Cada tarjeta muestra cliente, fecha, ítems, total y días restantes hasta el vencimiento. (3) Botón "Editar" que restaura el carrito del POS con todos los datos de la cotización para modificarla y volver a guardarla (actualiza la misma, no duplica — id estable). (4) Botón "Crear pedido" que abre el formulario de pedido pre-llenado con ítems, cliente y extras; al guardar el pedido la cotización se elimina automáticamente. (5) Sincronización con Supabase desde el inicio (tabla cotizaciones, Realtime, merge seguro entre dispositivos). (6) Auto-eliminación a los 7 días: cada cotización lleva expires_at; al abrir la app se purgan las vencidas local y en la nube. v14.65: FIX regresión de V14_64 — al crear dos variantes seguidas (p.ej. "Termo Skinny Detal" y "Termo Skinny Mayor") sin resetear el editor, una sobreescribía a la otra porque _editPersId conservaba el id del producto anterior sin validar el SKU. Ahora persSave aplica la misma guarda por SKU del catálogo: si el id recordado apunta a un producto con SKU distinto al ingresado, se descarta y se emparejan por SKU exacto (el nombre solo se usa cuando no hay SKU). Resultado: con SKUs distintos, cada variante se guarda como producto independiente. v14.64: FIX CRÍTICO duplicados al guardar producto del editor — cada "Guardar" creaba un registro nuevo en lugar de actualizar el existente, porque persToJSON() no asignaba un id estable y mapearParaSupa generaba un Date.now() distinto en cada upsert (insertaba fila nueva en Supabase y Realtime la bajaba). Correcciones: (1) persSave ahora resuelve un id estable (producto cargado vía _editPersId → mismo SKU+nombre → mismo nombre) y conserva el id existente, de modo que el upsert ACTUALIZA la misma fila. (2) persLoadFromSearch recuerda el id del producto cargado; persReset e importación lo limpian. (3) Nueva _dedupPers() que al arrancar colapsa los productos personalizables duplicados (mismo nombre+SKU) conservando el más reciente y poniendo los extras en lista negra para que la sincronización no los reviva. v14.63: FIX handler roto closeAllModals — al hacer clic en un número de pedido desde la búsqueda global lanzaba ReferenceError (la función no existía), por lo que ni cerraba el modal ni navegaba al pedido. Ahora closeAllModals() cierra todos los modales abiertos del stack. Limpieza: eliminada una definición duplicada de bnMas (código muerto; se conserva la versión con soporte del botón Atrás de Android). v14.62: FIX CRÍTICO sobreescritura de producto en catálogo — al editar un producto del catálogo, cargar luego un producto guardado distinto desde el buscador y registrarlo, el nuevo producto sobreescribía al anterior porque el ID de edición (_editCatProdId) quedaba "pegado". Dos correcciones: (1) persLoadFromSearch e importación de JSON ahora limpian _editCatProdId al cargar un producto guardado (cargar ≠ editar la entrada del catálogo por ID). (2) confirmarCatalogo ahora usa el SKU como identidad: si el ID de edición apunta a un producto cuyo SKU no coincide con el ingresado, se descarta ese ID; el emparejado es por SKU exacto y el nombre solo se usa como último recurso cuando no hay SKU. Resultado: un SKU distinto nunca sobreescribe otro producto. v14.61: FIX registros dobles en editor de producto personalizable — ahora usa _editCatProdId (ID original) como criterio primario al guardar, evitando duplicados al renombrar el producto. v14.42: FIX Inventario — el descuento de stock no funcionaba al vender ni al entregar pedidos. Tres problemas corregidos: (1) descontarInventarioDeItems usaba _registrarMovInv que aplicaba doble descuento de stock (ella misma resta + _registrarMovInv también resta y guarda); cambiado a _soloLogMovInv que solo logea el movimiento sin tocar stock. (2) Flag _modificado nunca se asignaba, así que los upserts a Supabase no se ejecutaban — los cambios de stock no se sincronizaban entre dispositivos. (3) Solo descontaba si modo_inventario era 'terminado' o 'insumos'; ahora también descuenta automáticamente si modo_inventario es 'ninguno' pero existe un registro en terminados vinculado al producto. Logs de depuración agregados en consola para rastrear cada descuento. v14.41: FIX Dashboard — KPIs de finanzas desaparecían tras cargar porque can() no tenía fallback al rol para permisos nuevos. Ahora can() replica el patrón de canView(). FIX APP_VERSION desincronizada. v14.35: Limpieza profunda de localStorage — _migrarFotosBase64() ahora cubre 3 fuentes de peso oculto: (1) fotos base64 dentro del campo calculo embebido en productos del catálogo (POS.cat), (2) fotos base64 en productos personalizables del editor (POS.pers), (3) fotos directas del catálogo (ya existente). Al crear producto desde el editor, calculo.foto se limpia preventivamente para no duplicar base64 en localStorage. Botón de limpieza manual renombrado a "Limpiar fotos base64 (catálogo + editor)". v14.32: Arquitectura — 17 CSS design tokens (--sp-xs a --sp-2xl, --r-sm a --r-pill, --fs-xs a --fs-2xl, --font, --transition). Aplicados a .btn, .modal, .card y body como convención. Suite de tests de regresión para cálculos financieros: 28 assertions cubriendo round2, parseEU, safeNum, euro, fmtBs, pedidoTotalCDifCalc, pedidoSaldoCDif, esc. Se activan con ?test en URL o localStorage._gm_tests=1. v14.31: Accesibilidad — role="dialog" y aria-modal="true" en los 21 modales. aria-label en 10 botones de solo ícono (editar, duplicar, eliminar, anular, imprimir). tabindex="-1" en contenedores .modal para recibir foco al abrir. openModal() ahora enfoca el modal abierto. Contraste dark mode verificado (7.4:1 y 6.9:1 — supera WCAG AA). v14.30: Migración agresiva de fotos base64 — al cargar, sube fotos pendientes a Supabase Storage y limpia base64 del localStorage. Monitor de almacenamiento mejorado con desglose de las 3 keys más pesadas y botón de limpieza manual. SW resiliente: install ya no falla si un ícono o manifest no se descarga. Mensajes de error de actualización PWA más descriptivos. v14.29: Resiliencia y UX — openModal/closeModal mejorados con stack de modales, scroll lock del body, y cierre con Escape (closeTopModal). Modal de usuarios unificado al sistema centralizado. Nuevo helper safeNum(v, fallback) para validar inputs numéricos de forma segura (NaN/Infinity → fallback). v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.69: Pedidos — FIX sincronización de Caja al corregir abono inicial. Al editar un pedido y cambiar el monto del abono inicial (ej: pusiste $50 por error y era $70), el movimiento de caja vinculado ahora se corrige automáticamente con el nuevo monto (incluyendo conversión Bs si aplica). Solo afecta el primer movimiento de caja del pedido (el abono inicial); los pagos adicionales registrados después no se tocan. v14.68: UX — tres ajustes de precarga: (1) Carrito POS: método de pago pre-seleccionado cambiado de "Efectivo Bs" a "Pago Móvil". (2) Cotizaciones: modo de cotización pre-cargado en "Bolívares" en lugar de "Solo Dólares". (3) Pedidos: abono inicial se precarga automáticamente al 50% del total cuando el campo está vacío; si la casilla "Envío" está activada, se precarga al 100% (pago completo por adelantado). En pedidos en edición, el abono ya registrado no se sobreescribe. v14.67: Cotizaciones — nombre del cliente ahora es opcional. Solo se requiere al menos nombre o teléfono (si el cliente llama sin dar nombre, el teléfono es suficiente para buscarla luego). Las tarjetas muestran el teléfono como título cuando no hay nombre. v14.66: Ventas — nuevo módulo "Cotizaciones guardadas". Tercera pestaña en Ventas (junto a Nueva Venta e Historial) para guardar presupuestos antes de que el cliente abone. (1) Botón "Guardar cotización" en el panel Cotizar/WhatsApp: abre un modal con nombre y teléfono del cliente (precargados si ya hay cliente seleccionado), guarda el carrito completo (productos, extras, modo USD/Bs, % abono, totales) y copia el texto de WhatsApp al portapapeles en un solo paso. (2) Pestaña con buscador por nombre o teléfono. Cada tarjeta muestra cliente, fecha, ítems, total y días restantes hasta el vencimiento. (3) Botón "Editar" que restaura el carrito del POS con todos los datos de la cotización para modificarla y volver a guardarla (actualiza la misma, no duplica — id estable). (4) Botón "Crear pedido" que abre el formulario de pedido pre-llenado con ítems, cliente y extras; al guardar el pedido la cotización se elimina automáticamente. (5) Sincronización con Supabase desde el inicio (tabla cotizaciones, Realtime, merge seguro entre dispositivos). (6) Auto-eliminación a los 7 días: cada cotización lleva expires_at; al abrir la app se purgan las vencidas local y en la nube. v14.65: FIX regresión de V14_64 — al crear dos variantes seguidas (p.ej. "Termo Skinny Detal" y "Termo Skinny Mayor") sin resetear el editor, una sobreescribía a la otra porque _editPersId conservaba el id del producto anterior sin validar el SKU. Ahora persSave aplica la misma guarda por SKU del catálogo: si el id recordado apunta a un producto con SKU distinto al ingresado, se descarta y se emparejan por SKU exacto (el nombre solo se usa cuando no hay SKU). Resultado: con SKUs distintos, cada variante se guarda como producto independiente. v14.64: FIX CRÍTICO duplicados al guardar producto del editor — cada "Guardar" creaba un registro nuevo en lugar de actualizar el existente, porque persToJSON() no asignaba un id estable y mapearParaSupa generaba un Date.now() distinto en cada upsert (insertaba fila nueva en Supabase y Realtime la bajaba). Correcciones: (1) persSave ahora resuelve un id estable (producto cargado vía _editPersId → mismo SKU+nombre → mismo nombre) y conserva el id existente, de modo que el upsert ACTUALIZA la misma fila. (2) persLoadFromSearch recuerda el id del producto cargado; persReset e importación lo limpian. (3) Nueva _dedupPers() que al arrancar colapsa los productos personalizables duplicados (mismo nombre+SKU) conservando el más reciente y poniendo los extras en lista negra para que la sincronización no los reviva. v14.63: FIX handler roto closeAllModals — al hacer clic en un número de pedido desde la búsqueda global lanzaba ReferenceError (la función no existía), por lo que ni cerraba el modal ni navegaba al pedido. Ahora closeAllModals() cierra todos los modales abiertos del stack. Limpieza: eliminada una definición duplicada de bnMas (código muerto; se conserva la versión con soporte del botón Atrás de Android). v14.62: FIX CRÍTICO sobreescritura de producto en catálogo — al editar un producto del catálogo, cargar luego un producto guardado distinto desde el buscador y registrarlo, el nuevo producto sobreescribía al anterior porque el ID de edición (_editCatProdId) quedaba "pegado". Dos correcciones: (1) persLoadFromSearch e importación de JSON ahora limpian _editCatProdId al cargar un producto guardado (cargar ≠ editar la entrada del catálogo por ID). (2) confirmarCatalogo ahora usa el SKU como identidad: si el ID de edición apunta a un producto cuyo SKU no coincide con el ingresado, se descarta ese ID; el emparejado es por SKU exacto y el nombre solo se usa como último recurso cuando no hay SKU. Resultado: un SKU distinto nunca sobreescribe otro producto. v14.61: FIX registros dobles en editor de producto personalizable — ahora usa _editCatProdId (ID original) como criterio primario al guardar, evitando duplicados al renombrar el producto. v14.42: FIX Inventario — el descuento de stock no funcionaba al vender ni al entregar pedidos. Tres problemas corregidos: (1) descontarInventarioDeItems usaba _registrarMovInv que aplicaba doble descuento de stock (ella misma resta + _registrarMovInv también resta y guarda); cambiado a _soloLogMovInv que solo logea el movimiento sin tocar stock. (2) Flag _modificado nunca se asignaba, así que los upserts a Supabase no se ejecutaban — los cambios de stock no se sincronizaban entre dispositivos. (3) Solo descontaba si modo_inventario era 'terminado' o 'insumos'; ahora también descuenta automáticamente si modo_inventario es 'ninguno' pero existe un registro en terminados vinculado al producto. Logs de depuración agregados en consola para rastrear cada descuento. v14.41: FIX Dashboard — KPIs de finanzas desaparecían tras cargar porque can() no tenía fallback al rol para permisos nuevos. Ahora can() replica el patrón de canView(). FIX APP_VERSION desincronizada. v14.35: Limpieza profunda de localStorage — _migrarFotosBase64() ahora cubre 3 fuentes de peso oculto: (1) fotos base64 dentro del campo calculo embebido en productos del catálogo (POS.cat), (2) fotos base64 en productos personalizables del editor (POS.pers), (3) fotos directas del catálogo (ya existente). Al crear producto desde el editor, calculo.foto se limpia preventivamente para no duplicar base64 en localStorage. Botón de limpieza manual renombrado a "Limpiar fotos base64 (catálogo + editor)". v14.32: Arquitectura — 17 CSS design tokens (--sp-xs a --sp-2xl, --r-sm a --r-pill, --fs-xs a --fs-2xl, --font, --transition). Aplicados a .btn, .modal, .card y body como convención. Suite de tests de regresión para cálculos financieros: 28 assertions cubriendo round2, parseEU, safeNum, euro, fmtBs, pedidoTotalCDifCalc, pedidoSaldoCDif, esc. Se activan con ?test en URL o localStorage._gm_tests=1. v14.31: Accesibilidad — role="dialog" y aria-modal="true" en los 21 modales. aria-label en 10 botones de solo ícono (editar, duplicar, eliminar, anular, imprimir). tabindex="-1" en contenedores .modal para recibir foco al abrir. openModal() ahora enfoca el modal abierto. Contraste dark mode verificado (7.4:1 y 6.9:1 — supera WCAG AA). v14.30: Migración agresiva de fotos base64 — al cargar, sube fotos pendientes a Supabase Storage y limpia base64 del localStorage. Monitor de almacenamiento mejorado con desglose de las 3 keys más pesadas y botón de limpieza manual. SW resiliente: install ya no falla si un ícono o manifest no se descarga. Mensajes de error de actualización PWA más descriptivos. v14.29: Resiliencia y UX — openModal/closeModal mejorados con stack de modales, scroll lock del body, y cierre con Escape (closeTopModal). Modal de usuarios unificado al sistema centralizado. Nuevo helper safeNum(v, fallback) para validar inputs numéricos de forma segura (NaN/Infinity → fallback). v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
         </div>
       </div>
 
@@ -3151,8 +3151,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
                         <div style="flex:2;min-width:130px">
                           <label>Modo de cotización</label>
                           <select id="pos_wa_modo" onchange="posWaActualizar()">
-                            <option value="usd">Solo Dolares</option>
-                            <option value="bs">Bolivares</option>
+                            <option value="bs">Bolívares</option>
+                            <option value="usd">Solo Dólares</option>
                           </select>
                         </div>
                         <div style="flex:2;min-width:120px">
@@ -8001,7 +8001,7 @@ function nextNumVen(){
 // ═══════════════════════════════════════════════════════
 let _posItems = [];       // carrito POS
 let _posCliSel = null;    // cliente seleccionado en POS
-let _posMetodoActivo = 'efectivo_bs'; // método de pago activo
+let _posMetodoActivo = 'pago_movil'; // método de pago activo
 let _posCatActiva = '';   // categoría filtrada
 /* ═══════════════════════════════════════════════════════
    TIPOS DE VENTA — lógica diferenciada por tipo
@@ -10817,6 +10817,25 @@ function recalcPedido(){
   } else if(refRestante){ refRestante.style.display='none'; }
 
   const mpAbono = qs('#mp_abono');
+  // ── Auto-abono: 100% si hay envío, 50% en cualquier otro caso ──
+  // Solo actúa en pedidos nuevos (_pedIdx===null) o cuando el campo está vacío.
+  // Envío activado fuerza 100% solo en pedidos nuevos (no sobreescribe abonos ya registrados).
+  const _abonoEl = qs('#mp_abono');
+  const _envioActivo = qs('#mp_envio_chk')?.checked || false;
+  const _abonoVacio = !_abonoEl || _abonoEl.value.trim() === '' || _abonoEl.value.trim() === '0,00';
+  const _esPedidoNuevo = _pedIdx === null;
+  const _debeAutoAbono = _abonoVacio || (_esPedidoNuevo && _envioActivo);
+  if(_abonoEl && totalCDif > 0 && _debeAutoAbono){
+    const _pct = _envioActivo ? 1.0 : 0.5;
+    let _sugeridoAb;
+    if(esBs && bcv > 0){
+      _sugeridoAb = round2(totalBs * _pct);
+    } else {
+      _sugeridoAb = round2(totalCDif * _pct);
+    }
+    if(_sugeridoAb > 0) _abonoEl.value = _sugeridoAb.toFixed(2).replace('.',',');
+  }
+
   if(mpAbono) mpAbono.dataset.abonoUsd = abonoUsd.toFixed(4);
 }
 
@@ -10847,9 +10866,11 @@ function guardarPedido(){
 
   const all = loadPed();
   let pagos = [];
+  let _abonoAnteriorUsd = null; // para detectar si cambió y corregir Caja
   if(_pedIdx!==null){
     pagos = all[_pedIdx].pagos||[];
     if(pagos.length>0 && abono>0){
+      _abonoAnteriorUsd = pagos[0].monto; // capturar ANTES de modificar
       pagos[0].monto=abono;
       if(_esBsAb) pagos[0].monto_bs_ingresado = Math.round(_abonoRaw);
     } else if(pagos.length===0 && abono>0){
@@ -10907,6 +10928,35 @@ function guardarPedido(){
 
   // Si se editó el pedido y se agregó/cambió el cliente, corregir la nota del movimiento vinculado en Caja
   if(!esNuevo){ sincronizarCajaConPedido(ped); }
+
+  // Si el abono inicial cambió al editar → corregir el monto del primer movimiento de caja vinculado
+  if(!esNuevo && _abonoAnteriorUsd !== null && Math.abs(_abonoAnteriorUsd - abono) > 0.001){
+    const cajaAll = loadCajaMov();
+    // El movimiento inicial es el más antiguo vinculado a este pedido (id más bajo)
+    const movsVinculados = cajaAll
+      .filter(m => String(m.ref_tipo||'') === 'pedido' && String(m.ref_id) === String(ped.id))
+      .sort((a,b) => (a.id||0) - (b.id||0));
+    if(movsVinculados.length > 0){
+      const movInicial = movsVinculados[0];
+      const idxMov = cajaAll.findIndex(m => m.id === movInicial.id);
+      if(idxMov >= 0){
+        const _metMov = movInicial.metodo || _metodoAb;
+        const _mmCorr = cajaMonedaMonto(_metMov, abono, getTasaBCV(), getDiferencial());
+        cajaAll[idxMov] = {
+          ...cajaAll[idxMov],
+          monto:     _mmCorr.monto,
+          moneda:    _mmCorr.moneda,
+          monto_bs:  _mmCorr.monto_bs,
+          monto_usd: _mmCorr.monto_usd
+        };
+        if(_esBsAb) cajaAll[idxMov].monto_bs_ingresado = Math.round(_abonoRaw);
+        saveCajaMov(cajaAll);
+        upsertCajaMov(cajaAll[idxMov]);
+        if(typeof renderCaja === 'function') renderCaja();
+        console.log('[Caja] Abono inicial corregido:', _abonoAnteriorUsd, '→', abono, '| pedido:', ped.numero);
+      }
+    }
+  }
 
   // Si es pedido nuevo y tiene abono → registrar en Caja
   if(esNuevo && abono>0){
@@ -15347,7 +15397,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_67';
+  const APP_VERSION = 'v14_69';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
