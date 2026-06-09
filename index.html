@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_74">
+<html lang="es" data-app-version="GestioMada_V14_76">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -2720,6 +2720,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
             <div style="flex:1;min-width:180px">
               <div class="fg"><label>Nombre del negocio</label><input type="text" id="cfg_neg" placeholder="Mi Negocio"/></div>
               <div class="fg"><label>RIF / RNC</label><input type="text" id="cfg_rif" placeholder="J-12345678-9"/></div>
+              <div class="fg" style="margin-top:-8px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--muted);font-weight:400"><input type="checkbox" id="cfg_rif_visible" style="width:15px;height:15px;cursor:pointer"> Mostrar RIF en recibo y cotización</label></div>
               <div class="fg"><label>Teléfono / WhatsApp</label><input type="text" id="cfg_tel" placeholder="+58 414…"/></div>
               <div class="fg"><label>Instagram</label><input type="text" id="cfg_instagram" placeholder="@minegocio"/></div>
               <div class="fg"><label>Dirección / Referencia</label><input type="text" id="cfg_dir" placeholder="Ej. Av. Principal, Local 3…"/></div>
@@ -2947,7 +2948,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.74: Reportes y Finanzas — FIX sistémico: todos los módulos ahora usan pedidoSaldoCDif/pedidoTotalCDifCalc (total c/diferencial) en lugar de p.total base. Corregidos: KPI «Por cobrar» en Reportes, tab Pedidos (KPIs facturado/cobrado/pendiente, lista de pendientes, tabla detalle del período), tab Cambiario en Finanzas (exposición activa). v14.73: Finanzas — FIX CRÍTICO saldo por cliente: el módulo CxC ahora usa el mismo motor que Pedidos (total c/diferencial) en vez de p.total base. Antes mostraba el saldo en USD base sin aplicar el diferencial cambiario, causando valores incorrectos (ej: $55,67 en vez de $71,20). v14.74: Reportes+Finanzas — FIX sistémico repRestantePedido/repTotalPedido: 6 puntos corregidos para usar pedidoSaldoCDif y pedidoTotalCDifCalc (misma lógica que módulo Pedidos, con diferencial aplicado). Afectaba: KPI Por cobrar en Reportes, tabla de pedidos del período (total/cobrado/pendiente), lista de pendientes en Reportes, y exposición cambiaria activa en Finanzas. v14.73: Finanzas — FIX saldo por cliente: finSaldoPedidoCxC ahora usa pedidoSaldoCDif (total c/dif, igual que módulo Pedidos) en lugar de repRestantePedido (total base sin diferencial). Corrige valores incorrectos en lista de deudores, aging, KPIs ejecutivos y DSO. v14.72: Pedidos — búsqueda difusa (fuzzy search) por nombre de cliente: tolera errores ortográficos de 1-2 caracteres (ej: "Jimenes" encuentra "Jiménez", "Lopes" encuentra "López"). Combina coincidencia exacta primero y Levenshtein como respaldo. v14.71: Pedidos — búsqueda por nombre de cliente ahora ignora acentos: buscar "Monica" encuentra "Mónica" y viceversa. Aplica también en el filtro de impresión de pedidos. v14.70: Topbar — nuevo botón «Sincronizar» que descarga todos los datos desde Supabase al instante, sin necesidad de recargar la página con Ctrl+F5. Útil cuando un dispositivo no recibe un pedido u otro cambio hecho en otro equipo. v14.69: Pedidos — FIX sincronización de Caja al corregir abono inicial. Al editar un pedido y cambiar el monto del abono inicial (ej: pusiste $50 por error y era $70), el movimiento de caja vinculado ahora se corrige automáticamente con el nuevo monto (incluyendo conversión Bs si aplica). Solo afecta el primer movimiento de caja del pedido (el abono inicial); los pagos adicionales registrados después no se tocan. v14.68: UX — tres ajustes de precarga: (1) Carrito POS: método de pago pre-seleccionado cambiado de "Efectivo Bs" a "Pago Móvil". (2) Cotizaciones: modo de cotización pre-cargado en "Bolívares" en lugar de "Solo Dólares". (3) Pedidos: abono inicial se precarga automáticamente al 50% del total cuando el campo está vacío; si la casilla "Envío" está activada, se precarga al 100% (pago completo por adelantado). En pedidos en edición, el abono ya registrado no se sobreescribe. v14.67: Cotizaciones — nombre del cliente ahora es opcional. Solo se requiere al menos nombre o teléfono (si el cliente llama sin dar nombre, el teléfono es suficiente para buscarla luego). Las tarjetas muestran el teléfono como título cuando no hay nombre. v14.66: Ventas — nuevo módulo "Cotizaciones guardadas". Tercera pestaña en Ventas (junto a Nueva Venta e Historial) para guardar presupuestos antes de que el cliente abone. (1) Botón "Guardar cotización" en el panel Cotizar/WhatsApp: abre un modal con nombre y teléfono del cliente (precargados si ya hay cliente seleccionado), guarda el carrito completo (productos, extras, modo USD/Bs, % abono, totales) y copia el texto de WhatsApp al portapapeles en un solo paso. (2) Pestaña con buscador por nombre o teléfono. Cada tarjeta muestra cliente, fecha, ítems, total y días restantes hasta el vencimiento. (3) Botón "Editar" que restaura el carrito del POS con todos los datos de la cotización para modificarla y volver a guardarla (actualiza la misma, no duplica — id estable). (4) Botón "Crear pedido" que abre el formulario de pedido pre-llenado con ítems, cliente y extras; al guardar el pedido la cotización se elimina automáticamente. (5) Sincronización con Supabase desde el inicio (tabla cotizaciones, Realtime, merge seguro entre dispositivos). (6) Auto-eliminación a los 7 días: cada cotización lleva expires_at; al abrir la app se purgan las vencidas local y en la nube. v14.65: FIX regresión de V14_64 — al crear dos variantes seguidas (p.ej. "Termo Skinny Detal" y "Termo Skinny Mayor") sin resetear el editor, una sobreescribía a la otra porque _editPersId conservaba el id del producto anterior sin validar el SKU. Ahora persSave aplica la misma guarda por SKU del catálogo: si el id recordado apunta a un producto con SKU distinto al ingresado, se descarta y se emparejan por SKU exacto (el nombre solo se usa cuando no hay SKU). Resultado: con SKUs distintos, cada variante se guarda como producto independiente. v14.64: FIX CRÍTICO duplicados al guardar producto del editor — cada "Guardar" creaba un registro nuevo en lugar de actualizar el existente, porque persToJSON() no asignaba un id estable y mapearParaSupa generaba un Date.now() distinto en cada upsert (insertaba fila nueva en Supabase y Realtime la bajaba). Correcciones: (1) persSave ahora resuelve un id estable (producto cargado vía _editPersId → mismo SKU+nombre → mismo nombre) y conserva el id existente, de modo que el upsert ACTUALIZA la misma fila. (2) persLoadFromSearch recuerda el id del producto cargado; persReset e importación lo limpian. (3) Nueva _dedupPers() que al arrancar colapsa los productos personalizables duplicados (mismo nombre+SKU) conservando el más reciente y poniendo los extras en lista negra para que la sincronización no los reviva. v14.63: FIX handler roto closeAllModals — al hacer clic en un número de pedido desde la búsqueda global lanzaba ReferenceError (la función no existía), por lo que ni cerraba el modal ni navegaba al pedido. Ahora closeAllModals() cierra todos los modales abiertos del stack. Limpieza: eliminada una definición duplicada de bnMas (código muerto; se conserva la versión con soporte del botón Atrás de Android). v14.62: FIX CRÍTICO sobreescritura de producto en catálogo — al editar un producto del catálogo, cargar luego un producto guardado distinto desde el buscador y registrarlo, el nuevo producto sobreescribía al anterior porque el ID de edición (_editCatProdId) quedaba "pegado". Dos correcciones: (1) persLoadFromSearch e importación de JSON ahora limpian _editCatProdId al cargar un producto guardado (cargar ≠ editar la entrada del catálogo por ID). (2) confirmarCatalogo ahora usa el SKU como identidad: si el ID de edición apunta a un producto cuyo SKU no coincide con el ingresado, se descarta ese ID; el emparejado es por SKU exacto y el nombre solo se usa como último recurso cuando no hay SKU. Resultado: un SKU distinto nunca sobreescribe otro producto. v14.61: FIX registros dobles en editor de producto personalizable — ahora usa _editCatProdId (ID original) como criterio primario al guardar, evitando duplicados al renombrar el producto. v14.74: Reportes y Finanzas — FIX sistémico: todos los módulos ahora usan pedidoSaldoCDif/pedidoTotalCDifCalc (total c/diferencial) en lugar de p.total base. Corregidos: KPI «Por cobrar» en Reportes, tab Pedidos (KPIs facturado/cobrado/pendiente, lista de pendientes, tabla detalle del período), tab Cambiario en Finanzas (exposición activa). v14.73: Finanzas — FIX CRÍTICO saldo por cliente: el módulo CxC ahora usa el mismo motor que Pedidos (total c/diferencial) en vez de p.total base. Antes mostraba el saldo en USD base sin aplicar el diferencial cambiario, causando valores incorrectos (ej: $55,67 en vez de $71,20). v14.74: Reportes+Finanzas — FIX sistémico repRestantePedido/repTotalPedido: 6 puntos corregidos para usar pedidoSaldoCDif y pedidoTotalCDifCalc (misma lógica que módulo Pedidos, con diferencial aplicado). Afectaba: KPI Por cobrar en Reportes, tabla de pedidos del período (total/cobrado/pendiente), lista de pendientes en Reportes, y exposición cambiaria activa en Finanzas. v14.73: Finanzas — FIX saldo por cliente: finSaldoPedidoCxC ahora usa pedidoSaldoCDif (total c/dif, igual que módulo Pedidos) en lugar de repRestantePedido (total base sin diferencial). Corrige valores incorrectos en lista de deudores, aging, KPIs ejecutivos y DSO. v14.72: Pedidos — búsqueda difusa (fuzzy search) por nombre de cliente: tolera errores ortográficos de 1-2 caracteres (ej: "Jimenes" encuentra "Jiménez", "Lopes" encuentra "López"). Combina coincidencia exacta primero y Levenshtein como respaldo. v14.71: Pedidos — búsqueda por nombre de cliente ahora ignora acentos: buscar "Monica" encuentra "Mónica" y viceversa. Aplica también en el filtro de impresión de pedidos. v14.74: Reportes y Finanzas — FIX sistémico: todos los módulos ahora usan pedidoSaldoCDif/pedidoTotalCDifCalc (total c/diferencial) en lugar de p.total base. Corregidos: KPI «Por cobrar» en Reportes, tab Pedidos (KPIs facturado/cobrado/pendiente, lista de pendientes, tabla detalle del período), tab Cambiario en Finanzas (exposición activa). v14.73: Finanzas — FIX CRÍTICO saldo por cliente: el módulo CxC ahora usa el mismo motor que Pedidos (total c/diferencial) en vez de p.total base. Antes mostraba el saldo en USD base sin aplicar el diferencial cambiario, causando valores incorrectos (ej: $55,67 en vez de $71,20). v14.72: Pedidos — búsqueda difusa (fuzzy): tolera errores ortográficos de 1-2 letras usando distancia de Levenshtein. Cada palabra del query se evalúa independientemente contra cada palabra del nombre (nombre y apellido por separado). Tolerancia: ≤4 chars → 1 error, ≥5 chars → 2 errores. Estrategia: primero coincidencia exacta normalizada (rápida), luego fuzzy solo si no hay resultado directo. Aplica en buscador principal y filtro de impresión. v14.71: Pedidos — búsqueda insensible a acentos: "Monica" encuentra "Mónica", "Jimenez" encuentra "Jiménez", etc. La normalización aplica tanto al buscador principal de pedidos como al filtro de impresión. v14.70: Topbar — nuevo botón «Sincronizar» que fuerza la descarga completa de datos desde Supabase. Resuelve casos donde un dispositivo no recibe en tiempo real un pedido o cambio creado en otro equipo (Realtime perdido por conexión interrumpida). El botón muestra un spinner mientras sincroniza y un toast de confirmación al terminar. En móvil muestra solo el ícono para no ocupar espacio. v14.42: FIX Inventario — el descuento de stock no funcionaba al vender ni al entregar pedidos. Tres problemas corregidos: (1) descontarInventarioDeItems usaba _registrarMovInv que aplicaba doble descuento de stock (ella misma resta + _registrarMovInv también resta y guarda); cambiado a _soloLogMovInv que solo logea el movimiento sin tocar stock. (2) Flag _modificado nunca se asignaba, así que los upserts a Supabase no se ejecutaban — los cambios de stock no se sincronizaban entre dispositivos. (3) Solo descontaba si modo_inventario era 'terminado' o 'insumos'; ahora también descuenta automáticamente si modo_inventario es 'ninguno' pero existe un registro en terminados vinculado al producto. Logs de depuración agregados en consola para rastrear cada descuento. v14.41: FIX Dashboard — KPIs de finanzas desaparecían tras cargar porque can() no tenía fallback al rol para permisos nuevos. Ahora can() replica el patrón de canView(). FIX APP_VERSION desincronizada. v14.35: Limpieza profunda de localStorage — _migrarFotosBase64() ahora cubre 3 fuentes de peso oculto: (1) fotos base64 dentro del campo calculo embebido en productos del catálogo (POS.cat), (2) fotos base64 en productos personalizables del editor (POS.pers), (3) fotos directas del catálogo (ya existente). Al crear producto desde el editor, calculo.foto se limpia preventivamente para no duplicar base64 en localStorage. Botón de limpieza manual renombrado a "Limpiar fotos base64 (catálogo + editor)". v14.32: Arquitectura — 17 CSS design tokens (--sp-xs a --sp-2xl, --r-sm a --r-pill, --fs-xs a --fs-2xl, --font, --transition). Aplicados a .btn, .modal, .card y body como convención. Suite de tests de regresión para cálculos financieros: 28 assertions cubriendo round2, parseEU, safeNum, euro, fmtBs, pedidoTotalCDifCalc, pedidoSaldoCDif, esc. Se activan con ?test en URL o localStorage._gm_tests=1. v14.31: Accesibilidad — role="dialog" y aria-modal="true" en los 21 modales. aria-label en 10 botones de solo ícono (editar, duplicar, eliminar, anular, imprimir). tabindex="-1" en contenedores .modal para recibir foco al abrir. openModal() ahora enfoca el modal abierto. Contraste dark mode verificado (7.4:1 y 6.9:1 — supera WCAG AA). v14.30: Migración agresiva de fotos base64 — al cargar, sube fotos pendientes a Supabase Storage y limpia base64 del localStorage. Monitor de almacenamiento mejorado con desglose de las 3 keys más pesadas y botón de limpieza manual. SW resiliente: install ya no falla si un ícono o manifest no se descarga. Mensajes de error de actualización PWA más descriptivos. v14.29: Resiliencia y UX — openModal/closeModal mejorados con stack de modales, scroll lock del body, y cierre con Escape (closeTopModal). Modal de usuarios unificado al sistema centralizado. Nuevo helper safeNum(v, fallback) para validar inputs numéricos de forma segura (NaN/Infinity → fallback). v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.76: Config — toggle para ocultar/mostrar RIF en recibos y cotizaciones. Cotizaciones — validez reducida a 24 horas (muestra horas restantes). Comprobante de cotización en Bs: total ahora se muestra en grande (36px) para mayor claridad. v14.75: Cotizaciones — nuevo botón Imprimir en cada cotización guardada. Genera un comprobante en ventana nueva (estilo idéntico al recibo de venta) con encabezado COTIZACIÓN, datos del cliente, tabla de productos con precios c/diferencial, total en Bs o USD según el modo configurado, abono requerido si aplica, y fecha de vencimiento. Se imprime automáticamente al abrir. v14.74: Reportes y Finanzas — FIX sistémico: todos los módulos ahora usan pedidoSaldoCDif/pedidoTotalCDifCalc (total c/diferencial) en lugar de p.total base. Corregidos: KPI «Por cobrar» en Reportes, tab Pedidos (KPIs facturado/cobrado/pendiente, lista de pendientes, tabla detalle del período), tab Cambiario en Finanzas (exposición activa). v14.73: Finanzas — FIX CRÍTICO saldo por cliente: el módulo CxC ahora usa el mismo motor que Pedidos (total c/diferencial) en vez de p.total base. Antes mostraba el saldo en USD base sin aplicar el diferencial cambiario, causando valores incorrectos (ej: $55,67 en vez de $71,20). v14.76: Config — campo "Mostrar RIF en recibo y cotización" (checkbox); si está desmarcado el RIF no aparece en ningún comprobante. Cotizaciones — validez cambiada a 24h (muestra horas restantes, ej: "18 horas restantes"); el banner de vencimiento ahora incluye hora exacta. Comprobante cotización en Bs — total Bs aparece en 36px prominente con USD como referencia secundaria. v14.75: Cotizaciones — botón Imprimir en cada cotización guardada. Abre comprobante tipo recibo con: datos del negocio (logo, RIF, tel, IG), cliente, fecha de emisión y vencimiento (7 días), tabla de ítems c/diferencial, extras, total en Bs o USD según modo wa_modo, abono requerido si aplica, notas, y nota_recibo de configuración. Barra de color azul para diferenciarlo del recibo de venta (rosa). v14.74: Reportes+Finanzas — FIX sistémico repRestantePedido/repTotalPedido: 6 puntos corregidos para usar pedidoSaldoCDif y pedidoTotalCDifCalc (misma lógica que módulo Pedidos, con diferencial aplicado). Afectaba: KPI Por cobrar en Reportes, tabla de pedidos del período (total/cobrado/pendiente), lista de pendientes en Reportes, y exposición cambiaria activa en Finanzas. v14.73: Finanzas — FIX saldo por cliente: finSaldoPedidoCxC ahora usa pedidoSaldoCDif (total c/dif, igual que módulo Pedidos) en lugar de repRestantePedido (total base sin diferencial). Corrige valores incorrectos en lista de deudores, aging, KPIs ejecutivos y DSO. v14.72: Pedidos — búsqueda difusa (fuzzy search) por nombre de cliente: tolera errores ortográficos de 1-2 caracteres (ej: "Jimenes" encuentra "Jiménez", "Lopes" encuentra "López"). Combina coincidencia exacta primero y Levenshtein como respaldo. v14.71: Pedidos — búsqueda por nombre de cliente ahora ignora acentos: buscar "Monica" encuentra "Mónica" y viceversa. Aplica también en el filtro de impresión de pedidos. v14.70: Topbar — nuevo botón «Sincronizar» que descarga todos los datos desde Supabase al instante, sin necesidad de recargar la página con Ctrl+F5. Útil cuando un dispositivo no recibe un pedido u otro cambio hecho en otro equipo. v14.69: Pedidos — FIX sincronización de Caja al corregir abono inicial. Al editar un pedido y cambiar el monto del abono inicial (ej: pusiste $50 por error y era $70), el movimiento de caja vinculado ahora se corrige automáticamente con el nuevo monto (incluyendo conversión Bs si aplica). Solo afecta el primer movimiento de caja del pedido (el abono inicial); los pagos adicionales registrados después no se tocan. v14.68: UX — tres ajustes de precarga: (1) Carrito POS: método de pago pre-seleccionado cambiado de "Efectivo Bs" a "Pago Móvil". (2) Cotizaciones: modo de cotización pre-cargado en "Bolívares" en lugar de "Solo Dólares". (3) Pedidos: abono inicial se precarga automáticamente al 50% del total cuando el campo está vacío; si la casilla "Envío" está activada, se precarga al 100% (pago completo por adelantado). En pedidos en edición, el abono ya registrado no se sobreescribe. v14.67: Cotizaciones — nombre del cliente ahora es opcional. Solo se requiere al menos nombre o teléfono (si el cliente llama sin dar nombre, el teléfono es suficiente para buscarla luego). Las tarjetas muestran el teléfono como título cuando no hay nombre. v14.66: Ventas — nuevo módulo "Cotizaciones guardadas". Tercera pestaña en Ventas (junto a Nueva Venta e Historial) para guardar presupuestos antes de que el cliente abone. (1) Botón "Guardar cotización" en el panel Cotizar/WhatsApp: abre un modal con nombre y teléfono del cliente (precargados si ya hay cliente seleccionado), guarda el carrito completo (productos, extras, modo USD/Bs, % abono, totales) y copia el texto de WhatsApp al portapapeles en un solo paso. (2) Pestaña con buscador por nombre o teléfono. Cada tarjeta muestra cliente, fecha, ítems, total y días restantes hasta el vencimiento. (3) Botón "Editar" que restaura el carrito del POS con todos los datos de la cotización para modificarla y volver a guardarla (actualiza la misma, no duplica — id estable). (4) Botón "Crear pedido" que abre el formulario de pedido pre-llenado con ítems, cliente y extras; al guardar el pedido la cotización se elimina automáticamente. (5) Sincronización con Supabase desde el inicio (tabla cotizaciones, Realtime, merge seguro entre dispositivos). (6) Auto-eliminación a los 7 días: cada cotización lleva expires_at; al abrir la app se purgan las vencidas local y en la nube. v14.65: FIX regresión de V14_64 — al crear dos variantes seguidas (p.ej. "Termo Skinny Detal" y "Termo Skinny Mayor") sin resetear el editor, una sobreescribía a la otra porque _editPersId conservaba el id del producto anterior sin validar el SKU. Ahora persSave aplica la misma guarda por SKU del catálogo: si el id recordado apunta a un producto con SKU distinto al ingresado, se descarta y se emparejan por SKU exacto (el nombre solo se usa cuando no hay SKU). Resultado: con SKUs distintos, cada variante se guarda como producto independiente. v14.64: FIX CRÍTICO duplicados al guardar producto del editor — cada "Guardar" creaba un registro nuevo en lugar de actualizar el existente, porque persToJSON() no asignaba un id estable y mapearParaSupa generaba un Date.now() distinto en cada upsert (insertaba fila nueva en Supabase y Realtime la bajaba). Correcciones: (1) persSave ahora resuelve un id estable (producto cargado vía _editPersId → mismo SKU+nombre → mismo nombre) y conserva el id existente, de modo que el upsert ACTUALIZA la misma fila. (2) persLoadFromSearch recuerda el id del producto cargado; persReset e importación lo limpian. (3) Nueva _dedupPers() que al arrancar colapsa los productos personalizables duplicados (mismo nombre+SKU) conservando el más reciente y poniendo los extras en lista negra para que la sincronización no los reviva. v14.63: FIX handler roto closeAllModals — al hacer clic en un número de pedido desde la búsqueda global lanzaba ReferenceError (la función no existía), por lo que ni cerraba el modal ni navegaba al pedido. Ahora closeAllModals() cierra todos los modales abiertos del stack. Limpieza: eliminada una definición duplicada de bnMas (código muerto; se conserva la versión con soporte del botón Atrás de Android). v14.62: FIX CRÍTICO sobreescritura de producto en catálogo — al editar un producto del catálogo, cargar luego un producto guardado distinto desde el buscador y registrarlo, el nuevo producto sobreescribía al anterior porque el ID de edición (_editCatProdId) quedaba "pegado". Dos correcciones: (1) persLoadFromSearch e importación de JSON ahora limpian _editCatProdId al cargar un producto guardado (cargar ≠ editar la entrada del catálogo por ID). (2) confirmarCatalogo ahora usa el SKU como identidad: si el ID de edición apunta a un producto cuyo SKU no coincide con el ingresado, se descarta ese ID; el emparejado es por SKU exacto y el nombre solo se usa como último recurso cuando no hay SKU. Resultado: un SKU distinto nunca sobreescribe otro producto. v14.61: FIX registros dobles en editor de producto personalizable — ahora usa _editCatProdId (ID original) como criterio primario al guardar, evitando duplicados al renombrar el producto. v14.76: Config — toggle para ocultar/mostrar RIF en recibos y cotizaciones. Cotizaciones — validez reducida a 24 horas (muestra horas restantes). Comprobante de cotización en Bs: total ahora se muestra en grande (36px) para mayor claridad. v14.75: Cotizaciones — nuevo botón Imprimir en cada cotización guardada. Genera un comprobante en ventana nueva (estilo idéntico al recibo de venta) con encabezado COTIZACIÓN, datos del cliente, tabla de productos con precios c/diferencial, total en Bs o USD según el modo configurado, abono requerido si aplica, y fecha de vencimiento. Se imprime automáticamente al abrir. v14.74: Reportes y Finanzas — FIX sistémico: todos los módulos ahora usan pedidoSaldoCDif/pedidoTotalCDifCalc (total c/diferencial) en lugar de p.total base. Corregidos: KPI «Por cobrar» en Reportes, tab Pedidos (KPIs facturado/cobrado/pendiente, lista de pendientes, tabla detalle del período), tab Cambiario en Finanzas (exposición activa). v14.73: Finanzas — FIX CRÍTICO saldo por cliente: el módulo CxC ahora usa el mismo motor que Pedidos (total c/diferencial) en vez de p.total base. Antes mostraba el saldo en USD base sin aplicar el diferencial cambiario, causando valores incorrectos (ej: $55,67 en vez de $71,20). v14.76: Config — campo "Mostrar RIF en recibo y cotización" (checkbox); si está desmarcado el RIF no aparece en ningún comprobante. Cotizaciones — validez cambiada a 24h (muestra horas restantes, ej: "18 horas restantes"); el banner de vencimiento ahora incluye hora exacta. Comprobante cotización en Bs — total Bs aparece en 36px prominente con USD como referencia secundaria. v14.75: Cotizaciones — botón Imprimir en cada cotización guardada. Abre comprobante tipo recibo con: datos del negocio (logo, RIF, tel, IG), cliente, fecha de emisión y vencimiento (7 días), tabla de ítems c/diferencial, extras, total en Bs o USD según modo wa_modo, abono requerido si aplica, notas, y nota_recibo de configuración. Barra de color azul para diferenciarlo del recibo de venta (rosa). v14.74: Reportes+Finanzas — FIX sistémico repRestantePedido/repTotalPedido: 6 puntos corregidos para usar pedidoSaldoCDif y pedidoTotalCDifCalc (misma lógica que módulo Pedidos, con diferencial aplicado). Afectaba: KPI Por cobrar en Reportes, tabla de pedidos del período (total/cobrado/pendiente), lista de pendientes en Reportes, y exposición cambiaria activa en Finanzas. v14.73: Finanzas — FIX saldo por cliente: finSaldoPedidoCxC ahora usa pedidoSaldoCDif (total c/dif, igual que módulo Pedidos) en lugar de repRestantePedido (total base sin diferencial). Corrige valores incorrectos en lista de deudores, aging, KPIs ejecutivos y DSO. v14.72: Pedidos — búsqueda difusa (fuzzy search) por nombre de cliente: tolera errores ortográficos de 1-2 caracteres (ej: "Jimenes" encuentra "Jiménez", "Lopes" encuentra "López"). Combina coincidencia exacta primero y Levenshtein como respaldo. v14.71: Pedidos — búsqueda por nombre de cliente ahora ignora acentos: buscar "Monica" encuentra "Mónica" y viceversa. Aplica también en el filtro de impresión de pedidos. v14.76: Config — toggle para ocultar/mostrar RIF en recibos y cotizaciones. Cotizaciones — validez reducida a 24 horas (muestra horas restantes). Comprobante de cotización en Bs: total ahora se muestra en grande (36px) para mayor claridad. v14.75: Cotizaciones — nuevo botón Imprimir en cada cotización guardada. Genera un comprobante en ventana nueva (estilo idéntico al recibo de venta) con encabezado COTIZACIÓN, datos del cliente, tabla de productos con precios c/diferencial, total en Bs o USD según el modo configurado, abono requerido si aplica, y fecha de vencimiento. Se imprime automáticamente al abrir. v14.74: Reportes y Finanzas — FIX sistémico: todos los módulos ahora usan pedidoSaldoCDif/pedidoTotalCDifCalc (total c/diferencial) en lugar de p.total base. Corregidos: KPI «Por cobrar» en Reportes, tab Pedidos (KPIs facturado/cobrado/pendiente, lista de pendientes, tabla detalle del período), tab Cambiario en Finanzas (exposición activa). v14.73: Finanzas — FIX CRÍTICO saldo por cliente: el módulo CxC ahora usa el mismo motor que Pedidos (total c/diferencial) en vez de p.total base. Antes mostraba el saldo en USD base sin aplicar el diferencial cambiario, causando valores incorrectos (ej: $55,67 en vez de $71,20). v14.72: Pedidos — búsqueda difusa (fuzzy): tolera errores ortográficos de 1-2 letras usando distancia de Levenshtein. Cada palabra del query se evalúa independientemente contra cada palabra del nombre (nombre y apellido por separado). Tolerancia: ≤4 chars → 1 error, ≥5 chars → 2 errores. Estrategia: primero coincidencia exacta normalizada (rápida), luego fuzzy solo si no hay resultado directo. Aplica en buscador principal y filtro de impresión. v14.71: Pedidos — búsqueda insensible a acentos: "Monica" encuentra "Mónica", "Jimenez" encuentra "Jiménez", etc. La normalización aplica tanto al buscador principal de pedidos como al filtro de impresión. v14.70: Topbar — nuevo botón «Sincronizar» que fuerza la descarga completa de datos desde Supabase. Resuelve casos donde un dispositivo no recibe en tiempo real un pedido o cambio creado en otro equipo (Realtime perdido por conexión interrumpida). El botón muestra un spinner mientras sincroniza y un toast de confirmación al terminar. En móvil muestra solo el ícono para no ocupar espacio. v14.42: FIX Inventario — el descuento de stock no funcionaba al vender ni al entregar pedidos. Tres problemas corregidos: (1) descontarInventarioDeItems usaba _registrarMovInv que aplicaba doble descuento de stock (ella misma resta + _registrarMovInv también resta y guarda); cambiado a _soloLogMovInv que solo logea el movimiento sin tocar stock. (2) Flag _modificado nunca se asignaba, así que los upserts a Supabase no se ejecutaban — los cambios de stock no se sincronizaban entre dispositivos. (3) Solo descontaba si modo_inventario era 'terminado' o 'insumos'; ahora también descuenta automáticamente si modo_inventario es 'ninguno' pero existe un registro en terminados vinculado al producto. Logs de depuración agregados en consola para rastrear cada descuento. v14.41: FIX Dashboard — KPIs de finanzas desaparecían tras cargar porque can() no tenía fallback al rol para permisos nuevos. Ahora can() replica el patrón de canView(). FIX APP_VERSION desincronizada. v14.35: Limpieza profunda de localStorage — _migrarFotosBase64() ahora cubre 3 fuentes de peso oculto: (1) fotos base64 dentro del campo calculo embebido en productos del catálogo (POS.cat), (2) fotos base64 en productos personalizables del editor (POS.pers), (3) fotos directas del catálogo (ya existente). Al crear producto desde el editor, calculo.foto se limpia preventivamente para no duplicar base64 en localStorage. Botón de limpieza manual renombrado a "Limpiar fotos base64 (catálogo + editor)". v14.32: Arquitectura — 17 CSS design tokens (--sp-xs a --sp-2xl, --r-sm a --r-pill, --fs-xs a --fs-2xl, --font, --transition). Aplicados a .btn, .modal, .card y body como convención. Suite de tests de regresión para cálculos financieros: 28 assertions cubriendo round2, parseEU, safeNum, euro, fmtBs, pedidoTotalCDifCalc, pedidoSaldoCDif, esc. Se activan con ?test en URL o localStorage._gm_tests=1. v14.31: Accesibilidad — role="dialog" y aria-modal="true" en los 21 modales. aria-label en 10 botones de solo ícono (editar, duplicar, eliminar, anular, imprimir). tabindex="-1" en contenedores .modal para recibir foco al abrir. openModal() ahora enfoca el modal abierto. Contraste dark mode verificado (7.4:1 y 6.9:1 — supera WCAG AA). v14.30: Migración agresiva de fotos base64 — al cargar, sube fotos pendientes a Supabase Storage y limpia base64 del localStorage. Monitor de almacenamiento mejorado con desglose de las 3 keys más pesadas y botón de limpieza manual. SW resiliente: install ya no falla si un ícono o manifest no se descarga. Mensajes de error de actualización PWA más descriptivos. v14.29: Resiliencia y UX — openModal/closeModal mejorados con stack de modales, scroll lock del body, y cierre con Escape (closeTopModal). Modal de usuarios unificado al sistema centralizado. Nuevo helper safeNum(v, fallback) para validar inputs numéricos de forma segura (NaN/Infinity → fallback). v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
         </div>
       </div>
 
@@ -4141,6 +4142,7 @@ function loadCfg(){
   try{ CFG = Object.assign(CFG, JSON.parse(localStorage.getItem(LS_CFG)||'{}')); }catch(e){}
   qs('#cfg_neg').value = CFG.negocio||'';
   if(qs('#cfg_rif')) qs('#cfg_rif').value = CFG.rif||'';
+  if(qs('#cfg_rif_visible')) qs('#cfg_rif_visible').checked = CFG.rif_visible !== false;
   qs('#cfg_tel').value = CFG.telefono||'';
   if(qs('#cfg_instagram')) qs('#cfg_instagram').value = CFG.instagram||'';
   if(qs('#cfg_dir')) qs('#cfg_dir').value = CFG.direccion||'';
@@ -4188,6 +4190,7 @@ async function guardarConfigNegocio(){
   CFG.logo        = (_li && _li.style.display !== 'none') ? _li.src : '';
   CFG.negocio     = qs('#cfg_neg')?.value || '';
   CFG.rif         = qs('#cfg_rif')?.value || '';
+  CFG.rif_visible = qs('#cfg_rif_visible')?.checked !== false;
   CFG.telefono    = qs('#cfg_tel')?.value || '';
   CFG.instagram   = qs('#cfg_instagram')?.value || '';
   CFG.direccion   = qs('#cfg_dir')?.value || '';
@@ -4210,6 +4213,7 @@ async function guardarConfigNegocio(){
     const campos = [
       { clave: 'negocio',      valor: CFG.negocio },
       { clave: 'rif',          valor: CFG.rif },
+      { clave: 'rif_visible',    valor: CFG.rif_visible },
       { clave: 'telefono',     valor: CFG.telefono },
       { clave: 'instagram',    valor: CFG.instagram },
       { clave: 'direccion',    valor: CFG.direccion },
@@ -4282,7 +4286,7 @@ async function cargarConfigNegocioDesdeNube(){
 
     let changed = false;
     // Todos los campos que se sincronizan via tabla config
-    const camposSyncables = ['negocio','rif','telefono','instagram','direccion','slogan','nota_recibo','logo_url',
+    const camposSyncables = ['negocio','rif','rif_visible','telefono','instagram','direccion','slogan','nota_recibo','logo_url',
       'dif_bloqueado','dif_congelado','restante_usd_puro','tipos_venta_on','comision_detal','comision_mayor','caja_auto_apertura','cat_order',
       'tasa_auto','tasa_bcv','tasa_paralela','imp_on','imp_pct','metodos_activos','categorias','moneda','moneda2'];
     data.forEach(row => {
@@ -4336,6 +4340,7 @@ function _aplicarConfigEnUI(){
   // Datos del negocio
   if(qs('#cfg_neg')) qs('#cfg_neg').value = CFG.negocio || '';
   if(qs('#cfg_rif')) qs('#cfg_rif').value = CFG.rif || '';
+  if(qs('#cfg_rif_visible')) qs('#cfg_rif_visible').checked = CFG.rif_visible !== false;
   if(qs('#cfg_tel')) qs('#cfg_tel').value = CFG.telefono || '';
   if(qs('#cfg_instagram')) qs('#cfg_instagram').value = CFG.instagram || '';
   if(qs('#cfg_dir')) qs('#cfg_dir').value = CFG.direccion || '';
@@ -4533,6 +4538,7 @@ function guardarConfig(){
   const _li=qs('#cfg_logo_img'); CFG.logo=(_li&&_li.style.display!=='none')?_li.src:'';
   CFG.negocio    = qs('#cfg_neg').value;
   CFG.rif        = qs('#cfg_rif')?.value||'';
+  CFG.rif_visible= qs('#cfg_rif_visible')?.checked !== false;
   CFG.telefono   = qs('#cfg_tel').value;
   CFG.instagram  = qs('#cfg_instagram')?.value||'';
   CFG.direccion  = qs('#cfg_dir')?.value||'';
@@ -8899,6 +8905,9 @@ function renderCotizaciones(){
         <button class="btn btn-sm btn-brand" onclick="cotCrearPedido(${c.id})" style="flex:1;min-width:110px">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:3px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Crear pedido
         </button>
+        <button class="btn btn-sm" onclick="cotImprimir(${c.id})" aria-label="Imprimir cotización" style="flex-shrink:0" title="Imprimir cotización">
+          <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        </button>
         <button class="btn btn-sm" onclick="cotEliminar(${c.id})" aria-label="Eliminar cotización" style="flex-shrink:0;color:var(--danger)">
           <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
         </button>
@@ -8906,6 +8915,231 @@ function renderCotizaciones(){
     </div>`;
   }).join('');
 }
+
+// ── Imprimir comprobante de cotización ──
+function cotImprimir(id){
+  const c = loadCot().find(x => String(x.id) === String(id));
+  if(!c){ toast('Cotización no encontrada','warn'); return; }
+
+  const neg      = CFG.negocio||'GestioMada';
+  const rif      = (CFG.rif_visible !== false) ? (CFG.rif||'') : '';
+  const tel      = CFG.telefono||'';
+  const instagram= CFG.instagram||'';
+  const dir      = CFG.direccion||'';
+  const slogan   = CFG.slogan||'';
+  const notaRec  = CFG.nota_recibo||'';
+
+  const bcvR  = getTasaBCV();
+  const difR  = getDiferencial();
+  const enBs  = c.wa_modo === 'bs' && bcvR > 0;
+
+  const fmtUsd = n => '$ ' + Number(n||0).toFixed(2).replace('.',',');
+  const fmtBsL = n => 'Bs ' + Number(n||0).toFixed(2).replace('.',',');
+
+  // Fecha de creación y validez
+  const fechaCreado = c.fecha_creado
+    ? new Date(c.fecha_creado).toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'})
+    : new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'});
+  // Validez: 24 horas desde creación
+  const _cotFechaCreado = c.fecha_creado ? new Date(c.fecha_creado) : new Date();
+  const _cotFechaVence = new Date(_cotFechaCreado.getTime() + 24*60*60*1000);
+  const _cotAhora = new Date();
+  const _cotMsRestantes = _cotFechaVence - _cotAhora;
+  const diasValida = _cotMsRestantes > 0 ? Math.ceil(_cotMsRestantes / (60*60*1000)) : -1; // horas restantes
+  const diasValidaLbl = diasValida > 0 ? diasValida + (diasValida === 1 ? ' hora restante' : ' horas restantes') : 'Expirada';
+  const fechaVence = _cotFechaVence.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'}) + ' ' + _cotFechaVence.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
+
+  // Items — precios al cliente (con diferencial si corresponde)
+  const itemsHtml = (c.items||[]).map((it,i) => {
+    const puBase  = it.precio_usd || it.precio_unit || 0;
+    const puCDif  = round2(puBase * (difR > 0 ? difR : 1));
+    const ptCDif  = puCDif * (it.cant||1);
+    const puBs    = puCDif * bcvR;
+    const ptBs    = ptCDif * bcvR;
+    return `<tr style="background:${i%2===0?'#fff':'#fafafa'}">
+      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">${it.nombre||''}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px">${it.cant||1}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px">
+        <div style="font-weight:600">${enBs ? fmtBsL(puBs) : fmtUsd(puCDif)}</div>
+        ${enBs ? '' : (bcvR>0 ? '<div style="font-size:11px;color:#888">'+fmtBsL(puBs)+'</div>' : '')}
+      </td>
+      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px;font-weight:700">
+        <div>${enBs ? fmtBsL(ptBs) : fmtUsd(ptCDif)}</div>
+        ${enBs ? '' : (bcvR>0 ? '<div style="font-size:11px;color:#888;font-weight:400">'+fmtBsL(ptBs)+'</div>' : '')}
+      </td>
+    </tr>`;
+  }).join('') || `<tr><td colspan="4" style="padding:12px;color:#999;text-align:center;font-size:13px">Sin productos</td></tr>`;
+
+  // Extras
+  const ex = c.extras || {};
+  const extrasFilas = [
+    ['Delivery',     ex.delivery],
+    ['Envío',        ex.envio],
+    ['Diseño',       ex.diseno],
+    ['Extra',        ex.extras],
+  ].filter(([,v]) => v > 0).map(([lbl,v]) => {
+    const vCDif = v; // extras ya están en USD base, sin diferencial (regla global)
+    const vBs   = vCDif * bcvR;
+    return `<tr style="background:#fafafa">
+      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:13px;color:#555">${lbl}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px">1</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px">
+        <div style="font-weight:600">${enBs ? fmtBsL(vBs) : fmtUsd(vCDif)}</div>
+        ${enBs ? '' : (bcvR>0 ? '<div style="font-size:11px;color:#888">'+fmtBsL(vBs)+'</div>' : '')}
+      </td>
+      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px;font-weight:700">
+        <div>${enBs ? fmtBsL(vBs) : fmtUsd(vCDif)}</div>
+        ${enBs ? '' : (bcvR>0 ? '<div style="font-size:11px;color:#888;font-weight:400">'+fmtBsL(vBs)+'</div>' : '')}
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Totales
+  const totalCDif = c.total_cdif || 0;
+  const totalBsVal= c.total_bs   || (totalCDif * bcvR);
+  const abonoPct  = c.abono_pct  || 0;
+  const abonoUsd  = round2(totalCDif * abonoPct / 100);
+  const abonoBs   = round2(totalBsVal * abonoPct / 100);
+
+  const totalesHtml = enBs && bcvR > 0 ? `
+    <table style="width:100%;border-collapse:collapse;margin-bottom:6px">
+      <tr>
+        <td style="padding:5px 12px;color:#666;font-size:12px">Tasa BCV referencial</td>
+        <td style="padding:5px 12px;text-align:right;font-size:12px">${fmtBsL(bcvR)} Bs/$</td>
+      </tr>
+    </table>
+    <div style="background:#111;color:#fff;border-radius:10px;padding:16px 20px;margin:8px 0">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.6);margin-bottom:6px">Total estimado</div>
+      <div style="font-size:36px;font-weight:900;letter-spacing:-1px">Bs ${totalBsVal.toFixed(2).replace('.',',')}</div>
+      <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px">${fmtUsd(totalCDif)} × ${fmtBsL(bcvR)}</div>
+    </div>
+    ${abonoPct>0 ? `<div style="background:#fff3cd;border-radius:8px;padding:10px 14px;margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:#856404;font-weight:600">Abono requerido (${abonoPct}%)</span>
+      <span style="font-size:16px;font-weight:800;color:#856404">Bs ${abonoBs.toFixed(2).replace('.',',')}</span>
+    </div>` : ''}
+  ` : `
+    <div style="background:#111;color:#fff;border-radius:10px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center;margin:8px 0">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:rgba(255,255,255,.6)">Total estimado</div>
+      <div style="font-size:28px;font-weight:900">${fmtUsd(totalCDif)}</div>
+    </div>
+    ${bcvR>0 ? `<div style="text-align:right;font-size:11px;color:#aaa;margin-bottom:8px">Referencia Bs: ${fmtBsL(totalCDif * bcvR)}</div>` : ''}
+    ${abonoPct>0 ? `<div style="background:#fff3cd;border-radius:8px;padding:10px 14px;margin-top:8px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:12px;color:#856404;font-weight:600">Abono requerido (${abonoPct}%)</span>
+      <span style="font-size:16px;font-weight:800;color:#856404">${fmtUsd(abonoUsd)}</span>
+    </div>` : ''}
+  `;
+
+  const logoHtml = CFG.logo
+    ? `<img src="${CFG.logo}" style="max-height:60px;max-width:140px;object-fit:contain;display:block;margin-bottom:6px"/>`
+    : `<div style="font-size:24px;font-weight:900;color:#ff7aa2;letter-spacing:-0.5px">${neg}</div>`;
+
+  const clienteNom = c.cliente_nom || (c.cliente ? (c.cliente.nombre||'')+(c.cliente.apellido?' '+c.cliente.apellido:'') : '') || 'Sin identificar';
+  const clienteTel = c.cliente_tel || c.cliente?.telefono || '';
+
+  const win = window.open('','_blank','width=800,height=950,toolbar=0,scrollbars=1');
+  if(!win){ toast('Activa las ventanas emergentes para imprimir','warn'); return; }
+
+  win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
+  <title>Cotización — ${clienteNom}</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#222;background:#fff;padding:0}
+    .page{max-width:780px;margin:0 auto;padding:36px 40px}
+    .top-bar{height:8px;background:linear-gradient(90deg,#ff7aa2,#7aa2ff);margin-bottom:32px}
+    .bottom-bar{height:8px;background:linear-gradient(90deg,#ff7aa2,#7aa2ff);margin-top:36px}
+    .header-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px}
+    .neg-name{font-size:18px;font-weight:800;color:#111;margin-bottom:2px}
+    .neg-sub{font-size:12px;color:#666;line-height:1.9}
+    .recibo-title{font-size:36px;font-weight:900;color:#f0f0f0;letter-spacing:-1px;text-align:right;line-height:1}
+    .recibo-num{font-size:12px;font-weight:700;color:#7aa2ff;text-align:right;margin-top:4px;letter-spacing:1px}
+    .info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:28px;padding-bottom:20px;border-bottom:1.5px solid #eee}
+    .info-col .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#999;margin-bottom:5px}
+    .info-col .val{font-size:13px;color:#222;line-height:1.7}
+    .items-table{width:100%;border-collapse:collapse;margin-bottom:6px}
+    .items-table thead td{padding:10px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#999;border-bottom:2px solid #eee;background:#f8f8f8}
+    .items-table thead td.r{text-align:right}
+    .validez{background:#e8f4fd;border-radius:8px;padding:10px 14px;margin-top:14px;font-size:12px;color:#1565c0;display:flex;justify-content:space-between;align-items:center}
+    .conditions{margin-top:24px;padding-top:16px;border-top:1px solid #eee;font-size:12px;color:#666;line-height:1.8}
+    .conditions .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#999;margin-bottom:5px}
+    .slogan{text-align:center;font-style:italic;color:#ff7aa2;font-size:13px;margin:16px 0 6px;font-weight:600}
+    .print-btn{display:block;width:100%;padding:12px;background:#7aa2ff;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:18px;font-family:inherit}
+    @media print{.print-btn{display:none}}
+  </style></head><body>
+  <button class="print-btn" onclick="window.print()">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:6px"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+    Imprimir cotización
+  </button>
+  <div class="page">
+    <div class="top-bar"></div>
+
+    <div class="header-row">
+      <div>
+        ${logoHtml}
+        <div class="neg-name">${neg}</div>
+        <div class="neg-sub">
+          ${rif?'RIF: '+rif+'<br>':''}
+          ${dir?dir+'<br>':''}
+          ${tel?'Tel/WhatsApp: '+tel+'<br>':''}
+          ${instagram?'Instagram: '+instagram:''}
+        </div>
+      </div>
+      <div>
+        <div class="recibo-title">COTIZACIÓN</div>
+        <div class="recibo-num">Válida hasta ${fechaVence}</div>
+      </div>
+    </div>
+
+    <div class="info-grid">
+      <div class="info-col">
+        <div class="label">Cliente</div>
+        <div class="val">${clienteNom}${clienteTel?'<br>'+clienteTel:''}</div>
+      </div>
+      <div class="info-col">
+        <div class="label">Fecha</div>
+        <div class="val">${fechaCreado}</div>
+      </div>
+      <div class="info-col">
+        <div class="label">Validez</div>
+        <div class="val">${diasValidaLbl}<br>${fechaVence}</div>
+      </div>
+    </div>
+
+    <table class="items-table">
+      <thead>
+        <tr>
+          <td>Producto / servicio</td>
+          <td style="text-align:center">Cant.</td>
+          <td class="r">Precio unit.</td>
+          <td class="r">Subtotal</td>
+        </tr>
+      </thead>
+      <tbody>${itemsHtml}${extrasFilas}</tbody>
+    </table>
+
+    <div style="margin-top:16px">
+      ${totalesHtml}
+    </div>
+
+    ${c.notas ? `<div class="conditions" style="margin-top:16px">
+      <div class="label">Notas</div>
+      <div>${c.notas}</div>
+    </div>` : ''}
+
+    <div class="validez">
+      <span>⏳ Esta cotización es válida por 24 horas desde su emisión</span>
+      <span style="font-weight:700">Vence: ${fechaVence}</span>
+    </div>
+
+    ${notaRec ? `<div class="conditions"><div class="label">Condiciones</div><div>${notaRec}</div></div>` : ''}
+    ${slogan ? `<div class="slogan">${slogan}</div>` : ''}
+
+    <div class="bottom-bar"></div>
+  </div>
+  <script>window.onload=function(){window.print();}<\/script>
+  </body></html>`);
+  win.document.close();
+}
+
 
 // Editar: restaura el carrito POS con los datos de la cotización
 function cotEditar(id){
@@ -9693,7 +9927,7 @@ function imprimirComprobante(){
   const v=all[_venIdx]; if(!v) return;
 
   const neg      = CFG.negocio||'GestioMada';
-  const rif      = CFG.rif||'';
+  const rif      = (CFG.rif_visible !== false) ? (CFG.rif||'') : '';
   const tel      = CFG.telefono||'';
   const instagram= CFG.instagram||'';
   const dir      = CFG.direccion||'';
@@ -15482,7 +15716,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_74';
+  const APP_VERSION = 'v14_76';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
