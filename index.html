@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V14_89">
+<html lang="es" data-app-version="GestioMada_V14_90">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -3042,7 +3042,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
-          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.89: Pedidos — nuevo botón "Ocultar estados" en la barra de filtros. Permite marcar uno o varios estados (Pendiente, En producción, Impresión, Listo, Entregado, Cancelado) para ocultarlos de la lista visible — útil por ejemplo para ver "Entregan hoy" sin que aparezcan los que ya están en estado "Listo". Es una preferencia del dispositivo (se guarda en localStorage, no viaja a Supabase) e incluye un badge con la cantidad de estados ocultos y un botón "Mostrar todos" para limpiar el filtro. También se respeta al usar el botón "Imprimir" del listado. v14.88: Pedidos — nuevo filtro por fecha de creación. Opciones: Hoy, Últimos 7 días, Últimos 30 días, Fecha específica (con date picker). Usa fecha_creado con fallback a fecha_pedido para compatibilidad con pedidos históricos. v14.87: Reportes — revisión completa y corrección de 7 bugs: (1-3) fecha_creado null en pedidos históricos provocaba que no aparecieran en KPIs, tab Pedidos ni tab Clientes — fallback a fecha_pedido; (4) renderRepClientes usaba repTotalPedido (USD base) para pedidos de cliente en lugar de pedidoTotalCDifCalc; (5) mismo error en fecha de última actividad del cliente; (6) exportReportesCSV usaba repTotalPedido para pedidos y no mostraba cobrado/pendiente — corregido con pedidoTotalCDifCalc y pedidoSaldoCDif; (7) renderRepPedidos métodos de pago sumaba pg.monto (USD base) en lugar de monto_cdif congelado. v14.86: Comisiones — columna Ref. muestra pedido_num (morado) cuando la comisión está en espera y aún no tiene venta vinculada; encabezado cambiado de 'Venta #' a 'Ref.' para reflejar ambos casos. v14.85: Comisiones — FIX filtro 'Pendientes de pago' excluía incorrectamente comisiones en_espera (en espera no es pendiente de pago). v14.84: Comisiones/importación — FIX pedidos históricos sin usuario_id. La función importarComisionesPedidosExistentes ahora usa usuario_nom como fallback cuando usuario_id es null. Supabase: 47 pedidos de Juan Carlos actualizados con usuario_id=1778682140157 via UPDATE directo. v14.83: Comisiones — botón temporal 'Importar comisiones anteriores' (TEMP_IMPORT_COM). Genera comisiones para pedidos registrados antes de v14.82 que no tienen comisión. Pedidos en proceso → en_espera:true; entregados → activa, pendiente de pago. Se oculta tras ejecutarse para evitar duplicados. Marcado con comentarios TEMP_IMPORT_COM para fácil eliminación. v14.82: Comisiones — nuevo flujo de estados. Las comisiones ahora se crean al REGISTRAR el pedido (en_espera=true) y se confirman al ENTREGARLO (en_espera=false). Si el pedido se cancela, las comisiones en espera se desactivan. Si se edita el pedido y cambian montos, se recalculan. Módulo Reportes/Comisiones: nuevo KPI 'En espera' (morado), chip visual en tabla, nueva opción de filtro. Supabase: columnas en_espera, pedido_id, pedido_num, fecha_confirmacion agregadas a tabla comisiones. mapearParaSupa actualizado. Helpers nuevos: confirmarComisionesPedido, cancelarComisionesPedido, recalcularComisionesPedido. v14.81: Comisiones — FIX comisiones de pedidos registrados por vendedor. Al entregar un pedido, la comisión ahora se asigna al usuario que CREÓ el pedido (p.usuario_id / p.usuario_nom) y no al usuario activo en el dispositivo que hace la entrega. Afecta generarComisionesVenta (detecta origen='pedido' y usa venta.usuario_id como vendedor), _ejecutarEntregaPedido y cobrarYEntregar (preservan p.usuario_id al construir la venta vinculada). Resultado: si el vendedor registró el pedido y el admin lo entrega días después, la comisión igual queda a nombre del vendedor. v14.80: Supabase/Pedidos — columnas faltantes agregadas a la tabla pedidos y a mapearParaSupa. Las columnas total_cdif, total_bs, delivery_usd, envio_usd, diseno_usd, extras_usd, fecha_creado, tasa_bcv_creacion y tasa_par_creacion ahora viajan completas a Supabase en cada upsert. Antes se omitían, obligando a reconstruirlas con normalizarPedidoImportado al descargar usando el diferencial actual en lugar del original. v14.79: Pedidos — FIX saldo c/dif congelado por pago. Cada pago ahora almacena monto_cdif (= monto_usd × diferencial del momento del pago), que queda congelado para siempre independientemente de cambios futuros en el diferencial o la tasa BCV. pedidoSaldoCDif usa monto_cdif si existe; fallback a monto×dif actual para pagos históricos (retrocompatibilidad). Afecta todos los puntos de registro: abono inicial (guardarPedido), pagos adicionales (registrarPago en modal detalle), abonos desde Caja (guardarMovimiento), y pagos vinculados desde ventas (registrarPagoEnPedidoVinculado). Corrección de display en verPedido, lista de pedidos, impresión y Finanzas CxC. Resultado: agregar extras a un pedido ya abonado muestra el saldo correcto (nuevo_total_cdif − suma_monto_cdif_pagos) sin que el abono anterior se recalcule con tasas nuevas. v14.78: Pedidos — FIX editar notas/estado sin alterar montos ni abono registrado. Al abrir el formulario de edición se guarda un snapshot de los totales (total, total_cdif, total_bs) y del valor del campo abono. Al guardar: (1) si los ítems, descuento y extras no cambiaron, se conservan los totales originales del pedido en lugar de recalcularlos con las tasas actuales; (2) si el campo abono no fue modificado por el usuario, el primer pago (pagos[0]) no se toca —preservando el monto y monto_bs_ingresado registrados originalmente—. Solo cuando el usuario cambia explícitamente el campo abono se actualizan los datos del pago y se corrige la Caja. v14.77: Cotizaciones — comprobante impreso ahora muestra el mismo desglose que el mensaje WA: precio/u en USD y Bs, total por línea, extras con doble moneda, y bloque abono/restante con "al BCV del día de entrega". v14.76: Config — toggle para ocultar/mostrar RIF en recibos y cotizaciones. Cotizaciones — validez reducida a 24 horas (muestra horas restantes). Comprobante de cotización en Bs: total ahora se muestra en grande (36px) para mayor claridad. v14.75: Cotizaciones — nuevo botón Imprimir en cada cotización guardada. Genera un comprobante en ventana nueva (estilo idéntico al recibo de venta) con encabezado COTIZACIÓN, datos del cliente, tabla de productos con precios c/diferencial, total en Bs o USD según el modo configurado, abono requerido si aplica, y fecha de vencimiento. Se imprime automáticamente al abrir. v14.74: Reportes y Finanzas — FIX sistémico: todos los módulos ahora usan pedidoSaldoCDif/pedidoTotalCDifCalc (total c/diferencial) en lugar de p.total base. Corregidos: KPI «Por cobrar» en Reportes, tab Pedidos (KPIs facturado/cobrado/pendiente, lista de pendientes, tabla detalle del período), tab Cambiario en Finanzas (exposición activa). v14.73: Finanzas — FIX CRÍTICO saldo por cliente: el módulo CxC ahora usa el mismo motor que Pedidos (total c/diferencial) en vez de p.total base. Antes mostraba el saldo en USD base sin aplicar el diferencial cambiario, causando valores incorrectos (ej: $55,67 en vez de $71,20). v14.77: Cotizaciones — cotImprimir usa la misma fórmula de cálculo que posWaActualizar: precio ancla USD × dif, conversión Bs por línea, extras sin diferencial. Tabla muestra pvUsd/u + pvBs/u + totalBs + totalUsd por fila (modo Bs) o pvUsd + refBs (modo USD). Bloque de abono muestra Bs y USD simultáneamente; restante incluye "al BCV del día". v14.76: Config — campo "Mostrar RIF en recibo y cotización" (checkbox); si está desmarcado el RIF no aparece en ningún comprobante. Cotizaciones — validez cambiada a 24h (muestra horas restantes, ej: "18 horas restantes"); el banner de vencimiento ahora incluye hora exacta. Comprobante cotización en Bs — total Bs aparece en 36px prominente con USD como referencia secundaria. v14.75: Cotizaciones — botón Imprimir en cada cotización guardada. Abre comprobante tipo recibo con: datos del negocio (logo, RIF, tel, IG), cliente, fecha de emisión y vencimiento (7 días), tabla de ítems c/diferencial, extras, total en Bs o USD según modo wa_modo, abono requerido si aplica, notas, y nota_recibo de configuración. Barra de color azul para diferenciarlo del recibo de venta (rosa). v14.74: Reportes+Finanzas — FIX sistémico repRestantePedido/repTotalPedido: 6 puntos corregidos para usar pedidoSaldoCDif y pedidoTotalCDifCalc (misma lógica que módulo Pedidos, con diferencial aplicado). Afectaba: KPI Por cobrar en Reportes, tabla de pedidos del período (total/cobrado/pendiente), lista de pendientes en Reportes, y exposición cambiaria activa en Finanzas. v14.73: Finanzas — FIX saldo por cliente: finSaldoPedidoCxC ahora usa pedidoSaldoCDif (total c/dif, igual que módulo Pedidos) en lugar de repRestantePedido (total base sin diferencial). Corrige valores incorrectos en lista de deudores, aging, KPIs ejecutivos y DSO. v14.72: Pedidos — búsqueda difusa (fuzzy search) por nombre de cliente: tolera errores ortográficos de 1-2 caracteres (ej: "Jimenes" encuentra "Jiménez", "Lopes" encuentra "López"). Combina coincidencia exacta primero y Levenshtein como respaldo. v14.71: Pedidos — búsqueda por nombre de cliente ahora ignora acentos: buscar "Monica" encuentra "Mónica" y viceversa. Aplica también en el filtro de impresión de pedidos. v14.70: Topbar — nuevo botón «Sincronizar» que descarga todos los datos desde Supabase al instante, sin necesidad de recargar la página con Ctrl+F5. Útil cuando un dispositivo no recibe un pedido u otro cambio hecho en otro equipo. v14.69: Pedidos — FIX sincronización de Caja al corregir abono inicial. Al editar un pedido y cambiar el monto del abono inicial (ej: pusiste $50 por error y era $70), el movimiento de caja vinculado ahora se corrige automáticamente con el nuevo monto (incluyendo conversión Bs si aplica). Solo afecta el primer movimiento de caja del pedido (el abono inicial); los pagos adicionales registrados después no se tocan. v14.68: UX — tres ajustes de precarga: (1) Carrito POS: método de pago pre-seleccionado cambiado de "Efectivo Bs" a "Pago Móvil". (2) Cotizaciones: modo de cotización pre-cargado en "Bolívares" en lugar de "Solo Dólares". (3) Pedidos: abono inicial se precarga automáticamente al 50% del total cuando el campo está vacío; si la casilla "Envío" está activada, se precarga al 100% (pago completo por adelantado). En pedidos en edición, el abono ya registrado no se sobreescribe. v14.67: Cotizaciones — nombre del cliente ahora es opcional. Solo se requiere al menos nombre o teléfono (si el cliente llama sin dar nombre, el teléfono es suficiente para buscarla luego). Las tarjetas muestran el teléfono como título cuando no hay nombre. v14.66: Ventas — nuevo módulo "Cotizaciones guardadas". Tercera pestaña en Ventas (junto a Nueva Venta e Historial) para guardar presupuestos antes de que el cliente abone. (1) Botón "Guardar cotización" en el panel Cotizar/WhatsApp: abre un modal con nombre y teléfono del cliente (precargados si ya hay cliente seleccionado), guarda el carrito completo (productos, extras, modo USD/Bs, % abono, totales) y copia el texto de WhatsApp al portapapeles en un solo paso. (2) Pestaña con buscador por nombre o teléfono. Cada tarjeta muestra cliente, fecha, ítems, total y días restantes hasta el vencimiento. (3) Botón "Editar" que restaura el carrito del POS con todos los datos de la cotización para modificarla y volver a guardarla (actualiza la misma, no duplica — id estable). (4) Botón "Crear pedido" que abre el formulario de pedido pre-llenado con ítems, cliente y extras; al guardar el pedido la cotización se elimina automáticamente. (5) Sincronización con Supabase desde el inicio (tabla cotizaciones, Realtime, merge seguro entre dispositivos). (6) Auto-eliminación a los 7 días: cada cotización lleva expires_at; al abrir la app se purgan las vencidas local y en la nube. v14.65: FIX regresión de V14_64 — al crear dos variantes seguidas (p.ej. "Termo Skinny Detal" y "Termo Skinny Mayor") sin resetear el editor, una sobreescribía a la otra porque _editPersId conservaba el id del producto anterior sin validar el SKU. Ahora persSave aplica la misma guarda por SKU del catálogo: si el id recordado apunta a un producto con SKU distinto al ingresado, se descarta y se emparejan por SKU exacto (el nombre solo se usa cuando no hay SKU). Resultado: con SKUs distintos, cada variante se guarda como producto independiente. v14.64: FIX CRÍTICO duplicados al guardar producto del editor — cada "Guardar" creaba un registro nuevo en lugar de actualizar el existente, porque persToJSON() no asignaba un id estable y mapearParaSupa generaba un Date.now() distinto en cada upsert (insertaba fila nueva en Supabase y Realtime la bajaba). Correcciones: (1) persSave ahora resuelve un id estable (producto cargado vía _editPersId → mismo SKU+nombre → mismo nombre) y conserva el id existente, de modo que el upsert ACTUALIZA la misma fila. (2) persLoadFromSearch recuerda el id del producto cargado; persReset e importación lo limpian. (3) Nueva _dedupPers() que al arrancar colapsa los productos personalizables duplicados (mismo nombre+SKU) conservando el más reciente y poniendo los extras en lista negra para que la sincronización no los reviva. v14.63: FIX handler roto closeAllModals — al hacer clic en un número de pedido desde la búsqueda global lanzaba ReferenceError (la función no existía), por lo que ni cerraba el modal ni navegaba al pedido. Ahora closeAllModals() cierra todos los modales abiertos del stack. Limpieza: eliminada una definición duplicada de bnMas (código muerto; se conserva la versión con soporte del botón Atrás de Android). v14.62: FIX CRÍTICO sobreescritura de producto en catálogo — al editar un producto del catálogo, cargar luego un producto guardado distinto desde el buscador y registrarlo, el nuevo producto sobreescribía al anterior porque el ID de edición (_editCatProdId) quedaba "pegado". Dos correcciones: (1) persLoadFromSearch e importación de JSON ahora limpian _editCatProdId al cargar un producto guardado (cargar ≠ editar la entrada del catálogo por ID). (2) confirmarCatalogo ahora usa el SKU como identidad: si el ID de edición apunta a un producto cuyo SKU no coincide con el ingresado, se descarta ese ID; el emparejado es por SKU exacto y el nombre solo se usa como último recurso cuando no hay SKU. Resultado: un SKU distinto nunca sobreescribe otro producto. v14.61: FIX registros dobles en editor de producto personalizable — ahora usa _editCatProdId (ID original) como criterio primario al guardar, evitando duplicados al renombrar el producto. v14.77: Cotizaciones — comprobante impreso ahora muestra el mismo desglose que el mensaje WA: precio/u en USD y Bs, total por línea, extras con doble moneda, y bloque abono/restante con "al BCV del día de entrega". v14.76: Config — toggle para ocultar/mostrar RIF en recibos y cotizaciones. Cotizaciones — validez reducida a 24 horas (muestra horas restantes). Comprobante de cotización en Bs: total ahora se muestra en grande (36px) para mayor claridad. v14.75: Cotizaciones — nuevo botón Imprimir en cada cotización guardada. Genera un comprobante en ventana nueva (estilo idéntico al recibo de venta) con encabezado COTIZACIÓN, datos del cliente, tabla de productos con precios c/diferencial, total en Bs o USD según el modo configurado, abono requerido si aplica, y fecha de vencimiento. Se imprime automáticamente al abrir. v14.74: Reportes y Finanzas — FIX sistémico: todos los módulos ahora usan pedidoSaldoCDif/pedidoTotalCDifCalc (total c/diferencial) en lugar de p.total base. Corregidos: KPI «Por cobrar» en Reportes, tab Pedidos (KPIs facturado/cobrado/pendiente, lista de pendientes, tabla detalle del período), tab Cambiario en Finanzas (exposición activa). v14.73: Finanzas — FIX CRÍTICO saldo por cliente: el módulo CxC ahora usa el mismo motor que Pedidos (total c/diferencial) en vez de p.total base. Antes mostraba el saldo en USD base sin aplicar el diferencial cambiario, causando valores incorrectos (ej: $55,67 en vez de $71,20). v14.77: Cotizaciones — cotImprimir usa la misma fórmula de cálculo que posWaActualizar: precio ancla USD × dif, conversión Bs por línea, extras sin diferencial. Tabla muestra pvUsd/u + pvBs/u + totalBs + totalUsd por fila (modo Bs) o pvUsd + refBs (modo USD). Bloque de abono muestra Bs y USD simultáneamente; restante incluye "al BCV del día". v14.76: Config — campo "Mostrar RIF en recibo y cotización" (checkbox); si está desmarcado el RIF no aparece en ningún comprobante. Cotizaciones — validez cambiada a 24h (muestra horas restantes, ej: "18 horas restantes"); el banner de vencimiento ahora incluye hora exacta. Comprobante cotización en Bs — total Bs aparece en 36px prominente con USD como referencia secundaria. v14.75: Cotizaciones — botón Imprimir en cada cotización guardada. Abre comprobante tipo recibo con: datos del negocio (logo, RIF, tel, IG), cliente, fecha de emisión y vencimiento (7 días), tabla de ítems c/diferencial, extras, total en Bs o USD según modo wa_modo, abono requerido si aplica, notas, y nota_recibo de configuración. Barra de color azul para diferenciarlo del recibo de venta (rosa). v14.74: Reportes+Finanzas — FIX sistémico repRestantePedido/repTotalPedido: 6 puntos corregidos para usar pedidoSaldoCDif y pedidoTotalCDifCalc (misma lógica que módulo Pedidos, con diferencial aplicado). Afectaba: KPI Por cobrar en Reportes, tabla de pedidos del período (total/cobrado/pendiente), lista de pendientes en Reportes, y exposición cambiaria activa en Finanzas. v14.73: Finanzas — FIX saldo por cliente: finSaldoPedidoCxC ahora usa pedidoSaldoCDif (total c/dif, igual que módulo Pedidos) en lugar de repRestantePedido (total base sin diferencial). Corrige valores incorrectos en lista de deudores, aging, KPIs ejecutivos y DSO. v14.72: Pedidos — búsqueda difusa (fuzzy search) por nombre de cliente: tolera errores ortográficos de 1-2 caracteres (ej: "Jimenes" encuentra "Jiménez", "Lopes" encuentra "López"). Combina coincidencia exacta primero y Levenshtein como respaldo. v14.71: Pedidos — búsqueda por nombre de cliente ahora ignora acentos: buscar "Monica" encuentra "Mónica" y viceversa. Aplica también en el filtro de impresión de pedidos. v14.77: Cotizaciones — comprobante impreso ahora muestra el mismo desglose que el mensaje WA: precio/u en USD y Bs, total por línea, extras con doble moneda, y bloque abono/restante con "al BCV del día de entrega". v14.76: Config — toggle para ocultar/mostrar RIF en recibos y cotizaciones. Cotizaciones — validez reducida a 24 horas (muestra horas restantes). Comprobante de cotización en Bs: total ahora se muestra en grande (36px) para mayor claridad. v14.75: Cotizaciones — nuevo botón Imprimir en cada cotización guardada. Genera un comprobante en ventana nueva (estilo idéntico al recibo de venta) con encabezado COTIZACIÓN, datos del cliente, tabla de productos con precios c/diferencial, total en Bs o USD según el modo configurado, abono requerido si aplica, y fecha de vencimiento. Se imprime automáticamente al abrir. v14.74: Reportes y Finanzas — FIX sistémico: todos los módulos ahora usan pedidoSaldoCDif/pedidoTotalCDifCalc (total c/diferencial) en lugar de p.total base. Corregidos: KPI «Por cobrar» en Reportes, tab Pedidos (KPIs facturado/cobrado/pendiente, lista de pendientes, tabla detalle del período), tab Cambiario en Finanzas (exposición activa). v14.73: Finanzas — FIX CRÍTICO saldo por cliente: el módulo CxC ahora usa el mismo motor que Pedidos (total c/diferencial) en vez de p.total base. Antes mostraba el saldo en USD base sin aplicar el diferencial cambiario, causando valores incorrectos (ej: $55,67 en vez de $71,20). v14.72: Pedidos — búsqueda difusa (fuzzy): tolera errores ortográficos de 1-2 letras usando distancia de Levenshtein. Cada palabra del query se evalúa independientemente contra cada palabra del nombre (nombre y apellido por separado). Tolerancia: ≤4 chars → 1 error, ≥5 chars → 2 errores. Estrategia: primero coincidencia exacta normalizada (rápida), luego fuzzy solo si no hay resultado directo. Aplica en buscador principal y filtro de impresión. v14.71: Pedidos — búsqueda insensible a acentos: "Monica" encuentra "Mónica", "Jimenez" encuentra "Jiménez", etc. La normalización aplica tanto al buscador principal de pedidos como al filtro de impresión. v14.70: Topbar — nuevo botón «Sincronizar» que fuerza la descarga completa de datos desde Supabase. Resuelve casos donde un dispositivo no recibe en tiempo real un pedido o cambio creado en otro equipo (Realtime perdido por conexión interrumpida). El botón muestra un spinner mientras sincroniza y un toast de confirmación al terminar. En móvil muestra solo el ícono para no ocupar espacio. v14.42: FIX Inventario — el descuento de stock no funcionaba al vender ni al entregar pedidos. Tres problemas corregidos: (1) descontarInventarioDeItems usaba _registrarMovInv que aplicaba doble descuento de stock (ella misma resta + _registrarMovInv también resta y guarda); cambiado a _soloLogMovInv que solo logea el movimiento sin tocar stock. (2) Flag _modificado nunca se asignaba, así que los upserts a Supabase no se ejecutaban — los cambios de stock no se sincronizaban entre dispositivos. (3) Solo descontaba si modo_inventario era 'terminado' o 'insumos'; ahora también descuenta automáticamente si modo_inventario es 'ninguno' pero existe un registro en terminados vinculado al producto. Logs de depuración agregados en consola para rastrear cada descuento. v14.41: FIX Dashboard — KPIs de finanzas desaparecían tras cargar porque can() no tenía fallback al rol para permisos nuevos. Ahora can() replica el patrón de canView(). FIX APP_VERSION desincronizada. v14.35: Limpieza profunda de localStorage — _migrarFotosBase64() ahora cubre 3 fuentes de peso oculto: (1) fotos base64 dentro del campo calculo embebido en productos del catálogo (POS.cat), (2) fotos base64 en productos personalizables del editor (POS.pers), (3) fotos directas del catálogo (ya existente). Al crear producto desde el editor, calculo.foto se limpia preventivamente para no duplicar base64 en localStorage. Botón de limpieza manual renombrado a "Limpiar fotos base64 (catálogo + editor)". v14.32: Arquitectura — 17 CSS design tokens (--sp-xs a --sp-2xl, --r-sm a --r-pill, --fs-xs a --fs-2xl, --font, --transition). Aplicados a .btn, .modal, .card y body como convención. Suite de tests de regresión para cálculos financieros: 28 assertions cubriendo round2, parseEU, safeNum, euro, fmtBs, pedidoTotalCDifCalc, pedidoSaldoCDif, esc. Se activan con ?test en URL o localStorage._gm_tests=1. v14.31: Accesibilidad — role="dialog" y aria-modal="true" en los 21 modales. aria-label en 10 botones de solo ícono (editar, duplicar, eliminar, anular, imprimir). tabindex="-1" en contenedores .modal para recibir foco al abrir. openModal() ahora enfoca el modal abierto. Contraste dark mode verificado (7.4:1 y 6.9:1 — supera WCAG AA). v14.30: Migración agresiva de fotos base64 — al cargar, sube fotos pendientes a Supabase Storage y limpia base64 del localStorage. Monitor de almacenamiento mejorado con desglose de las 3 keys más pesadas y botón de limpieza manual. SW resiliente: install ya no falla si un ícono o manifest no se descarga. Mensajes de error de actualización PWA más descriptivos. v14.29: Resiliencia y UX — openModal/closeModal mejorados con stack de modales, scroll lock del body, y cierre con Escape (closeTopModal). Modal de usuarios unificado al sistema centralizado. Nuevo helper safeNum(v, fallback) para validar inputs numéricos de forma segura (NaN/Infinity → fallback). v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v14.90: Pedidos — nuevo "Selección múltiple" en el listado para cambiar el estado de varios pedidos a la vez. Botón en la barra de filtros activa checkboxes en cada tarjeta; aparece una barra con "Seleccionar todos", "Limpiar selección" y "Cambiar estado…". Al elegir el nuevo estado: (1) si es "Entregado", los pedidos ya pagados al 100% se entregan directo (Venta + comisiones + descuento de inventario, sin movimiento de Caja); los que tienen restante se cobran con una sola forma de pago elegida para todo el lote y SÍ generan su movimiento de Caja correspondiente (mismo motor que "Cobrar y entregar"), mostrando antes un resumen con el total a cobrar en $ y Bs; (2) para otros estados (Pendiente/Producción/Impresión/Listo/Cancelado) solo se actualiza el estado de cada pedido (sin movimiento de caja), desactivando comisiones en espera si el destino es "Cancelado"; los pedidos ya entregados se excluyen automáticamente de este camino para no revertir una entrega ya facturada. v14.89: Pedidos — nuevo botón "Ocultar estados" en la barra de filtros. Permite marcar uno o varios estados (Pendiente, En producción, Impresión, Listo, Entregado, Cancelado) para ocultarlos de la lista visible — útil por ejemplo para ver "Entregan hoy" sin que aparezcan los que ya están en estado "Listo". Es una preferencia del dispositivo (se guarda en localStorage, no viaja a Supabase) e incluye un badge con la cantidad de estados ocultos y un botón "Mostrar todos" para limpiar el filtro. También se respeta al usar el botón "Imprimir" del listado. v14.88: Pedidos — nuevo filtro por fecha de creación. Opciones: Hoy, Últimos 7 días, Últimos 30 días, Fecha específica (con date picker). Usa fecha_creado con fallback a fecha_pedido para compatibilidad con pedidos históricos. v14.87: Reportes — revisión completa y corrección de 7 bugs: (1-3) fecha_creado null en pedidos históricos provocaba que no aparecieran en KPIs, tab Pedidos ni tab Clientes — fallback a fecha_pedido; (4) renderRepClientes usaba repTotalPedido (USD base) para pedidos de cliente en lugar de pedidoTotalCDifCalc; (5) mismo error en fecha de última actividad del cliente; (6) exportReportesCSV usaba repTotalPedido para pedidos y no mostraba cobrado/pendiente — corregido con pedidoTotalCDifCalc y pedidoSaldoCDif; (7) renderRepPedidos métodos de pago sumaba pg.monto (USD base) en lugar de monto_cdif congelado. v14.86: Comisiones — columna Ref. muestra pedido_num (morado) cuando la comisión está en espera y aún no tiene venta vinculada; encabezado cambiado de 'Venta #' a 'Ref.' para reflejar ambos casos. v14.85: Comisiones — FIX filtro 'Pendientes de pago' excluía incorrectamente comisiones en_espera (en espera no es pendiente de pago). v14.84: Comisiones/importación — FIX pedidos históricos sin usuario_id. La función importarComisionesPedidosExistentes ahora usa usuario_nom como fallback cuando usuario_id es null. Supabase: 47 pedidos de Juan Carlos actualizados con usuario_id=1778682140157 via UPDATE directo. v14.83: Comisiones — botón temporal 'Importar comisiones anteriores' (TEMP_IMPORT_COM). Genera comisiones para pedidos registrados antes de v14.82 que no tienen comisión. Pedidos en proceso → en_espera:true; entregados → activa, pendiente de pago. Se oculta tras ejecutarse para evitar duplicados. Marcado con comentarios TEMP_IMPORT_COM para fácil eliminación. v14.82: Comisiones — nuevo flujo de estados. Las comisiones ahora se crean al REGISTRAR el pedido (en_espera=true) y se confirman al ENTREGARLO (en_espera=false). Si el pedido se cancela, las comisiones en espera se desactivan. Si se edita el pedido y cambian montos, se recalculan. Módulo Reportes/Comisiones: nuevo KPI 'En espera' (morado), chip visual en tabla, nueva opción de filtro. Supabase: columnas en_espera, pedido_id, pedido_num, fecha_confirmacion agregadas a tabla comisiones. mapearParaSupa actualizado. Helpers nuevos: confirmarComisionesPedido, cancelarComisionesPedido, recalcularComisionesPedido. v14.81: Comisiones — FIX comisiones de pedidos registrados por vendedor. Al entregar un pedido, la comisión ahora se asigna al usuario que CREÓ el pedido (p.usuario_id / p.usuario_nom) y no al usuario activo en el dispositivo que hace la entrega. Afecta generarComisionesVenta (detecta origen='pedido' y usa venta.usuario_id como vendedor), _ejecutarEntregaPedido y cobrarYEntregar (preservan p.usuario_id al construir la venta vinculada). Resultado: si el vendedor registró el pedido y el admin lo entrega días después, la comisión igual queda a nombre del vendedor. v14.80: Supabase/Pedidos — columnas faltantes agregadas a la tabla pedidos y a mapearParaSupa. Las columnas total_cdif, total_bs, delivery_usd, envio_usd, diseno_usd, extras_usd, fecha_creado, tasa_bcv_creacion y tasa_par_creacion ahora viajan completas a Supabase en cada upsert. Antes se omitían, obligando a reconstruirlas con normalizarPedidoImportado al descargar usando el diferencial actual en lugar del original. v14.79: Pedidos — FIX saldo c/dif congelado por pago. Cada pago ahora almacena monto_cdif (= monto_usd × diferencial del momento del pago), que queda congelado para siempre independientemente de cambios futuros en el diferencial o la tasa BCV. pedidoSaldoCDif usa monto_cdif si existe; fallback a monto×dif actual para pagos históricos (retrocompatibilidad). Afecta todos los puntos de registro: abono inicial (guardarPedido), pagos adicionales (registrarPago en modal detalle), abonos desde Caja (guardarMovimiento), y pagos vinculados desde ventas (registrarPagoEnPedidoVinculado). Corrección de display en verPedido, lista de pedidos, impresión y Finanzas CxC. Resultado: agregar extras a un pedido ya abonado muestra el saldo correcto (nuevo_total_cdif − suma_monto_cdif_pagos) sin que el abono anterior se recalcule con tasas nuevas. v14.78: Pedidos — FIX editar notas/estado sin alterar montos ni abono registrado. Al abrir el formulario de edición se guarda un snapshot de los totales (total, total_cdif, total_bs) y del valor del campo abono. Al guardar: (1) si los ítems, descuento y extras no cambiaron, se conservan los totales originales del pedido en lugar de recalcularlos con las tasas actuales; (2) si el campo abono no fue modificado por el usuario, el primer pago (pagos[0]) no se toca —preservando el monto y monto_bs_ingresado registrados originalmente—. Solo cuando el usuario cambia explícitamente el campo abono se actualizan los datos del pago y se corrige la Caja. v14.77: Cotizaciones — comprobante impreso ahora muestra el mismo desglose que el mensaje WA: precio/u en USD y Bs, total por línea, extras con doble moneda, y bloque abono/restante con "al BCV del día de entrega". v14.76: Config — toggle para ocultar/mostrar RIF en recibos y cotizaciones. Cotizaciones — validez reducida a 24 horas (muestra horas restantes). Comprobante de cotización en Bs: total ahora se muestra en grande (36px) para mayor claridad. v14.75: Cotizaciones — nuevo botón Imprimir en cada cotización guardada. Genera un comprobante en ventana nueva (estilo idéntico al recibo de venta) con encabezado COTIZACIÓN, datos del cliente, tabla de productos con precios c/diferencial, total en Bs o USD según el modo configurado, abono requerido si aplica, y fecha de vencimiento. Se imprime automáticamente al abrir. v14.74: Reportes y Finanzas — FIX sistémico: todos los módulos ahora usan pedidoSaldoCDif/pedidoTotalCDifCalc (total c/diferencial) en lugar de p.total base. Corregidos: KPI «Por cobrar» en Reportes, tab Pedidos (KPIs facturado/cobrado/pendiente, lista de pendientes, tabla detalle del período), tab Cambiario en Finanzas (exposición activa). v14.73: Finanzas — FIX CRÍTICO saldo por cliente: el módulo CxC ahora usa el mismo motor que Pedidos (total c/diferencial) en vez de p.total base. Antes mostraba el saldo en USD base sin aplicar el diferencial cambiario, causando valores incorrectos (ej: $55,67 en vez de $71,20). v14.77: Cotizaciones — cotImprimir usa la misma fórmula de cálculo que posWaActualizar: precio ancla USD × dif, conversión Bs por línea, extras sin diferencial. Tabla muestra pvUsd/u + pvBs/u + totalBs + totalUsd por fila (modo Bs) o pvUsd + refBs (modo USD). Bloque de abono muestra Bs y USD simultáneamente; restante incluye "al BCV del día". v14.76: Config — campo "Mostrar RIF en recibo y cotización" (checkbox); si está desmarcado el RIF no aparece en ningún comprobante. Cotizaciones — validez cambiada a 24h (muestra horas restantes, ej: "18 horas restantes"); el banner de vencimiento ahora incluye hora exacta. Comprobante cotización en Bs — total Bs aparece en 36px prominente con USD como referencia secundaria. v14.75: Cotizaciones — botón Imprimir en cada cotización guardada. Abre comprobante tipo recibo con: datos del negocio (logo, RIF, tel, IG), cliente, fecha de emisión y vencimiento (7 días), tabla de ítems c/diferencial, extras, total en Bs o USD según modo wa_modo, abono requerido si aplica, notas, y nota_recibo de configuración. Barra de color azul para diferenciarlo del recibo de venta (rosa). v14.74: Reportes+Finanzas — FIX sistémico repRestantePedido/repTotalPedido: 6 puntos corregidos para usar pedidoSaldoCDif y pedidoTotalCDifCalc (misma lógica que módulo Pedidos, con diferencial aplicado). Afectaba: KPI Por cobrar en Reportes, tabla de pedidos del período (total/cobrado/pendiente), lista de pendientes en Reportes, y exposición cambiaria activa en Finanzas. v14.73: Finanzas — FIX saldo por cliente: finSaldoPedidoCxC ahora usa pedidoSaldoCDif (total c/dif, igual que módulo Pedidos) en lugar de repRestantePedido (total base sin diferencial). Corrige valores incorrectos en lista de deudores, aging, KPIs ejecutivos y DSO. v14.72: Pedidos — búsqueda difusa (fuzzy search) por nombre de cliente: tolera errores ortográficos de 1-2 caracteres (ej: "Jimenes" encuentra "Jiménez", "Lopes" encuentra "López"). Combina coincidencia exacta primero y Levenshtein como respaldo. v14.71: Pedidos — búsqueda por nombre de cliente ahora ignora acentos: buscar "Monica" encuentra "Mónica" y viceversa. Aplica también en el filtro de impresión de pedidos. v14.70: Topbar — nuevo botón «Sincronizar» que descarga todos los datos desde Supabase al instante, sin necesidad de recargar la página con Ctrl+F5. Útil cuando un dispositivo no recibe un pedido u otro cambio hecho en otro equipo. v14.69: Pedidos — FIX sincronización de Caja al corregir abono inicial. Al editar un pedido y cambiar el monto del abono inicial (ej: pusiste $50 por error y era $70), el movimiento de caja vinculado ahora se corrige automáticamente con el nuevo monto (incluyendo conversión Bs si aplica). Solo afecta el primer movimiento de caja del pedido (el abono inicial); los pagos adicionales registrados después no se tocan. v14.68: UX — tres ajustes de precarga: (1) Carrito POS: método de pago pre-seleccionado cambiado de "Efectivo Bs" a "Pago Móvil". (2) Cotizaciones: modo de cotización pre-cargado en "Bolívares" en lugar de "Solo Dólares". (3) Pedidos: abono inicial se precarga automáticamente al 50% del total cuando el campo está vacío; si la casilla "Envío" está activada, se precarga al 100% (pago completo por adelantado). En pedidos en edición, el abono ya registrado no se sobreescribe. v14.67: Cotizaciones — nombre del cliente ahora es opcional. Solo se requiere al menos nombre o teléfono (si el cliente llama sin dar nombre, el teléfono es suficiente para buscarla luego). Las tarjetas muestran el teléfono como título cuando no hay nombre. v14.66: Ventas — nuevo módulo "Cotizaciones guardadas". Tercera pestaña en Ventas (junto a Nueva Venta e Historial) para guardar presupuestos antes de que el cliente abone. (1) Botón "Guardar cotización" en el panel Cotizar/WhatsApp: abre un modal con nombre y teléfono del cliente (precargados si ya hay cliente seleccionado), guarda el carrito completo (productos, extras, modo USD/Bs, % abono, totales) y copia el texto de WhatsApp al portapapeles en un solo paso. (2) Pestaña con buscador por nombre o teléfono. Cada tarjeta muestra cliente, fecha, ítems, total y días restantes hasta el vencimiento. (3) Botón "Editar" que restaura el carrito del POS con todos los datos de la cotización para modificarla y volver a guardarla (actualiza la misma, no duplica — id estable). (4) Botón "Crear pedido" que abre el formulario de pedido pre-llenado con ítems, cliente y extras; al guardar el pedido la cotización se elimina automáticamente. (5) Sincronización con Supabase desde el inicio (tabla cotizaciones, Realtime, merge seguro entre dispositivos). (6) Auto-eliminación a los 7 días: cada cotización lleva expires_at; al abrir la app se purgan las vencidas local y en la nube. v14.65: FIX regresión de V14_64 — al crear dos variantes seguidas (p.ej. "Termo Skinny Detal" y "Termo Skinny Mayor") sin resetear el editor, una sobreescribía a la otra porque _editPersId conservaba el id del producto anterior sin validar el SKU. Ahora persSave aplica la misma guarda por SKU del catálogo: si el id recordado apunta a un producto con SKU distinto al ingresado, se descarta y se emparejan por SKU exacto (el nombre solo se usa cuando no hay SKU). Resultado: con SKUs distintos, cada variante se guarda como producto independiente. v14.64: FIX CRÍTICO duplicados al guardar producto del editor — cada "Guardar" creaba un registro nuevo en lugar de actualizar el existente, porque persToJSON() no asignaba un id estable y mapearParaSupa generaba un Date.now() distinto en cada upsert (insertaba fila nueva en Supabase y Realtime la bajaba). Correcciones: (1) persSave ahora resuelve un id estable (producto cargado vía _editPersId → mismo SKU+nombre → mismo nombre) y conserva el id existente, de modo que el upsert ACTUALIZA la misma fila. (2) persLoadFromSearch recuerda el id del producto cargado; persReset e importación lo limpian. (3) Nueva _dedupPers() que al arrancar colapsa los productos personalizables duplicados (mismo nombre+SKU) conservando el más reciente y poniendo los extras en lista negra para que la sincronización no los reviva. v14.63: FIX handler roto closeAllModals — al hacer clic en un número de pedido desde la búsqueda global lanzaba ReferenceError (la función no existía), por lo que ni cerraba el modal ni navegaba al pedido. Ahora closeAllModals() cierra todos los modales abiertos del stack. Limpieza: eliminada una definición duplicada de bnMas (código muerto; se conserva la versión con soporte del botón Atrás de Android). v14.62: FIX CRÍTICO sobreescritura de producto en catálogo — al editar un producto del catálogo, cargar luego un producto guardado distinto desde el buscador y registrarlo, el nuevo producto sobreescribía al anterior porque el ID de edición (_editCatProdId) quedaba "pegado". Dos correcciones: (1) persLoadFromSearch e importación de JSON ahora limpian _editCatProdId al cargar un producto guardado (cargar ≠ editar la entrada del catálogo por ID). (2) confirmarCatalogo ahora usa el SKU como identidad: si el ID de edición apunta a un producto cuyo SKU no coincide con el ingresado, se descarta ese ID; el emparejado es por SKU exacto y el nombre solo se usa como último recurso cuando no hay SKU. Resultado: un SKU distinto nunca sobreescribe otro producto. v14.61: FIX registros dobles en editor de producto personalizable — ahora usa _editCatProdId (ID original) como criterio primario al guardar, evitando duplicados al renombrar el producto. v14.77: Cotizaciones — comprobante impreso ahora muestra el mismo desglose que el mensaje WA: precio/u en USD y Bs, total por línea, extras con doble moneda, y bloque abono/restante con "al BCV del día de entrega". v14.76: Config — toggle para ocultar/mostrar RIF en recibos y cotizaciones. Cotizaciones — validez reducida a 24 horas (muestra horas restantes). Comprobante de cotización en Bs: total ahora se muestra en grande (36px) para mayor claridad. v14.75: Cotizaciones — nuevo botón Imprimir en cada cotización guardada. Genera un comprobante en ventana nueva (estilo idéntico al recibo de venta) con encabezado COTIZACIÓN, datos del cliente, tabla de productos con precios c/diferencial, total en Bs o USD según el modo configurado, abono requerido si aplica, y fecha de vencimiento. Se imprime automáticamente al abrir. v14.74: Reportes y Finanzas — FIX sistémico: todos los módulos ahora usan pedidoSaldoCDif/pedidoTotalCDifCalc (total c/diferencial) en lugar de p.total base. Corregidos: KPI «Por cobrar» en Reportes, tab Pedidos (KPIs facturado/cobrado/pendiente, lista de pendientes, tabla detalle del período), tab Cambiario en Finanzas (exposición activa). v14.73: Finanzas — FIX CRÍTICO saldo por cliente: el módulo CxC ahora usa el mismo motor que Pedidos (total c/diferencial) en vez de p.total base. Antes mostraba el saldo en USD base sin aplicar el diferencial cambiario, causando valores incorrectos (ej: $55,67 en vez de $71,20). v14.77: Cotizaciones — cotImprimir usa la misma fórmula de cálculo que posWaActualizar: precio ancla USD × dif, conversión Bs por línea, extras sin diferencial. Tabla muestra pvUsd/u + pvBs/u + totalBs + totalUsd por fila (modo Bs) o pvUsd + refBs (modo USD). Bloque de abono muestra Bs y USD simultáneamente; restante incluye "al BCV del día". v14.76: Config — campo "Mostrar RIF en recibo y cotización" (checkbox); si está desmarcado el RIF no aparece en ningún comprobante. Cotizaciones — validez cambiada a 24h (muestra horas restantes, ej: "18 horas restantes"); el banner de vencimiento ahora incluye hora exacta. Comprobante cotización en Bs — total Bs aparece en 36px prominente con USD como referencia secundaria. v14.75: Cotizaciones — botón Imprimir en cada cotización guardada. Abre comprobante tipo recibo con: datos del negocio (logo, RIF, tel, IG), cliente, fecha de emisión y vencimiento (7 días), tabla de ítems c/diferencial, extras, total en Bs o USD según modo wa_modo, abono requerido si aplica, notas, y nota_recibo de configuración. Barra de color azul para diferenciarlo del recibo de venta (rosa). v14.74: Reportes+Finanzas — FIX sistémico repRestantePedido/repTotalPedido: 6 puntos corregidos para usar pedidoSaldoCDif y pedidoTotalCDifCalc (misma lógica que módulo Pedidos, con diferencial aplicado). Afectaba: KPI Por cobrar en Reportes, tabla de pedidos del período (total/cobrado/pendiente), lista de pendientes en Reportes, y exposición cambiaria activa en Finanzas. v14.73: Finanzas — FIX saldo por cliente: finSaldoPedidoCxC ahora usa pedidoSaldoCDif (total c/dif, igual que módulo Pedidos) en lugar de repRestantePedido (total base sin diferencial). Corrige valores incorrectos en lista de deudores, aging, KPIs ejecutivos y DSO. v14.72: Pedidos — búsqueda difusa (fuzzy search) por nombre de cliente: tolera errores ortográficos de 1-2 caracteres (ej: "Jimenes" encuentra "Jiménez", "Lopes" encuentra "López"). Combina coincidencia exacta primero y Levenshtein como respaldo. v14.71: Pedidos — búsqueda por nombre de cliente ahora ignora acentos: buscar "Monica" encuentra "Mónica" y viceversa. Aplica también en el filtro de impresión de pedidos. v14.77: Cotizaciones — comprobante impreso ahora muestra el mismo desglose que el mensaje WA: precio/u en USD y Bs, total por línea, extras con doble moneda, y bloque abono/restante con "al BCV del día de entrega". v14.76: Config — toggle para ocultar/mostrar RIF en recibos y cotizaciones. Cotizaciones — validez reducida a 24 horas (muestra horas restantes). Comprobante de cotización en Bs: total ahora se muestra en grande (36px) para mayor claridad. v14.75: Cotizaciones — nuevo botón Imprimir en cada cotización guardada. Genera un comprobante en ventana nueva (estilo idéntico al recibo de venta) con encabezado COTIZACIÓN, datos del cliente, tabla de productos con precios c/diferencial, total en Bs o USD según el modo configurado, abono requerido si aplica, y fecha de vencimiento. Se imprime automáticamente al abrir. v14.74: Reportes y Finanzas — FIX sistémico: todos los módulos ahora usan pedidoSaldoCDif/pedidoTotalCDifCalc (total c/diferencial) en lugar de p.total base. Corregidos: KPI «Por cobrar» en Reportes, tab Pedidos (KPIs facturado/cobrado/pendiente, lista de pendientes, tabla detalle del período), tab Cambiario en Finanzas (exposición activa). v14.73: Finanzas — FIX CRÍTICO saldo por cliente: el módulo CxC ahora usa el mismo motor que Pedidos (total c/diferencial) en vez de p.total base. Antes mostraba el saldo en USD base sin aplicar el diferencial cambiario, causando valores incorrectos (ej: $55,67 en vez de $71,20). v14.72: Pedidos — búsqueda difusa (fuzzy): tolera errores ortográficos de 1-2 letras usando distancia de Levenshtein. Cada palabra del query se evalúa independientemente contra cada palabra del nombre (nombre y apellido por separado). Tolerancia: ≤4 chars → 1 error, ≥5 chars → 2 errores. Estrategia: primero coincidencia exacta normalizada (rápida), luego fuzzy solo si no hay resultado directo. Aplica en buscador principal y filtro de impresión. v14.71: Pedidos — búsqueda insensible a acentos: "Monica" encuentra "Mónica", "Jimenez" encuentra "Jiménez", etc. La normalización aplica tanto al buscador principal de pedidos como al filtro de impresión. v14.70: Topbar — nuevo botón «Sincronizar» que fuerza la descarga completa de datos desde Supabase. Resuelve casos donde un dispositivo no recibe en tiempo real un pedido o cambio creado en otro equipo (Realtime perdido por conexión interrumpida). El botón muestra un spinner mientras sincroniza y un toast de confirmación al terminar. En móvil muestra solo el ícono para no ocupar espacio. v14.42: FIX Inventario — el descuento de stock no funcionaba al vender ni al entregar pedidos. Tres problemas corregidos: (1) descontarInventarioDeItems usaba _registrarMovInv que aplicaba doble descuento de stock (ella misma resta + _registrarMovInv también resta y guarda); cambiado a _soloLogMovInv que solo logea el movimiento sin tocar stock. (2) Flag _modificado nunca se asignaba, así que los upserts a Supabase no se ejecutaban — los cambios de stock no se sincronizaban entre dispositivos. (3) Solo descontaba si modo_inventario era 'terminado' o 'insumos'; ahora también descuenta automáticamente si modo_inventario es 'ninguno' pero existe un registro en terminados vinculado al producto. Logs de depuración agregados en consola para rastrear cada descuento. v14.41: FIX Dashboard — KPIs de finanzas desaparecían tras cargar porque can() no tenía fallback al rol para permisos nuevos. Ahora can() replica el patrón de canView(). FIX APP_VERSION desincronizada. v14.35: Limpieza profunda de localStorage — _migrarFotosBase64() ahora cubre 3 fuentes de peso oculto: (1) fotos base64 dentro del campo calculo embebido en productos del catálogo (POS.cat), (2) fotos base64 en productos personalizables del editor (POS.pers), (3) fotos directas del catálogo (ya existente). Al crear producto desde el editor, calculo.foto se limpia preventivamente para no duplicar base64 en localStorage. Botón de limpieza manual renombrado a "Limpiar fotos base64 (catálogo + editor)". v14.32: Arquitectura — 17 CSS design tokens (--sp-xs a --sp-2xl, --r-sm a --r-pill, --fs-xs a --fs-2xl, --font, --transition). Aplicados a .btn, .modal, .card y body como convención. Suite de tests de regresión para cálculos financieros: 28 assertions cubriendo round2, parseEU, safeNum, euro, fmtBs, pedidoTotalCDifCalc, pedidoSaldoCDif, esc. Se activan con ?test en URL o localStorage._gm_tests=1. v14.31: Accesibilidad — role="dialog" y aria-modal="true" en los 21 modales. aria-label en 10 botones de solo ícono (editar, duplicar, eliminar, anular, imprimir). tabindex="-1" en contenedores .modal para recibir foco al abrir. openModal() ahora enfoca el modal abierto. Contraste dark mode verificado (7.4:1 y 6.9:1 — supera WCAG AA). v14.30: Migración agresiva de fotos base64 — al cargar, sube fotos pendientes a Supabase Storage y limpia base64 del localStorage. Monitor de almacenamiento mejorado con desglose de las 3 keys más pesadas y botón de limpieza manual. SW resiliente: install ya no falla si un ícono o manifest no se descarga. Mensajes de error de actualización PWA más descriptivos. v14.29: Resiliencia y UX — openModal/closeModal mejorados con stack de modales, scroll lock del body, y cierre con Escape (closeTopModal). Modal de usuarios unificado al sistema centralizado. Nuevo helper safeNum(v, fallback) para validar inputs numéricos de forma segura (NaN/Infinity → fallback). v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
         </div>
       </div>
 
@@ -3109,6 +3109,10 @@ body.dark .pos-prod-img-ph{background:#23283a}
             </button>
             <div id="ped-hide-panel" style="display:none;position:absolute;z-index:50;top:calc(100% + 6px);left:0;min-width:210px;background:var(--card);border:1px solid #e5e7eb;border-radius:12px;box-shadow:var(--shadow);padding:10px"></div>
           </div>
+          <button type="button" class="btn btn-sm" id="ped-bulk-toggle-btn" onclick="_pedToggleSeleccionMultiple()" title="Seleccionar varios pedidos para cambiar su estado en lote">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Selección múltiple
+          </button>
           <button class="btn btn-brand btn-sm" onclick="abrirNuevoPedido()">＋ Nuevo Pedido</button>
           <button class="btn btn-sm" onclick="imprimirListaPedidos()" title="Imprimir listado"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir</button>
           <button class="btn btn-sm" onclick="abrirImprimirRangoPedidos()" title="Imprimir pedidos por rango de números"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/><line x1="9" y1="17" x2="15" y2="17"/></svg> Rango #</button>
@@ -3118,6 +3122,12 @@ body.dark .pos-prod-img-ph{background:#23283a}
           </button>
         </div>
         <div class="grid g5" style="margin-bottom:14px" id="ped-kpis"></div>
+        <div id="ped-bulk-bar" style="display:none;align-items:center;gap:10px;flex-wrap:wrap;background:var(--brand);color:#fff;border-radius:10px;padding:10px 14px;margin-bottom:10px">
+          <strong style="font-size:13px"><span id="ped-bulk-count">0</span> seleccionados</strong>
+          <button type="button" class="btn btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.35)" onclick="_pedSeleccionarTodosVisibles()">Seleccionar todos</button>
+          <button type="button" class="btn btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.35)" onclick="_pedLimpiarSeleccion()">Limpiar selección</button>
+          <button type="button" class="btn btn-sm" style="background:#fff;color:var(--brand);font-weight:700;margin-left:auto" onclick="abrirCambioEstadoMasivo()">Cambiar estado…</button>
+        </div>
         <div id="ped-container"></div>
       </div>
 
@@ -10773,6 +10783,11 @@ let _pedSnapTotalBs    = null;  // total_bs al abrir
 let _pedSnapAbonoUsd   = null;  // abono[0].monto (USD) al abrir
 let _pedSnapAbonoRaw   = null;  // valor en campo mp_abono al abrir (para comparar si el usuario lo tocó)
 
+// ── Selección múltiple / cambio de estado masivo (V14_90) ──
+let _pedSeleccionMultiple = false;       // modo selección activo
+let _pedSeleccionados = new Set();       // ids (string) de pedidos seleccionados
+window._pedUltimosFiltrados = [];        // último listado filtrado/ordenado mostrado (para "Seleccionar todos")
+
 // Contadores y helpers de estado/pago
 const PED_ESTADOS = { pendiente:'Pendiente', produccion:'En producción', impresion:'Impresión', listo:'Listo', entregado:'Entregado', cancelado:'Cancelado' };
 const PED_PAGOS   = { sin_abono:'Sin abono', abonado:'Abonado', parcial:'Parcial', pagado:'Pagado' };
@@ -11697,6 +11712,8 @@ function renderPedidos(){
     }
     return matchQ&&(!fe||p.estado===fe)&&(!fp||ep===fp)&&matchEnt&&(!fcanal||normalizarCanalVenta(p.canal)===fcanal)&&matchEnvio&&matchProd&&matchCat&&matchCreacion&&!estadosOcultos.includes(p.estado);
   }).reverse();
+  window._pedUltimosFiltrados = fil;
+  _pedActualizarBarraBulk();
 
   const c=qs('#ped-container');
   if(!fil.length){
@@ -11707,9 +11724,12 @@ function renderPedidos(){
   fil.forEach(p=>{
     const ri=all.indexOf(p), ep=estadoPago(p), pag=totalPagado(p), rest=Math.max(0,p.total-pag);
     const hoy=hoyLocal(), vencido=p.fecha_entrega&&p.fecha_entrega<hoy&&p.estado!=='entregado'&&p.estado!=='cancelado';
-    const item=document.createElement('div'); item.className='list-item'; item.style.cssText='margin-bottom:10px;cursor:pointer;flex-wrap:wrap;gap:8px';
-    item.onclick=()=>verPedido(ri);
+    const seleccionado=_pedSeleccionados.has(String(p.id));
+    const item=document.createElement('div'); item.className='list-item';
+    item.style.cssText='margin-bottom:10px;cursor:pointer;flex-wrap:wrap;gap:8px'+(seleccionado?';outline:2px solid var(--brand);background:rgba(229,57,131,.05)':'');
+    item.onclick=_pedSeleccionMultiple?(()=>_pedToggleSeleccion(p.id)):(()=>verPedido(ri));
     item.innerHTML=`
+      ${_pedSeleccionMultiple?`<div style="display:flex;align-items:center;padding-right:2px" onclick="event.stopPropagation();_pedToggleSeleccion('${p.id}')"><input type="checkbox" ${seleccionado?'checked':''} style="width:18px;height:18px;cursor:pointer" onclick="event.stopPropagation();_pedToggleSeleccion('${p.id}')"/></div>`:''}
       <div class="li-ico" style="background:linear-gradient(135deg,#ffe3ee,#e8efff);font-size:13px;font-weight:700;color:var(--brand)">${p.numero.replace('PED-','#')}</div>
       <div class="li-body" style="min-width:180px">
         <div class="li-name">${p.cliente?(p.cliente.nombre+' '+p.cliente.apellido):'Sin cliente'}</div>
@@ -11756,6 +11776,36 @@ function renderPedidos(){
       </div>`;
     c.appendChild(item);
   });
+}
+
+/* ── Selección múltiple de pedidos (V14_90) ── */
+function _pedToggleSeleccionMultiple(){
+  _pedSeleccionMultiple = !_pedSeleccionMultiple;
+  if(!_pedSeleccionMultiple) _pedSeleccionados.clear();
+  const btn = qs('#ped-bulk-toggle-btn');
+  if(btn) btn.classList.toggle('btn-brand', _pedSeleccionMultiple);
+  renderPedidos();
+}
+function _pedToggleSeleccion(id){
+  const key = String(id);
+  if(_pedSeleccionados.has(key)) _pedSeleccionados.delete(key);
+  else _pedSeleccionados.add(key);
+  renderPedidos();
+}
+function _pedSeleccionarTodosVisibles(){
+  (window._pedUltimosFiltrados||[]).forEach(p=>_pedSeleccionados.add(String(p.id)));
+  renderPedidos();
+}
+function _pedLimpiarSeleccion(){
+  _pedSeleccionados.clear();
+  renderPedidos();
+}
+function _pedActualizarBarraBulk(){
+  const bar = qs('#ped-bulk-bar');
+  const cnt = qs('#ped-bulk-count');
+  const n = _pedSeleccionados.size;
+  if(cnt) cnt.textContent = n;
+  if(bar) bar.style.display = (_pedSeleccionMultiple && n>0) ? 'flex' : 'none';
 }
 
 function fmtFecha(iso){ if(!iso) return ''; const d=new Date(iso+'T12:00'); const dias=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb']; return dias[d.getDay()]+' '+d.toLocaleDateString('es-ES',{day:'2-digit',month:'2-digit',year:'numeric'}); }
@@ -12521,6 +12571,241 @@ function cobrarYEntregar(){
   toast('Pago registrado + Pedido entregado → Venta '+venta.numero+' creada','ok');
   closeModal('m-ver-ped'); renderPedidos(); renderDash();
 }
+
+/* ══ Cambio de estado masivo de pedidos (V14_90) ══
+   Reutiliza el mismo motor de _ejecutarEntregaPedido / cobrarYEntregar
+   para cada pedido seleccionado, garantizando que los pedidos con
+   restante generen su movimiento de Caja correspondiente. */
+function abrirCambioEstadoMasivo(){
+  if(!_pedSeleccionados.size){ toast('Selecciona al menos un pedido','warn'); return; }
+  const sel = qs('#pbe_estado'); if(sel) sel.value = 'entregado';
+  _pbeActualizarVista();
+  openModal('m-ped-bulk-estado');
+}
+
+function _pbeGetSeleccionados(){
+  const all = loadPed();
+  return all.filter(p => _pedSeleccionados.has(String(p.id)));
+}
+
+function _pbeActualizarVista(){
+  const nuevoEstado = qs('#pbe_estado')?.value || 'entregado';
+  const seleccionados = _pbeGetSeleccionados();
+  const titulo = qs('#pbe_count_titulo'); if(titulo) titulo.textContent = seleccionados.length;
+
+  const metodoWrap = qs('#pbe_metodo_wrap');
+  const resumen = qs('#pbe_resumen');
+  const preview = qs('#pbe_preview');
+  const btn = qs('#pbe_btn_confirmar');
+  if(!preview || !resumen) return;
+
+  const dif = getDiferencial(), bcv = getTasaBCV();
+
+  if(nuevoEstado === 'entregado'){
+    const candidatos = seleccionados.filter(p=>p.estado!=='entregado');
+    const yaEntregados = seleccionados.length - candidatos.length;
+    const conSaldo = candidatos.filter(p=>pedidoSaldoCDif(p,dif) > 0);
+    const sinSaldo = candidatos.filter(p=>pedidoSaldoCDif(p,dif) <= 0);
+    const totalRestanteCDif = round2(conSaldo.reduce((a,p)=>a+pedidoSaldoCDif(p,dif),0));
+    const totalRestanteBs = bcv>0 ? usdToBs(totalRestanteCDif, bcv) : 0;
+
+    if(metodoWrap) metodoWrap.style.display = conSaldo.length ? '' : 'none';
+
+    resumen.innerHTML =
+      `<div>✓ <strong>${sinSaldo.length}</strong> ya están pagados — se marcarán entregados directamente (sin movimiento de Caja).</div>`+
+      (conSaldo.length ? `<div style="color:var(--danger);font-weight:600;margin-top:4px">💵 <strong>${conSaldo.length}</strong> con restante — se cobrará un total de $${totalRestanteCDif.toFixed(2).replace('.',',')}${bcv>0?' (Bs '+fmtBs(totalRestanteBs)+')':''} y se generará su movimiento de Caja.</div>` : '')+
+      (yaEntregados ? `<div style="color:var(--muted);margin-top:4px">${yaEntregados} ya estaban entregados — se omiten.</div>` : '');
+    if(btn) btn.textContent = candidatos.length ? `Confirmar — ${candidatos.length} pedidos` : 'Nada que hacer';
+
+    preview.innerHTML = candidatos.map(p=>{
+      const saldo = pedidoSaldoCDif(p,dif);
+      const cli = p.cliente ? (p.cliente.nombre+' '+(p.cliente.apellido||'')) : 'Sin cliente';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+        <span><strong>${(p.numero||'').replace('PED-','#')}</strong> — ${cli}</span>
+        <span style="${saldo>0?'color:var(--danger);font-weight:600':'color:var(--ok);font-weight:600'}">${saldo>0?'Restante $'+saldo.toFixed(2).replace('.',','):'✓ Pagado'}</span>
+      </div>`;
+    }).join('') || '<div style="color:var(--muted);font-size:12px;text-align:center;padding:8px">No hay pedidos pendientes de entregar en la selección.</div>';
+
+  } else {
+    if(metodoWrap) metodoWrap.style.display = 'none';
+    const candidatos = seleccionados.filter(p=>p.estado!=='entregado');
+    const yaEntregados = seleccionados.length - candidatos.length;
+    resumen.innerHTML =
+      `<div>Se cambiará el estado de <strong>${candidatos.length}</strong> pedidos a "${PED_ESTADOS[nuevoEstado]||nuevoEstado}".</div>`+
+      (nuevoEstado==='cancelado' ? `<div style="color:var(--muted);margin-top:4px">Se desactivarán las comisiones en espera de estos pedidos.</div>` : '')+
+      (yaEntregados ? `<div style="color:var(--muted);margin-top:4px">${yaEntregados} ya estaban entregados — no se modifican en este flujo (revertir una entrega no es seguro aquí).</div>` : '');
+    if(btn) btn.textContent = candidatos.length ? `Confirmar — ${candidatos.length} pedidos` : 'Nada que hacer';
+
+    preview.innerHTML = candidatos.map(p=>{
+      const cli = p.cliente ? (p.cliente.nombre+' '+(p.cliente.apellido||'')) : 'Sin cliente';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+        <span><strong>${(p.numero||'').replace('PED-','#')}</strong> — ${cli}</span>
+        <span class="chip ${CHIP_EST[p.estado]||'chip-warn'}" style="font-size:10px">${PED_ESTADOS[p.estado]||p.estado}</span>
+      </div>`;
+    }).join('') || '<div style="color:var(--muted);font-size:12px;text-align:center;padding:8px">No hay pedidos para actualizar en la selección.</div>';
+  }
+}
+
+function ejecutarCambioEstadoMasivo(){
+  const nuevoEstado = qs('#pbe_estado')?.value || '';
+  if(!nuevoEstado) return;
+  const seleccionados = _pbeGetSeleccionados().filter(p=>p.estado!=='entregado');
+  if(!seleccionados.length){ toast('No hay pedidos para actualizar','warn'); return; }
+
+  const dif = getDiferencial(), bcv = getTasaBCV();
+  let _bulkSeq = 0;
+  const _bulkId = () => Date.now() + (_bulkSeq++);
+
+  if(nuevoEstado === 'entregado'){
+    const conSaldo = seleccionados.filter(p=>pedidoSaldoCDif(p,dif) > 0);
+    const metodo = qs('#pbe_metodo')?.value || 'efectivo_bs';
+    const metLbl = METODOS_LABEL[metodo] || metodo;
+
+    let confirmMsg = `¿Marcar ${seleccionados.length} pedidos como entregados?`;
+    if(conSaldo.length) confirmMsg += `\n\nSe cobrará el restante de ${conSaldo.length} pedido(s) con "${metLbl}" y se generará su movimiento de Caja.`;
+    if(!confirm(confirmMsg)) return;
+
+    let entregadosSinSaldo = 0, entregadosConCobro = 0, totalCobrado = 0;
+    const all = loadPed();
+
+    seleccionados.forEach(psel => {
+      const idx = all.findIndex(x => String(x.id) === String(psel.id));
+      if(idx < 0) return;
+      const p = all[idx];
+      if(p.estado === 'entregado') return;
+      const saldoCDif = round2(pedidoSaldoCDif(p, dif));
+
+      if(saldoCDif > 0){
+        // ── Cobrar restante + entregar (mismo motor que cobrarYEntregar) ──
+        const multHoy = dif>1 ? dif : 1;
+        const esBs = !['efectivo_usd','zelle'].includes(metodo);
+        const restanteUsdBase = round2(Math.max(0, (p.total||0) - totalPagado(p)));
+        const restanteBs = bcv>0 ? usdToBs(saldoCDif, bcv) : 0;
+
+        p.pagos = p.pagos || [];
+        p.pagos.push({
+          id: _bulkId(), monto: restanteUsdBase,
+          monto_cdif: saldoCDif,
+          monto_bs_ingresado: esBs ? restanteBs : null,
+          metodo, nota: 'Pago final al entregar (masivo)',
+          fecha: new Date().toISOString(),
+          tasa_bcv_pago: bcv, tasa_par_pago: bcv*multHoy
+        });
+        p.estado = 'entregado';
+        all[idx] = p;
+
+        _asegurarCajaAbierta();
+        const cajaAll = loadCajaMov();
+        const _mm = esBs && bcv>0
+          ? { moneda:'bs', monto:restanteBs, monto_bs:restanteBs, monto_usd:restanteUsdBase, tasa:bcv, tasa_paralela:bcv*multHoy }
+          : { moneda:'usd', monto:restanteUsdBase, monto_bs:0, monto_usd:restanteUsdBase, tasa:bcv };
+        const cliNom = p.cliente ? ' — '+p.cliente.nombre+' '+(p.cliente.apellido||'') : '';
+        const mov = {
+          id: _bulkId(), tipo:'ingreso', categoria:'venta',
+          monto:_mm.monto, moneda:_mm.moneda, monto_bs:_mm.monto_bs, monto_usd:_mm.monto_usd, tasa:_mm.tasa,
+          monto_cdif: saldoCDif,
+          metodo,
+          nota: 'Pago final y entrega '+p.numero+cliNom+' (masivo)',
+          ref_id: p.id, ref_tipo:'pedido',
+          fecha: hoyLocal()
+        };
+        cajaAll.push(mov);
+        saveCajaMov(cajaAll);
+        upsertCajaMov(mov);
+
+        const venAll = loadVen();
+        const pagadoTotal = totalPagado(p);
+        const venta = {
+          id: _bulkId(), numero: nextNumVen(),
+          cliente: p.cliente||null,
+          items: (p.items||[]).map(it=>({...it, moneda_prod:it.moneda_prod||'usd'})),
+          subtotal: p.subtotal||p.total, descuento: p.descuento||0, total: p.total,
+          recibido: pagadoTotal, vuelto: Math.max(0,pagadoTotal-p.total),
+          costo_total: (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
+          utilidad: p.total - (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
+          metodo, canal: normalizarCanalVenta(p.canal),
+          notas: 'Pedido '+p.numero+(p.notas?' — '+p.notas:''),
+          fecha: new Date().toISOString(), estado: 'completada',
+          origen: 'pedido', pedido_id: p.id, pedido_num: p.numero,
+          usuario_id: p.usuario_id || CURRENT_USR_ID || null,
+          usuario_nom: p.usuario_nom || CURRENT_USR_NOM || null
+        };
+        venAll.push(venta); saveVen(venAll); upsertVenta(venta);
+
+        const comEsp = loadComisiones().filter(c => String(c.pedido_id) === String(p.id) && c.en_espera);
+        if(comEsp.length > 0) confirmarComisionesPedido(p.id);
+        else generarComisionesVenta(venta, { en_espera: false, pedido_id: p.id, pedido_num: p.numero });
+
+        descontarInventarioDeItems(p.items||[], 'Entrega pedido '+p.numero);
+
+        entregadosConCobro++; totalCobrado += saldoCDif;
+      } else {
+        // ── Ya pagado: solo entregar (mismo motor que _ejecutarEntregaPedido) ──
+        p.estado = 'entregado';
+        all[idx] = p;
+
+        const venAll = loadVen();
+        const pagado = totalPagado(p);
+        const venta = {
+          id: _bulkId(), numero: nextNumVen(),
+          cliente: p.cliente||null,
+          items: (p.items||[]).map(it=>({...it, moneda_prod:it.moneda_prod||'usd'})),
+          subtotal: p.subtotal||p.total, descuento: p.descuento||0, total: p.total,
+          recibido: pagado, vuelto: Math.max(0,pagado-p.total),
+          costo_total: (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
+          utilidad: p.total - (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
+          metodo: (p.pagos&&p.pagos.length?p.pagos[p.pagos.length-1].metodo:'efectivo_bs'),
+          canal: normalizarCanalVenta(p.canal),
+          notas: 'Pedido '+p.numero+(p.notas?' — '+p.notas:''),
+          fecha: new Date().toISOString(), estado: 'completada',
+          origen: 'pedido', pedido_id: p.id, pedido_num: p.numero,
+          usuario_id: p.usuario_id || CURRENT_USR_ID || null,
+          usuario_nom: p.usuario_nom || CURRENT_USR_NOM || null
+        };
+        venAll.push(venta); saveVen(venAll); upsertVenta(venta);
+
+        const comEsp = loadComisiones().filter(c => String(c.pedido_id) === String(p.id) && c.en_espera);
+        if(comEsp.length > 0) confirmarComisionesPedido(p.id);
+        else generarComisionesVenta(venta, { en_espera: false, pedido_id: p.id, pedido_num: p.numero });
+
+        descontarInventarioDeItems(p.items||[], 'Entrega pedido '+p.numero);
+
+        entregadosSinSaldo++;
+      }
+      upsertPedido(p);
+    });
+
+    savePed(all);
+    const totalEntregados = entregadosSinSaldo + entregadosConCobro;
+    toast(`✓ ${totalEntregados} pedidos entregados`+(entregadosConCobro?` (${entregadosConCobro} con cobro de $${round2(totalCobrado).toFixed(2).replace('.',',')})`:''),'ok');
+
+  } else {
+    if(!confirm(`¿Cambiar el estado de ${seleccionados.length} pedidos a "${PED_ESTADOS[nuevoEstado]||nuevoEstado}"?`)) return;
+
+    const all = loadPed();
+    let actualizados = 0;
+    seleccionados.forEach(psel => {
+      const idx = all.findIndex(x => String(x.id) === String(psel.id));
+      if(idx < 0) return;
+      const p = all[idx];
+      if(p.estado === nuevoEstado) return;
+      p.estado = nuevoEstado;
+      all[idx] = p;
+      if(nuevoEstado === 'cancelado') cancelarComisionesPedido(p.id);
+      upsertPedido(p);
+      actualizados++;
+    });
+    savePed(all);
+    toast(`✓ ${actualizados} pedidos actualizados a "${PED_ESTADOS[nuevoEstado]||nuevoEstado}"`,'ok');
+  }
+
+  _pedSeleccionados.clear();
+  _pedSeleccionMultiple = false;
+  const toggleBtn = qs('#ped-bulk-toggle-btn'); if(toggleBtn) toggleBtn.classList.remove('btn-brand');
+  closeModal('m-ped-bulk-estado');
+  renderPedidos(); renderDash();
+}
+
 function cobrarPedidoDesdeModal(){
   if(_pedIdx===null) return;
   const all=loadPed(), p=all[_pedIdx];
@@ -16124,6 +16409,55 @@ window.addEventListener('popstate',e=>{
   </div>
 </div>
 
+<!-- ══ MODAL: Cambio de estado masivo de pedidos ══ -->
+<div class="modal-bg" id="m-ped-bulk-estado" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:540px">
+    <button class="modal-close" onclick="closeModal('m-ped-bulk-estado')">✕</button>
+    <div class="modal-title">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="20 6 9 17 4 12"/></svg>
+      Cambiar estado — <span id="pbe_count_titulo">0</span> pedidos seleccionados
+    </div>
+
+    <div class="fg" style="margin-bottom:10px">
+      <label>Nuevo estado</label>
+      <select id="pbe_estado" onchange="_pbeActualizarVista()">
+        <option value="pendiente">Pendiente</option>
+        <option value="produccion">En producción</option>
+        <option value="impresion">Impresión</option>
+        <option value="listo">Listo</option>
+        <option value="entregado">Entregado</option>
+        <option value="cancelado">Cancelado</option>
+      </select>
+    </div>
+
+    <div id="pbe_metodo_wrap" style="display:none;margin-bottom:10px">
+      <div class="fg">
+        <label>Forma de pago para cobrar los restantes</label>
+        <select id="pbe_metodo">
+          <option value="efectivo_bs">Bs Efectivo</option>
+          <option value="pago_movil">Pago Móvil</option>
+          <option value="transferencia">Transferencia</option>
+          <option value="efectivo_usd">USD Efectivo</option>
+          <option value="zelle">Zelle/Binance</option>
+        </select>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:4px">Se aplicará a todos los pedidos seleccionados que tengan saldo pendiente, y se generará su movimiento de Caja correspondiente.</div>
+    </div>
+
+    <div id="pbe_resumen" style="background:var(--bg);border-radius:10px;padding:10px;margin-bottom:10px;font-size:13px;line-height:1.5"></div>
+
+    <div style="background:var(--bg);border-radius:10px;padding:10px;max-height:240px;overflow-y:auto;margin-bottom:14px">
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px">Pedidos seleccionados</div>
+      <div id="pbe_preview"></div>
+    </div>
+
+    <div style="display:flex;gap:8px;align-items:center">
+      <button class="btn btn-brand" id="pbe_btn_confirmar" onclick="ejecutarCambioEstadoMasivo()">Confirmar cambio</button>
+      <button class="btn btn-sm" onclick="closeModal('m-ped-bulk-estado')" style="margin-left:auto">Cancelar</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL: Traslado entre locaciones ══ -->
 <div class="modal-bg" id="m-traslado" role="dialog" aria-modal="true">
   <div class="modal" tabindex="-1" style="max-width:420px">
@@ -16167,7 +16501,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v14_89';
+  const APP_VERSION = 'v14_90';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
