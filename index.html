@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_03">
+<html lang="es" data-app-version="GestioMada_V15_11">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -1744,6 +1744,8 @@ body.dark .musr-chk input:checked ~ .musr-chk-box{background:var(--brand);border
 .tab-btn{padding:8px 16px;cursor:pointer;border:none;background:none;font-family:inherit;font-size:13px;font-weight:600;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s}
 .tab-btn.active{color:var(--brand);border-bottom-color:var(--brand)}
 .tab-panel{display:none}.tab-panel.active{display:block}
+.tex-f-btn{background:none;border:none;cursor:pointer;padding:0 1px;font-size:11px;vertical-align:middle;color:var(--muted);line-height:1;transition:color .15s}
+.tex-f-btn.activo{color:var(--brand);font-weight:700}
 
 /* ══════════════════════════════════════
    POS LAYOUT — Vista de cobro de pantalla completa
@@ -3101,6 +3103,14 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.11: Reportes/Textiles Orden de Produccion — filtros estilo Excel en las 4 columnas de texto: Producto, Talla, Color y Caracteristica. Embudo en cada encabezado abre un panel flotante posicionado con JS (position:fixed, coordenadas del boton) con checkboxes por cada valor unico de esa columna, opcion Seleccionar todo y boton Limpiar. El embudo se vuelve morado con flecha llena cuando hay un filtro activo. Todos los filtros se aplican combinados. Se reescribio por completo el sistema de filtros anterior que no funcionaba (panel con position:absolute sin posicionamiento relativo).</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.10: Reportes/Textiles Orden de Produccion — filtro estilo Excel en columna Color. Icono de embudo en el encabezado abre un dropdown con checkbox por cada color unico presente en los datos; checkbox Todos selecciona/deselecciona todos; boton Limpiar resetea el filtro; el icono se pinta en color de marca cuando hay un filtro activo; al no haber resultados ofrece un boton Ver todos para limpiar rapido. El filtro aplica instantaneamente sin boton de confirmacion y no afecta los botones Imprimir ni Pasar a Produccion (que siguen operando sobre todos los pedidos pendientes).</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.09: Reportes/Textiles — FIX Orden de Produccion: el nombre del cliente aparecia como [object Object] porque p.cliente es un objeto {nombre, apellido} y se concatenaba directamente como string. Ahora extrae correctamente nombre + apellido del objeto cliente. Aplica en la tabla y en el PDF de impresion.</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.08: FIX scroll roto — el texto del changelog v15.07 contenía &lt;/div&gt; como texto literal sin escapar, que el parser HTML de Chrome interpretaba como tag de cierre real, cerrando prematuramente un div del layout y rompiendo el scroll de todos los módulos. Corregido escapando a &amp;lt;/div&amp;gt;.</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.07: Reportes/Textiles — FIX ESTRUCTURAL CRÍTICO: el div de cierre de #rep-tab-comisiones estaba ausente en el HTML, lo que hacía que #rep-tab-textiles quedara anidado DENTRO del panel de Comisiones. Al hacer clic en Textiles, el panel recibía la clase active y display:block, pero el padre (#rep-tab-comisiones) tenía display:none, así que Textiles permanecía invisible — de ahí el área completamente en blanco. Corregido agregando el &lt;/div&gt; faltante al cierre del panel Comisiones y rebalanceando la estructura HTML de view-reportes (115 opens / 115 closes).</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.06: Reportes/Textiles — FIX CRÍTICO: renderRepTextiles llamaba a loadPedidos() y loadVentas() que no existen (los nombres reales son loadPed() y loadVen()); la función crasheaba silenciosamente al primer clic y el tab quedaba siempre en blanco. Este bug existía desde v14.99 (creación del tab). Corregido a loadPed() y loadVen().</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.05: Reportes/Textiles — nueva sección "Orden de Producción". Agrupa todos los pedidos con estado Pendiente que tienen ítems textiles (talla/color registrados) por Producto → Talla → Color → Característica, sumando cantidades y listando el número de pedido y cliente de cada uno. Botón "Imprimir lista" genera una hoja limpia lista para pasar al proveedor. Botón "Pasar a En Producción" cambia el estado de todos esos pedidos de Pendiente a En Producción en un solo clic (con confirmación), propaga a Supabase y actualiza la vista de Pedidos y el Dashboard. FIX renderReportes: el detector de tab activo ahora incluye el caso "Textiles", que antes caía en la rama catch-all "caja" y nunca llamaba a renderRepTextiles al recibir un evento externo (Realtime, sincronización).</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.04: Reportes/Comisiones — FIX renderizado inicial: al hacer clic en la pestaña Comisiones, los KPIs (En espera, Pendientes, Pagadas, Desactivadas) y el listado de comisiones ahora se muestran inmediatamente sin necesidad de mover un filtro. Causa: la función repTab omitía comisiones de su objeto renders interno, así que la llamada a renderRepComisiones() nunca ocurría al abrir el tab. Fix secundario: renderReportes ahora también incluye textiles en su objeto renders para simetría completa entre ambas rutas de activación de tabs.</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.03: V15.01+V15.02 — Cotizaciones: preview de ítems muestra la variante en rosado ej: 1× Suéter terry detal (SC · Blanco · Con C/B). Formulario de pedido: ítems con variante ya establecida muestran ✏ Cambiar (abre picker inline para editar) y ✕ Quitar (borra la variante) — funciones nuevas: pedToggleEditVariante, pedLimpiarVariante, pedSetVarianteItem actualizado. POS y formulario de pedido: después de reconstruir opciones de selects Talla/Color/Característica con innerHTML, fuerza .value='' en los tres selects para evitar restauración de selección anterior. v15.00: Cotizaciones → Pedidos — FIX textiles sin variante. Cuando se convierte una cotización en pedido (botón 'Crear pedido'), los items de productos textiles que no tenían talla/color ya no se pierden silenciosamente. Dos mejoras: (1) El mapeo ahora preserva talla/color/característica si la cotización ya los traía. (2) Los items textiles sin variante muestran un recuadro amarillo de aviso directamente en la lista del pedido con selectores de Talla, Color y Característica listos para completar — un botón 'Confirmar' aplica la variante sin salir del formulario. Un toast naranja avisa cuántos productos textiles necesitan completarse. Esto aplica tanto a cotizaciones recién creadas como a cotizaciones guardadas antes de la implementación textil. v14.99: Reportes — Etapa 5 textiles. Nueva pestaña 'Textiles' en Reportes con: (1) 4 KPIs del período: unidades vendidas, ingresos USD, variante más vendida y conteo de combinaciones con stock crítico o agotado. (2) Tabla 'Ventas por variante': cruza pedidos entregados + ventas directas del POS y muestra por producto/talla/color/característica cuántas unidades se vendieron y el ingreso generado — respeta el filtro de período global. Filtro adicional por producto textil. (3) Tabla 'Stock actual por variante': muestra el stock local, depósito y total de cada combinación registrada en Inventario, con indicador visual OK (verde) / Stock bajo (amarillo) / Agotado (rojo). Las filas con stock agotado se resaltan en rojo suave. No requiere ninguna columna nueva en Supabase — todo se calcula en el cliente con los datos ya existentes. v14.98: Productos textiles — Etapa 4: descuento automático de stock por variante en ventas directas (POS). Al tocar un producto textil en el grid del POS aparece el panel de variante (Talla, Color, Característica + botón 'Omitir' para ventas sin especificar). Cada combinación forma una línea separada en el carrito con sus chips rosados visibles. Al cobrar, el sistema descuenta exactamente la fila de inventario que corresponde a esa talla/color/característica — no el producto genérico. Aplica tanto en venta rápida como en 'Cobrar pedido vinculado'. El mismo descuento exacto ya estaba activo desde v14.96 para entregas de pedidos. v14.97: Pedidos — FIX variantes textiles truncadas en la tarjeta de lista: quitado white-space:nowrap del CSS de ped-items-preview, ahora el texto siempre se muestra completo. Cada producto con su variante queda en un bloque propio (no separados por ·) para facilitar la lectura. Nuevo botón 'Omitir variante' en el panel textil del pedido: permite agregar el producto sin especificar talla/color, ideal para pedidos masivos (60 unidades) donde registrar cada combinación una por una sería muy lento. La línea sin variante acumula cantidad si se vuelve a agregar. v14.96: Pedidos — Etapa 3 textiles. Al armar un pedido y seleccionar un producto textil, aparece un panel de variante con los selectores de Talla, Color y Característica (Con C/B / Sin C/B) propios de ese producto. Cada combinación se agrega como una línea separada: 3 suéteres en 3 tallas y 3 colores distintos = 3 líneas, no 1 con cantidad 3. Si el mismo producto + misma variante se agrega de nuevo, solo incrementa la cantidad de esa línea. Los chips de talla/color/característica se ven en: el formulario del pedido, la tarjeta del listado, el modal de detalle y la impresión. Al entregar el pedido, el descuento automático de inventario busca ahora la fila de stock exacta (mismo producto + misma talla/color/característica) en vez de descontar cualquier terminado vinculado al producto. v14.95: Productos textiles — Etapa 2: inventario por variante. En Inventario → Productos terminados, al vincular un producto textil aparece un selector de Talla, Color y Característica (Con C/B / Sin C/B); cada combinación queda como su propia fila de stock (local y depósito) con su alerta de stock mínimo independiente. La lista y el buscador ahora distinguen cada combinación. El descuento automático al vender/entregar llega en la Etapa 3 junto al selector de talla/color en el pedido. v14.94: Productos textiles — "Grupo de tallas" pasó de selector único a chips de selección múltiple (un mismo producto puede ofrecerse en, por ejemplo, Adultos + Niños a la vez). Se agregó la columna textil_grupos_talla (array) en Supabase; los productos textiles guardados antes con un solo grupo se migraron automáticamente. v14.93: Editor de Producto — FIX foto no cargaba al buscar un producto guardado. persFill() solo leía la foto local (base64); ahora usa getFoto() y también muestra la foto subida a Storage (foto_url) cuando no hay copia local. Además, persToJSON() ahora distingue si la foto cargada es una URL de Storage o una imagen local nueva, así que al hacer clic en "Guardar" ya no se borra la foto_url existente. Aparte, reparé directamente en la base de datos 5 productos (incluyendo Suéter mono detal y Suéter terry detal) cuya "plantilla" en el buscador del Editor estaba vacía o duplicada — ahora cada uno tiene una sola plantilla completa, reconstruida desde los datos del catálogo. v14.92: Productos — FIX/extensión Etapa 1 textiles. El interruptor "Es producto textil" (con grupo de tallas y colores) ahora también está disponible en el modal "Agregar al Catálogo" del flujo Editor de Producto (cálculo de costos), que es el que realmente usas — antes solo estaba en el botón rápido "+ Nuevo Producto". Al editar un producto textil existente desde el catálogo, el modal recuerda su grupo de tallas y colores guardados. v14.91: Productos — Etapa 1 de "Productos textiles". Nuevo interruptor "Es producto textil" en Nuevo producto/Editar producto: al activarlo se elige el grupo de tallas (Niños 2-16, Adultos XS-XXXL con sufijo C/D, Bodys bebé 0-3M a 18-24M) y los colores que maneja ese producto, tomados de una lista base editable. Nueva sección "Textiles" en Configuración para administrar esa lista de colores (mismo patrón que Categorías). El catálogo y la ficha de producto muestran un badge "Textil" con el grupo de tallas y los colores habilitados. Por ahora es solo configuración — el selector de talla/color al armar un pedido y el descuento de stock por variante llegan en la próxima etapa. v14.90: Pedidos — nuevo "Selección múltiple" en el listado para cambiar el estado de varios pedidos a la vez. Botón en la barra de filtros activa checkboxes en cada tarjeta; aparece una barra con "Seleccionar todos", "Limpiar selección" y "Cambiar estado…". Al elegir el nuevo estado: (1) si es "Entregado", los pedidos ya pagados al 100% se entregan directo (Venta + comisiones + descuento de inventario, sin movimiento de Caja); los que tienen restante se cobran con una sola forma de pago elegida para todo el lote y SÍ generan su movimiento de Caja correspondiente (mismo motor que "Cobrar y entregar"), mostrando antes un resumen con el total a cobrar en $ y Bs; (2) para otros estados (Pendiente/Producción/Impresión/Listo/Cancelado) solo se actualiza el estado de cada pedido (sin movimiento de caja), desactivando comisiones en espera si el destino es "Cancelado"; los pedidos ya entregados se excluyen automáticamente de este camino para no revertir una entrega ya facturada. v14.89: Pedidos — nuevo botón "Ocultar estados" en la barra de filtros. Permite marcar uno o varios estados (Pendiente, En producción, Impresión, Listo, Entregado, Cancelado) para ocultarlos de la lista visible — útil por ejemplo para ver "Entregan hoy" sin que aparezcan los que ya están en estado "Listo". Es una preferencia del dispositivo (se guarda en localStorage, no viaja a Supabase) e incluye un badge con la cantidad de estados ocultos y un botón "Mostrar todos" para limpiar el filtro. También se respeta al usar el botón "Imprimir" del listado. v14.88: Pedidos — nuevo filtro por fecha de creación. Opciones: Hoy, Últimos 7 días, Últimos 30 días, Fecha específica (con date picker). Usa fecha_creado con fallback a fecha_pedido para compatibilidad con pedidos históricos. v14.87: Reportes — revisión completa y corrección de 7 bugs: (1-3) fecha_creado null en pedidos históricos provocaba que no aparecieran en KPIs, tab Pedidos ni tab Clientes — fallback a fecha_pedido; (4) renderRepClientes usaba repTotalPedido (USD base) para pedidos de cliente en lugar de pedidoTotalCDifCalc; (5) mismo error en fecha de última actividad del cliente; (6) exportReportesCSV usaba repTotalPedido para pedidos y no mostraba cobrado/pendiente — corregido con pedidoTotalCDifCalc y pedidoSaldoCDif; (7) renderRepPedidos métodos de pago sumaba pg.monto (USD base) en lugar de monto_cdif congelado. v14.86: Comisiones — columna Ref. muestra pedido_num (morado) cuando la comisión está en espera y aún no tiene venta vinculada; encabezado cambiado de 'Venta #' a 'Ref.' para reflejar ambos casos. v14.85: Comisiones — FIX filtro 'Pendientes de pago' excluía incorrectamente comisiones en_espera (en espera no es pendiente de pago). v14.84: Comisiones/importación — FIX pedidos históricos sin usuario_id. La función importarComisionesPedidosExistentes ahora usa usuario_nom como fallback cuando usuario_id es null. Supabase: 47 pedidos de Juan Carlos actualizados con usuario_id=1778682140157 via UPDATE directo. v14.83: Comisiones — botón temporal 'Importar comisiones anteriores' (TEMP_IMPORT_COM). Genera comisiones para pedidos registrados antes de v14.82 que no tienen comisión. Pedidos en proceso → en_espera:true; entregados → activa, pendiente de pago. Se oculta tras ejecutarse para evitar duplicados. Marcado con comentarios TEMP_IMPORT_COM para fácil eliminación. v14.82: Comisiones — nuevo flujo de estados. Las comisiones ahora se crean al REGISTRAR el pedido (en_espera=true) y se confirman al ENTREGARLO (en_espera=false). Si el pedido se cancela, las comisiones en espera se desactivan. Si se edita el pedido y cambian montos, se recalculan. Módulo Reportes/Comisiones: nuevo KPI 'En espera' (morado), chip visual en tabla, nueva opción de filtro. Supabase: columnas en_espera, pedido_id, pedido_num, fecha_confirmacion agregadas a tabla comisiones. mapearParaSupa actualizado. Helpers nuevos: confirmarComisionesPedido, cancelarComisionesPedido, recalcularComisionesPedido. v14.81: Comisiones — FIX comisiones de pedidos registrados por vendedor. Al entregar un pedido, la comisión ahora se asigna al usuario que CREÓ el pedido (p.usuario_id / p.usuario_nom) y no al usuario activo en el dispositivo que hace la entrega. Afecta generarComisionesVenta (detecta origen='pedido' y usa venta.usuario_id como vendedor), _ejecutarEntregaPedido y cobrarYEntregar (preservan p.usuario_id al construir la venta vinculada). Resultado: si el vendedor registró el pedido y el admin lo entrega días después, la comisión igual queda a nombre del vendedor. v14.80: Supabase/Pedidos — columnas faltantes agregadas a la tabla pedidos y a mapearParaSupa. Las columnas total_cdif, total_bs, delivery_usd, envio_usd, diseno_usd, extras_usd, fecha_creado, tasa_bcv_creacion y tasa_par_creacion ahora viajan completas a Supabase en cada upsert. Antes se omitían, obligando a reconstruirlas con normalizarPedidoImportado al descargar usando el diferencial actual en lugar del original. v14.79: Pedidos — FIX saldo c/dif congelado por pago. Cada pago ahora almacena monto_cdif (= monto_usd × diferencial del momento del pago), que queda congelado para siempre independientemente de cambios futuros en el diferencial o la tasa BCV. pedidoSaldoCDif usa monto_cdif si existe; fallback a monto×dif actual para pagos históricos (retrocompatibilidad). Afecta todos los puntos de registro: abono inicial (guardarPedido), pagos adicionales (registrarPago en modal detalle), abonos desde Caja (guardarMovimiento), y pagos vinculados desde ventas (registrarPagoEnPedidoVinculado). Corrección de display en verPedido, lista de pedidos, impresión y Finanzas CxC. Resultado: agregar extras a un pedido ya abonado muestra el saldo correcto (nuevo_total_cdif − suma_monto_cdif_pagos) sin que el abono anterior se recalcule con tasas nuevas. v14.78: Pedidos — FIX editar notas/estado sin alterar montos ni abono registrado. Al abrir el formulario de edición se guarda un snapshot de los totales (total, total_cdif, total_bs) y del valor del campo abono. Al guardar: (1) si los ítems, descuento y extras no cambiaron, se conservan los totales originales del pedido en lugar de recalcularlos con las tasas actuales; (2) si el campo abono no fue modificado por el usuario, el primer pago (pagos[0]) no se toca —preservando el monto y monto_bs_ingresado registrados originalmente—. Solo cuando el usuario cambia explícitamente el campo abono se actualizan los datos del pago y se corrige la Caja. v14.77: Cotizaciones — comprobante impreso ahora muestra el mismo desglose que el mensaje WA: precio/u en USD y Bs, total por línea, extras con doble moneda, y bloque abono/restante con "al BCV del día de entrega". v14.76: Config — toggle para ocultar/mostrar RIF en recibos y cotizaciones. Cotizaciones — validez reducida a 24 horas (muestra horas restantes). Comprobante de cotización en Bs: total ahora se muestra en grande (36px) para mayor claridad. v14.75: Cotizaciones — nuevo botón Imprimir en cada cotización guardada. Genera un comprobante en ventana nueva (estilo idéntico al recibo de venta) con encabezado COTIZACIÓN, datos del cliente, tabla de productos con precios c/diferencial, total en Bs o USD según el modo configurado, abono requerido si aplica, y fecha de vencimiento. Se imprime automáticamente al abrir. v14.74: Reportes y Finanzas — FIX sistémico: todos los módulos ahora usan pedidoSaldoCDif/pedidoTotalCDifCalc (total c/diferencial) en lugar de p.total base. Corregidos: KPI «Por cobrar» en Reportes, tab Pedidos (KPIs facturado/cobrado/pendiente, lista de pendientes, tabla detalle del período), tab Cambiario en Finanzas (exposición activa). v14.73: Finanzas — FIX CRÍTICO saldo por cliente: el módulo CxC ahora usa el mismo motor que Pedidos (total c/diferencial) en vez de p.total base. Antes mostraba el saldo en USD base sin aplicar el diferencial cambiario, causando valores incorrectos (ej: $55,67 en vez de $71,20). v14.77: Cotizaciones — cotImprimir usa la misma fórmula de cálculo que posWaActualizar: precio ancla USD × dif, conversión Bs por línea, extras sin diferencial. Tabla muestra pvUsd/u + pvBs/u + totalBs + totalUsd por fila (modo Bs) o pvUsd + refBs (modo USD). Bloque de abono muestra Bs y USD simultáneamente; restante incluye "al BCV del día". v14.76: Config — campo "Mostrar RIF en recibo y cotización" (checkbox); si está desmarcado el RIF no aparece en ningún comprobante. Cotizaciones — validez cambiada a 24h (muestra horas restantes, ej: "18 horas restantes"); el banner de vencimiento ahora incluye hora exacta. Comprobante cotización en Bs — total Bs aparece en 36px prominente con USD como referencia secundaria. v14.75: Cotizaciones — botón Imprimir en cada cotización guardada. Abre comprobante tipo recibo con: datos del negocio (logo, RIF, tel, IG), cliente, fecha de emisión y vencimiento (7 días), tabla de ítems c/diferencial, extras, total en Bs o USD según modo wa_modo, abono requerido si aplica, notas, y nota_recibo de configuración. Barra de color azul para diferenciarlo del recibo de venta (rosa). v14.74: Reportes+Finanzas — FIX sistémico repRestantePedido/repTotalPedido: 6 puntos corregidos para usar pedidoSaldoCDif y pedidoTotalCDifCalc (misma lógica que módulo Pedidos, con diferencial aplicado). Afectaba: KPI Por cobrar en Reportes, tabla de pedidos del período (total/cobrado/pendiente), lista de pendientes en Reportes, y exposición cambiaria activa en Finanzas. v14.73: Finanzas — FIX saldo por cliente: finSaldoPedidoCxC ahora usa pedidoSaldoCDif (total c/dif, igual que módulo Pedidos) en lugar de repRestantePedido (total base sin diferencial). Corrige valores incorrectos en lista de deudores, aging, KPIs ejecutivos y DSO. v14.72: Pedidos — búsqueda difusa (fuzzy search) por nombre de cliente: tolera errores ortográficos de 1-2 caracteres (ej: "Jimenes" encuentra "Jiménez", "Lopes" encuentra "López"). Combina coincidencia exacta primero y Levenshtein como respaldo. v14.71: Pedidos — búsqueda por nombre de cliente ahora ignora acentos: buscar "Monica" encuentra "Mónica" y viceversa. Aplica también en el filtro de impresión de pedidos. v14.70: Topbar — nuevo botón «Sincronizar» que descarga todos los datos desde Supabase al instante, sin necesidad de recargar la página con Ctrl+F5. Útil cuando un dispositivo no recibe un pedido u otro cambio hecho en otro equipo. v14.69: Pedidos — FIX sincronización de Caja al corregir abono inicial. Al editar un pedido y cambiar el monto del abono inicial (ej: pusiste $50 por error y era $70), el movimiento de caja vinculado ahora se corrige automáticamente con el nuevo monto (incluyendo conversión Bs si aplica). Solo afecta el primer movimiento de caja del pedido (el abono inicial); los pagos adicionales registrados después no se tocan. v14.68: UX — tres ajustes de precarga: (1) Carrito POS: método de pago pre-seleccionado cambiado de "Efectivo Bs" a "Pago Móvil". (2) Cotizaciones: modo de cotización pre-cargado en "Bolívares" en lugar de "Solo Dólares". (3) Pedidos: abono inicial se precarga automáticamente al 50% del total cuando el campo está vacío; si la casilla "Envío" está activada, se precarga al 100% (pago completo por adelantado). En pedidos en edición, el abono ya registrado no se sobreescribe. v14.67: Cotizaciones — nombre del cliente ahora es opcional. Solo se requiere al menos nombre o teléfono (si el cliente llama sin dar nombre, el teléfono es suficiente para buscarla luego). Las tarjetas muestran el teléfono como título cuando no hay nombre. v14.66: Ventas — nuevo módulo "Cotizaciones guardadas". Tercera pestaña en Ventas (junto a Nueva Venta e Historial) para guardar presupuestos antes de que el cliente abone. (1) Botón "Guardar cotización" en el panel Cotizar/WhatsApp: abre un modal con nombre y teléfono del cliente (precargados si ya hay cliente seleccionado), guarda el carrito completo (productos, extras, modo USD/Bs, % abono, totales) y copia el texto de WhatsApp al portapapeles en un solo paso. (2) Pestaña con buscador por nombre o teléfono. Cada tarjeta muestra cliente, fecha, ítems, total y días restantes hasta el vencimiento. (3) Botón "Editar" que restaura el carrito del POS con todos los datos de la cotización para modificarla y volver a guardarla (actualiza la misma, no duplica — id estable). (4) Botón "Crear pedido" que abre el formulario de pedido pre-llenado con ítems, cliente y extras; al guardar el pedido la cotización se elimina automáticamente. (5) Sincronización con Supabase desde el inicio (tabla cotizaciones, Realtime, merge seguro entre dispositivos). (6) Auto-eliminación a los 7 días: cada cotización lleva expires_at; al abrir la app se purgan las vencidas local y en la nube. v14.65: FIX regresión de V14_64 — al crear dos variantes seguidas (p.ej. "Termo Skinny Detal" y "Termo Skinny Mayor") sin resetear el editor, una sobreescribía a la otra porque _editPersId conservaba el id del producto anterior sin validar el SKU. Ahora persSave aplica la misma guarda por SKU del catálogo: si el id recordado apunta a un producto con SKU distinto al ingresado, se descarta y se emparejan por SKU exacto (el nombre solo se usa cuando no hay SKU). Resultado: con SKUs distintos, cada variante se guarda como producto independiente. v14.64: FIX CRÍTICO duplicados al guardar producto del editor — cada "Guardar" creaba un registro nuevo en lugar de actualizar el existente, porque persToJSON() no asignaba un id estable y mapearParaSupa generaba un Date.now() distinto en cada upsert (insertaba fila nueva en Supabase y Realtime la bajaba). Correcciones: (1) persSave ahora resuelve un id estable (producto cargado vía _editPersId → mismo SKU+nombre → mismo nombre) y conserva el id existente, de modo que el upsert ACTUALIZA la misma fila. (2) persLoadFromSearch recuerda el id del producto cargado; persReset e importación lo limpian. (3) Nueva _dedupPers() que al arrancar colapsa los productos personalizables duplicados (mismo nombre+SKU) conservando el más reciente y poniendo los extras en lista negra para que la sincronización no los reviva. v14.63: FIX handler roto closeAllModals — al hacer clic en un número de pedido desde la búsqueda global lanzaba ReferenceError (la función no existía), por lo que ni cerraba el modal ni navegaba al pedido. Ahora closeAllModals() cierra todos los modales abiertos del stack. Limpieza: eliminada una definición duplicada de bnMas (código muerto; se conserva la versión con soporte del botón Atrás de Android). v14.62: FIX CRÍTICO sobreescritura de producto en catálogo — al editar un producto del catálogo, cargar luego un producto guardado distinto desde el buscador y registrarlo, el nuevo producto sobreescribía al anterior porque el ID de edición (_editCatProdId) quedaba "pegado". Dos correcciones: (1) persLoadFromSearch e importación de JSON ahora limpian _editCatProdId al cargar un producto guardado (cargar ≠ editar la entrada del catálogo por ID). (2) confirmarCatalogo ahora usa el SKU como identidad: si el ID de edición apunta a un producto cuyo SKU no coincide con el ingresado, se descarta ese ID; el emparejado es por SKU exacto y el nombre solo se usa como último recurso cuando no hay SKU. Resultado: un SKU distinto nunca sobreescribe otro producto. v14.61: FIX registros dobles en editor de producto personalizable — ahora usa _editCatProdId (ID original) como criterio primario al guardar, evitando duplicados al renombrar el producto. v14.77: Cotizaciones — comprobante impreso ahora muestra el mismo desglose que el mensaje WA: precio/u en USD y Bs, total por línea, extras con doble moneda, y bloque abono/restante con "al BCV del día de entrega". v14.76: Config — toggle para ocultar/mostrar RIF en recibos y cotizaciones. Cotizaciones — validez reducida a 24 horas (muestra horas restantes). Comprobante de cotización en Bs: total ahora se muestra en grande (36px) para mayor claridad. v14.75: Cotizaciones — nuevo botón Imprimir en cada cotización guardada. Genera un comprobante en ventana nueva (estilo idéntico al recibo de venta) con encabezado COTIZACIÓN, datos del cliente, tabla de productos con precios c/diferencial, total en Bs o USD según el modo configurado, abono requerido si aplica, y fecha de vencimiento. Se imprime automáticamente al abrir. v14.74: Reportes y Finanzas — FIX sistémico: todos los módulos ahora usan pedidoSaldoCDif/pedidoTotalCDifCalc (total c/diferencial) en lugar de p.total base. Corregidos: KPI «Por cobrar» en Reportes, tab Pedidos (KPIs facturado/cobrado/pendiente, lista de pendientes, tabla detalle del período), tab Cambiario en Finanzas (exposición activa). v14.73: Finanzas — FIX CRÍTICO saldo por cliente: el módulo CxC ahora usa el mismo motor que Pedidos (total c/diferencial) en vez de p.total base. Antes mostraba el saldo en USD base sin aplicar el diferencial cambiario, causando valores incorrectos (ej: $55,67 en vez de $71,20). v14.77: Cotizaciones — cotImprimir usa la misma fórmula de cálculo que posWaActualizar: precio ancla USD × dif, conversión Bs por línea, extras sin diferencial. Tabla muestra pvUsd/u + pvBs/u + totalBs + totalUsd por fila (modo Bs) o pvUsd + refBs (modo USD). Bloque de abono muestra Bs y USD simultáneamente; restante incluye "al BCV del día". v14.76: Config — campo "Mostrar RIF en recibo y cotización" (checkbox); si está desmarcado el RIF no aparece en ningún comprobante. Cotizaciones — validez cambiada a 24h (muestra horas restantes, ej: "18 horas restantes"); el banner de vencimiento ahora incluye hora exacta. Comprobante cotización en Bs — total Bs aparece en 36px prominente con USD como referencia secundaria. v14.75: Cotizaciones — botón Imprimir en cada cotización guardada. Abre comprobante tipo recibo con: datos del negocio (logo, RIF, tel, IG), cliente, fecha de emisión y vencimiento (7 días), tabla de ítems c/diferencial, extras, total en Bs o USD según modo wa_modo, abono requerido si aplica, notas, y nota_recibo de configuración. Barra de color azul para diferenciarlo del recibo de venta (rosa). v14.74: Reportes+Finanzas — FIX sistémico repRestantePedido/repTotalPedido: 6 puntos corregidos para usar pedidoSaldoCDif y pedidoTotalCDifCalc (misma lógica que módulo Pedidos, con diferencial aplicado). Afectaba: KPI Por cobrar en Reportes, tabla de pedidos del período (total/cobrado/pendiente), lista de pendientes en Reportes, y exposición cambiaria activa en Finanzas. v14.73: Finanzas — FIX saldo por cliente: finSaldoPedidoCxC ahora usa pedidoSaldoCDif (total c/dif, igual que módulo Pedidos) en lugar de repRestantePedido (total base sin diferencial). Corrige valores incorrectos en lista de deudores, aging, KPIs ejecutivos y DSO. v14.72: Pedidos — búsqueda difusa (fuzzy search) por nombre de cliente: tolera errores ortográficos de 1-2 caracteres (ej: "Jimenes" encuentra "Jiménez", "Lopes" encuentra "López"). Combina coincidencia exacta primero y Levenshtein como respaldo. v14.71: Pedidos — búsqueda por nombre de cliente ahora ignora acentos: buscar "Monica" encuentra "Mónica" y viceversa. Aplica también en el filtro de impresión de pedidos. v14.77: Cotizaciones — comprobante impreso ahora muestra el mismo desglose que el mensaje WA: precio/u en USD y Bs, total por línea, extras con doble moneda, y bloque abono/restante con "al BCV del día de entrega". v14.76: Config — toggle para ocultar/mostrar RIF en recibos y cotizaciones. Cotizaciones — validez reducida a 24 horas (muestra horas restantes). Comprobante de cotización en Bs: total ahora se muestra en grande (36px) para mayor claridad. v14.75: Cotizaciones — nuevo botón Imprimir en cada cotización guardada. Genera un comprobante en ventana nueva (estilo idéntico al recibo de venta) con encabezado COTIZACIÓN, datos del cliente, tabla de productos con precios c/diferencial, total en Bs o USD según el modo configurado, abono requerido si aplica, y fecha de vencimiento. Se imprime automáticamente al abrir. v14.74: Reportes y Finanzas — FIX sistémico: todos los módulos ahora usan pedidoSaldoCDif/pedidoTotalCDifCalc (total c/diferencial) en lugar de p.total base. Corregidos: KPI «Por cobrar» en Reportes, tab Pedidos (KPIs facturado/cobrado/pendiente, lista de pendientes, tabla detalle del período), tab Cambiario en Finanzas (exposición activa). v14.73: Finanzas — FIX CRÍTICO saldo por cliente: el módulo CxC ahora usa el mismo motor que Pedidos (total c/diferencial) en vez de p.total base. Antes mostraba el saldo en USD base sin aplicar el diferencial cambiario, causando valores incorrectos (ej: $55,67 en vez de $71,20). v14.72: Pedidos — búsqueda difusa (fuzzy): tolera errores ortográficos de 1-2 letras usando distancia de Levenshtein. Cada palabra del query se evalúa independientemente contra cada palabra del nombre (nombre y apellido por separado). Tolerancia: ≤4 chars → 1 error, ≥5 chars → 2 errores. Estrategia: primero coincidencia exacta normalizada (rápida), luego fuzzy solo si no hay resultado directo. Aplica en buscador principal y filtro de impresión. v14.71: Pedidos — búsqueda insensible a acentos: "Monica" encuentra "Mónica", "Jimenez" encuentra "Jiménez", etc. La normalización aplica tanto al buscador principal de pedidos como al filtro de impresión. v14.70: Topbar — nuevo botón «Sincronizar» que fuerza la descarga completa de datos desde Supabase. Resuelve casos donde un dispositivo no recibe en tiempo real un pedido o cambio creado en otro equipo (Realtime perdido por conexión interrumpida). El botón muestra un spinner mientras sincroniza y un toast de confirmación al terminar. En móvil muestra solo el ícono para no ocupar espacio. v14.42: FIX Inventario — el descuento de stock no funcionaba al vender ni al entregar pedidos. Tres problemas corregidos: (1) descontarInventarioDeItems usaba _registrarMovInv que aplicaba doble descuento de stock (ella misma resta + _registrarMovInv también resta y guarda); cambiado a _soloLogMovInv que solo logea el movimiento sin tocar stock. (2) Flag _modificado nunca se asignaba, así que los upserts a Supabase no se ejecutaban — los cambios de stock no se sincronizaban entre dispositivos. (3) Solo descontaba si modo_inventario era 'terminado' o 'insumos'; ahora también descuenta automáticamente si modo_inventario es 'ninguno' pero existe un registro en terminados vinculado al producto. Logs de depuración agregados en consola para rastrear cada descuento. v14.41: FIX Dashboard — KPIs de finanzas desaparecían tras cargar porque can() no tenía fallback al rol para permisos nuevos. Ahora can() replica el patrón de canView(). FIX APP_VERSION desincronizada. v14.35: Limpieza profunda de localStorage — _migrarFotosBase64() ahora cubre 3 fuentes de peso oculto: (1) fotos base64 dentro del campo calculo embebido en productos del catálogo (POS.cat), (2) fotos base64 en productos personalizables del editor (POS.pers), (3) fotos directas del catálogo (ya existente). Al crear producto desde el editor, calculo.foto se limpia preventivamente para no duplicar base64 en localStorage. Botón de limpieza manual renombrado a "Limpiar fotos base64 (catálogo + editor)". v14.32: Arquitectura — 17 CSS design tokens (--sp-xs a --sp-2xl, --r-sm a --r-pill, --fs-xs a --fs-2xl, --font, --transition). Aplicados a .btn, .modal, .card y body como convención. Suite de tests de regresión para cálculos financieros: 28 assertions cubriendo round2, parseEU, safeNum, euro, fmtBs, pedidoTotalCDifCalc, pedidoSaldoCDif, esc. Se activan con ?test en URL o localStorage._gm_tests=1. v14.31: Accesibilidad — role="dialog" y aria-modal="true" en los 21 modales. aria-label en 10 botones de solo ícono (editar, duplicar, eliminar, anular, imprimir). tabindex="-1" en contenedores .modal para recibir foco al abrir. openModal() ahora enfoca el modal abierto. Contraste dark mode verificado (7.4:1 y 6.9:1 — supera WCAG AA). v14.30: Migración agresiva de fotos base64 — al cargar, sube fotos pendientes a Supabase Storage y limpia base64 del localStorage. Monitor de almacenamiento mejorado con desglose de las 3 keys más pesadas y botón de limpieza manual. SW resiliente: install ya no falla si un ícono o manifest no se descarga. Mensajes de error de actualización PWA más descriptivos. v14.29: Resiliencia y UX — openModal/closeModal mejorados con stack de modales, scroll lock del body, y cierre con Escape (closeTopModal). Modal de usuarios unificado al sistema centralizado. Nuevo helper safeNum(v, fallback) para validar inputs numéricos de forma segura (NaN/Infinity → fallback). v14.28: Limpieza de peso muerto — changelog movido a modal lazy (ahorra ~22KB del DOM principal). round2() centralizado: 43 instancias de parseFloat(x.toFixed(2)) reemplazadas. Nuevo helper gmIco() para íconos SVG reutilizables. <a href="#" onclick="event.preventDefault();abrirChangelog()" style="color:var(--brand);text-decoration:underline">Ver historial completo de cambios</a></p>
         </div>
       </div>
@@ -3852,6 +3862,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
             </div>
             <div id="rep-com-list"></div>
           </div>
+        </div>
         <!-- ══ TEXTILES ══ -->
         <div class="tab-panel" id="rep-tab-textiles">
           <!-- KPIs -->
@@ -3882,6 +3893,42 @@ body.dark .pos-prod-img-ph{background:#23283a}
             </div>
           </div>
 
+          <!-- Orden de Producción -->
+          <div class="card" style="margin-bottom:14px" id="rep-tex-prod-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+              <div class="card-title" style="margin:0">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                Orden de Producción
+                <span style="font-size:11px;font-weight:400;color:var(--muted)">(pedidos en estado Pendiente con ítems textiles)</span>
+              </div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="btn btn-sm" onclick="texImprimirOrden()" id="btn-tex-imprimir" style="display:none">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                  Imprimir lista
+                </button>
+                <button class="btn btn-sm" onclick="texPasarAProduccion()" id="btn-tex-produccion" style="display:none;background:#185FA5;color:#fff;border-color:#185FA5">
+                  <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  Pasar a En Producción
+                </button>
+              </div>
+            </div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:12px" id="rep-tex-orden-table">
+                <thead>
+                  <tr style="text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">
+                    <th style="padding:6px 8px;font-weight:600;white-space:nowrap">Producto <button class="tex-f-btn" data-col="nombre" onclick="texAbrirFiltro(event,'nombre')" title="Filtrar">▽</button></th>
+                    <th style="padding:6px 8px;font-weight:600;white-space:nowrap">Talla <button class="tex-f-btn" data-col="talla" onclick="texAbrirFiltro(event,'talla')" title="Filtrar">▽</button></th>
+                    <th style="padding:6px 8px;font-weight:600;white-space:nowrap">Color <button class="tex-f-btn" data-col="color" onclick="texAbrirFiltro(event,'color')" title="Filtrar">▽</button></th>
+                    <th style="padding:6px 8px;font-weight:600;white-space:nowrap">Caract. <button class="tex-f-btn" data-col="caract" onclick="texAbrirFiltro(event,'caract')" title="Filtrar">▽</button></th>
+                    <th style="padding:6px 8px;font-weight:600;text-align:right">Cant.</th>
+                    <th style="padding:6px 8px;font-weight:600">Pedidos / Clientes</th>
+                  </tr>
+                </thead>
+                <tbody id="rep-tex-orden-body"></tbody>
+              </table>
+            </div>
+          </div>
+
           <!-- Stock actual por variante -->
           <div class="card">
             <div class="card-title" style="margin-bottom:12px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2l9 4.5v11L12 22 3 17.5V6.5L12 2z"/><polyline points="3 6.5 12 11 21 6.5"/><line x1="12" y1="11" x2="12" y2="22"/></svg> Stock actual por variante</div>
@@ -3904,9 +3951,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
             </div>
           </div>
         </div>
-
       </div>
-    </div>
+
       <div class="view" id="view-envios">
 
         <!-- Toolbar -->
@@ -14467,12 +14513,12 @@ function repTab(tab, btn){
   document.querySelectorAll('#view-reportes .tab-panel').forEach(p=>p.classList.remove('active'));
   if(btn) btn.classList.add('active');
   const p = qs('#rep-tab-'+tab); if(p) p.classList.add('active');
-  const renders = { ventas:renderRepVentas, productos:renderRepProductos, pedidos:renderRepPedidos, clientes:renderRepClientes, caja:renderRepCaja, inventario:renderRepInventario, textiles:renderRepTextiles };
+  const renders = { ventas:renderRepVentas, productos:renderRepProductos, pedidos:renderRepPedidos, clientes:renderRepClientes, caja:renderRepCaja, inventario:renderRepInventario, comisiones:renderRepComisiones, textiles:renderRepTextiles };
   if(renders[tab]) renders[tab]();
 }
 
 function renderRepTextiles(){
-  const cat=loadCat(), ter=loadTer(), peds=loadPedidos(), ventas=loadVentas();
+  const cat=loadCat(), ter=loadTer(), peds=loadPed(), ventas=loadVen();
   const desde=_repDesde?new Date(_repDesde):null;
   const hasta=_repHasta?new Date(_repHasta+' 23:59:59'):null;
   const filtroProd=qs('#rep_tex_prod')?.value||'';
@@ -14585,6 +14631,267 @@ function renderRepTextiles(){
       }).join('');
     }
   }
+
+  // ── Orden de Producción ──
+  _renderOrdenProduccion(cat, loadPed(), filtroProd);
+}
+
+/* ── Filtros Orden de Producción (estilo Excel) ── */
+const _texFiltros = { nombre: new Set(), talla: new Set(), color: new Set(), caract: new Set() };
+let _texFiltroColActual = null;
+let _texFilasCache = [];
+
+function texAbrirFiltro(e, col){
+  e.stopPropagation();
+  const panel = document.getElementById('tex-filtro-panel');
+  if(!panel) return;
+
+  // Si ya está abierto el mismo, ciérralo
+  if(_texFiltroColActual === col && panel.style.display !== 'none'){
+    panel.style.display = 'none';
+    _texFiltroColActual = null;
+    return;
+  }
+  _texFiltroColActual = col;
+
+  // Título legible
+  const titulos = { nombre:'Producto', talla:'Talla', color:'Color', caract:'Característica' };
+  const tituloEl = document.getElementById('tex-filtro-titulo');
+  if(tituloEl) tituloEl.textContent = 'Filtrar ' + (titulos[col]||col);
+
+  // Obtener valores únicos de la columna desde la caché de filas completas
+  const vals = [...new Set(_texFilasCache.map(r => r[col]||'').filter(Boolean))].sort();
+
+  // Poblar opciones
+  const opDiv = document.getElementById('tex-filtro-opciones');
+  const activoSet = _texFiltros[col];
+  if(opDiv){
+    opDiv.innerHTML = vals.map(v => {
+      const checked = !activoSet.has(v); // si está en el set = excluido = desmarcado
+      return `<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer">
+        <input type="checkbox" value="${v.replace(/"/g,'&quot;')}" ${checked?'checked':''}
+          onchange="texFiltroOpcion(this,'${col}')"
+          style="accent-color:var(--brand);width:14px;height:14px;flex-shrink:0">
+        <span style="white-space:nowrap">${v}</span>
+      </label>`;
+    }).join('');
+  }
+
+  // Sincronizar "Seleccionar todo"
+  const todos = document.getElementById('tex-filtro-todos');
+  if(todos) todos.checked = activoSet.size === 0;
+
+  // Posicionar el panel bajo el botón que fue pulsado
+  const btn = e.currentTarget || e.target;
+  const rect = btn.getBoundingClientRect();
+  panel.style.display = 'block';
+  const pw = panel.offsetWidth || 190;
+  let left = rect.left;
+  if(left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+  panel.style.left = left + 'px';
+  panel.style.top  = (rect.bottom + 4) + 'px';
+}
+
+function texFiltroOpcion(cb, col){
+  const val = cb.value;
+  if(cb.checked) _texFiltros[col].delete(val);
+  else           _texFiltros[col].add(val);
+  // Sincronizar "Seleccionar todo"
+  const vals = [...document.querySelectorAll('#tex-filtro-opciones input')];
+  const todos = document.getElementById('tex-filtro-todos');
+  if(todos) todos.checked = vals.every(c => c.checked);
+  texActualizarBotonesFiltro();
+  _texRedibujarOrden();
+}
+
+function texFiltroTodos(checked){
+  if(!_texFiltroColActual) return;
+  const activoSet = _texFiltros[_texFiltroColActual];
+  document.querySelectorAll('#tex-filtro-opciones input').forEach(cb => {
+    cb.checked = checked;
+    if(checked) activoSet.delete(cb.value);
+    else        activoSet.add(cb.value);
+  });
+  texActualizarBotonesFiltro();
+  _texRedibujarOrden();
+}
+
+function texLimpiarFiltroCol(){
+  if(!_texFiltroColActual) return;
+  _texFiltros[_texFiltroColActual].clear();
+  document.querySelectorAll('#tex-filtro-opciones input').forEach(cb => cb.checked = true);
+  const todos = document.getElementById('tex-filtro-todos');
+  if(todos) todos.checked = true;
+  texActualizarBotonesFiltro();
+  _texRedibujarOrden();
+}
+
+function texActualizarBotonesFiltro(){
+  document.querySelectorAll('.tex-f-btn').forEach(btn => {
+    const col = btn.dataset.col;
+    const activo = col && _texFiltros[col] && _texFiltros[col].size > 0;
+    btn.classList.toggle('activo', !!activo);
+    btn.textContent = activo ? '▼' : '▽';
+  });
+}
+
+function texCerrarFiltroPanel(e){
+  const panel = document.getElementById('tex-filtro-panel');
+  if(!panel || panel.style.display === 'none') return;
+  if(!panel.contains(e.target) && !e.target.classList.contains('tex-f-btn')){
+    panel.style.display = 'none';
+    _texFiltroColActual = null;
+  }
+}
+document.addEventListener('click', texCerrarFiltroPanel);
+
+function _texRedibujarOrden(){
+  const cat = loadCat(), peds = loadPed();
+  const filtroProd = qs('#rep_tex_prod')?.value||'';
+  _renderOrdenProduccion(cat, peds, filtroProd);
+}
+
+/* ── Orden de Producción: pedidos pendientes con textiles ── */
+function _renderOrdenProduccion(cat, peds, filtroProd){
+  // Solo pedidos pendientes con al menos 1 ítem con variante textil
+  const pedsPend = peds.filter(p => {
+    if(p.estado !== 'pendiente') return false;
+    return (p.items||[]).some(it => it.talla || it.color);
+  });
+
+  // Agrupar por: nombre|talla|color|característica
+  const grupos = {};
+  pedsPend.forEach(p => {
+    (p.items||[]).forEach(it => {
+      if(!(it.talla || it.color)) return;
+      const prod = it.id_prod ? cat.find(c => String(c.id)===String(it.id_prod)) : null;
+      if(filtroProd && (!prod || String(prod.id)!==filtroProd)) return;
+      const clave = (it.id_prod||it.nombre)+'|'+(it.talla||'')+'|'+(it.color||'')+'|'+(it.caracteristica||'');
+      if(!grupos[clave]) grupos[clave]={ nombre:it.nombre, talla:it.talla||'', color:it.color||'', caract:it.caracteristica||'', cant:0, pedidos:[] };
+      grupos[clave].cant += (it.cant||1);
+      if(!grupos[clave].pedidos.find(r => r.id===p.id)){
+        grupos[clave].pedidos.push({ id:p.id, num:p.numero||p.num||String(p.id).slice(-4), cliente:p.cliente_nom||(p.cliente?(typeof p.cliente==='string'?p.cliente:((p.cliente.nombre||'')+' '+(p.cliente.apellido||'')).trim()):'') });
+      }
+    });
+  });
+
+  const filas = Object.values(grupos).sort((a,b)=>{
+    const np = a.nombre.localeCompare(b.nombre);
+    if(np!==0) return np;
+    const nt = a.talla.localeCompare(b.talla);
+    if(nt!==0) return nt;
+    return a.color.localeCompare(b.color);
+  });
+
+  const tbody = qs('#rep-tex-orden-body');
+  const btnImp = qs('#btn-tex-imprimir');
+  const btnProd = qs('#btn-tex-produccion');
+
+  // Guardar todas las filas en caché para el dropdown de filtros
+  _texFilasCache = filas;
+
+  // Aplicar todos los filtros activos
+  const filasFiltradas = filas.filter(r =>
+    (!_texFiltros.nombre.size || !_texFiltros.nombre.has(r.nombre||'')) &&
+    (!_texFiltros.talla.size  || !_texFiltros.talla.has(r.talla||''))  &&
+    (!_texFiltros.color.size  || !_texFiltros.color.has(r.color||''))  &&
+    (!_texFiltros.caract.size || !_texFiltros.caract.has(r.caract||''))
+  );
+
+  texActualizarBotonesFiltro();
+
+  if(btnImp) btnImp.style.display = filas.length ? '' : 'none';
+  if(btnProd) btnProd.style.display = filas.length ? '' : 'none';
+
+  if(!tbody) return;
+  if(!filas.length){
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">No hay pedidos pendientes con ítems textiles.<br><span style="font-size:11px">Cuando registres pedidos con talla y color, aparecerán aquí agrupados.</span></td></tr>';
+    return;
+  }
+  if(!filasFiltradas.length){
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">Ningún resultado para el filtro de color activo. <button onclick="texLimpiarFiltroColor()" style="background:none;border:none;color:var(--brand);cursor:pointer;font-weight:600;font-size:12px">Ver todos</button></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filasFiltradas.map((r,i) => {
+    const pedTags = r.pedidos.map(p =>
+      '<span style="display:inline-block;background:#EEE9FF;color:#5B21B6;font-size:10px;padding:1px 6px;border-radius:999px;font-weight:600;margin:1px 2px 1px 0;white-space:nowrap">'
+      + esc(p.num) + (p.cliente ? ' · ' + esc(p.cliente) : '')
+      + '</span>'
+    ).join('');
+    return '<tr style="border-bottom:1px solid var(--border);background:' + (i%2?'var(--bg2)':'') + '">'
+      + '<td style="padding:8px 8px;font-weight:600">' + esc(r.nombre) + '</td>'
+      + '<td style="padding:8px 8px"><span style="background:#ffe3ee;color:#be185d;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:700">' + (r.talla||'—') + '</span></td>'
+      + '<td style="padding:8px 8px">' + esc(r.color||'—') + '</td>'
+      + '<td style="padding:8px 8px;font-size:11px;color:var(--muted)">' + esc(r.caract||'—') + '</td>'
+      + '<td style="padding:8px 8px;text-align:right;font-size:15px;font-weight:800;color:#185FA5">' + r.cant + '</td>'
+      + '<td style="padding:8px 8px;line-height:1.8">' + pedTags + '</td>'
+      + '</tr>';
+  }).join('');
+}
+
+/* Pasar todos los pedidos pendientes con textiles → En Producción */
+function texPasarAProduccion(){
+  const all = loadPed();
+  const candidatos = all.filter(p => p.estado==='pendiente' && (p.items||[]).some(it=>it.talla||it.color));
+  if(!candidatos.length){ toast('No hay pedidos pendientes con textiles','warn'); return; }
+  if(!confirm('¿Pasar ' + candidatos.length + ' pedido' + (candidatos.length>1?'s':'') + ' a "En producción"?')) return;
+  candidatos.forEach(p => {
+    const idx = all.findIndex(x => x.id===p.id);
+    if(idx!==-1){ all[idx].estado='produccion'; upsertPedido(all[idx]); }
+  });
+  savePed(all);
+  toast(candidatos.length + ' pedido' + (candidatos.length>1?'s':'')+' → En producción','ok');
+  renderRepTextiles();
+  if(typeof renderPedidos==='function') renderPedidos();
+  if(typeof renderDash==='function') renderDash();
+}
+
+/* Imprimir orden de producción en ventana nueva */
+function texImprimirOrden(){
+  const cat = loadCat();
+  const peds = loadPed();
+  const filtroProd = qs('#rep_tex_prod')?.value||'';
+  const pedsPend = peds.filter(p => p.estado==='pendiente' && (p.items||[]).some(it=>it.talla||it.color));
+  const grupos = {};
+  pedsPend.forEach(p => {
+    (p.items||[]).forEach(it => {
+      if(!(it.talla||it.color)) return;
+      const prod = it.id_prod?cat.find(c=>String(c.id)===String(it.id_prod)):null;
+      if(filtroProd && (!prod||String(prod.id)!==filtroProd)) return;
+      const clave=(it.id_prod||it.nombre)+'|'+(it.talla||'')+'|'+(it.color||'')+'|'+(it.caracteristica||'');
+      if(!grupos[clave]) grupos[clave]={nombre:it.nombre,talla:it.talla||'',color:it.color||'',caract:it.caracteristica||'',cant:0,pedidos:[]};
+      grupos[clave].cant+=(it.cant||1);
+      if(!grupos[clave].pedidos.find(r=>r.id===p.id))
+        grupos[clave].pedidos.push({id:p.id,num:p.numero||p.num||String(p.id).slice(-4),cliente:p.cliente_nom||(p.cliente?(typeof p.cliente==='string'?p.cliente:((p.cliente.nombre||'')+' '+(p.cliente.apellido||'')).trim()):'')});
+    });
+  });
+  const filas=Object.values(grupos).sort((a,b)=>{const np=a.nombre.localeCompare(b.nombre);if(np)return np;const nt=a.talla.localeCompare(b.talla);if(nt)return nt;return a.color.localeCompare(b.color);});
+  const cfg=loadConfig();
+  const negocio=cfg.negocio||'GestioMada';
+  const fecha=new Date().toLocaleDateString('es-VE',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const totalUnd=filas.reduce((a,r)=>a+r.cant,0);
+  const rows=filas.map((r,i)=>`<tr style="background:${i%2?'#f9f9f9':'#fff'}">
+    <td style="padding:8px 10px;font-weight:600">${r.nombre}</td>
+    <td style="padding:8px 10px;text-align:center"><span style="background:#ffe3ee;color:#be185d;font-size:12px;padding:2px 10px;border-radius:999px;font-weight:700">${r.talla||'—'}</span></td>
+    <td style="padding:8px 10px">${r.color||'—'}</td>
+    <td style="padding:8px 10px;color:#888;font-size:12px">${r.caract||'—'}</td>
+    <td style="padding:8px 10px;text-align:center;font-size:16px;font-weight:800;color:#185FA5">${r.cant}</td>
+    <td style="padding:8px 10px;font-size:11px;line-height:1.8">${r.pedidos.map(p=>'<span style="display:inline-block;background:#EEE9FF;color:#5B21B6;padding:1px 7px;border-radius:999px;font-weight:600;margin:1px 2px 1px 0">'+p.num+(p.cliente?' · '+p.cliente:'')+'</span>').join('')}</td>
+  </tr>`).join('');
+  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Orden de Producción — ${negocio}</title>
+  <style>body{font-family:system-ui,sans-serif;padding:24px;color:#111}h1{font-size:20px;margin:0 0 4px}p.sub{color:#666;font-size:13px;margin:0 0 18px}
+  table{width:100%;border-collapse:collapse;font-size:13px}thead th{padding:8px 10px;text-align:left;border-bottom:2px solid #ddd;color:#666;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+  tfoot td{padding:8px 10px;border-top:2px solid #ddd;font-weight:700}
+  @media print{body{padding:12px}}</style></head><body>
+  <h1>📦 Orden de Producción — ${negocio}</h1>
+  <p class="sub">Fecha: ${fecha} &nbsp;·&nbsp; ${filas.length} variante${filas.length!==1?'s':''} &nbsp;·&nbsp; ${totalUnd} unidad${totalUnd!==1?'es':''} totales</p>
+  <table><thead><tr><th>Producto</th><th>Talla</th><th>Color</th><th>Caract.</th><th style="text-align:center">Cant.</th><th>Pedidos / Clientes</th></tr></thead>
+  <tbody>${rows}</tbody>
+  <tfoot><tr><td colspan="4" style="text-align:right;color:#666;font-size:12px">TOTAL UNIDADES</td><td style="text-align:center;color:#185FA5;font-size:16px">${totalUnd}</td><td></td></tr></tfoot>
+  </table></body></html>`;
+  const w=window.open('','_blank','width=900,height=700');
+  if(w){ w.document.write(html); w.document.close(); setTimeout(()=>w.print(),400); }
 }
 
 /* ── Render principal ── */
@@ -14593,8 +14900,8 @@ function renderReportes(){
   // Render tab activo
   const activeTab = qs('#rep-tabs .tab-btn.active');
   if(!activeTab) return;
-  const txt=activeTab.textContent.trim(); const tabId = txt.includes('Vent')?'ventas':txt.includes('Prod')?'productos':txt.includes('Ped')?'pedidos':txt.includes('Cli')?'clientes':txt.includes('Inv')?'inventario':txt.includes('Comis')?'comisiones':'caja';
-  const renders = { ventas:renderRepVentas, productos:renderRepProductos, pedidos:renderRepPedidos, clientes:renderRepClientes, caja:renderRepCaja, inventario:renderRepInventario, comisiones:renderRepComisiones };
+  const txt=activeTab.textContent.trim(); const tabId = txt.includes('Vent')?'ventas':txt.includes('Prod')?'productos':txt.includes('Ped')?'pedidos':txt.includes('Cli')?'clientes':txt.includes('Inv')?'inventario':txt.includes('Comis')?'comisiones':txt.includes('Tex')?'textiles':'caja';
+  const renders = { ventas:renderRepVentas, productos:renderRepProductos, pedidos:renderRepPedidos, clientes:renderRepClientes, caja:renderRepCaja, inventario:renderRepInventario, comisiones:renderRepComisiones, textiles:renderRepTextiles };
   if(renders[tabId]) renders[tabId]();
 }
 
@@ -17212,7 +17519,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_03';
+  const APP_VERSION = 'v15_11';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -17859,6 +18166,17 @@ if(location.search.includes('test') || localStorage.getItem('_gm_tests')==='1'){
     </div>
     <div id="changelog-body" style="padding:16px;font-size:12px;color:var(--muted);line-height:1.7;white-space:pre-line"></div>
   </div>
+</div>
+<!-- Panel flotante filtro Orden de Producción -->
+<div id="tex-filtro-panel" style="display:none;position:fixed;z-index:9999;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.18);padding:10px 12px;min-width:180px;max-height:280px;overflow-y:auto;font-size:13px;color:var(--text)">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+    <span id="tex-filtro-titulo" style="font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Filtrar</span>
+    <button onclick="texLimpiarFiltroCol()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--brand);font-weight:600;padding:0">Limpiar</button>
+  </div>
+  <label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-weight:600;border-bottom:1px solid var(--border);margin-bottom:4px">
+    <input type="checkbox" id="tex-filtro-todos" onchange="texFiltroTodos(this.checked)" style="accent-color:var(--brand);width:14px;height:14px;flex-shrink:0"> Seleccionar todo
+  </label>
+  <div id="tex-filtro-opciones"></div>
 </div>
 </body>
 </html>
