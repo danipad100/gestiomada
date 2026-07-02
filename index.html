@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_11">
+<html lang="es" data-app-version="GestioMada_V15_13">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -397,8 +397,11 @@ function generarComisionesVenta(venta, opcs){
   console.log('[COMISIONES]', enEspera ? 'En espera' : 'Confirmadas', 'para', vendedorNom, '—', items.length, 'items');
 }
 
-/* Confirma las comisiones en_espera de un pedido al ser entregado */
-function confirmarComisionesPedido(pedidoId){
+/* Confirma las comisiones en_espera de un pedido al ser entregado.
+   venta (opcional): la Venta recién creada al entregar, para vincular
+   venta_id/venta_numero en la comisión y que Reportes pueda mostrar
+   el número de venta y el cliente correctos. */
+function confirmarComisionesPedido(pedidoId, venta){
   if(!pedidoId) return;
   const all = loadComisiones();
   const ahora = new Date().toISOString();
@@ -407,6 +410,10 @@ function confirmarComisionesPedido(pedidoId){
     if(String(c.pedido_id) === String(pedidoId) && c.en_espera){
       c.en_espera = false;
       c.fecha_confirmacion = ahora;
+      if(venta){
+        c.venta_id = venta.id || c.venta_id || null;
+        c.venta_numero = venta.numero || c.venta_numero || '';
+      }
       hubo = true;
       upsertComision(c);
     }
@@ -1746,6 +1753,10 @@ body.dark .musr-chk input:checked ~ .musr-chk-box{background:var(--brand);border
 .tab-panel{display:none}.tab-panel.active{display:block}
 .tex-f-btn{background:none;border:none;cursor:pointer;padding:0 1px;font-size:11px;vertical-align:middle;color:var(--muted);line-height:1;transition:color .15s}
 .tex-f-btn.activo{color:var(--brand);font-weight:700}
+.com-f-btn{background:none;border:none;cursor:pointer;padding:0 1px;font-size:11px;vertical-align:middle;color:var(--muted);line-height:1;transition:color .15s}
+.com-f-btn.activo{color:var(--brand);font-weight:700}
+.repcol-f-btn{background:none;border:none;cursor:pointer;padding:0 1px;font-size:11px;vertical-align:middle;color:var(--muted);line-height:1;transition:color .15s}
+.repcol-f-btn.activo{color:var(--brand);font-weight:700}
 
 /* ══════════════════════════════════════
    POS LAYOUT — Vista de cobro de pantalla completa
@@ -3103,6 +3114,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.13: Reportes — filtros estilo Excel (▽) extendidos a las tablas de detalle de Ventas, Pedidos e Inventario, con el mismo motor genérico y visual que ya usaban Textiles/Orden de Producción y Comisiones. Ventas: columnas Cliente, Método y Canal (afecta también los gráficos de la pestaña, ya que ahora se filtran junto con la tabla). Pedidos: columnas Cliente, Canal y Estado (idem, afecta KPIs y gráficos del tab). Inventario → Stock actual: columnas Ítem y Tipo; se quitó el límite de 15 filas de esa tabla para que el filtro tenga sentido sobre el listado completo. Los tabs de Productos, Clientes y Caja no recibieron estos filtros porque sus tablas son rankings agregados (top 10/15) sin una fila por registro individual — si se necesita, se puede agregar una tabla de detalle nueva ahí. Se centralizó la lógica de filtrado en un motor reutilizable (repColAbrirFiltro/repColFiltroOpcion/etc.) para no repetir código en cada tab nuevo.</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.12: Reportes/Comisiones — tres mejoras al Listado de comisiones: (1) Los 4 KPIs (En espera, Pendientes de pago, Pagadas, Desactivadas) ahora muestran también la cantidad de &lt;b&gt;pedidos&lt;/b&gt; distintos comisionados junto al número de comisiones (ej: &quot;93 comisiones · 47 pedidos&quot;), contando por pedido/venta de origen en vez de por ítem, para no inflar el conteo cuando un pedido tiene varios productos. (2) Nuevos filtros estilo Excel (▽) en las columnas Vendedor y Producto del listado, con selección múltiple por checkbox — mismo patrón visual que Reportes/Textiles → Orden de Producción. (3) La columna Ref. ahora muestra también el nombre del cliente junto al número de pedido/venta (ej: &quot;PED-0136 · Francis Rosendo&quot;), resuelto cruzando la comisión con el pedido o la venta vinculada. FIX relacionado: confirmarComisionesPedido() no guardaba venta_id/venta_numero al confirmar una comisión en espera al momento de la entrega, dejando esos campos vacíos aun cuando la Venta sí se había creado — esto hacía que el chip de la columna Ref. mostrara &quot;pedido aún no entregado&quot; (morado) en comisiones ya entregadas y pagadas. Corregido en los 4 puntos donde se entrega un pedido (entrega directa, cobrar y entregar, y los dos casos del cambio de estado masivo); el color morado ahora depende del flag en_espera real, no de si venta_numero está vacío.</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.11: Reportes/Textiles Orden de Produccion — filtros estilo Excel en las 4 columnas de texto: Producto, Talla, Color y Caracteristica. Embudo en cada encabezado abre un panel flotante posicionado con JS (position:fixed, coordenadas del boton) con checkboxes por cada valor unico de esa columna, opcion Seleccionar todo y boton Limpiar. El embudo se vuelve morado con flecha llena cuando hay un filtro activo. Todos los filtros se aplican combinados. Se reescribio por completo el sistema de filtros anterior que no funcionaba (panel con position:absolute sin posicionamiento relativo).</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.10: Reportes/Textiles Orden de Produccion — filtro estilo Excel en columna Color. Icono de embudo en el encabezado abre un dropdown con checkbox por cada color unico presente en los datos; checkbox Todos selecciona/deselecciona todos; boton Limpiar resetea el filtro; el icono se pinta en color de marca cuando hay un filtro activo; al no haber resultados ofrece un boton Ver todos para limpiar rapido. El filtro aplica instantaneamente sin boton de confirmacion y no afecta los botones Imprimir ni Pasar a Produccion (que siguen operando sobre todos los pedidos pendientes).</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.09: Reportes/Textiles — FIX Orden de Produccion: el nombre del cliente aparecia como [object Object] porque p.cliente es un objeto {nombre, apellido} y se concatenaba directamente como string. Ahora extrae correctamente nombre + apellido del objeto cliente. Aplica en la tabla y en el PDF de impresion.</p>
@@ -13012,7 +13025,7 @@ function _ejecutarEntregaPedido(all, idx){
   // Confirmar comisiones en_espera → pendiente de pago; si no existían, crearlas ahora
   const _comEsp1 = loadComisiones().filter(c => String(c.pedido_id) === String(p.id) && c.en_espera);
   if(_comEsp1.length > 0){
-    confirmarComisionesPedido(p.id);
+    confirmarComisionesPedido(p.id, venta);
   } else {
     generarComisionesVenta(venta, { en_espera: false, pedido_id: p.id, pedido_num: p.numero });
   }
@@ -13135,7 +13148,7 @@ function cobrarYEntregar(){
   // Confirmar comisiones en_espera → pendiente de pago; si no existían, crearlas ahora
   const _comEsp2 = loadComisiones().filter(c => String(c.pedido_id) === String(p.id) && c.en_espera);
   if(_comEsp2.length > 0){
-    confirmarComisionesPedido(p.id);
+    confirmarComisionesPedido(p.id, venta);
   } else {
     generarComisionesVenta(venta, { en_espera: false, pedido_id: p.id, pedido_num: p.numero });
   }
@@ -13308,7 +13321,7 @@ function ejecutarCambioEstadoMasivo(){
         venAll.push(venta); saveVen(venAll); upsertVenta(venta);
 
         const comEsp = loadComisiones().filter(c => String(c.pedido_id) === String(p.id) && c.en_espera);
-        if(comEsp.length > 0) confirmarComisionesPedido(p.id);
+        if(comEsp.length > 0) confirmarComisionesPedido(p.id, venta);
         else generarComisionesVenta(venta, { en_espera: false, pedido_id: p.id, pedido_num: p.numero });
 
         descontarInventarioDeItems(p.items||[], 'Entrega pedido '+p.numero);
@@ -13340,7 +13353,7 @@ function ejecutarCambioEstadoMasivo(){
         venAll.push(venta); saveVen(venAll); upsertVenta(venta);
 
         const comEsp = loadComisiones().filter(c => String(c.pedido_id) === String(p.id) && c.en_espera);
-        if(comEsp.length > 0) confirmarComisionesPedido(p.id);
+        if(comEsp.length > 0) confirmarComisionesPedido(p.id, venta);
         else generarComisionesVenta(venta, { en_espera: false, pedido_id: p.id, pedido_num: p.numero });
 
         descontarInventarioDeItems(p.items||[], 'Entrega pedido '+p.numero);
@@ -13553,17 +13566,24 @@ function renderRepInventario(){
       </div>`).join('');
   }
 
-  // Stock actual de insumos (top por cantidad)
+  // Stock actual de insumos y terminados (con filtros de columna estilo Excel)
   const stockWrap = qs('#rep-inv-stock');
   if(stockWrap){
-    const allItems = [...ins.map(i=>({...i,tipoItem:'Insumo'})), ...ter.map(t=>({...t,tipoItem:'Terminado'}))].sort((a,b)=>(b.stock||0)-(a.stock||0)).slice(0,15);
-    if(!allItems.length){ stockWrap.innerHTML='<div class="empty" style="padding:20px"><p>Sin insumos registrados</p></div>'; }
+    const allItemsSinColFiltro = [...ins.map(i=>({...i,tipoItem:'Insumo'})), ...ter.map(t=>({...t,tipoItem:'Terminado'}))].sort((a,b)=>(b.stock||0)-(a.stock||0));
+    _repColInit('inv_stock', ['tipoItem','nombre']);
+    _repColCache['inv_stock'] = allItemsSinColFiltro.map(it=>({tipoItem:it.tipoItem, nombre:it.nombre||''}));
+    _repColRedraw['inv_stock'] = renderRepInventario;
+    const allItems = allItemsSinColFiltro.filter(it => repColPasaFiltro('inv_stock', {tipoItem:it.tipoItem, nombre:it.nombre||''}));
+    if(!allItems.length){
+      const msg = allItemsSinColFiltro.length ? 'Ningún resultado para los filtros de columna activos. <button onclick="repColLimpiarTodos(\'inv_stock\')" style="background:none;border:none;color:var(--brand);cursor:pointer;font-weight:600;font-size:12px">Ver todos</button>' : 'Sin insumos registrados';
+      stockWrap.innerHTML='<div class="empty" style="padding:20px"><p>'+msg+'</p></div>';
+    }
     else{
       const maxStock = Math.max(...allItems.map(i=>i.stock||0),1);
       stockWrap.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
         <thead><tr style="border-bottom:2px solid var(--border)">
-          <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Ítem</th>
-          <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Tipo</th>
+          <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Ítem <button class="repcol-f-btn" data-report="inv_stock" data-col="nombre" onclick="repColAbrirFiltro(event,'inv_stock','nombre','Ítem')" title="Filtrar">▽</button></th>
+          <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Tipo <button class="repcol-f-btn" data-report="inv_stock" data-col="tipoItem" onclick="repColAbrirFiltro(event,'inv_stock','tipoItem','Tipo')" title="Filtrar">▽</button></th>
           <th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Stock</th>
           <th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Mínimo</th>
           <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Estado</th>
@@ -13581,6 +13601,7 @@ function renderRepInventario(){
       </table></div>`;
     }
   }
+  repColActualizarBotones();
   const tipoF=qs('#rep_inv_tipo')?.value||'';
   const itemF=qs('#rep_inv_item')?.value||'';
   // Poblar selector de insumos/terminados
@@ -13612,6 +13633,134 @@ function renderRepInventario(){
 }
 
 /* ══════════ TAB COMISIONES ══════════ */
+// Identifica el pedido/venta de origen de una comisión, para contar
+// "pedidos comisionados" sin duplicar por cada ítem/producto.
+function _comGrupoKey(c){
+  return c.pedido_id ? ('P'+c.pedido_id) : (c.venta_id ? ('V'+c.venta_id) : (c.venta_numero ? ('VN'+c.venta_numero) : ('C'+c.id)));
+}
+function _comContarPedidos(arr){ return new Set(arr.map(_comGrupoKey)).size; }
+
+// Resuelve el número de referencia y el nombre del cliente de una comisión,
+// consultando el pedido (si existe) o la venta vinculada.
+function _comOrigenInfo(c, pedMap, venMap, venByNum){
+  if(c.pedido_id){
+    const p = pedMap.get(String(c.pedido_id));
+    if(p){
+      const cliente = p.cliente_nom || (p.cliente ? (typeof p.cliente==='string'?p.cliente:((p.cliente.nombre||'')+(p.cliente.apellido?' '+p.cliente.apellido:'')).trim()) : '');
+      return { num: c.venta_numero || c.pedido_num || p.numero || '', cliente };
+    }
+  }
+  let v = c.venta_id ? venMap.get(String(c.venta_id)) : null;
+  if(!v && c.venta_numero) v = venByNum.get(c.venta_numero);
+  if(v){
+    const cliente = v.cliente ? (typeof v.cliente==='string'?v.cliente:((v.cliente.nombre||'')+(v.cliente.apellido?' '+v.cliente.apellido:'')).trim()) : '';
+    return { num: c.venta_numero || v.numero || '', cliente };
+  }
+  return { num: c.venta_numero || c.pedido_num || '', cliente: '' };
+}
+
+/* ── Filtros de columna estilo Excel para el Listado de comisiones ── */
+const _comFiltros = { vendedor_nom: new Set(), producto_nom: new Set() };
+let _comFiltroColActual = null;
+let _comFilasCache = [];
+
+function comAbrirFiltro(e, col){
+  e.stopPropagation();
+  const panel = document.getElementById('com-filtro-panel');
+  if(!panel) return;
+
+  if(_comFiltroColActual === col && panel.style.display !== 'none'){
+    panel.style.display = 'none';
+    _comFiltroColActual = null;
+    return;
+  }
+  _comFiltroColActual = col;
+
+  const titulos = { vendedor_nom:'Vendedor', producto_nom:'Producto' };
+  const tituloEl = document.getElementById('com-filtro-titulo');
+  if(tituloEl) tituloEl.textContent = 'Filtrar ' + (titulos[col]||col);
+
+  const vals = [...new Set(_comFilasCache.map(r => r[col]||'').filter(Boolean))].sort();
+
+  const opDiv = document.getElementById('com-filtro-opciones');
+  const activoSet = _comFiltros[col];
+  if(opDiv){
+    opDiv.innerHTML = vals.map(v => {
+      const checked = !activoSet.has(v);
+      return `<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer">
+        <input type="checkbox" value="${v.replace(/"/g,'&quot;')}" ${checked?'checked':''}
+          onchange="comFiltroOpcion(this,'${col}')"
+          style="accent-color:var(--brand);width:14px;height:14px;flex-shrink:0">
+        <span style="white-space:nowrap">${esc(v)}</span>
+      </label>`;
+    }).join('');
+  }
+
+  const todos = document.getElementById('com-filtro-todos');
+  if(todos) todos.checked = activoSet.size === 0;
+
+  const btn = e.currentTarget || e.target;
+  const rect = btn.getBoundingClientRect();
+  panel.style.display = 'block';
+  const pw = panel.offsetWidth || 190;
+  let left = rect.left;
+  if(left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+  panel.style.left = left + 'px';
+  panel.style.top  = (rect.bottom + 4) + 'px';
+}
+
+function comFiltroOpcion(cb, col){
+  const val = cb.value;
+  if(cb.checked) _comFiltros[col].delete(val);
+  else           _comFiltros[col].add(val);
+  const vals = [...document.querySelectorAll('#com-filtro-opciones input')];
+  const todos = document.getElementById('com-filtro-todos');
+  if(todos) todos.checked = vals.every(c => c.checked);
+  comActualizarBotonesFiltro();
+  renderRepComisiones();
+}
+
+function comFiltroTodos(checked){
+  if(!_comFiltroColActual) return;
+  const activoSet = _comFiltros[_comFiltroColActual];
+  document.querySelectorAll('#com-filtro-opciones input').forEach(cb => {
+    cb.checked = checked;
+    if(checked) activoSet.delete(cb.value);
+    else        activoSet.add(cb.value);
+  });
+  comActualizarBotonesFiltro();
+  renderRepComisiones();
+}
+
+function comLimpiarFiltroCol(){
+  if(!_comFiltroColActual) return;
+  _comFiltros[_comFiltroColActual].clear();
+  document.querySelectorAll('#com-filtro-opciones input').forEach(cb => cb.checked = true);
+  const todos = document.getElementById('com-filtro-todos');
+  if(todos) todos.checked = true;
+  comActualizarBotonesFiltro();
+  renderRepComisiones();
+}
+
+function comActualizarBotonesFiltro(){
+  document.querySelectorAll('.com-f-btn').forEach(btn => {
+    const col = btn.dataset.col;
+    const activo = col && _comFiltros[col] && _comFiltros[col].size > 0;
+    btn.classList.toggle('activo', !!activo);
+    btn.textContent = activo ? '▼' : '▽';
+  });
+}
+
+function comCerrarFiltroPanel(e){
+  const panel = document.getElementById('com-filtro-panel');
+  if(!panel || panel.style.display === 'none') return;
+  if(!panel.contains(e.target) && !e.target.classList.contains('com-f-btn')){
+    panel.style.display = 'none';
+    _comFiltroColActual = null;
+  }
+}
+document.addEventListener('click', comCerrarFiltroPanel);
+
 function renderRepComisiones(){
   const all = loadComisiones();
   const vendedorF = qs('#rep_com_vendedor')?.value||'';
@@ -13630,7 +13779,12 @@ function renderRepComisiones(){
     });
   }
 
-  // Filtrar
+  // Mapas de pedidos/ventas para resolver cliente y número de referencia
+  const pedMap  = new Map(loadPed().map(p=>[String(p.id), p]));
+  const venMap  = new Map(loadVen().map(v=>[String(v.id), v]));
+  const venByNum= new Map(loadVen().filter(v=>v.numero).map(v=>[v.numero, v]));
+
+  // Filtrar (rango de fecha + selects superiores)
   const fil = all.filter(c => {
     if(!repInRango(c.fecha)) return false;
     if(vendedorF && c.vendedor_nom !== vendedorF) return false;
@@ -13643,23 +13797,37 @@ function renderRepComisiones(){
     return true;
   }).sort((a,b) => String(b.fecha||'').localeCompare(String(a.fecha||'')));
 
-  // KPIs
-  const enEsperaAll  = fil.filter(c=>c.activa && c.en_espera);
-  const activasAll   = fil.filter(c=>c.activa && !c.en_espera);
+  // Caché para poblar las opciones de los filtros de columna (Vendedor/Producto)
+  _comFilasCache = fil;
+
+  // Filtros de columna estilo Excel (Vendedor, Producto)
+  const filCol = fil.filter(c =>
+    (!_comFiltros.vendedor_nom.size || !_comFiltros.vendedor_nom.has(c.vendedor_nom||'')) &&
+    (!_comFiltros.producto_nom.size || !_comFiltros.producto_nom.has(c.producto_nom||''))
+  );
+  comActualizarBotonesFiltro();
+
+  // KPIs (sobre lo efectivamente visible, filCol)
+  const enEsperaAll  = filCol.filter(c=>c.activa && c.en_espera);
+  const activasAll   = filCol.filter(c=>c.activa && !c.en_espera);
   const pendientes   = activasAll.filter(c=>!c.pagada);
   const pagadas      = activasAll.filter(c=>c.pagada);
-  const desactivadas = fil.filter(c=>!c.activa);
+  const desactivadas = filCol.filter(c=>!c.activa);
   const montoEspera      = enEsperaAll.reduce((a,c)=>a+c.monto_comision,0);
   const montoPendiente   = pendientes.reduce((a,c)=>a+c.monto_comision,0);
   const montoPagado      = pagadas.reduce((a,c)=>a+c.monto_comision,0);
   const montoDesactivado = desactivadas.reduce((a,c)=>a+c.monto_comision,0);
+  const pedEspera      = _comContarPedidos(enEsperaAll);
+  const pedPendientes  = _comContarPedidos(pendientes);
+  const pedPagadas     = _comContarPedidos(pagadas);
+  const pedDesactivadas= _comContarPedidos(desactivadas);
 
   const kpiWrap = qs('#rep-com-kpis');
   if(kpiWrap) kpiWrap.innerHTML = ''
-    + '<div class="kpi" style="border-top:3px solid #7C3AED"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EDE9FE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#7C3AED" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div><div class="kpi-lbl">En espera</div><div class="kpi-val" style="color:#7C3AED">' + euro(montoEspera) + '</div><div class="kpi-sub">' + enEsperaAll.length + ' pedidos en proceso</div></div>'
-    + '<div class="kpi c-amber"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div></div><div class="kpi-lbl">Pendientes de pago</div><div class="kpi-val">' + euro(montoPendiente) + '</div><div class="kpi-sub">' + pendientes.length + ' comisiones</div></div>'
-    + '<div class="kpi c-green"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div></div><div class="kpi-lbl">Pagadas</div><div class="kpi-val">' + euro(montoPagado) + '</div><div class="kpi-sub">' + pagadas.length + ' comisiones</div></div>'
-    + '<div class="kpi c-red"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div></div><div class="kpi-lbl">Desactivadas</div><div class="kpi-val">' + euro(montoDesactivado) + '</div><div class="kpi-sub">' + desactivadas.length + ' comisiones</div></div>';
+    + '<div class="kpi" style="border-top:3px solid #7C3AED"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EDE9FE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#7C3AED" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div></div><div class="kpi-lbl">En espera</div><div class="kpi-val" style="color:#7C3AED">' + euro(montoEspera) + '</div><div class="kpi-sub">' + enEsperaAll.length + ' comisiones · ' + pedEspera + ' pedido' + (pedEspera===1?'':'s') + '</div></div>'
+    + '<div class="kpi c-amber"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div></div><div class="kpi-lbl">Pendientes de pago</div><div class="kpi-val">' + euro(montoPendiente) + '</div><div class="kpi-sub">' + pendientes.length + ' comisiones · ' + pedPendientes + ' pedido' + (pedPendientes===1?'':'s') + '</div></div>'
+    + '<div class="kpi c-green"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div></div><div class="kpi-lbl">Pagadas</div><div class="kpi-val">' + euro(montoPagado) + '</div><div class="kpi-sub">' + pagadas.length + ' comisiones · ' + pedPagadas + ' pedido' + (pedPagadas===1?'':'s') + '</div></div>'
+    + '<div class="kpi c-red"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></div></div><div class="kpi-lbl">Desactivadas</div><div class="kpi-val">' + euro(montoDesactivado) + '</div><div class="kpi-sub">' + desactivadas.length + ' comisiones · ' + pedDesactivadas + ' pedido' + (pedDesactivadas===1?'':'s') + '</div></div>';
 
   // Mostrar/ocultar botón "Pagar todas"
   const btnPagarTodas = qs('#btn-pagar-todas-com');
@@ -13667,13 +13835,14 @@ function renderRepComisiones(){
 
   // Lista
   const wrap = qs('#rep-com-list'); if(!wrap) return;
-  if(!fil.length){
-    wrap.innerHTML = '<div class="empty" style="padding:20px"><p style="color:var(--muted)">Sin comisiones en el período.</p></div>';
+  if(!filCol.length){
+    const msg = fil.length ? 'Ningún resultado para los filtros de columna activos. <button onclick="comLimpiarTodosFiltrosCol()" style="background:none;border:none;color:var(--brand);cursor:pointer;font-weight:600;font-size:12px">Ver todos</button>' : 'Sin comisiones en el período.';
+    wrap.innerHTML = '<div class="empty" style="padding:20px"><p style="color:var(--muted)">' + msg + '</p></div>';
     return;
   }
 
   let rows = '';
-  fil.forEach(c => {
+  filCol.forEach(c => {
     const fechaFmt = c.fecha ? new Date(c.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}) : '—';
     const tipoBg = c.tipo_venta==='mayor' ? 'background:#dbeafe;color:#1e40af' : 'background:#fef3c7;color:#92400e';
     const checked = c.activa ? 'checked' : '';
@@ -13691,17 +13860,25 @@ function renderRepComisiones(){
     const fechaPagoTip = c.pagada && c.fecha_pago ? '<div style="font-size:10px;color:var(--muted)">Pagada: '+new Date(c.fecha_pago).toLocaleDateString('es-ES',{day:'2-digit',month:'short'})+'</div>' : '';
     const rowBg = c.en_espera ? 'background:#FAF5FF' : (c.pagada && c.activa ? 'background:#f8fdf5' : '');
     const comColor = !c.activa ? 'var(--muted)' : c.en_espera ? '#7C3AED' : (c.pagada ? 'var(--ok)' : '#854F0B');
+
+    // Ref. + cliente — "en espera" (aún no entregado) se muestra en morado
+    const origen = _comOrigenInfo(c, pedMap, venMap, venByNum);
+    const refTxt = origen.num ? esc(origen.num) + (origen.cliente ? ' · ' + esc(origen.cliente) : '') : '—';
+    const refHtml = origen.num
+      ? (c.en_espera ? '<span title="Pedido aún no entregado" style="color:#7C3AED">' + refTxt + '</span>' : refTxt)
+      : '—';
+
     rows += '<tr style="border-bottom:1px solid #f3f3f8;' + (!c.activa?'opacity:0.5;':'') + rowBg + '">'
       + '<td style="padding:7px;text-align:center"><label class="gm-toggle-mini"><input type="checkbox" ' + checked + ' onchange="toggleComision(\'' + c.id + '\',this.checked)"/><span class="gm-toggle-track"><span class="gm-toggle-thumb"></span></span></label></td>'
       + '<td style="padding:7px">' + fechaFmt + '</td>'
-      + '<td style="padding:7px;font-weight:600">' + (c.vendedor_nom||'—') + '</td>'
-      + '<td style="padding:7px">' + (c.producto_nom||'—') + fechaPagoTip + '</td>'
+      + '<td style="padding:7px;font-weight:600">' + esc(c.vendedor_nom||'—') + '</td>'
+      + '<td style="padding:7px">' + esc(c.producto_nom||'—') + fechaPagoTip + '</td>'
       + '<td style="padding:7px;text-align:center"><span class="chip" style="font-size:10px;' + tipoBg + '">' + (c.tipo_venta==='mayor'?'Mayor':'Detal') + '</span></td>'
       + '<td style="padding:7px;text-align:right">' + euro(c.monto_venta) + '</td>'
       + '<td style="padding:7px;text-align:center;font-weight:600">' + c.porcentaje + '%</td>'
       + '<td style="padding:7px;text-align:right;font-weight:700;color:' + comColor + '">' + euro(c.monto_comision) + '</td>'
       + '<td style="padding:7px;text-align:center">' + pagadaChip + '</td>'
-      + '<td style="padding:7px;font-size:11px;color:var(--muted)">' + (c.venta_numero || (c.pedido_num ? '<span title="Pedido aún no entregado" style="color:#7C3AED">' + c.pedido_num + '</span>' : '—')) + '</td>'
+      + '<td style="padding:7px;font-size:11px;color:var(--muted)">' + refHtml + '</td>'
       + '</tr>';
   });
 
@@ -13709,17 +13886,24 @@ function renderRepComisiones(){
     + '<thead><tr style="border-bottom:2px solid var(--border)">'
     + '<th style="padding:7px;text-align:center;color:var(--muted);font-weight:600;width:50px">Activa</th>'
     + '<th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Fecha</th>'
-    + '<th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Vendedor</th>'
-    + '<th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Producto</th>'
+    + '<th style="padding:7px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Vendedor <button class="com-f-btn" data-col="vendedor_nom" onclick="comAbrirFiltro(event,\'vendedor_nom\')" title="Filtrar">▽</button></th>'
+    + '<th style="padding:7px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Producto <button class="com-f-btn" data-col="producto_nom" onclick="comAbrirFiltro(event,\'producto_nom\')" title="Filtrar">▽</button></th>'
     + '<th style="padding:7px;text-align:center;color:var(--muted);font-weight:600">Tipo</th>'
     + '<th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Venta</th>'
     + '<th style="padding:7px;text-align:center;color:var(--muted);font-weight:600">%</th>'
     + '<th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Comisión</th>'
     + '<th style="padding:7px;text-align:center;color:var(--muted);font-weight:600">Pago</th>'
-    + '<th style="padding:7px;text-align:left;color:var(--muted);font-weight:600" title="Número de venta (entregado) o pedido (en espera)">Ref.</th>'
+    + '<th style="padding:7px;text-align:left;color:var(--muted);font-weight:600" title="Número de venta o pedido, y cliente">Ref. / Cliente</th>'
     + '</tr></thead>'
     + '<tbody>' + rows + '</tbody>'
     + '</table></div>';
+}
+
+function comLimpiarTodosFiltrosCol(){
+  _comFiltros.vendedor_nom.clear();
+  _comFiltros.producto_nom.clear();
+  comActualizarBotonesFiltro();
+  renderRepComisiones();
 }
 
 // ── TEMP_IMPORT_COM: función temporal — eliminar en próxima versión ──────────
@@ -14977,7 +15161,21 @@ function repVentaCanal(v){
 
 /* ══════════ TAB VENTAS ══════════ */
 function renderRepVentas(){
-  const ven = loadVen().filter(v=>v.estado!=='anulada'&&repInRango(v.fecha));
+  const venSinColFiltro = loadVen().filter(v=>v.estado!=='anulada'&&repInRango(v.fecha));
+
+  // Cache de valores únicos para los filtros de columna + aplicar filtros activos
+  _repColInit('ventas', ['cliente','metodo','canal']);
+  _repColCache['ventas'] = venSinColFiltro.map(v=>({
+    cliente: repClienteNombre(v.cliente,'Venta rápida'),
+    metodo:  METODOS_LABEL[v.metodo]||v.metodo,
+    canal:   CANALES_LABEL[repVentaCanal(v)]||CANALES_LABEL.local
+  }));
+  _repColRedraw['ventas'] = renderRepVentas;
+  const ven = venSinColFiltro.filter(v => repColPasaFiltro('ventas', {
+    cliente: repClienteNombre(v.cliente,'Venta rápida'),
+    metodo:  METODOS_LABEL[v.metodo]||v.metodo,
+    canal:   CANALES_LABEL[repVentaCanal(v)]||CANALES_LABEL.local
+  }));
 
   // Ventas por día (mini bar chart en HTML/CSS)
   const byDay = {};
@@ -15066,7 +15264,12 @@ function renderRepVentas(){
   // Tabla detalle
   const tablaWrap = qs('#rep-ventas-tabla');
   if(tablaWrap){
-    if(!ven.length){ tablaWrap.innerHTML='<div class="empty" style="padding:20px"><p>Sin ventas en el período</p></div>'; return; }
+    if(!ven.length){
+      const msg = venSinColFiltro.length ? 'Ningún resultado para los filtros de columna activos. <button onclick="repColLimpiarTodos(\'ventas\')" style="background:none;border:none;color:var(--brand);cursor:pointer;font-weight:600;font-size:12px">Ver todos</button>' : 'Sin ventas en el período';
+      tablaWrap.innerHTML='<div class="empty" style="padding:20px"><p>'+msg+'</p></div>';
+      repColActualizarBotones();
+      return;
+    }
     tablaWrap.innerHTML = `
       <div style="overflow-x:auto">
         <table style="width:100%;border-collapse:collapse;font-size:12px">
@@ -15074,9 +15277,9 @@ function renderRepVentas(){
             <tr style="border-bottom:2px solid var(--border)">
               <th style="padding:8px;text-align:left;color:var(--muted);font-weight:600">#</th>
               <th style="padding:8px;text-align:left;color:var(--muted);font-weight:600">Fecha</th>
-              <th style="padding:8px;text-align:left;color:var(--muted);font-weight:600">Cliente</th>
-              <th style="padding:8px;text-align:left;color:var(--muted);font-weight:600">Método</th>
-              <th style="padding:8px;text-align:left;color:var(--muted);font-weight:600">Canal</th>
+              <th style="padding:8px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Cliente <button class="repcol-f-btn" data-report="ventas" data-col="cliente" onclick="repColAbrirFiltro(event,'ventas','cliente','Cliente')" title="Filtrar">▽</button></th>
+              <th style="padding:8px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Método <button class="repcol-f-btn" data-report="ventas" data-col="metodo" onclick="repColAbrirFiltro(event,'ventas','metodo','Método')" title="Filtrar">▽</button></th>
+              <th style="padding:8px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Canal <button class="repcol-f-btn" data-report="ventas" data-col="canal" onclick="repColAbrirFiltro(event,'ventas','canal','Canal')" title="Filtrar">▽</button></th>
               <th style="padding:8px;text-align:right;color:var(--muted);font-weight:600">Total</th>
               <th style="padding:8px;text-align:right;color:var(--muted);font-weight:600">Costo</th>
               <th style="padding:8px;text-align:right;color:var(--muted);font-weight:600">Utilidad</th>
@@ -15106,6 +15309,7 @@ function renderRepVentas(){
         </table>
       </div>`;
   }
+  repColActualizarBotones();
 }
 
 /* ══════════ TAB PRODUCTOS ══════════
@@ -15221,7 +15425,19 @@ function renderRepPedidos(){
   const PED_PAGOS_R   = { sin_abono:'Sin abono', abonado:'Abonado', parcial:'Parcial', pagado:'Pagado' };
   const CANAL_LABEL_P  = { local:'🏪 Local', whatsapp:'📱 WhatsApp', online:'🌐 Online' };
   const CANAL_COLOR_P  = { local:'#22c55e', whatsapp:'#25D366', online:'#3b82f6' };
-  const all = loadPed().filter(p=>repInRango(p.fecha_creado||p.fecha_pedido));
+  const allSinColFiltro = loadPed().filter(p=>repInRango(p.fecha_creado||p.fecha_pedido));
+
+  // Cache de valores únicos para los filtros de columna + aplicar filtros activos
+  _repColInit('pedidos', ['cliente','canal','estado']);
+  const _pedColRow = p => ({
+    cliente: repClienteNombre(p.cliente,'Sin cliente'),
+    canal:   CANAL_LABEL_P[normalizarCanalVenta(p.canal)]||'Local',
+    estado:  PED_ESTADOS_R[p.estado]||p.estado
+  });
+  _repColCache['pedidos'] = allSinColFiltro.map(_pedColRow);
+  _repColRedraw['pedidos'] = renderRepPedidos;
+  const all = allSinColFiltro.filter(p => repColPasaFiltro('pedidos', _pedColRow(p)));
+
   const allActivos = loadPed().filter(p=>!['cancelado','entregado'].includes(p.estado));
   const _pedCDif = p => typeof pedidoTotalCDifCalc==='function' ? pedidoTotalCDifCalc(p) : repTotalPedido(p);
   const _pedSaldo = p => typeof pedidoSaldoCDif==='function' ? pedidoSaldoCDif(p) : repRestantePedido(p);
@@ -15324,14 +15540,17 @@ function renderRepPedidos(){
   // Tabla detalle de pedidos del período
   const tabPedWrap = qs('#rep-ped-tabla');
   if(tabPedWrap){
-    if(!all.length){ tabPedWrap.innerHTML='<div class="empty" style="padding:20px"><p>Sin pedidos en el período</p></div>'; }
+    if(!all.length){
+      const msg = allSinColFiltro.length ? 'Ningún resultado para los filtros de columna activos. <button onclick="repColLimpiarTodos(\'pedidos\')" style="background:none;border:none;color:var(--brand);cursor:pointer;font-weight:600;font-size:12px">Ver todos</button>' : 'Sin pedidos en el período';
+      tabPedWrap.innerHTML='<div class="empty" style="padding:20px"><p>'+msg+'</p></div>';
+    }
     else tabPedWrap.innerHTML = `<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px">
       <thead><tr style="border-bottom:2px solid var(--border)">
         <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">#</th>
         <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Fecha</th>
-        <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Cliente</th>
-        <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Canal</th>
-        <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Estado</th>
+        <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Cliente <button class="repcol-f-btn" data-report="pedidos" data-col="cliente" onclick="repColAbrirFiltro(event,'pedidos','cliente','Cliente')" title="Filtrar">▽</button></th>
+        <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Canal <button class="repcol-f-btn" data-report="pedidos" data-col="canal" onclick="repColAbrirFiltro(event,'pedidos','canal','Canal')" title="Filtrar">▽</button></th>
+        <th style="padding:7px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Estado <button class="repcol-f-btn" data-report="pedidos" data-col="estado" onclick="repColAbrirFiltro(event,'pedidos','estado','Estado')" title="Filtrar">▽</button></th>
         <th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Total</th>
         <th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Cobrado</th>
         <th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Pendiente</th>
@@ -15359,6 +15578,7 @@ function renderRepPedidos(){
       </tr></tfoot>
     </table></div>`;
   }
+  repColActualizarBotones();
 }
 
 /* ══════════ TAB CLIENTES ══════════ */
@@ -15597,6 +15817,128 @@ function _barras(obj, labels, total){
       <div style="min-width:30px;text-align:right;font-weight:700">${v}</div>
       <div style="min-width:38px;text-align:right;color:var(--muted)">${total>0?((v/total)*100).toFixed(0):0}%</div>
     </div>`).join('') || '<p class="muted" style="font-size:12px">Sin datos</p>';
+}
+
+/* ══════════ Filtros de columna estilo Excel — motor genérico reutilizable
+   para las tablas de detalle de Reportes (Ventas, Pedidos, Inventario, etc.) ══════════ */
+const _repColFiltros = {};   // { reportId: { col: Set } }
+let _repColFiltroActual = null; // { reportId, col }
+const _repColCache = {};     // { reportId: [ {col:valor,...}, ... ] }  — valores únicos disponibles
+const _repColRedraw = {};    // { reportId: fnRedibujar }
+
+function _repColInit(reportId, cols){
+  if(!_repColFiltros[reportId]) _repColFiltros[reportId] = {};
+  cols.forEach(c => { if(!_repColFiltros[reportId][c]) _repColFiltros[reportId][c] = new Set(); });
+}
+
+function repColPasaFiltro(reportId, rowObj){
+  const filtros = _repColFiltros[reportId];
+  if(!filtros) return true;
+  return Object.keys(filtros).every(col => !filtros[col].size || !filtros[col].has(rowObj[col]||''));
+}
+
+function repColAbrirFiltro(e, reportId, col, label){
+  e.stopPropagation();
+  const panel = document.getElementById('repcol-filtro-panel');
+  if(!panel) return;
+  if(_repColFiltroActual && _repColFiltroActual.reportId===reportId && _repColFiltroActual.col===col && panel.style.display!=='none'){
+    panel.style.display='none'; _repColFiltroActual=null; return;
+  }
+  _repColFiltroActual = { reportId, col };
+  const tituloEl = document.getElementById('repcol-filtro-titulo');
+  if(tituloEl) tituloEl.textContent = 'Filtrar ' + (label||col);
+
+  const cache = _repColCache[reportId] || [];
+  const vals = [...new Set(cache.map(r=>r[col]||'').filter(Boolean))].sort();
+  const activoSet = (_repColFiltros[reportId] && _repColFiltros[reportId][col]) || new Set();
+
+  const opDiv = document.getElementById('repcol-filtro-opciones');
+  if(opDiv){
+    opDiv.innerHTML = vals.map(v => {
+      const checked = !activoSet.has(v);
+      return `<label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer">
+        <input type="checkbox" value="${v.replace(/"/g,'&quot;')}" ${checked?'checked':''}
+          onchange="repColFiltroOpcion(this)"
+          style="accent-color:var(--brand);width:14px;height:14px;flex-shrink:0">
+        <span style="white-space:nowrap">${esc(v)}</span>
+      </label>`;
+    }).join('');
+  }
+
+  const todos = document.getElementById('repcol-filtro-todos');
+  if(todos) todos.checked = activoSet.size === 0;
+
+  const btn = e.currentTarget || e.target;
+  const rect = btn.getBoundingClientRect();
+  panel.style.display = 'block';
+  const pw = panel.offsetWidth || 190;
+  let left = rect.left;
+  if(left + pw > window.innerWidth - 8) left = window.innerWidth - pw - 8;
+  panel.style.left = left + 'px';
+  panel.style.top  = (rect.bottom + 4) + 'px';
+}
+
+function repColFiltroOpcion(cb){
+  if(!_repColFiltroActual) return;
+  const { reportId, col } = _repColFiltroActual;
+  const activoSet = _repColFiltros[reportId][col];
+  if(cb.checked) activoSet.delete(cb.value);
+  else           activoSet.add(cb.value);
+  const vals = [...document.querySelectorAll('#repcol-filtro-opciones input')];
+  const todos = document.getElementById('repcol-filtro-todos');
+  if(todos) todos.checked = vals.every(c => c.checked);
+  repColActualizarBotones();
+  const redraw = _repColRedraw[reportId]; if(redraw) redraw();
+}
+
+function repColFiltroTodos(checked){
+  if(!_repColFiltroActual) return;
+  const { reportId, col } = _repColFiltroActual;
+  const activoSet = _repColFiltros[reportId][col];
+  document.querySelectorAll('#repcol-filtro-opciones input').forEach(cb => {
+    cb.checked = checked;
+    if(checked) activoSet.delete(cb.value);
+    else        activoSet.add(cb.value);
+  });
+  repColActualizarBotones();
+  const redraw = _repColRedraw[reportId]; if(redraw) redraw();
+}
+
+function repColLimpiarFiltro(){
+  if(!_repColFiltroActual) return;
+  const { reportId, col } = _repColFiltroActual;
+  _repColFiltros[reportId][col].clear();
+  document.querySelectorAll('#repcol-filtro-opciones input').forEach(cb => cb.checked = true);
+  const todos = document.getElementById('repcol-filtro-todos');
+  if(todos) todos.checked = true;
+  repColActualizarBotones();
+  const redraw = _repColRedraw[reportId]; if(redraw) redraw();
+}
+
+function repColActualizarBotones(){
+  document.querySelectorAll('.repcol-f-btn').forEach(btn => {
+    const reportId = btn.dataset.report, col = btn.dataset.col;
+    const activo = reportId && col && _repColFiltros[reportId] && _repColFiltros[reportId][col] && _repColFiltros[reportId][col].size > 0;
+    btn.classList.toggle('activo', !!activo);
+    btn.textContent = activo ? '▼' : '▽';
+  });
+}
+
+function repColCerrarPanel(e){
+  const panel = document.getElementById('repcol-filtro-panel');
+  if(!panel || panel.style.display === 'none') return;
+  if(!panel.contains(e.target) && !e.target.classList.contains('repcol-f-btn')){
+    panel.style.display = 'none';
+    _repColFiltroActual = null;
+  }
+}
+document.addEventListener('click', repColCerrarPanel);
+
+function repColLimpiarTodos(reportId){
+  if(!_repColFiltros[reportId]) return;
+  Object.values(_repColFiltros[reportId]).forEach(s => s.clear());
+  repColActualizarBotones();
+  const redraw = _repColRedraw[reportId]; if(redraw) redraw();
 }
 
 function fmtDiaCorto(iso){
@@ -17519,7 +17861,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_11';
+  const APP_VERSION = 'v15_13';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -18177,6 +18519,28 @@ if(location.search.includes('test') || localStorage.getItem('_gm_tests')==='1'){
     <input type="checkbox" id="tex-filtro-todos" onchange="texFiltroTodos(this.checked)" style="accent-color:var(--brand);width:14px;height:14px;flex-shrink:0"> Seleccionar todo
   </label>
   <div id="tex-filtro-opciones"></div>
+</div>
+<!-- Panel flotante filtro Comisiones (Vendedor/Producto) -->
+<div id="com-filtro-panel" style="display:none;position:fixed;z-index:9999;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.18);padding:10px 12px;min-width:180px;max-height:280px;overflow-y:auto;font-size:13px;color:var(--text)">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+    <span id="com-filtro-titulo" style="font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Filtrar</span>
+    <button onclick="comLimpiarFiltroCol()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--brand);font-weight:600;padding:0">Limpiar</button>
+  </div>
+  <label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-weight:600;border-bottom:1px solid var(--border);margin-bottom:4px">
+    <input type="checkbox" id="com-filtro-todos" onchange="comFiltroTodos(this.checked)" style="accent-color:var(--brand);width:14px;height:14px;flex-shrink:0"> Seleccionar todo
+  </label>
+  <div id="com-filtro-opciones"></div>
+</div>
+<!-- Panel flotante genérico de filtro de columna (Ventas, Pedidos, Inventario, etc.) -->
+<div id="repcol-filtro-panel" style="display:none;position:fixed;z-index:9999;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.18);padding:10px 12px;min-width:180px;max-height:280px;overflow-y:auto;font-size:13px;color:var(--text)">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--border)">
+    <span id="repcol-filtro-titulo" style="font-weight:700;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Filtrar</span>
+    <button onclick="repColLimpiarFiltro()" style="background:none;border:none;cursor:pointer;font-size:11px;color:var(--brand);font-weight:600;padding:0">Limpiar</button>
+  </div>
+  <label style="display:flex;align-items:center;gap:8px;padding:4px 0;cursor:pointer;font-weight:600;border-bottom:1px solid var(--border);margin-bottom:4px">
+    <input type="checkbox" id="repcol-filtro-todos" onchange="repColFiltroTodos(this.checked)" style="accent-color:var(--brand);width:14px;height:14px;flex-shrink:0"> Seleccionar todo
+  </label>
+  <div id="repcol-filtro-opciones"></div>
 </div>
 </body>
 </html>
