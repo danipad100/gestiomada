@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_14">
+<html lang="es" data-app-version="GestioMada_V15_16">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -330,12 +330,16 @@ function saveComisiones(a){ _lsSet(LS_COMISIONES, JSON.stringify(a)); }
 function getComisionPct(tipo){ return tipo==='mayor'?(CFG.comision_mayor||2):(CFG.comision_detal||5); }
 
 function generarComisionesVenta(venta, opcs){
-  // opcs = { en_espera: bool, pedido_id, pedido_num }
+  // opcs = { en_espera: bool, pedido_id, pedido_num, diseno_usd, extras_usd }
   // en_espera:true  → pedido recién registrado, comisión "En espera"
   // en_espera:false → venta POS directa o entrega de pedido, comisión "Pendiente de pago"
+  // diseno_usd/extras_usd: montos de esos dos extras del pedido (USD base, sin diferencial).
+  //   Delivery y Envío quedan fuera a propósito — son costos logísticos, no trabajo del vendedor.
   const enEspera  = opcs && opcs.en_espera  === true;
   const pedidoId  = (opcs && opcs.pedido_id)  || null;
   const pedidoNum = (opcs && opcs.pedido_num) || null;
+  const disenoUsd = parseFloat(opcs && opcs.diseno_usd) || 0;
+  const extrasUsd = parseFloat(opcs && opcs.extras_usd) || 0;
 
   // ── Determinar el vendedor a comisionar ──────────────────────────────────
   // Si viene de un pedido (registro o entrega), usar el usuario que CREÓ el pedido.
@@ -360,21 +364,23 @@ function generarComisionesVenta(venta, opcs){
   const comisiones = loadComisiones();
   const items = venta.items || [];
 
-  items.forEach(it => {
-    const prod = cat.find(p => String(p.id) === String(it.id_prod));
-    const tipoVenta = prod ? (prod.tipo_venta || 'detal') : 'detal';
-    const pct = getComisionPct(tipoVenta);
-    const montoItem = (it.precio_unit || 0) * (it.cant || 1);
-    const montoComision = parseFloat((montoItem * pct / 100).toFixed(4));
+  // Si la comisión proviene de un pedido, los productos se comisionan sobre el monto
+  // c/diferencial — lo que el cliente realmente pagó (mismo cálculo que pedidoTotalCDifCalc:
+  // subtotal_paralelo × diferencial). Las ventas POS directas NO aplican diferencial porque
+  // venta.total tampoco lo aplica en ese flujo — comisionar con dif ahí sería inflar el monto
+  // por encima de lo efectivamente cobrado.
+  const difProductos = pedidoId ? ((typeof getDiferencial === 'function' ? getDiferencial() : 1) || 1) : 1;
 
+  const _crearComision = (montoItem, tipoVenta, pct, productoNom, productoId) => {
+    const montoComision = parseFloat((montoItem * pct / 100).toFixed(4));
     const comision = {
       id:                 Date.now() + Math.floor(Math.random()*1000),
       venta_id:           venta.id || null,
       venta_numero:       venta.numero || '',
       vendedor_id:        vendedorId,
       vendedor_nom:       vendedorNom,
-      producto_nom:       it.nombre || '',
-      producto_id:        it.id_prod || null,
+      producto_nom:       productoNom,
+      producto_id:        productoId,
       tipo_venta:         tipoVenta,
       monto_venta:        montoItem,
       porcentaje:         pct,
@@ -388,13 +394,32 @@ function generarComisionesVenta(venta, opcs){
       notas:              '',
       fecha:              new Date().toISOString()
     };
-
     comisiones.push(comision);
     upsertComision(comision);
+  };
+
+  items.forEach(it => {
+    const prod = cat.find(p => String(p.id) === String(it.id_prod));
+    const tipoVenta = prod ? (prod.tipo_venta || 'detal') : 'detal';
+    const pct = getComisionPct(tipoVenta);
+    const montoItem = round2((it.precio_unit || 0) * (it.cant || 1) * difProductos);
+    _crearComision(montoItem, tipoVenta, pct, it.nombre || '', it.id_prod || null);
   });
 
+  // Extras comisionables del pedido: Diseño y Extras (se comisionan al % de "detal";
+  // Delivery y Envío quedan excluidos por decisión de negocio — no son trabajo del vendedor)
+  if(disenoUsd > 0){
+    const pctEx = getComisionPct('detal');
+    _crearComision(disenoUsd, 'detal', pctEx, 'Diseño (extra del pedido)', null);
+  }
+  if(extrasUsd > 0){
+    const pctEx = getComisionPct('detal');
+    _crearComision(extrasUsd, 'detal', pctEx, 'Extras (extra del pedido)', null);
+  }
+
   saveComisiones(comisiones);
-  console.log('[COMISIONES]', enEspera ? 'En espera' : 'Confirmadas', 'para', vendedorNom, '—', items.length, 'items');
+  console.log('[COMISIONES]', enEspera ? 'En espera' : 'Confirmadas', 'para', vendedorNom, '—', items.length, 'items',
+    disenoUsd>0?'+ diseño $'+disenoUsd:'', extrasUsd>0?'+ extras $'+extrasUsd:'');
 }
 
 /* Confirma las comisiones en_espera de un pedido al ser entregado.
@@ -460,7 +485,7 @@ function recalcularComisionesPedido(pedido){
     usuario_id: pedido.usuario_id||CURRENT_USR_ID,
     usuario_nom: pedido.usuario_nom||CURRENT_USR_NOM||''
   };
-  generarComisionesVenta(ventaProxy, { en_espera: true, pedido_id: pedido.id, pedido_num: pedido.numero });
+  generarComisionesVenta(ventaProxy, { en_espera: true, pedido_id: pedido.id, pedido_num: pedido.numero, diseno_usd: pedido.diseno_usd||0, extras_usd: pedido.extras_usd||0 });
 }
 
 // Sync inmediato de UN solo producto — propaga el cambio al instante a todos los dispositivos
@@ -3114,6 +3139,8 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.16: Comisiones — FIX CRÍTICO monto de venta incorrecto. La comisión de productos de un pedido se calculaba sobre el precio base "dólar paralelo" (precio_unit × cantidad), sin aplicar el diferencial cambiario — es decir, sobre un monto menor al que el cliente realmente pagó (el mismo error que ya existía desde el diseño original de generarComisionesVenta). Ahora, cuando la comisión proviene de un pedido, el monto de cada producto se multiplica por el diferencial vigente al momento de generar la comisión, igual que pedidoTotalCDifCalc(). Las ventas POS directas (sin pedido) NO aplican diferencial, porque venta.total tampoco lo aplica en ese flujo — comisionar con diferencial ahí infllaría el monto por encima de lo cobrado. CORRECCIÓN RETROACTIVA en Supabase: se recalcularon 91 comisiones de productos de pedidos ya entregados (monto_venta y monto_comision, usando el total_cdif ya guardado en cada pedido para derivar el diferencial histórico exacto — no el diferencial actual) y se agregaron 22 comisiones de "Extras" que faltaban por no existir aún la función de comisionar extras (v15.15) al momento de esos pedidos. Ninguna comisión afectada estaba pagada. 3 pedidos muy antiguos (PED-0088/89/90) no se pudieron corregir por no tener total_cdif guardado — quedan pendientes de revisión manual si se necesita.</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.15: Comisiones — ahora también comisionan los extras "Diseño" y "Extras" de un pedido (Delivery y Envío quedan excluidos a propósito, por ser costos logísticos y no trabajo del vendedor). Cada uno aparece como una línea de comisión independiente en el listado (producto "Diseño (extra del pedido)" / "Extras (extra del pedido)"), comisionada al % de "detal" configurado en Ajustes. Aplica en los 3 momentos donde se generan comisiones: registro del pedido (en_espera), entrega (confirmación/creación), y recálculo al editar un pedido (si solo cambian los extras y no los ítems, igual dispara el recálculo — ya estaba contemplado en la detección de cambios de montos). generarComisionesVenta ahora acepta diseno_usd/extras_usd en las opciones; los 6 puntos donde se llama (registro, entrega directa, cobrar y entregar, cambio masivo de estado ×2, recálculo por edición) fueron actualizados para pasar esos montos desde el pedido. La herramienta temporal de importación histórica (importarComisionesPedidosExistentes, marcada para eliminar) no fue tocada — solo cubre ítems, no extras, ya que es de un solo uso para pedidos previos a v14.82.</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.14: Reportes/Comisiones — filtros estilo Excel (▽) extendidos a las 6 columnas que faltaban: Tipo, Venta, %, Comisión, Pago y Ref. / Cliente (antes solo Vendedor y Producto los tenían). Venta/%/Comisión listan los valores formateados tal cual se muestran ($ y %) y se ordenan numéricamente, no alfabéticamente. Pago filtra por el estado visible del chip (En espera / Pendiente / Pagada / —). Ref. / Cliente filtra por el texto combinado de número de pedido-venta + nombre de cliente. Internamente se precalculan los 8 campos filtrables una sola vez por comisión (reutilizando el cruce con pedido/venta ya hecho para la columna Ref.) en vez de recalcularlos dos veces por fila.</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.13: Reportes — filtros estilo Excel (▽) extendidos a las tablas de detalle de Ventas, Pedidos e Inventario, con el mismo motor genérico y visual que ya usaban Textiles/Orden de Producción y Comisiones. Ventas: columnas Cliente, Método y Canal (afecta también los gráficos de la pestaña, ya que ahora se filtran junto con la tabla). Pedidos: columnas Cliente, Canal y Estado (idem, afecta KPIs y gráficos del tab). Inventario → Stock actual: columnas Ítem y Tipo; se quitó el límite de 15 filas de esa tabla para que el filtro tenga sentido sobre el listado completo. Los tabs de Productos, Clientes y Caja no recibieron estos filtros porque sus tablas son rankings agregados (top 10/15) sin una fila por registro individual — si se necesita, se puede agregar una tabla de detalle nueva ahí. Se centralizó la lógica de filtrado en un motor reutilizable (repColAbrirFiltro/repColFiltroOpcion/etc.) para no repetir código en cada tab nuevo.</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.12: Reportes/Comisiones — tres mejoras al Listado de comisiones: (1) Los 4 KPIs (En espera, Pendientes de pago, Pagadas, Desactivadas) ahora muestran también la cantidad de &lt;b&gt;pedidos&lt;/b&gt; distintos comisionados junto al número de comisiones (ej: &quot;93 comisiones · 47 pedidos&quot;), contando por pedido/venta de origen en vez de por ítem, para no inflar el conteo cuando un pedido tiene varios productos. (2) Nuevos filtros estilo Excel (▽) en las columnas Vendedor y Producto del listado, con selección múltiple por checkbox — mismo patrón visual que Reportes/Textiles → Orden de Producción. (3) La columna Ref. ahora muestra también el nombre del cliente junto al número de pedido/venta (ej: &quot;PED-0136 · Francis Rosendo&quot;), resuelto cruzando la comisión con el pedido o la venta vinculada. FIX relacionado: confirmarComisionesPedido() no guardaba venta_id/venta_numero al confirmar una comisión en espera al momento de la entrega, dejando esos campos vacíos aun cuando la Venta sí se había creado — esto hacía que el chip de la columna Ref. mostrara &quot;pedido aún no entregado&quot; (morado) en comisiones ya entregadas y pagadas. Corregido en los 4 puntos donde se entrega un pedido (entrega directa, cobrar y entregar, y los dos casos del cambio de estado masivo); el color morado ahora depende del flag en_espera real, no de si venta_numero está vacío.</p>
@@ -12128,7 +12155,7 @@ function guardarPedido(){
       usuario_id:  ped.usuario_id  || CURRENT_USR_ID  || null,
       usuario_nom: ped.usuario_nom || CURRENT_USR_NOM || ''
     };
-    generarComisionesVenta(_ventaProxy, { en_espera: true, pedido_id: ped.id, pedido_num: ped.numero });
+    generarComisionesVenta(_ventaProxy, { en_espera: true, pedido_id: ped.id, pedido_num: ped.numero, diseno_usd: ped.diseno_usd||0, extras_usd: ped.extras_usd||0 });
   } else if(!_montosIguales){
     // Pedido editado con cambio de montos: recalcular comisiones en espera
     recalcularComisionesPedido(ped);
@@ -13028,7 +13055,7 @@ function _ejecutarEntregaPedido(all, idx){
   if(_comEsp1.length > 0){
     confirmarComisionesPedido(p.id, venta);
   } else {
-    generarComisionesVenta(venta, { en_espera: false, pedido_id: p.id, pedido_num: p.numero });
+    generarComisionesVenta(venta, { en_espera: false, pedido_id: p.id, pedido_num: p.numero, diseno_usd: p.diseno_usd||0, extras_usd: p.extras_usd||0 });
   }
 
   // Descontar inventario
@@ -13151,7 +13178,7 @@ function cobrarYEntregar(){
   if(_comEsp2.length > 0){
     confirmarComisionesPedido(p.id, venta);
   } else {
-    generarComisionesVenta(venta, { en_espera: false, pedido_id: p.id, pedido_num: p.numero });
+    generarComisionesVenta(venta, { en_espera: false, pedido_id: p.id, pedido_num: p.numero, diseno_usd: p.diseno_usd||0, extras_usd: p.extras_usd||0 });
   }
 
   // 5. Descontar inventario
@@ -13323,7 +13350,7 @@ function ejecutarCambioEstadoMasivo(){
 
         const comEsp = loadComisiones().filter(c => String(c.pedido_id) === String(p.id) && c.en_espera);
         if(comEsp.length > 0) confirmarComisionesPedido(p.id, venta);
-        else generarComisionesVenta(venta, { en_espera: false, pedido_id: p.id, pedido_num: p.numero });
+        else generarComisionesVenta(venta, { en_espera: false, pedido_id: p.id, pedido_num: p.numero, diseno_usd: p.diseno_usd||0, extras_usd: p.extras_usd||0 });
 
         descontarInventarioDeItems(p.items||[], 'Entrega pedido '+p.numero);
 
@@ -13355,7 +13382,7 @@ function ejecutarCambioEstadoMasivo(){
 
         const comEsp = loadComisiones().filter(c => String(c.pedido_id) === String(p.id) && c.en_espera);
         if(comEsp.length > 0) confirmarComisionesPedido(p.id, venta);
-        else generarComisionesVenta(venta, { en_espera: false, pedido_id: p.id, pedido_num: p.numero });
+        else generarComisionesVenta(venta, { en_espera: false, pedido_id: p.id, pedido_num: p.numero, diseno_usd: p.diseno_usd||0, extras_usd: p.extras_usd||0 });
 
         descontarInventarioDeItems(p.items||[], 'Entrega pedido '+p.numero);
 
@@ -17886,7 +17913,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_14';
+  const APP_VERSION = 'v15_16';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
