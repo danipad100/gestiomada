@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_13">
+<html lang="es" data-app-version="GestioMada_V15_14">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -3114,6 +3114,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.14: Reportes/Comisiones — filtros estilo Excel (▽) extendidos a las 6 columnas que faltaban: Tipo, Venta, %, Comisión, Pago y Ref. / Cliente (antes solo Vendedor y Producto los tenían). Venta/%/Comisión listan los valores formateados tal cual se muestran ($ y %) y se ordenan numéricamente, no alfabéticamente. Pago filtra por el estado visible del chip (En espera / Pendiente / Pagada / —). Ref. / Cliente filtra por el texto combinado de número de pedido-venta + nombre de cliente. Internamente se precalculan los 8 campos filtrables una sola vez por comisión (reutilizando el cruce con pedido/venta ya hecho para la columna Ref.) en vez de recalcularlos dos veces por fila.</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.13: Reportes — filtros estilo Excel (▽) extendidos a las tablas de detalle de Ventas, Pedidos e Inventario, con el mismo motor genérico y visual que ya usaban Textiles/Orden de Producción y Comisiones. Ventas: columnas Cliente, Método y Canal (afecta también los gráficos de la pestaña, ya que ahora se filtran junto con la tabla). Pedidos: columnas Cliente, Canal y Estado (idem, afecta KPIs y gráficos del tab). Inventario → Stock actual: columnas Ítem y Tipo; se quitó el límite de 15 filas de esa tabla para que el filtro tenga sentido sobre el listado completo. Los tabs de Productos, Clientes y Caja no recibieron estos filtros porque sus tablas son rankings agregados (top 10/15) sin una fila por registro individual — si se necesita, se puede agregar una tabla de detalle nueva ahí. Se centralizó la lógica de filtrado en un motor reutilizable (repColAbrirFiltro/repColFiltroOpcion/etc.) para no repetir código en cada tab nuevo.</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.12: Reportes/Comisiones — tres mejoras al Listado de comisiones: (1) Los 4 KPIs (En espera, Pendientes de pago, Pagadas, Desactivadas) ahora muestran también la cantidad de &lt;b&gt;pedidos&lt;/b&gt; distintos comisionados junto al número de comisiones (ej: &quot;93 comisiones · 47 pedidos&quot;), contando por pedido/venta de origen en vez de por ítem, para no inflar el conteo cuando un pedido tiene varios productos. (2) Nuevos filtros estilo Excel (▽) en las columnas Vendedor y Producto del listado, con selección múltiple por checkbox — mismo patrón visual que Reportes/Textiles → Orden de Producción. (3) La columna Ref. ahora muestra también el nombre del cliente junto al número de pedido/venta (ej: &quot;PED-0136 · Francis Rosendo&quot;), resuelto cruzando la comisión con el pedido o la venta vinculada. FIX relacionado: confirmarComisionesPedido() no guardaba venta_id/venta_numero al confirmar una comisión en espera al momento de la entrega, dejando esos campos vacíos aun cuando la Venta sí se había creado — esto hacía que el chip de la columna Ref. mostrara &quot;pedido aún no entregado&quot; (morado) en comisiones ya entregadas y pagadas. Corregido en los 4 puntos donde se entrega un pedido (entrega directa, cobrar y entregar, y los dos casos del cambio de estado masivo); el color morado ahora depende del flag en_espera real, no de si venta_numero está vacío.</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.11: Reportes/Textiles Orden de Produccion — filtros estilo Excel en las 4 columnas de texto: Producto, Talla, Color y Caracteristica. Embudo en cada encabezado abre un panel flotante posicionado con JS (position:fixed, coordenadas del boton) con checkboxes por cada valor unico de esa columna, opcion Seleccionar todo y boton Limpiar. El embudo se vuelve morado con flecha llena cuando hay un filtro activo. Todos los filtros se aplican combinados. Se reescribio por completo el sistema de filtros anterior que no funcionaba (panel con position:absolute sin posicionamiento relativo).</p>
@@ -13660,7 +13661,7 @@ function _comOrigenInfo(c, pedMap, venMap, venByNum){
 }
 
 /* ── Filtros de columna estilo Excel para el Listado de comisiones ── */
-const _comFiltros = { vendedor_nom: new Set(), producto_nom: new Set() };
+const _comFiltros = { vendedor_nom: new Set(), producto_nom: new Set(), tipo_lbl: new Set(), venta_fmt: new Set(), porc_fmt: new Set(), comision_fmt: new Set(), pago_lbl: new Set(), ref_lbl: new Set() };
 let _comFiltroColActual = null;
 let _comFilasCache = [];
 
@@ -13676,11 +13677,17 @@ function comAbrirFiltro(e, col){
   }
   _comFiltroColActual = col;
 
-  const titulos = { vendedor_nom:'Vendedor', producto_nom:'Producto' };
+  const titulos = { vendedor_nom:'Vendedor', producto_nom:'Producto', tipo_lbl:'Tipo', venta_fmt:'Venta', porc_fmt:'%', comision_fmt:'Comisión', pago_lbl:'Pago', ref_lbl:'Ref. / Cliente' };
   const tituloEl = document.getElementById('com-filtro-titulo');
   if(tituloEl) tituloEl.textContent = 'Filtrar ' + (titulos[col]||col);
 
-  const vals = [...new Set(_comFilasCache.map(r => r[col]||'').filter(Boolean))].sort();
+  const cache = _comFilasCache.map(r => r[col]||'').filter(Boolean);
+  const vals = [...new Set(cache)];
+  if(['venta_fmt','comision_fmt','porc_fmt'].includes(col)){
+    vals.sort((a,b) => parseEU(a.replace(/[^0-9.,]/g,'')) - parseEU(b.replace(/[^0-9.,]/g,'')));
+  } else {
+    vals.sort();
+  }
 
   const opDiv = document.getElementById('com-filtro-opciones');
   const activoSet = _comFiltros[col];
@@ -13797,14 +13804,34 @@ function renderRepComisiones(){
     return true;
   }).sort((a,b) => String(b.fecha||'').localeCompare(String(a.fecha||'')));
 
-  // Caché para poblar las opciones de los filtros de columna (Vendedor/Producto)
-  _comFilasCache = fil;
+  // Precalcular, por cada comisión, todos los valores usados por los filtros de columna
+  // (evita recalcular el cruce con pedido/venta dos veces por fila)
+  const _comPagoLbl = c => !c.activa ? '—' : (c.en_espera ? 'En espera' : (c.pagada ? 'Pagada' : 'Pendiente'));
+  const filConCampos = fil.map(c => {
+    const origen = _comOrigenInfo(c, pedMap, venMap, venByNum);
+    const refLbl = origen.num ? (origen.num + (origen.cliente ? ' · ' + origen.cliente : '')) : '—';
+    return {
+      c, origen,
+      vendedor_nom: c.vendedor_nom || '',
+      producto_nom: c.producto_nom || '',
+      tipo_lbl:     c.tipo_venta==='mayor' ? 'Mayor' : 'Detal',
+      venta_fmt:    euro(c.monto_venta),
+      porc_fmt:     c.porcentaje + '%',
+      comision_fmt: euro(c.monto_comision),
+      pago_lbl:     _comPagoLbl(c),
+      ref_lbl:      refLbl
+    };
+  });
 
-  // Filtros de columna estilo Excel (Vendedor, Producto)
-  const filCol = fil.filter(c =>
-    (!_comFiltros.vendedor_nom.size || !_comFiltros.vendedor_nom.has(c.vendedor_nom||'')) &&
-    (!_comFiltros.producto_nom.size || !_comFiltros.producto_nom.has(c.producto_nom||''))
+  // Caché para poblar las opciones de los filtros de columna
+  _comFilasCache = filConCampos;
+
+  // Filtros de columna estilo Excel (las 8 columnas del listado)
+  const COM_COLS = ['vendedor_nom','producto_nom','tipo_lbl','venta_fmt','porc_fmt','comision_fmt','pago_lbl','ref_lbl'];
+  const filColRows = filConCampos.filter(r =>
+    COM_COLS.every(col => !_comFiltros[col].size || !_comFiltros[col].has(r[col]))
   );
+  const filCol = filColRows.map(r => r.c);
   comActualizarBotonesFiltro();
 
   // KPIs (sobre lo efectivamente visible, filCol)
@@ -13842,7 +13869,7 @@ function renderRepComisiones(){
   }
 
   let rows = '';
-  filCol.forEach(c => {
+  filColRows.forEach(({c, origen}) => {
     const fechaFmt = c.fecha ? new Date(c.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'}) : '—';
     const tipoBg = c.tipo_venta==='mayor' ? 'background:#dbeafe;color:#1e40af' : 'background:#fef3c7;color:#92400e';
     const checked = c.activa ? 'checked' : '';
@@ -13862,7 +13889,6 @@ function renderRepComisiones(){
     const comColor = !c.activa ? 'var(--muted)' : c.en_espera ? '#7C3AED' : (c.pagada ? 'var(--ok)' : '#854F0B');
 
     // Ref. + cliente — "en espera" (aún no entregado) se muestra en morado
-    const origen = _comOrigenInfo(c, pedMap, venMap, venByNum);
     const refTxt = origen.num ? esc(origen.num) + (origen.cliente ? ' · ' + esc(origen.cliente) : '') : '—';
     const refHtml = origen.num
       ? (c.en_espera ? '<span title="Pedido aún no entregado" style="color:#7C3AED">' + refTxt + '</span>' : refTxt)
@@ -13888,20 +13914,19 @@ function renderRepComisiones(){
     + '<th style="padding:7px;text-align:left;color:var(--muted);font-weight:600">Fecha</th>'
     + '<th style="padding:7px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Vendedor <button class="com-f-btn" data-col="vendedor_nom" onclick="comAbrirFiltro(event,\'vendedor_nom\')" title="Filtrar">▽</button></th>'
     + '<th style="padding:7px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap">Producto <button class="com-f-btn" data-col="producto_nom" onclick="comAbrirFiltro(event,\'producto_nom\')" title="Filtrar">▽</button></th>'
-    + '<th style="padding:7px;text-align:center;color:var(--muted);font-weight:600">Tipo</th>'
-    + '<th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Venta</th>'
-    + '<th style="padding:7px;text-align:center;color:var(--muted);font-weight:600">%</th>'
-    + '<th style="padding:7px;text-align:right;color:var(--muted);font-weight:600">Comisión</th>'
-    + '<th style="padding:7px;text-align:center;color:var(--muted);font-weight:600">Pago</th>'
-    + '<th style="padding:7px;text-align:left;color:var(--muted);font-weight:600" title="Número de venta o pedido, y cliente">Ref. / Cliente</th>'
+    + '<th style="padding:7px;text-align:center;color:var(--muted);font-weight:600;white-space:nowrap">Tipo <button class="com-f-btn" data-col="tipo_lbl" onclick="comAbrirFiltro(event,\'tipo_lbl\')" title="Filtrar">▽</button></th>'
+    + '<th style="padding:7px;text-align:right;color:var(--muted);font-weight:600;white-space:nowrap">Venta <button class="com-f-btn" data-col="venta_fmt" onclick="comAbrirFiltro(event,\'venta_fmt\')" title="Filtrar">▽</button></th>'
+    + '<th style="padding:7px;text-align:center;color:var(--muted);font-weight:600;white-space:nowrap">% <button class="com-f-btn" data-col="porc_fmt" onclick="comAbrirFiltro(event,\'porc_fmt\')" title="Filtrar">▽</button></th>'
+    + '<th style="padding:7px;text-align:right;color:var(--muted);font-weight:600;white-space:nowrap">Comisión <button class="com-f-btn" data-col="comision_fmt" onclick="comAbrirFiltro(event,\'comision_fmt\')" title="Filtrar">▽</button></th>'
+    + '<th style="padding:7px;text-align:center;color:var(--muted);font-weight:600;white-space:nowrap">Pago <button class="com-f-btn" data-col="pago_lbl" onclick="comAbrirFiltro(event,\'pago_lbl\')" title="Filtrar">▽</button></th>'
+    + '<th style="padding:7px;text-align:left;color:var(--muted);font-weight:600;white-space:nowrap" title="Número de venta o pedido, y cliente">Ref. / Cliente <button class="com-f-btn" data-col="ref_lbl" onclick="comAbrirFiltro(event,\'ref_lbl\')" title="Filtrar">▽</button></th>'
     + '</tr></thead>'
     + '<tbody>' + rows + '</tbody>'
     + '</table></div>';
 }
 
 function comLimpiarTodosFiltrosCol(){
-  _comFiltros.vendedor_nom.clear();
-  _comFiltros.producto_nom.clear();
+  Object.values(_comFiltros).forEach(s => s.clear());
   comActualizarBotonesFiltro();
   renderRepComisiones();
 }
@@ -17861,7 +17886,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_13';
+  const APP_VERSION = 'v15_14';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
