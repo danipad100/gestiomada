@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_16">
+<html lang="es" data-app-version="GestioMada_V15_17">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -3139,6 +3139,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="card" style="opacity:.7">
           <div class="card-title"><span class="ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> Versión</div>
           <p style="font-size:12px;color:var(--muted)">GestioMada · v13.42 · Editor · Catálogo · Clientes · Pedidos · Ventas · Caja · Inventario · Reportes</p>
+          <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.17: FIX CRÍTICO — Ventas/Utilidad de pedidos guardadas en precio base, no c/dif. Al entregar un pedido, la Venta que se crea automáticamente para registrar la operación guardaba `total: p.total` (precio base "dólar paralelo") en vez de `p.total_cdif` (lo que el cliente realmente pagó, mismo cálculo que ya se usa en la ficha del pedido). Esto subestimaba el ingreso y la utilidad de TODA venta ligada a un pedido en Reportes → Ventas y Reportes → Productos (Caja y Comisiones no se veían afectados: Caja ya usa su propio campo monto_cdif, y Comisiones se corrigió en v15.16). Corregido en los 4 puntos donde se crea esa Venta (entrega directa, cobrar y entregar, y los 2 casos del cambio masivo de estado): ahora usan pedidoTotalCDifCalc(p) para el total y recalculan utilidad = total_cdif − costo_total. Se agregó el helper totalPagadoCDif() (suma monto_cdif de los pagos del pedido) para que "recibido" en la Venta nueva también quede en c/dif. CORRECCIÓN RETROACTIVA en Supabase: 85 registros de la tabla ventas (los que vienen de un pedido, identificados por el patrón "Pedido PED-XXXX" en notas ya que pedido_id no se sincroniza a Supabase) fueron actualizados: total → total_cdif del pedido, utilidad recalculada. El campo "recibido" de esas 85 ventas NO se tocó — los pagos antiguos no siempre guardaron el desglose c/dif de forma consistente y no había forma confiable de reconstruirlo sin riesgo de empeorar el dato. Pendiente/no incluido en este fix: Reportes → Productos sigue calculando ingresos por producto sumando directamente los items (precio base) en vez de escalar por el diferencial de cada venta — quedó fuera de este fix porque requiere guardar los extras del pedido en la propia Venta para poder aislar el monto de productos del de extras; por ahora el ranking de "Productos más vendidos" y "Utilidad por producto" sigue en base, mientras que el total de Reportes → Ventas ya está correcto en c/dif — quedará una pequeña diferencia entre ambas pestañas hasta que se aborde ese punto aparte.</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.16: Comisiones — FIX CRÍTICO monto de venta incorrecto. La comisión de productos de un pedido se calculaba sobre el precio base "dólar paralelo" (precio_unit × cantidad), sin aplicar el diferencial cambiario — es decir, sobre un monto menor al que el cliente realmente pagó (el mismo error que ya existía desde el diseño original de generarComisionesVenta). Ahora, cuando la comisión proviene de un pedido, el monto de cada producto se multiplica por el diferencial vigente al momento de generar la comisión, igual que pedidoTotalCDifCalc(). Las ventas POS directas (sin pedido) NO aplican diferencial, porque venta.total tampoco lo aplica en ese flujo — comisionar con diferencial ahí infllaría el monto por encima de lo cobrado. CORRECCIÓN RETROACTIVA en Supabase: se recalcularon 91 comisiones de productos de pedidos ya entregados (monto_venta y monto_comision, usando el total_cdif ya guardado en cada pedido para derivar el diferencial histórico exacto — no el diferencial actual) y se agregaron 22 comisiones de "Extras" que faltaban por no existir aún la función de comisionar extras (v15.15) al momento de esos pedidos. Ninguna comisión afectada estaba pagada. 3 pedidos muy antiguos (PED-0088/89/90) no se pudieron corregir por no tener total_cdif guardado — quedan pendientes de revisión manual si se necesita.</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.15: Comisiones — ahora también comisionan los extras "Diseño" y "Extras" de un pedido (Delivery y Envío quedan excluidos a propósito, por ser costos logísticos y no trabajo del vendedor). Cada uno aparece como una línea de comisión independiente en el listado (producto "Diseño (extra del pedido)" / "Extras (extra del pedido)"), comisionada al % de "detal" configurado en Ajustes. Aplica en los 3 momentos donde se generan comisiones: registro del pedido (en_espera), entrega (confirmación/creación), y recálculo al editar un pedido (si solo cambian los extras y no los ítems, igual dispara el recálculo — ya estaba contemplado en la detección de cambios de montos). generarComisionesVenta ahora acepta diseno_usd/extras_usd en las opciones; los 6 puntos donde se llama (registro, entrega directa, cobrar y entregar, cambio masivo de estado ×2, recálculo por edición) fueron actualizados para pasar esos montos desde el pedido. La herramienta temporal de importación histórica (importarComisionesPedidosExistentes, marcada para eliminar) no fue tocada — solo cubre ítems, no extras, ya que es de un solo uso para pedidos previos a v14.82.</p>
           <p style="font-size:12px;color:var(--muted);margin-top:4px">v15.14: Reportes/Comisiones — filtros estilo Excel (▽) extendidos a las 6 columnas que faltaban: Tipo, Venta, %, Comisión, Pago y Ref. / Cliente (antes solo Vendedor y Producto los tenían). Venta/%/Comisión listan los valores formateados tal cual se muestran ($ y %) y se ordenan numéricamente, no alfabéticamente. Pago filtra por el estado visible del chip (En espera / Pendiente / Pagada / —). Ref. / Cliente filtra por el texto combinado de número de pedido-venta + nombre de cliente. Internamente se precalculan los 8 campos filtrables una sola vez por comisión (reutilizando el cruce con pedido/venta ya hecho para la columna Ref.) en vez de recalcularlos dos veces por fila.</p>
@@ -11306,6 +11307,8 @@ function estadoPago(ped){
   return primero ? 'abonado' : 'parcial';
 }
 function totalPagado(ped){ return (ped.pagos||[]).reduce((a,p)=>a+p.monto,0); }
+// Suma de lo realmente pagado en dólar c/dif (usa monto_cdif si existe; pagos viejos sin ese campo caen a monto base).
+function totalPagadoCDif(ped){ return (ped.pagos||[]).reduce((a,p)=>a+(p.monto_cdif!=null?p.monto_cdif:p.monto),0); }
 
 
 function nombreClientePedido(ped){
@@ -13023,7 +13026,9 @@ function _ejecutarEntregaPedido(all, idx){
 
   // Crear Venta vinculada
   const venAll=loadVen();
-  const pagado=totalPagado(p);
+  const pagado=totalPagadoCDif(p);          // c/dif: lo que el cliente realmente pagó
+  const totalCDifEnt = pedidoTotalCDifCalc(p); // Reportes/Ventas/Productos deben reflejar esto, no p.total (base)
+  const costoTotalEnt = (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0);
   const venta={
     id:          Date.now(),
     numero:      nextNumVen(),
@@ -13031,11 +13036,11 @@ function _ejecutarEntregaPedido(all, idx){
     items:       (p.items||[]).map(it=>({...it, moneda_prod:it.moneda_prod||'usd'})),
     subtotal:    p.subtotal||p.total,
     descuento:   p.descuento||0,
-    total:       p.total,
+    total:       totalCDifEnt,
     recibido:    pagado,
-    vuelto:      Math.max(0,pagado-p.total),
-    costo_total: (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
-    utilidad:    p.total - (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
+    vuelto:      Math.max(0,pagado-totalCDifEnt),
+    costo_total: costoTotalEnt,
+    utilidad:    totalCDifEnt - costoTotalEnt,
     metodo:      (p.pagos&&p.pagos.length?p.pagos[p.pagos.length-1].metodo:'efectivo_bs'),
     canal:       normalizarCanalVenta(p.canal),
     notas:       'Pedido '+p.numero+(p.notas?' — '+p.notas:''),
@@ -13146,7 +13151,9 @@ function cobrarYEntregar(){
 
   // 4. Crear Venta vinculada
   const venAll = loadVen();
-  const pagadoTotal = totalPagado(p);
+  const pagadoTotal = totalPagadoCDif(p);        // c/dif: lo que el cliente realmente pagó
+  const totalCDifCE = pedidoTotalCDifCalc(p);    // Reportes/Ventas/Productos deben reflejar esto, no p.total (base)
+  const costoTotalCE = (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0);
   const venta = {
     id:          Date.now()+2,
     numero:      nextNumVen(),
@@ -13154,11 +13161,11 @@ function cobrarYEntregar(){
     items:       (p.items||[]).map(it=>({...it, moneda_prod:it.moneda_prod||'usd'})),
     subtotal:    p.subtotal||p.total,
     descuento:   p.descuento||0,
-    total:       p.total,
+    total:       totalCDifCE,
     recibido:    pagadoTotal,
-    vuelto:      Math.max(0,pagadoTotal-p.total),
-    costo_total: (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
-    utilidad:    p.total - (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
+    vuelto:      Math.max(0,pagadoTotal-totalCDifCE),
+    costo_total: costoTotalCE,
+    utilidad:    totalCDifCE - costoTotalCE,
     metodo:      metodo,
     canal:       normalizarCanalVenta(p.canal),
     notas:       'Pedido '+p.numero+(p.notas?' — '+p.notas:''),
@@ -13330,15 +13337,17 @@ function ejecutarCambioEstadoMasivo(){
         upsertCajaMov(mov);
 
         const venAll = loadVen();
-        const pagadoTotal = totalPagado(p);
+        const pagadoTotal = totalPagadoCDif(p);         // c/dif: lo que el cliente realmente pagó
+        const totalCDifBulk1 = pedidoTotalCDifCalc(p);  // Reportes/Ventas/Productos deben reflejar esto, no p.total (base)
+        const costoTotalBulk1 = (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0);
         const venta = {
           id: _bulkId(), numero: nextNumVen(),
           cliente: p.cliente||null,
           items: (p.items||[]).map(it=>({...it, moneda_prod:it.moneda_prod||'usd'})),
-          subtotal: p.subtotal||p.total, descuento: p.descuento||0, total: p.total,
-          recibido: pagadoTotal, vuelto: Math.max(0,pagadoTotal-p.total),
-          costo_total: (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
-          utilidad: p.total - (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
+          subtotal: p.subtotal||p.total, descuento: p.descuento||0, total: totalCDifBulk1,
+          recibido: pagadoTotal, vuelto: Math.max(0,pagadoTotal-totalCDifBulk1),
+          costo_total: costoTotalBulk1,
+          utilidad: totalCDifBulk1 - costoTotalBulk1,
           metodo, canal: normalizarCanalVenta(p.canal),
           notas: 'Pedido '+p.numero+(p.notas?' — '+p.notas:''),
           fecha: new Date().toISOString(), estado: 'completada',
@@ -13361,15 +13370,17 @@ function ejecutarCambioEstadoMasivo(){
         all[idx] = p;
 
         const venAll = loadVen();
-        const pagado = totalPagado(p);
+        const pagado = totalPagadoCDif(p);              // c/dif: lo que el cliente realmente pagó
+        const totalCDifBulk2 = pedidoTotalCDifCalc(p);  // Reportes/Ventas/Productos deben reflejar esto, no p.total (base)
+        const costoTotalBulk2 = (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0);
         const venta = {
           id: _bulkId(), numero: nextNumVen(),
           cliente: p.cliente||null,
           items: (p.items||[]).map(it=>({...it, moneda_prod:it.moneda_prod||'usd'})),
-          subtotal: p.subtotal||p.total, descuento: p.descuento||0, total: p.total,
-          recibido: pagado, vuelto: Math.max(0,pagado-p.total),
-          costo_total: (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
-          utilidad: p.total - (p.items||[]).reduce((a,it)=>a+(it.costo_unit||0)*(it.cant||1),0),
+          subtotal: p.subtotal||p.total, descuento: p.descuento||0, total: totalCDifBulk2,
+          recibido: pagado, vuelto: Math.max(0,pagado-totalCDifBulk2),
+          costo_total: costoTotalBulk2,
+          utilidad: totalCDifBulk2 - costoTotalBulk2,
           metodo: (p.pagos&&p.pagos.length?p.pagos[p.pagos.length-1].metodo:'efectivo_bs'),
           canal: normalizarCanalVenta(p.canal),
           notas: 'Pedido '+p.numero+(p.notas?' — '+p.notas:''),
@@ -17913,7 +17924,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_16';
+  const APP_VERSION = 'v15_17';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
