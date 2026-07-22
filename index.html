@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_17">
+<html lang="es" data-app-version="GestioMada_V15_21">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>GestioMada</title>
 <link rel="manifest" href="manifest.json"/>
-<meta content="#ff7aa2" name="theme-color"/>
+<meta content="#ea8db9" name="theme-color"/>
 <meta name="apple-mobile-web-app-title" content="GestioMada"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="default" name="apple-mobile-web-app-status-bar-style"/>
@@ -244,6 +244,13 @@ async function forzarSyncSupa(){
 }
 
 function iniciarRealtime(){
+  // FIX v15.20: initSupabaseSync() llama a iniciarRealtime() en cada sync (inicial y manual
+  // desde el botón "Sincronizar"). Volver a suscribir los mismos canales ('rt-ventas', etc.)
+  // hace que Supabase lance "cannot add postgres_changes callbacks ... after subscribe()".
+  // Los canales solo necesitan suscribirse una vez por sesión; los syncs posteriores solo
+  // deben refrescar datos, no volver a abrir el listener.
+  if(window._realtimeIniciado) return;
+  window._realtimeIniciado = true;
   const tablasRealtime = ['ventas','pedidos','productos','clientes','caja_movimientos','inventario_insumos','productos_pers','usuarios','comisiones','cotizaciones'];
   tablasRealtime.forEach(tabla => {
     SUPA.channel('rt-' + tabla)
@@ -915,8 +922,9 @@ SUPA.from('productos').select('id').limit(1)
   --card:   #fff;
   --ink:    #222;
   --muted:  #6b7280;
-  --brand:  #ff7aa2;
-  --brand2: #7aa2ff;
+  --brand:  #ea8db9;
+  --brand2: #8a3a5b;
+  --brand-light: #f0aecb;
   --ok:     #22c55e;
   --danger: #ef4444;
   --warn:   #f59e0b;
@@ -970,7 +978,7 @@ body.dark .sidebar{background:#101318;border-right-color:#23283a}
 body.dark .sb-logo{border-bottom-color:#23283a}
 body.dark .sb-group{color:#4b5563}
 body.dark .nav-item:hover{background:#1b2030}
-body.dark .nav-item.active{background:linear-gradient(90deg,#ff7aa211,#7aa2ff11);border-left-color:var(--brand)}
+body.dark .nav-item.active{background:rgba(234,141,185,.10);border-left-color:var(--brand)}
 body.dark .topbar{background:#101318;border-bottom-color:#23283a;box-shadow:none}
 body.dark .search-bar{background:#101318;border-color:#23283a}
 body.dark .search-bar input{background:#0f1115;color:#e5e7eb;border-color:#2a3147}
@@ -1034,6 +1042,8 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--i
   border-right:1px solid #f0f0f5;
   display:flex;flex-direction:column;
   flex-shrink:0;overflow-y:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
   box-shadow:2px 0 12px rgba(0,0,0,.04);
   z-index:10;
 }
@@ -1065,7 +1075,7 @@ html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--i
 }
 .nav-item:hover{background:#f7f7fb;color:var(--ink)}
 .nav-item.active{
-  background:linear-gradient(120deg,#ffe3ee,#e8efff);
+  background:#fdf1f6;
   color:var(--ink);
 }
 .nav-item .ico{width:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -1196,7 +1206,7 @@ body.dark .pin-key:active{ background:#3a1525 }
 }
 .rol-option input:checked ~ .rol-card{
   border-color:var(--brand);
-  background:linear-gradient(135deg,#fff5f8,#f0f4ff);
+  background:#fdf1f6;
 }
 body.dark .rol-card{background:var(--card);border-color:#2a3147}
 body.dark .rol-option input:checked ~ .rol-card{background:#1b1030;border-color:var(--brand)}
@@ -1208,7 +1218,7 @@ body.dark .rol-option input:checked ~ .rol-card{background:#1b1030;border-color:
 .bottom-nav{
   display:none;
   position:fixed;bottom:0;left:0;right:0;
-  height:58px;z-index:200;
+  height:64px;z-index:200;
   background:var(--card);
   border-top:1px solid #f0f0f5;
   box-shadow:0 -4px 16px rgba(0,0,0,.07);
@@ -1229,7 +1239,7 @@ body.dark .bn-mas-btn:hover{background:#23283a}
   position:relative;
 }
 .bn-item.active{color:var(--brand)}
-.bn-item svg{width:20px;height:20px;flex-shrink:0}
+.bn-item svg{width:25px;height:25px;flex-shrink:0}
 .bn-item .bn-badge{
   position:absolute;top:4px;right:calc(50% - 14px);
   background:var(--brand);color:#fff;
@@ -1278,7 +1288,7 @@ body.dark .ham-btn:hover{background:#1b2030}
 
   /* Sidebar: drawer deslizable */
   .sidebar{
-    position:fixed;top:0;left:0;height:100%;
+    position:fixed;top:0;left:0;height:100%;height:100dvh;
     width:240px!important;z-index:100;
     transform:translateX(-100%);
     transition:transform .25s cubic-bezier(.4,0,.2,1);
@@ -1430,7 +1440,7 @@ input[readonly]{background:#ffe8ee;font-weight:600;color:var(--ink)}
 }
 .btn:active{transform:scale(.97)}
 .btn:hover{opacity:.88}
-.btn-brand{background:linear-gradient(120deg,var(--brand),var(--brand2));color:#fff}
+.btn-brand{background:var(--brand);color:#fff}
 .btn-ok{background:var(--ok);color:#fff}
 .btn-danger{background:var(--danger);color:#fff}
 .btn-dark{background:#111;color:#fff}
@@ -1441,7 +1451,7 @@ label.btn{cursor:pointer}
 /* ═══════════════ PILLS ═══════════════ */
 .pill{
   display:inline-flex;align-items:center;gap:6px;
-  background:#f3f4f6;border-radius:999px;
+  background:var(--bg);border-radius:999px;
   padding:5px 12px;font-size:12px;
 }
 .pill strong,.result{font-weight:700;color:var(--brand)}
@@ -1461,7 +1471,7 @@ label.btn{cursor:pointer}
 
 /* ═══════════════ TOT BLOCK ═══════════════ */
 .tot-block{
-  background:linear-gradient(120deg,#ffe3ee,#e8efff);
+  background:#fdf1f6;
   border-radius:var(--radius);
   padding:14px 18px;
   display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;
@@ -1506,6 +1516,45 @@ label.btn{cursor:pointer}
 .kpi.blue  .kpi-val{color:#185FA5}
 .kpi.warn  .kpi-val{color:#854F0B}
 
+/* ═══════════════ DASHBOARD (v15.18) ═══════════════ */
+.dh-alerts{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:14px}
+.dh-alert{display:none;align-items:center;gap:8px;padding:9px 16px;border-radius:999px;font-size:12.5px;font-weight:600;cursor:pointer;transition:filter .15s}
+.dh-alert:hover{filter:brightness(.96)}
+.dh-alert.show{display:inline-flex}
+.dh-alert.red{background:#FCEBEB;color:#A32D2D}
+.dh-alert.amber{background:#FAEEDA;color:#854F0B}
+.dh-alert-ok{align-items:center;gap:8px;padding:9px 16px;border-radius:999px;font-size:12.5px;font-weight:600;background:#EAF3DE;color:#3B6D11}
+
+.dh-hero{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+.dh-card{background:var(--card);border-radius:var(--r-xl);box-shadow:var(--shadow);padding:16px 18px;cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
+.dh-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,.10)}
+.dh-card-top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.dh-card-ico{width:28px;height:28px;border-radius:8px;background:var(--brand-light);color:var(--brand2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dh-card-lbl{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:600}
+.dh-card-val{font-size:24px;font-weight:700;color:var(--ink);line-height:1.15}
+.dh-card-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+.dh-summary{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.dh-sec{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:14px 18px}
+.dh-sec-title{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.dh-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--bg);cursor:pointer}
+.dh-row:last-child{border-bottom:none}
+.dh-row-lbl{font-size:12.5px;color:var(--ink);font-weight:500;display:flex;flex-direction:column;gap:1px}
+.dh-row-lbl small{font-size:10px}
+.dh-row-val{font-size:14px;font-weight:700;color:var(--ink);white-space:nowrap}
+.dh-row:hover .dh-row-val{color:var(--brand2)}
+
+@media (max-width:900px){.dh-hero{grid-template-columns:repeat(2,1fr)}.dh-summary{grid-template-columns:1fr}}
+@media (max-width:480px){.dh-hero{grid-template-columns:1fr}}
+
+body.dark .dh-card{background:#151924;border:1px solid #23283a}
+body.dark .dh-card-ico{background:#2a1620}
+body.dark .dh-sec{background:#151924;box-shadow:none;border:1px solid #23283a}
+body.dark .dh-row{border-bottom-color:#23283a}
+body.dark .dh-alert.red{background:#3a1616;color:#f87171}
+body.dark .dh-alert.amber{background:#3a2c10;color:#fbbf24}
+body.dark .dh-alert-ok{background:#132a17;color:#4ade80}
+
 /* ═══════════════ PRODUCT GRID ═══════════════ */
 .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
 .prod-card{
@@ -1529,7 +1578,7 @@ label.btn{cursor:pointer}
 #pers_search_results div:hover{background:var(--brand-light,#fff0f5);color:var(--brand)}
 .prod-card-img{
   width:100%;height:140px;
-  background:linear-gradient(135deg,#ffe3ee 0%,#e8efff 100%);
+  background:#fdf1f6;
   display:flex;align-items:center;justify-content:center;
   font-size:38px;position:relative;
   border-bottom:1px solid #f3f3f8;
@@ -1547,6 +1596,7 @@ label.btn{cursor:pointer}
 .prod-card-cost{font-size:11px;color:var(--muted)}
 .prod-card-pv{font-size:16px;font-weight:700;color:var(--ink);display:flex;align-items:baseline;gap:6px;flex-wrap:wrap}
 .prod-card-actions{border-top:1px solid #f3f3f8;padding:8px 12px;display:flex;gap:6px}
+body.dark .prod-card-actions{border-top-color:#23283a}
 .status-dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:var(--ok)}
 .status-dot.off{background:#d1d5db}
 
@@ -1565,7 +1615,7 @@ label.btn{cursor:pointer}
 }
 .li-ico{
   width:40px;height:40px;border-radius:12px;flex-shrink:0;
-  background:linear-gradient(135deg,#ffe3ee,#e8efff);
+  background:#fdf1f6;
   display:flex;align-items:center;justify-content:center;font-size:20px;
 }
 .li-body{flex:1;min-width:0}
@@ -1658,10 +1708,10 @@ label.btn{cursor:pointer}
 }
 .gm-select-menu button:hover,
 .gm-select-menu button.focused{
-  background:linear-gradient(120deg,#ffe8ee,#eef2ff);
+  background:#fdf1f6;
 }
 .gm-select-menu button.selected{
-  background:linear-gradient(120deg,#ffd1e1,#c7d4ff);
+  background:var(--brand-light);
   font-weight:600;
 }
 .gm-select-menu button .gm-select-icon{width:20px;height:20px;color:var(--brand)}
@@ -1674,8 +1724,8 @@ body.dark .gm-select-trigger:focus{border-color:#ffd1e1}
 body.dark .gm-select-menu{background:#151924;border-color:#2a3147;box-shadow:0 8px 20px rgba(0,0,0,.4)}
 body.dark .gm-select-menu button{color:#e5e7eb}
 body.dark .gm-select-menu button:hover,
-body.dark .gm-select-menu button.focused{background:linear-gradient(120deg,#3a2330,#1f2645)}
-body.dark .gm-select-menu button.selected{background:linear-gradient(120deg,#5b2a3f,#2b3663);color:#fff}
+body.dark .gm-select-menu button.focused{background:#2a1620}
+body.dark .gm-select-menu button.selected{background:var(--brand2);color:#fff}
 body.dark #tb-rol-menu{background:#151924;border-color:#2a3147;box-shadow:0 8px 20px rgba(0,0,0,.4)}
 body.dark #ped-hide-panel{border-color:#2a3147;box-shadow:0 8px 20px rgba(0,0,0,.4)}
 body.dark #tb-rol-menu button{color:#e5e7eb}
@@ -1768,7 +1818,7 @@ body.dark .musr-chk input:checked ~ .musr-chk-box{background:var(--brand);border
 }
 .cfg-btn:hover{background:#f7f7fb;border-color:#ddd;color:var(--ink)}
 .ud{background:#ffe8ee !important;font-weight:600}
-.copy-btn{font-size:12px;border:none;background:#f3f4f6;border-radius:8px;padding:6px 10px;cursor:pointer;font-family:inherit;font-weight:600}
+.copy-btn{font-size:12px;border:none;background:var(--bg);border-radius:8px;padding:6px 10px;cursor:pointer;font-family:inherit;font-weight:600}
 .copy-btn:hover{background:#ffe3ee}
 
 /* Tab system */
@@ -1907,7 +1957,7 @@ body.dark .musr-chk input:checked ~ .musr-chk-box{background:var(--brand);border
 .pos-item-del:hover{color:var(--danger)}
 /* Total en carrito */
 .pos-total-bar{
-  background:linear-gradient(135deg,var(--brand),var(--brand2));
+  background:var(--brand);
   border-radius:0;padding:12px 16px;
   display:flex;justify-content:space-between;align-items:center;
   margin-top:0;
@@ -1927,7 +1977,7 @@ body.dark .musr-chk input:checked ~ .musr-chk-box{background:var(--brand);border
 }
 .pos-cobrar-btn{
   width:100%;padding:14px;border-radius:14px;
-  background:linear-gradient(135deg,var(--brand),var(--brand2));
+  background:var(--brand);
   color:#fff;border:none;font-size:15px;font-weight:700;
   cursor:pointer;font-family:inherit;
   box-shadow:0 4px 16px rgba(255,122,162,.35);
@@ -2047,6 +2097,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
 /* Scrollbar */
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:3px}
+body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
 
 
 @keyframes gm-spin{to{transform:rotate(360deg)}}
@@ -2369,7 +2420,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="fg" style="flex:1"><label>Confirmar PIN *</label><input type="password" id="musr_pin2" maxlength="4" placeholder="••••" inputmode="numeric" autocomplete="new-password" style="letter-spacing:6px;text-align:center;font-size:18px;font-weight:700;padding:8px 12px"/></div>
       </div>
       <div style="display:flex;align-items:center;gap:12px;padding:10px 0 4px">
-        <div id="musr-avatar" style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ff7aa2,#7aa2ff);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">?</div>
+        <div id="musr-avatar" style="width:44px;height:44px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0">?</div>
         <div style="font-size:12px;color:var(--muted)">Vista previa del avatar</div>
       </div>
       <div style="border-top:1px solid var(--border);margin:12px 0 10px"></div>
@@ -2490,112 +2541,71 @@ body.dark .pos-prod-img-ph{background:#23283a}
            DASHBOARD
       ══════════════════════════════════════ -->
       <div class="view active" id="view-dashboard">
-        <div class="grid g4" style="margin-bottom:14px">
-          <div class="kpi c-green" style="cursor:pointer" onclick="nav('catalogo',document.querySelector('[data-v=catalogo]'))">
-            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div></div>
-            <div class="kpi-lbl">Catálogo</div>
-            <div class="kpi-val" id="d-cat">0</div>
-            <div class="kpi-sub">productos →</div>
+
+        <!-- Alertas: solo aparecen si hay algo que requiera atención -->
+        <div class="dh-alerts" id="dh-alerts-wrap">
+          <div class="dh-alert amber" id="dh-alert-ent" onclick="nav('pedidos',document.querySelector('[data-v=pedidos]'))">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+            <span><b id="d-ent-hoy">0</b> pedido(s) por entregar hoy</span>
           </div>
-          <div class="kpi c-teal" style="cursor:pointer" onclick="nav('catalogo',document.querySelector('[data-v=catalogo]'))">
-            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E1F5EE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F6E56" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div></div>
-            <div class="kpi-lbl">Activos</div>
-            <div class="kpi-val" id="d-act">0</div>
-            <div class="kpi-sub">disponibles →</div>
+          <div class="dh-alert red" id="dh-alert-venc" onclick="nav('pedidos',document.querySelector('[data-v=pedidos]'))">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span><b id="d-ped-venc">0</b> pedido(s) vencido(s)</span>
           </div>
-          <div class="kpi c-blue" style="cursor:pointer" onclick="nav('clientes',document.querySelector('[data-v=clientes]'))">
-            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E6F1FB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div></div>
-            <div class="kpi-lbl">Clientes</div>
-            <div class="kpi-val" id="d-cli">0</div>
-            <div class="kpi-sub">registrados →</div>
+          <div class="dh-alert red" id="dh-alert-inv" onclick="nav('inventario',document.querySelector('[data-v=inventario]'))">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span><b id="d-inv-alertas">0</b> alerta(s) de inventario</span>
           </div>
-          <div class="kpi c-amber" style="cursor:pointer" onclick="nav('pedidos',document.querySelector('[data-v=pedidos]'))">
-            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></div></div>
-            <div class="kpi-lbl">Pedidos activos</div>
-            <div class="kpi-val" id="d-ped">0</div>
-            <div class="kpi-sub">en proceso →</div>
+          <div class="dh-alert-ok" id="dh-alert-ok" style="display:none">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span>Sin pendientes urgentes hoy</span>
           </div>
         </div>
-        <div class="grid g4" style="margin-bottom:14px">
-          <div class="kpi c-pink" style="cursor:pointer" onclick="nav('ventas',document.querySelector('[data-v=ventas]'))">
-            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FBEAF0"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#993556" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div></div>
-            <div class="kpi-lbl">Ventas hoy</div>
-            <div class="kpi-val" id="d-ven-num" style="font-size:20px">0</div>
-            <div class="kpi-sub">transacciones →</div>
+
+        <!-- Hero: pulso del día -->
+        <div class="dh-hero">
+          <div class="dh-card" onclick="nav('ventas',document.querySelector('[data-v=ventas]'))">
+            <div class="dh-card-top"><div class="dh-card-ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div><div class="dh-card-lbl">Ventas hoy</div></div>
+            <div class="dh-card-val" id="d-ven-num">0</div>
+            <div class="dh-card-sub">transacciones →</div>
           </div>
-          <div class="kpi c-green" style="cursor:pointer" onclick="nav('ventas',document.querySelector('[data-v=ventas]'))">
-            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EAF3DE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#3B6D11" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></div></div>
-            <div class="kpi-lbl">Ingresos hoy</div>
-            <div class="kpi-val" id="d-ven-hoy" style="font-size:16px">$ 0,00</div>
-            <div class="kpi-sub">total cobrado →</div>
+          <div class="dh-card" onclick="nav('ventas',document.querySelector('[data-v=ventas]'))">
+            <div class="dh-card-top"><div class="dh-card-ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></div><div class="dh-card-lbl">Ingresos hoy</div></div>
+            <div class="dh-card-val" id="d-ven-hoy">$ 0,00</div>
+            <div class="dh-card-sub">total cobrado →</div>
           </div>
-          <div class="kpi c-purple" style="cursor:pointer" onclick="nav('reportes',document.querySelector('[data-v=reportes]'))">
-            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EEEDFE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#534AB7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></div></div>
-            <div class="kpi-lbl">Utilidad hoy</div>
-            <div class="kpi-val" id="d-util-hoy" style="font-size:16px">$ 0,00</div>
-            <div class="kpi-sub">ganancia neta →</div>
+          <div class="dh-card" onclick="nav('reportes',document.querySelector('[data-v=reportes]'))">
+            <div class="dh-card-top"><div class="dh-card-ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></div><div class="dh-card-lbl">Utilidad hoy</div></div>
+            <div class="dh-card-val" id="d-util-hoy">$ 0,00</div>
+            <div class="dh-card-sub">ganancia neta →</div>
           </div>
-          <div class="kpi c-red" style="cursor:pointer" onclick="nav('inventario',document.querySelector('[data-v=inventario]'))">
-            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div></div>
-            <div class="kpi-lbl">Alertas inventario</div>
-            <div class="kpi-val" id="d-inv-alertas">0</div>
-            <div class="kpi-sub">stock bajo →</div>
+          <div class="dh-card" onclick="nav('pedidos',document.querySelector('[data-v=pedidos]'))">
+            <div class="dh-card-top"><div class="dh-card-ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></div><div class="dh-card-lbl">Pedidos activos</div></div>
+            <div class="dh-card-val" id="d-ped">0</div>
+            <div class="dh-card-sub">en proceso →</div>
           </div>
         </div>
-        <!-- Fila Finanzas (V14_33): KPIs ejecutivos financieros — solo visibles si admin -->
-        <div class="grid g4" id="d-finanzas-row" style="margin-bottom:14px;display:none">
-          <div class="kpi c-coral" style="cursor:pointer" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'))">
-            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FFE4E1"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#C2410C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg></div></div>
-            <div class="kpi-lbl">Por cobrar</div>
-            <div class="kpi-val" id="d-fin-cxc" style="font-size:16px">$ 0,00</div>
-            <div class="kpi-sub" id="d-fin-cxc-sub">— pedidos</div>
+
+        <!-- Resumen compacto -->
+        <div class="dh-summary">
+          <div class="dh-sec">
+            <div class="dh-sec-title">Negocio</div>
+            <div class="dh-row" onclick="nav('catalogo',document.querySelector('[data-v=catalogo]'))"><span class="dh-row-lbl">Catálogo</span><span class="dh-row-val" id="d-cat">0</span></div>
+            <div class="dh-row" onclick="nav('catalogo',document.querySelector('[data-v=catalogo]'))"><span class="dh-row-lbl">Productos activos</span><span class="dh-row-val" id="d-act">0</span></div>
+            <div class="dh-row" onclick="nav('clientes',document.querySelector('[data-v=clientes]'))"><span class="dh-row-lbl">Clientes registrados</span><span class="dh-row-val" id="d-cli">0</span></div>
+            <div class="dh-row" onclick="nav('caja',document.querySelector('[data-v=caja]'))"><span class="dh-row-lbl">Saldo caja Bs</span><span class="dh-row-val" id="d-caja-bs">Bs 0,00</span></div>
+            <div class="dh-row" onclick="nav('caja',document.querySelector('[data-v=caja]'))"><span class="dh-row-lbl">Saldo caja USD</span><span class="dh-row-val" id="d-caja-usd">$ 0,00</span></div>
           </div>
-          <div class="kpi c-amber" style="cursor:pointer" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'))">
-            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div></div>
-            <div class="kpi-lbl">CxC vencida</div>
-            <div class="kpi-val" id="d-fin-vencido" style="font-size:16px">$ 0,00</div>
-            <div class="kpi-sub" id="d-fin-vencido-sub">— pedidos vencidos</div>
-          </div>
-          <div class="kpi c-red" style="cursor:pointer" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'));setTimeout(()=>{const t=document.querySelectorAll('#fin-tabs .tab-btn')[3];if(t)t.click();},150)">
-            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FCEBEB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div></div>
-            <div class="kpi-lbl">Pérdida cambiaria</div>
-            <div class="kpi-val" id="d-fin-fx" style="font-size:16px">$ 0,00</div>
-            <div class="kpi-sub" id="d-fin-fx-sub">este mes</div>
-          </div>
-          <div class="kpi c-purple" style="cursor:pointer" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'));setTimeout(()=>{const t=document.querySelectorAll('#fin-tabs .tab-btn')[2];if(t)t.click();},150)">
-            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#EEEDFE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#534AB7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div></div>
-            <div class="kpi-lbl">Saldo proyectado</div>
-            <div class="kpi-val" id="d-fin-flujo" style="font-size:16px">$ 0,00</div>
-            <div class="kpi-sub" id="d-fin-flujo-sub">en 15 días</div>
+          <!-- Fila Finanzas (V14_33): solo visible si admin -->
+          <div class="dh-sec" id="d-finanzas-row" style="display:none">
+            <div class="dh-sec-title">Finanzas</div>
+            <div class="dh-row" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'))"><span class="dh-row-lbl">Por cobrar <small id="d-fin-cxc-sub" style="color:var(--muted);font-weight:400">— pedidos</small></span><span class="dh-row-val" id="d-fin-cxc">$ 0,00</span></div>
+            <div class="dh-row" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'))"><span class="dh-row-lbl">CxC vencida <small id="d-fin-vencido-sub" style="color:var(--muted);font-weight:400">— pedidos vencidos</small></span><span class="dh-row-val" id="d-fin-vencido">$ 0,00</span></div>
+            <div class="dh-row" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'));setTimeout(()=>{const t=document.querySelectorAll('#fin-tabs .tab-btn')[3];if(t)t.click();},150)"><span class="dh-row-lbl">Pérdida cambiaria <small id="d-fin-fx-sub" style="color:var(--muted);font-weight:400">este mes</small></span><span class="dh-row-val" id="d-fin-fx">$ 0,00</span></div>
+            <div class="dh-row" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'));setTimeout(()=>{const t=document.querySelectorAll('#fin-tabs .tab-btn')[2];if(t)t.click();},150)"><span class="dh-row-lbl">Saldo proyectado <small id="d-fin-flujo-sub" style="color:var(--muted);font-weight:400">en 15 días</small></span><span class="dh-row-val" id="d-fin-flujo">$ 0,00</span></div>
           </div>
         </div>
-        <!-- Fila 3: Entregas hoy + Saldo caja -->
-        <div class="grid g4" style="margin-bottom:14px">
-          <div class="kpi c-amber" style="cursor:pointer" onclick="nav('pedidos',document.querySelector('[data-v=pedidos]'))">
-            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div></div>
-            <div class="kpi-lbl">Entregar hoy</div>
-            <div class="kpi-val" id="d-ent-hoy">0</div>
-            <div class="kpi-sub">pedidos</div>
-          </div>
-          <div class="kpi c-teal" style="cursor:pointer" onclick="nav('caja',document.querySelector('[data-v=caja]'))">
-            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E1F5EE"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#0F6E56" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div>
-            <div class="kpi-lbl">Saldo caja Bs</div>
-            <div class="kpi-val" id="d-caja-bs" style="font-size:15px">Bs 0,00</div>
-            <div class="kpi-sub">hoy</div>
-          </div>
-          <div class="kpi c-blue" style="cursor:pointer" onclick="nav('caja',document.querySelector('[data-v=caja]'))">
-            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#E6F1FB"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div>
-            <div class="kpi-lbl">Saldo caja USD</div>
-            <div class="kpi-val" id="d-caja-usd" style="font-size:15px">$ 0,00</div>
-            <div class="kpi-sub">hoy</div>
-          </div>
-          <div class="kpi c-coral" style="cursor:pointer" onclick="nav('pedidos',document.querySelector('[data-v=pedidos]'))">
-            <div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAECE7"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#993C1D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div></div>
-            <div class="kpi-lbl">Pedidos vencidos</div>
-            <div class="kpi-val" id="d-ped-venc">0</div>
-            <div class="kpi-sub">fuera de fecha</div>
-          </div>
-        </div>
+
         <div class="grid g2" style="margin-bottom:14px">
           <div class="card">
             <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Últimos pedidos</div>
@@ -3237,7 +3247,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
           <strong style="font-size:13px"><span id="ped-bulk-count">0</span> seleccionados</strong>
           <button type="button" class="btn btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.35)" onclick="_pedSeleccionarTodosVisibles()">Seleccionar todos</button>
           <button type="button" class="btn btn-sm" style="background:rgba(255,255,255,.18);color:#fff;border-color:rgba(255,255,255,.35)" onclick="_pedLimpiarSeleccion()">Limpiar selección</button>
-          <button type="button" class="btn btn-sm" style="background:#fff;color:var(--brand);font-weight:700;margin-left:auto" onclick="abrirCambioEstadoMasivo()">Cambiar estado…</button>
+          <button type="button" class="btn btn-sm" style="background:var(--card);color:var(--brand);font-weight:700;margin-left:auto;border:1px solid var(--border)" onclick="abrirCambioEstadoMasivo()">Cambiar estado…</button>
         </div>
         <div id="ped-container"></div>
       </div>
@@ -4106,7 +4116,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
 
         <!-- ══ TAB PYL (Estado de Resultados) ══ -->
         <div class="tab-panel" id="fin-tab-pyl">
-          <div class="card" style="padding:14px;margin-bottom:14px;background:linear-gradient(135deg,#fef3c7 0%,#fed7aa 100%);border-left:4px solid var(--warn)">
+          <div class="card" style="padding:14px;margin-bottom:14px;background:#fef3c7;border-left:4px solid var(--warn)">
             <div style="display:flex;align-items:flex-start;gap:10px">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
               <div style="font-size:12.5px;color:#5c3a08;line-height:1.5">
@@ -4164,7 +4174,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
             <div style="font-size:12.5px;color:var(--muted);line-height:1.6">
               <p style="margin-bottom:8px"><strong style="color:var(--ink)">Pérdida cambiaria realizada:</strong> diferencia entre el USD que se debió cobrar al crear el pedido y el USD efectivamente cobrado en cada abono. Si la tasa BCV subió entre la creación del pedido y el cobro, hubo pérdida.</p>
               <p style="margin-bottom:8px"><strong style="color:var(--ink)">Exposición cambiaria activa:</strong> saldo pendiente de cobrar valuado en Bs al momento de creación del pedido. Si el cliente paga tarde, este monto en Bs vale menos USD.</p>
-              <p><strong style="color:var(--ink)">Fórmula:</strong> <code style="background:#f3f4f6;padding:2px 6px;border-radius:4px">Pérdida = monto_bs_pagado / tasa_pago − monto_bs_pagado / tasa_creación</code></p>
+              <p><strong style="color:var(--ink)">Fórmula:</strong> <code style="background:var(--bg);padding:2px 6px;border-radius:4px">Pérdida = monto_bs_pagado / tasa_pago − monto_bs_pagado / tasa_creación</code></p>
             </div>
           </div>
         </div>
@@ -4330,7 +4340,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
         <div class="pill">Abonado <strong id="mp_pill_abonado">$ 0,00</strong></div>
         <div class="pill" style="background:#ffe3ee">Restante <strong id="mp_pill_restante" style="color:var(--danger)">$ 0,00</strong></div>
         <div id="mp_ref_bs" style="display:none;font-size:10px;color:var(--muted);width:100%;text-align:right;margin-top:-2px"></div>
-        <div id="mp_ref_restante" style="display:none;font-size:10px;width:100%;text-align:right;margin-top:-4px;padding:4px 8px;background:#fff8f0;border-radius:6px;border:1px solid #fde8c8"></div>
+        <div id="mp_ref_restante" style="display:none;font-size:10px;width:100%;text-align:right;margin-top:-4px;padding:4px 8px;background:rgba(245,158,11,.10);border-radius:6px;border:1px solid rgba(245,158,11,.35)"></div>
       </div>
     </div>
     <div class="frow" style="margin-bottom:12px">
@@ -4415,7 +4425,7 @@ body.dark .pos-prod-img-ph{background:#23283a}
       <button class="btn btn-sm" id="btn-cobrar-y-entregar" onclick="cobrarYEntregar()" style="display:none;background:#0F6E56;color:#fff;border:none"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> Cobrar y entregar</button>
       <select class="gm-select" id="mvped-estado-sel" onchange="cambiarEstadoPedido(this.value)" style="font-size:12px;padding:6px 10px;min-width:140px"></select>
       <button class="btn btn-danger btn-sm" onclick="cancelarPedido()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg> Cancelar</button>
-      <button class="btn btn-sm" style="background:#fff0f0;color:#c0392b;border:1px solid #f5c6c6" onclick="eliminarPedido()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Eliminar</button>
+      <button class="btn btn-sm" style="background:rgba(239,68,68,.10);color:var(--danger);border:1px solid rgba(239,68,68,.35)" onclick="eliminarPedido()"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg> Eliminar</button>
       <button class="btn btn-sm" onclick="closeModal('m-ver-ped')">Cerrar</button>
     </div>
   </div>
@@ -5356,7 +5366,7 @@ async function _limpiarFotosBase64Manual(){
 function abrirChangelog(){
   const body=document.getElementById('changelog-body');
   if(body && !body.dataset.loaded){
-    const raw='v14.42: FIX Inventario — descuento de stock corregido en ventas y entregas de pedidos. (1) Doble descuento eliminado: _registrarMovInv restaba stock además de logear el movimiento, causando conflicto con el descuento directo de descontarInventarioDeItems; cambiado a _soloLogMovInv. (2) Flag _modificado nunca se asignaba: los upserts a Supabase no se ejecutaban, así que los cambios de stock no se sincronizaban entre dispositivos; ahora cada item modificado se marca y se upsertea. (3) Fallback inteligente: si modo_inventario es ninguno pero existe un registro en inventario_terminados vinculado al producto (prod_id), se descuenta automáticamente — antes solo descontaba con modo terminado o insumos explícito. Logs de depuración en consola para rastrear cada operación de descuento. v14.41: FIX Dashboard — KPIs de finanzas (Por cobrar, CxC vencida, Pérdida cambiaria, Saldo proyectado) desaparecían tras cargar porque can() no tenía fallback al rol cuando el usuario personalizado fue creado antes de que existiera el permiso \"finanzas\". Ahora can() replica el mismo patrón de canView(): si el permiso no está en la lista personal del usuario pero SÍ lo tiene su rol, se permite. FIX versión APP_VERSION desincronizada (era v14_35 vs HTML v14_40). v14.27: Blindaje de datos Fase 1 continuación — indicador visual offline/online (banner amarillo cuando se pierde conexión, confirma reconexión con verde). Migración automática al cargar: elimina fotos base64 redundantes del catálogo local cuando el producto ya tiene foto_url de Supabase (libera MB de localStorage). Monitor de uso de localStorage en Config (barra visual KB usados / 5MB con alerta por color). Sync merge ya no preserva base64 cuando Supabase tiene foto_url. v14.26: Blindaje de datos Fase 1 — nuevo helper esc() sanitiza HTML en todos los innerHTML que interpolan datos del usuario (nombres de productos, clientes, categorías, etc.) previniendo inyección XSS. Nuevo wrapper _lsSet() centraliza todos los localStorage.setItem con try/catch: si el almacenamiento se llena, muestra toast de alerta en vez de fallar silenciosamente. v14.24: Flujo de entrega corregido — marcar "Entregado" ahora solo funciona si el pedido está 100% pagado (crea Venta + descuenta inventario). Si tiene saldo pendiente, bloquea y avisa. Nuevo botón "Cobrar y entregar": registra el pago restante (con método de pago seleccionado), crea movimiento en Caja, marca entregado, crea Venta vinculada y descuenta inventario en un solo paso. Se elimina el registro automático de pagos fantasma en Caja al entregar. v14.16: Pedidos — montos Bs unificados entre lista, detalle y edición: productos aplican diferencial con redondeo previo; delivery/envío/diseño/extras no llevan diferencial; conversión final siempre usa usdToBs(). v14.06: Extras visibles en pedidos — tarjetas de lista muestran chips violeta de Diseño/Envío/Delivery cuando aplican. Impresión de lista (vista principal y KPIs) incluye extras debajo de productos. Modal de KPI detalle también muestra extras. v14.05: KPIs de pedidos ahora caben 5 en una fila en desktop — grid cambiado de g4 a g5 (5 columnas). Responsive: 2 columnas en tablet, 1 en móvil. v14.04: Nuevo estado de pedido "Impresión" — se inserta entre "En producción" y "Listo" en el flujo de estados. Incluye: filtro en lista de pedidos, opción en formulario de pedido, KPI card con ícono de impresora (violeta), badge en impresión de listado, flujo de avance (Producción → Impresión → Listo), soporte en reportes, historial de cliente y modal de detalle. FIX precisión Bs en pedidos — el problema raíz era que pagadoCDif acumulaba errores de floating point sin redondear, causando restante c/dif con decimales fantasma. Corregido en todos los puntos de cálculo con parseFloat(toFixed(2)). v14.02: Ventas/Cotización WhatsApp — los montos del texto ahora usan exactamente el mismo motor de redondeo del carrito POS: productos redondeados por línea (cantidad × precio × diferencial), extras sin diferencial, total Bs/USD y ancla USD iguales a la barra del carrito. v14.01: Sincronización completa de configuraciones entre dispositivos — todas las opciones de Configuración ahora se propagan automáticamente via Supabase + Realtime: toggle "Tasas de cambio Auto/Manual" (incluyendo los valores de BCV y Paralela al obtenerlos), regla "Restante USD puro", impuestos (on/off y porcentaje), métodos de pago activos, categorías de productos, monedas, y diferencial congelado. Realtime activado en tabla config: cualquier cambio en un dispositivo se refleja al instante en todos los demás sin recargar. v14.00: FIX regla "Restante USD puro" — cuando el checkbox está activo y todos los pagos son en USD/Zelle, ahora la tarjeta del pedido muestra TODO en dólar base: total sin diferencial (ej: $40,00 en vez de $52,08), sin equivalente en Bs, y restante solo en USD (ej: $15,00). Lo mismo en el modal de detalle: total, pagado y restante en USD base sin c/dif ni Bs. v13.99: Configuración — nueva sección "Reglas de negocio" con checkbox "Restante en USD puro si el abono fue en dólares". Cuando está activo y TODOS los pagos del pedido son en USD Efectivo o Zelle/Binance, el restante se muestra solo en dólar paralelo (precio base sin diferencial, sin equivalente en Bs). Aplica en: lista de pedidos, modal detalle, POS panel pedido, e impresión. Se sincroniza con Supabase. Diseñado como opción configurable para no imponer reglas de negocio específicas a futuros usuarios de GestioMada. v13.98: Pedidos — botón "Imprimir" en la vista principal (junto a "+ Nuevo Pedido") que imprime el listado de pedidos según los filtros activos. Botón de imprimir dentro de cada popup de KPI (Pendientes, En producción, etc.). La lista impresa incluye: checkbox para rayar, #pedido, cliente con teléfono, productos, estado, pago, total c/dif y fecha entrega. Formato landscape optimizado para papel. v13.97: Pedidos — nuevo botón "Imprimir" en el modal de detalle del pedido. Genera una página limpia con logo del negocio, datos del cliente, tabla de productos (cant, precio, subtotal), totales con diferencial y Bs, historial de pagos, restante y notas. Se abre en ventana nueva y lanza la impresión automáticamente. Eliminado selector de temporalidad de KPIs (innecesario — los KPIs siempre muestran el estado actual). v13.96: KPIs Pedidos — cards limpios que siempre muestran el estado actual real del negocio (sin filtro de temporalidad innecesario); al hacer clic se abre popup con resumen de productos agrupados y detalle por pedido. FIX CRÍTICO zona horaria — todas las fechas "hoy" usan hora local (Venezuela UTC-4) en vez de UTC; antes, después de las 8pm el sistema pensaba que era el día siguiente. Nuevo helper hoyLocal(), corregidas 31+ instancias en toda la app. v13.95: KPIs Pedidos — cada card ahora muestra los productos agrupados con cantidades totales (ej: Taza dorada ×8), máximo 4 productos visibles con "+N más…". Nuevo selector de temporalidad (Hoy, 7 días, 1 mes, 3 meses, Todo) que filtra los KPIs por fecha de creación del pedido. v13.94: Pedidos — cada tarjeta de pedido ahora muestra los productos del cliente (cantidad × nombre) debajo de los badges, sin precio. En desktop se muestra en una línea con "…" si es muy largo; en móvil se expande completo. v13.93: Font-size inputs restaurado a 13px en desktop (el zoom iOS se previene con viewport maximum-scale). Descuento y abono en POS y Pedidos ahora usan placeholder en vez de value="0,00" — campo vacío al crear, muestra valor solo si hay dato al editar. v13.92: FIX precisión Bs en cotización WhatsApp — aplicada la misma fórmula round2(USD×dif) × BCV a la cotización: precio por ítem, total productos, total general y abono en Bs. Antes el texto de WhatsApp mostraba centavos distintos al total del POS. v13.91: FIX precisión Bs — fórmula corregida en toda la app: ahora se calcula round2(USD×dif) × BCV en vez de USD×dif×BCV directo, eliminando diferencias de centavos por redondeo floating point. Aplica en: POS total y carrito, cobrar, catálogo info moneda, caja movimientos, pedidos recalc. Pedidos — nuevo filtro "Fecha específica" con selector de fecha para buscar pedidos por fecha de entrega exacta. iOS — corregido zoom automático al enfocar inputs (viewport maximum-scale + font-size 16px global). Filtros de pedidos en móvil con font-size 14px para evitar textos cortados. Extra en ventas/pedidos muestra campo vacío con placeholder en vez de 0. v13.89: Ventas/Cotización — activar Diseño ya no oculta ni desactiva el abono; solamente Envío omite el bloque de abono automático en la cotización WhatsApp. v13.83: Tipos de venta simplificados — eliminado "Pago de pedido" (redundante con "Pago restante"). Quedan 3 tipos: Venta rápida, Abono, Pago restante. v13.82: Formato decimal unificado — todos los montos en Bs y USD usan coma (,) como separador decimal y punto (.) como separador de miles en toda la app (catálogo, POS, pedidos, ventas, caja, reportes, cotizador WhatsApp, recibo). Nuevo helper global fmtBs(). Restante Bs en lista de pedidos y panel "Pedido a cobrar" muestra 2 decimales. v13.81: Pedidos/Ventas — el restante de pedidos ahora muestra también el equivalente en Bs (Restante × tasa BCV del día) tanto en la lista de pedidos como en el panel "Pedido a cobrar" del POS y modal de ventas. v13.85: POS móvil — el menú desplegable de Canal ahora abre hacia la izquierda para evitar desbordes laterales. v13.84: Ventas — corregido recibo/modal de Pago restante para mostrar el monto real cobrado al cliente y no el monto interno base; Canal en POS móvil ahora muestra solo el ícono para dar más espacio a Tipo de venta. v13.80: Ventas/Pedidos — el POS ahora lee el mismo Total/Pagado/Restante c/dif del módulo Pedidos al vincular un pedido, evitando diferencias entre módulos. v13.79: Clientes/Pedidos — unificado el registro de cliente en un solo campo "Nombre completo"; al editar clientes antiguos se muestra nombre + apellido juntos y se guarda sin separar el apellido. v13.73: FIX CRÍTICO: (1) Topbar pill — el menú de usuario no funcionaba porque los SVGs estaban como template literals en HTML estático. Reescrito: menú generado desde JS en aplicarPermisos() con SVGs reales. Tres opciones: "Cambiar usuario", "Bloquear pantalla", "Cerrar sesión" (en rojo). (2) Modal de usuario reescrito con clases estándar de GestioMada (modal-bg + modal) — antes usaba clases inexistentes (modal-box, modal-hd, modal-body) que no tenían CSS, causando que el modal se mostrara sin overlay, sin centrado y sin estilo. (3) Checkboxes de módulos/acciones rediseñados con estilo GestioMada — custom checkbox con animación de check, colores de la marca, hover con borde rosado, dark mode, responsive a 1 columna en móvil. v13.72: Usuarios sincronizados con Supabase — tabla \'usuarios\' como fuente de verdad con sync bidireccional + Realtime. Crear, editar, cambiar PIN y eliminar usuarios se propaga automáticamente a todos los dispositivos. Eliminaciones se propagan sin restaurar registros borrados. El PIN hasheado (no texto plano) viaja entre dispositivos. Al recibir cambio Realtime se refresca la lista de usuarios en Configuración y el lock screen. v13.71: Usuarios y acceso — auditoría y corrección de 7 bugs: (1) CRÍTICO: lock screen en modo genérico mostraba el texto "user" en vez del ícono SVG. (2) Topbar pill con menú dropdown "Cambiar usuario" y "Bloquear pantalla". (3) Typo gradiente CSS corregido. (4) Movimientos de caja graban usuario_id/usuario_nom. (5) No se puede eliminar el usuario logueado ni el último admin activo. (6) PIN default 0000 solo para Admin. v13.70: Pedidos — nuevo filtro por categoría. Las categorías se leen del catálogo por id_prod (porque el item del carrito no guarda categoría). Se puebla dinámicamente con las categorías presentes en los pedidos existentes. v13.69: Caja — eliminado campo manual "Tasa Bs/USD" del modal de movimientos; ahora se usa automáticamente la tasa paralela del sistema (BCV × diferencial) para conversiones Bs↔USD, equivalentes y registro histórico. El pill de equivalente muestra la tasa usada. v13.68: Acciones rápidas de Caja — (1) "Abono recibido" ahora ofrece vincular opcionalmente a un pedido pendiente (híbrido): si se vincula, el pago se registra automáticamente en el pedido reduciendo su saldo, y el movimiento de caja queda referenciado con ref_tipo=\'pedido\'. Si es en Bs, se preserva monto_bs_ingresado usando tasa paralela (bcv×dif) para que cuadre con el saldo del pedido. (2) Nuevo campo "Nombre / Referencia" en todos los movimientos (Ingreso/Gasto/Compra/Abono/Retiro) — etiqueta contextual según el tipo (proveedor, cliente, quien retira, etc.). Al seleccionar pedido en abono, autocompleta el nombre del cliente. (3) La moneda del monto ahora se bloquea automáticamente cuando el método la determina (Bs efectivo/PM/transferencia → Bs; USD efectivo/Zelle → USD). Solo "Otro" permite elegir moneda libre. v13.67: Selects de Canal y Envío rediseñados con gm-select custom SVG minimalistas. v13.66: Pedidos/Caja/Reportes — al editar un pedido y agregar/cambiar cliente, se actualizan los movimientos vinculados en Caja; canales normalizados para Reportes (Local/WhatsApp/Online, incluyendo variantes mal escritas). v13.65: Reportes — FIX crítico cálculos de datos: (1) KPI "Equivalente en Bs" ahora aplica el factor correcto por método de pago (Bs usa BCV×diferencial, USD usa BCV plano). (2) Tab Productos y Categorías: precios en USD base sin inflar con diferencial — los totales cuadran con suma de ventas. (3) Categoría se lee desde el catálogo por id_prod (el item del carrito no la guarda). (4) Tab Caja: ingresos/gastos separados por moneda (Bs y USD) — deja de sumar mezclado dos monedas distintas; KPIs "Saldo USD" y "Saldo Bs" independientes; gráfico diario en equivalente USD para comparar. v13.64: Corrección error SyntaxError byEst/ins duplicados en Reportes. v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.';
+    const raw='v15.21: FIXES móviles y modo oscuro. (1) Menú lateral en móvil: el scroll ya no \"rebota\" — la altura del drawer pasó de 100% a 100dvh (evita el recálculo cuando Chrome oculta/muestra la barra de direcciones durante el gesto) y ahora se bloquea el scroll del body mientras el menú está abierto (mismo mecanismo que los modales), evitando que el scroll del sidebar se encadene con el del fondo. (2) Menú inferior: íconos 25% más grandes (20px→25px), el texto queda igual; barra ajustada de 58 a 64px de alto. (3) Modo oscuro — auditoría y corrección de contrastes rotos: fila expandible de Finanzas/CxC con fondo blanco fijo que dejaba el texto casi ilegible (ahora usa var(--card)/var(--bg)); varios chips y una pill traían un color de fondo inline que anulaba por especificidad la regla de modo oscuro ya definida en su clase (quitado); ~16 barras de progreso de Reportes y el zebra-striping de tablas de Finanzas/Reportes tenían fondos grises fijos (#fff/#fafafa/#f9f9f9/#f3f4f6) — ahora usan variables temáticas; botones y cajas de aviso (Cambiar estado, Eliminar pedido, restante de pago, notas de venta/pedido/cotización, variante textil pendiente, indicador de vuelto/falta en Caja) usaban colores pastel sólidos que quedaban como parches brillantes o de bajo contraste sobre fondo oscuro — pasados a un patrón semi-transparente que se adapta a ambos temas. Bordes y scrollbar sin variante oscura agregados. Las plantillas de impresión (recibos, pedidos) se dejaron intactas — siempre deben verse en claro para el papel. v15.20: FIX CRÍTICO — botón \"Sincronizar\" mostraba \"Error al sincronizar: cannot add postgres_changes callbacks for realtime:rt-ventas after subscribe()\". Causa: initSupabaseSync() llamaba a iniciarRealtime() en cada sincronización (la inicial y cada vez que se presionaba el botón), y volver a suscribir los mismos canales de Realtime ya activos no está permitido por Supabase. Ahora iniciarRealtime() se ejecuta una sola vez por sesión (guardado con window._realtimeIniciado); los syncs posteriores solo refrescan datos sin reabrir los canales. v15.19: Dashboard — \"Productos más vendidos\" pasó de lista a gráfica de barras + línea de tendencia (estilo combo), usando la paleta sólida de la app: barras en rosa, línea y puntos en vino. Cada barra muestra su valor arriba, y debajo el ranking (#1..#5) y el nombre del producto truncado con el nombre completo visible al pasar el mouse. Se adapta a modo oscuro. v15.18: Dashboard — rediseño completo para reducir saturación visual: las 16 tarjetas KPI se reorganizaron en (1) una franja de alertas que solo aparece cuando hay algo pendiente (pedidos por entregar hoy, pedidos vencidos, alertas de inventario) con mensaje \"Sin pendientes urgentes hoy\" cuando no hay nada, (2) una fila de 4 métricas principales del día (Ventas, Ingresos, Utilidad, Pedidos activos) y (3) dos tarjetas de resumen compacto en formato lista (Negocio y Finanzas, esta última solo visible para admin) en vez de tarjetas grandes repetidas. Paleta — eliminados todos los degradados (30+ usos en toda la app: botones, avatares, barras de progreso, menú de usuarios, comprobantes impresos) y reemplazados por colores sólidos: rosa principal #ea8db9, vino #8a3a5b para énfasis. Los íconos con fondo pastel del Dashboard se sustituyeron por un solo tono de acento. Los demás módulos (Reportes, Pedidos, Caja, Finanzas) no se tocaron — siguen usando el sistema de tarjetas KPI existente sin cambios. v14.42: FIX Inventario — descuento de stock corregido en ventas y entregas de pedidos. (1) Doble descuento eliminado: _registrarMovInv restaba stock además de logear el movimiento, causando conflicto con el descuento directo de descontarInventarioDeItems; cambiado a _soloLogMovInv. (2) Flag _modificado nunca se asignaba: los upserts a Supabase no se ejecutaban, así que los cambios de stock no se sincronizaban entre dispositivos; ahora cada item modificado se marca y se upsertea. (3) Fallback inteligente: si modo_inventario es ninguno pero existe un registro en inventario_terminados vinculado al producto (prod_id), se descuenta automáticamente — antes solo descontaba con modo terminado o insumos explícito. Logs de depuración en consola para rastrear cada operación de descuento. v14.41: FIX Dashboard — KPIs de finanzas (Por cobrar, CxC vencida, Pérdida cambiaria, Saldo proyectado) desaparecían tras cargar porque can() no tenía fallback al rol cuando el usuario personalizado fue creado antes de que existiera el permiso \"finanzas\". Ahora can() replica el mismo patrón de canView(): si el permiso no está en la lista personal del usuario pero SÍ lo tiene su rol, se permite. FIX versión APP_VERSION desincronizada (era v14_35 vs HTML v14_40). v14.27: Blindaje de datos Fase 1 continuación — indicador visual offline/online (banner amarillo cuando se pierde conexión, confirma reconexión con verde). Migración automática al cargar: elimina fotos base64 redundantes del catálogo local cuando el producto ya tiene foto_url de Supabase (libera MB de localStorage). Monitor de uso de localStorage en Config (barra visual KB usados / 5MB con alerta por color). Sync merge ya no preserva base64 cuando Supabase tiene foto_url. v14.26: Blindaje de datos Fase 1 — nuevo helper esc() sanitiza HTML en todos los innerHTML que interpolan datos del usuario (nombres de productos, clientes, categorías, etc.) previniendo inyección XSS. Nuevo wrapper _lsSet() centraliza todos los localStorage.setItem con try/catch: si el almacenamiento se llena, muestra toast de alerta en vez de fallar silenciosamente. v14.24: Flujo de entrega corregido — marcar "Entregado" ahora solo funciona si el pedido está 100% pagado (crea Venta + descuenta inventario). Si tiene saldo pendiente, bloquea y avisa. Nuevo botón "Cobrar y entregar": registra el pago restante (con método de pago seleccionado), crea movimiento en Caja, marca entregado, crea Venta vinculada y descuenta inventario en un solo paso. Se elimina el registro automático de pagos fantasma en Caja al entregar. v14.16: Pedidos — montos Bs unificados entre lista, detalle y edición: productos aplican diferencial con redondeo previo; delivery/envío/diseño/extras no llevan diferencial; conversión final siempre usa usdToBs(). v14.06: Extras visibles en pedidos — tarjetas de lista muestran chips violeta de Diseño/Envío/Delivery cuando aplican. Impresión de lista (vista principal y KPIs) incluye extras debajo de productos. Modal de KPI detalle también muestra extras. v14.05: KPIs de pedidos ahora caben 5 en una fila en desktop — grid cambiado de g4 a g5 (5 columnas). Responsive: 2 columnas en tablet, 1 en móvil. v14.04: Nuevo estado de pedido "Impresión" — se inserta entre "En producción" y "Listo" en el flujo de estados. Incluye: filtro en lista de pedidos, opción en formulario de pedido, KPI card con ícono de impresora (violeta), badge en impresión de listado, flujo de avance (Producción → Impresión → Listo), soporte en reportes, historial de cliente y modal de detalle. FIX precisión Bs en pedidos — el problema raíz era que pagadoCDif acumulaba errores de floating point sin redondear, causando restante c/dif con decimales fantasma. Corregido en todos los puntos de cálculo con parseFloat(toFixed(2)). v14.02: Ventas/Cotización WhatsApp — los montos del texto ahora usan exactamente el mismo motor de redondeo del carrito POS: productos redondeados por línea (cantidad × precio × diferencial), extras sin diferencial, total Bs/USD y ancla USD iguales a la barra del carrito. v14.01: Sincronización completa de configuraciones entre dispositivos — todas las opciones de Configuración ahora se propagan automáticamente via Supabase + Realtime: toggle "Tasas de cambio Auto/Manual" (incluyendo los valores de BCV y Paralela al obtenerlos), regla "Restante USD puro", impuestos (on/off y porcentaje), métodos de pago activos, categorías de productos, monedas, y diferencial congelado. Realtime activado en tabla config: cualquier cambio en un dispositivo se refleja al instante en todos los demás sin recargar. v14.00: FIX regla "Restante USD puro" — cuando el checkbox está activo y todos los pagos son en USD/Zelle, ahora la tarjeta del pedido muestra TODO en dólar base: total sin diferencial (ej: $40,00 en vez de $52,08), sin equivalente en Bs, y restante solo en USD (ej: $15,00). Lo mismo en el modal de detalle: total, pagado y restante en USD base sin c/dif ni Bs. v13.99: Configuración — nueva sección "Reglas de negocio" con checkbox "Restante en USD puro si el abono fue en dólares". Cuando está activo y TODOS los pagos del pedido son en USD Efectivo o Zelle/Binance, el restante se muestra solo en dólar paralelo (precio base sin diferencial, sin equivalente en Bs). Aplica en: lista de pedidos, modal detalle, POS panel pedido, e impresión. Se sincroniza con Supabase. Diseñado como opción configurable para no imponer reglas de negocio específicas a futuros usuarios de GestioMada. v13.98: Pedidos — botón "Imprimir" en la vista principal (junto a "+ Nuevo Pedido") que imprime el listado de pedidos según los filtros activos. Botón de imprimir dentro de cada popup de KPI (Pendientes, En producción, etc.). La lista impresa incluye: checkbox para rayar, #pedido, cliente con teléfono, productos, estado, pago, total c/dif y fecha entrega. Formato landscape optimizado para papel. v13.97: Pedidos — nuevo botón "Imprimir" en el modal de detalle del pedido. Genera una página limpia con logo del negocio, datos del cliente, tabla de productos (cant, precio, subtotal), totales con diferencial y Bs, historial de pagos, restante y notas. Se abre en ventana nueva y lanza la impresión automáticamente. Eliminado selector de temporalidad de KPIs (innecesario — los KPIs siempre muestran el estado actual). v13.96: KPIs Pedidos — cards limpios que siempre muestran el estado actual real del negocio (sin filtro de temporalidad innecesario); al hacer clic se abre popup con resumen de productos agrupados y detalle por pedido. FIX CRÍTICO zona horaria — todas las fechas "hoy" usan hora local (Venezuela UTC-4) en vez de UTC; antes, después de las 8pm el sistema pensaba que era el día siguiente. Nuevo helper hoyLocal(), corregidas 31+ instancias en toda la app. v13.95: KPIs Pedidos — cada card ahora muestra los productos agrupados con cantidades totales (ej: Taza dorada ×8), máximo 4 productos visibles con "+N más…". Nuevo selector de temporalidad (Hoy, 7 días, 1 mes, 3 meses, Todo) que filtra los KPIs por fecha de creación del pedido. v13.94: Pedidos — cada tarjeta de pedido ahora muestra los productos del cliente (cantidad × nombre) debajo de los badges, sin precio. En desktop se muestra en una línea con "…" si es muy largo; en móvil se expande completo. v13.93: Font-size inputs restaurado a 13px en desktop (el zoom iOS se previene con viewport maximum-scale). Descuento y abono en POS y Pedidos ahora usan placeholder en vez de value="0,00" — campo vacío al crear, muestra valor solo si hay dato al editar. v13.92: FIX precisión Bs en cotización WhatsApp — aplicada la misma fórmula round2(USD×dif) × BCV a la cotización: precio por ítem, total productos, total general y abono en Bs. Antes el texto de WhatsApp mostraba centavos distintos al total del POS. v13.91: FIX precisión Bs — fórmula corregida en toda la app: ahora se calcula round2(USD×dif) × BCV en vez de USD×dif×BCV directo, eliminando diferencias de centavos por redondeo floating point. Aplica en: POS total y carrito, cobrar, catálogo info moneda, caja movimientos, pedidos recalc. Pedidos — nuevo filtro "Fecha específica" con selector de fecha para buscar pedidos por fecha de entrega exacta. iOS — corregido zoom automático al enfocar inputs (viewport maximum-scale + font-size 16px global). Filtros de pedidos en móvil con font-size 14px para evitar textos cortados. Extra en ventas/pedidos muestra campo vacío con placeholder en vez de 0. v13.89: Ventas/Cotización — activar Diseño ya no oculta ni desactiva el abono; solamente Envío omite el bloque de abono automático en la cotización WhatsApp. v13.83: Tipos de venta simplificados — eliminado "Pago de pedido" (redundante con "Pago restante"). Quedan 3 tipos: Venta rápida, Abono, Pago restante. v13.82: Formato decimal unificado — todos los montos en Bs y USD usan coma (,) como separador decimal y punto (.) como separador de miles en toda la app (catálogo, POS, pedidos, ventas, caja, reportes, cotizador WhatsApp, recibo). Nuevo helper global fmtBs(). Restante Bs en lista de pedidos y panel "Pedido a cobrar" muestra 2 decimales. v13.81: Pedidos/Ventas — el restante de pedidos ahora muestra también el equivalente en Bs (Restante × tasa BCV del día) tanto en la lista de pedidos como en el panel "Pedido a cobrar" del POS y modal de ventas. v13.85: POS móvil — el menú desplegable de Canal ahora abre hacia la izquierda para evitar desbordes laterales. v13.84: Ventas — corregido recibo/modal de Pago restante para mostrar el monto real cobrado al cliente y no el monto interno base; Canal en POS móvil ahora muestra solo el ícono para dar más espacio a Tipo de venta. v13.80: Ventas/Pedidos — el POS ahora lee el mismo Total/Pagado/Restante c/dif del módulo Pedidos al vincular un pedido, evitando diferencias entre módulos. v13.79: Clientes/Pedidos — unificado el registro de cliente en un solo campo "Nombre completo"; al editar clientes antiguos se muestra nombre + apellido juntos y se guarda sin separar el apellido. v13.73: FIX CRÍTICO: (1) Topbar pill — el menú de usuario no funcionaba porque los SVGs estaban como template literals en HTML estático. Reescrito: menú generado desde JS en aplicarPermisos() con SVGs reales. Tres opciones: "Cambiar usuario", "Bloquear pantalla", "Cerrar sesión" (en rojo). (2) Modal de usuario reescrito con clases estándar de GestioMada (modal-bg + modal) — antes usaba clases inexistentes (modal-box, modal-hd, modal-body) que no tenían CSS, causando que el modal se mostrara sin overlay, sin centrado y sin estilo. (3) Checkboxes de módulos/acciones rediseñados con estilo GestioMada — custom checkbox con animación de check, colores de la marca, hover con borde rosado, dark mode, responsive a 1 columna en móvil. v13.72: Usuarios sincronizados con Supabase — tabla \'usuarios\' como fuente de verdad con sync bidireccional + Realtime. Crear, editar, cambiar PIN y eliminar usuarios se propaga automáticamente a todos los dispositivos. Eliminaciones se propagan sin restaurar registros borrados. El PIN hasheado (no texto plano) viaja entre dispositivos. Al recibir cambio Realtime se refresca la lista de usuarios en Configuración y el lock screen. v13.71: Usuarios y acceso — auditoría y corrección de 7 bugs: (1) CRÍTICO: lock screen en modo genérico mostraba el texto "user" en vez del ícono SVG. (2) Topbar pill con menú dropdown "Cambiar usuario" y "Bloquear pantalla". (3) Typo gradiente CSS corregido. (4) Movimientos de caja graban usuario_id/usuario_nom. (5) No se puede eliminar el usuario logueado ni el último admin activo. (6) PIN default 0000 solo para Admin. v13.70: Pedidos — nuevo filtro por categoría. Las categorías se leen del catálogo por id_prod (porque el item del carrito no guarda categoría). Se puebla dinámicamente con las categorías presentes en los pedidos existentes. v13.69: Caja — eliminado campo manual "Tasa Bs/USD" del modal de movimientos; ahora se usa automáticamente la tasa paralela del sistema (BCV × diferencial) para conversiones Bs↔USD, equivalentes y registro histórico. El pill de equivalente muestra la tasa usada. v13.68: Acciones rápidas de Caja — (1) "Abono recibido" ahora ofrece vincular opcionalmente a un pedido pendiente (híbrido): si se vincula, el pago se registra automáticamente en el pedido reduciendo su saldo, y el movimiento de caja queda referenciado con ref_tipo=\'pedido\'. Si es en Bs, se preserva monto_bs_ingresado usando tasa paralela (bcv×dif) para que cuadre con el saldo del pedido. (2) Nuevo campo "Nombre / Referencia" en todos los movimientos (Ingreso/Gasto/Compra/Abono/Retiro) — etiqueta contextual según el tipo (proveedor, cliente, quien retira, etc.). Al seleccionar pedido en abono, autocompleta el nombre del cliente. (3) La moneda del monto ahora se bloquea automáticamente cuando el método la determina (Bs efectivo/PM/transferencia → Bs; USD efectivo/Zelle → USD). Solo "Otro" permite elegir moneda libre. v13.67: Selects de Canal y Envío rediseñados con gm-select custom SVG minimalistas. v13.66: Pedidos/Caja/Reportes — al editar un pedido y agregar/cambiar cliente, se actualizan los movimientos vinculados en Caja; canales normalizados para Reportes (Local/WhatsApp/Online, incluyendo variantes mal escritas). v13.65: Reportes — FIX crítico cálculos de datos: (1) KPI "Equivalente en Bs" ahora aplica el factor correcto por método de pago (Bs usa BCV×diferencial, USD usa BCV plano). (2) Tab Productos y Categorías: precios en USD base sin inflar con diferencial — los totales cuadran con suma de ventas. (3) Categoría se lee desde el catálogo por id_prod (el item del carrito no la guarda). (4) Tab Caja: ingresos/gastos separados por moneda (Bs y USD) — deja de sumar mezclado dos monedas distintas; KPIs "Saldo USD" y "Saldo Bs" independientes; gráfico diario en equivalente USD para comparar. v13.64: Corrección error SyntaxError byEst/ins duplicados en Reportes. v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.';
     body.innerHTML=raw.split(/(?=v\d+\.\d+:)/).map(s=>s.trim()).filter(Boolean).map(s=>'<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border,#e5e7eb)">'+s+'</div>').join('');
     body.dataset.loaded='1';
   }
@@ -6488,7 +6498,7 @@ function renderCatalogo(){
   }
   if(inactivos.length){
     const sec=document.createElement('div'); sec.style.cssText='margin-top:28px';
-    sec.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><div style="height:1px;flex:1;background:var(--border)"></div><div style="display:flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;background:#f3f4f6;border:1.5px solid var(--border)"><div style="width:8px;height:8px;border-radius:50%;background:#d1d5db;flex-shrink:0"></div><span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Inactivos (${inactivos.length})</span></div><div style="height:1px;flex:1;background:var(--border)"></div></div>`;
+    sec.innerHTML=`<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><div style="height:1px;flex:1;background:var(--border)"></div><div style="display:flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;background:var(--bg);border:1.5px solid var(--border)"><div style="width:8px;height:8px;border-radius:50%;background:#d1d5db;flex-shrink:0"></div><span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em">Inactivos (${inactivos.length})</span></div><div style="height:1px;flex:1;background:var(--border)"></div></div>`;
     const grid=document.createElement('div'); grid.className='prod-grid'; grid.style.cssText='opacity:0.55;filter:grayscale(30%)';
     inactivos.forEach(p=>grid.appendChild(buildCard(p)));
     if(_catReorderMode) _setupDragDrop(grid);
@@ -6853,6 +6863,72 @@ function historialCli(c){
 /* ════════════════════════════════════════════
    DASHBOARD
 ════════════════════════════════════════════ */
+function _dhAlertOkCheck(){
+  const wrap = qs('#dh-alerts-wrap'); if(!wrap) return;
+  const anyShown = !!wrap.querySelector('.dh-alert.show');
+  const ok = qs('#dh-alert-ok'); if(ok) ok.style.display = anyShown ? 'none' : 'flex';
+}
+function _dhChartTopProds(data){
+  const isDark = document.body.classList.contains('dark');
+  const gridCol = isDark ? '#23283a' : '#eef0f4';
+  const txtCol  = isDark ? '#9ca3af' : '#6b7280';
+  const inkCol  = isDark ? '#e5e7eb' : '#222';
+  const barCol  = 'var(--brand)';
+  const lineCol = 'var(--brand2)';
+
+  const W=640, H=270, padL=8, padR=8, padT=34, padB=54;
+  const plotW = W-padL-padR, plotH = H-padT-padB;
+  const n = data.length;
+  const max = Math.max(...data.map(d=>d.cant)) * 1.2 || 1;
+  const slot = plotW/n;
+  const barW = Math.min(56, slot*0.5);
+
+  const xAt = i => padL + slot*i + slot/2;
+  const yAt = v => padT + plotH - (v/max)*plotH;
+
+  // grid lines (4 horizontales)
+  const gridN = 4;
+  let grid = '';
+  for(let g=0; g<=gridN; g++){
+    const y = padT + plotH - (plotH/gridN)*g;
+    grid += `<line x1="${padL}" y1="${y.toFixed(1)}" x2="${W-padR}" y2="${y.toFixed(1)}" stroke="${gridCol}" stroke-width="1"/>`;
+  }
+
+  // barras
+  let bars = '';
+  data.forEach((d,i)=>{
+    const x = xAt(i) - barW/2;
+    const y = yAt(d.cant);
+    const h = (padT+plotH) - y;
+    bars += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${Math.max(h,2).toFixed(1)}" rx="6" fill="${barCol}" opacity="${i===0?1:0.82}"/>`;
+  });
+
+  // línea + puntos + valores
+  const pts = data.map((d,i)=>`${xAt(i).toFixed(1)},${yAt(d.cant).toFixed(1)}`).join(' ');
+  let dots = '';
+  data.forEach((d,i)=>{
+    const x=xAt(i), y=yAt(d.cant);
+    dots += `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4" fill="${lineCol}" stroke="${isDark?'#151924':'#fff'}" stroke-width="2"/>`;
+    dots += `<text x="${x.toFixed(1)}" y="${(y-10).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="${inkCol}">${d.cant}</text>`;
+  });
+
+  // etiquetas eje X (rank + nombre truncado, con título completo)
+  let labels = '';
+  data.forEach((d,i)=>{
+    const x = xAt(i);
+    const nombreCorto = esc(d.nombre.length>16 ? d.nombre.slice(0,15)+'…' : d.nombre);
+    labels += `<text x="${x.toFixed(1)}" y="${(padT+plotH+18).toFixed(1)}" text-anchor="middle" font-size="10.5" font-weight="700" fill="${barCol}">#${i+1}</text>`;
+    labels += `<text x="${x.toFixed(1)}" y="${(padT+plotH+34).toFixed(1)}" text-anchor="middle" font-size="10.5" fill="${txtCol}"><title>${esc(d.nombre)}</title>${nombreCorto}</text>`;
+  });
+
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block;font-family:var(--font)">
+    ${grid}
+    ${bars}
+    <polyline points="${pts}" fill="none" stroke="${lineCol}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    ${dots}
+    ${labels}
+  </svg>`;
+}
 function renderDash(){
   const cat=loadCat(), cli=loadCli();
   const act=cat.filter(p=>p.estado==='activo').length;
@@ -6876,13 +6952,7 @@ function renderDash(){
       conteo[k].cant+=it.cant;
     }));
     const topProds=Object.values(conteo).sort((a,b)=>b.cant-a.cant).slice(0,5);
-    dp.innerHTML = topProds.length ? topProds.map((p,i)=>`
-      <div class="list-item" style="margin-bottom:6px">
-        <div class="li-ico" style="font-size:13px;font-weight:700;color:var(--brand)">#${i+1}</div>
-        <div class="li-body"><div class="li-name">${p.nombre}</div></div>
-        <div class="li-right"><div class="li-val" style="color:var(--ok);font-weight:700">${p.cant} uds</div></div>
-      </div>`).join('')
-    : `<div style="padding:16px;text-align:center;font-size:12px;color:var(--muted)">Sin ventas registradas aún</div>`;
+    dp.innerHTML = topProds.length ? _dhChartTopProds(topProds) : `<div style="padding:16px;text-align:center;font-size:12px;color:var(--muted)">Sin ventas registradas aún</div>`;
   }
 
   // Últimos clientes
@@ -7169,7 +7239,7 @@ function renderLockScreen(){
     const hint = qs('#lock-hint'); if(hint) hint.textContent = 'Toca tu nombre e ingresa el PIN de acceso';
     grid.innerHTML = usuarios.map((u,idx)=>{
       const iniciales = u.nombre.trim().split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
-      const colores = ['linear-gradient(135deg,#ff7aa2,#ff9ec4)','linear-gradient(135deg,#7aa2ff,#a2c4ff)','linear-gradient(135deg,#7adaff,#a2ecff)','linear-gradient(135deg,#b07aff,#c9a2ff)','linear-gradient(135deg,#ff9f7a,#ffbfa2)'];
+      const colores = ['#ea8db9','#8a3a5b','#0F6E56','#185FA5','#854F0B'];
       const grad = colores[idx % colores.length];
       const rolDesc = ROLES[u.rol]?.label || u.rol;
       return `<div class="lock-rol-card" onclick="abrirPinModalUsuario(${idx})">
@@ -7277,7 +7347,7 @@ function abrirPinModal(rol, modo='entrar', usrObj=null){
   if(usrObj){
     const iniciales = usrObj.nombre.trim().split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
     qs('#pin-rol-ico').textContent = iniciales;
-    qs('#pin-rol-ico').style.cssText = 'font-size:22px;font-weight:700;background:linear-gradient(135deg,#ff7aa2,#7aa2ff);border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#fff;margin:0 auto 8px';
+    qs('#pin-rol-ico').style.cssText = 'font-size:22px;font-weight:700;background:var(--brand);border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;color:#fff;margin:0 auto 8px';
     qs('#pin-rol-nombre').textContent = modo==='cambiar' ? 'Nuevo PIN — '+usrObj.nombre : usrObj.nombre;
   } else {
     const _pinIcoEl=qs('#pin-rol-ico'); if(_pinIcoEl) _pinIcoEl.innerHTML=rolIcoSvg(r?.ico||'lock');
@@ -7379,7 +7449,7 @@ function renderCfgPins(){
         const rolLbl = ROLES[u.rol]?.label || u.rol;
         const estadoColor = u.estado==='activo' ? 'var(--ok)' : 'var(--muted)';
         return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;background:var(--bg);border-radius:12px;flex-wrap:wrap">
-          <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,#ff7aa2,#7aa2ff);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0">${iniciales}</div>
+          <div style="width:38px;height:38px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0">${iniciales}</div>
           <div style="flex:1;min-width:100px">
             <div style="font-weight:700;font-size:13px">${u.nombre}</div>
             <div style="font-size:11px;color:var(--muted)">${rolLbl} · <span style="color:${estadoColor}">${u.estado}</span></div>
@@ -7488,7 +7558,7 @@ function abrirModalSqlUsuarios(mensaje){
   <div class="modal" tabindex="-1" style="max-width:600px">
     <button class="modal-close" onclick="closeModal('m-sql-usuarios')">✕</button>
     <div class="modal-title">Verificar sync — Tabla "usuarios"</div>
-    <div id="msql-msg" style="font-size:13px;margin:10px 0;padding:10px 12px;background:#fff3cd;border-radius:8px;color:#856404"></div>
+    <div id="msql-msg" style="font-size:13px;margin:10px 0;padding:10px 12px;background:rgba(245,158,11,.10);border-radius:8px;color:var(--warn)"></div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:6px">SQL a ejecutar en Supabase → SQL Editor:</div>
     <pre id="msql-code" style="background:#1e1e1e;color:#d4d4d4;padding:12px;border-radius:8px;overflow-x:auto;font-size:11.5px;line-height:1.5;font-family:Consolas,Monaco,monospace;max-height:280px"></pre>
     <div class="btn-row" style="margin-top:12px;justify-content:space-between;flex-wrap:wrap">
@@ -7568,7 +7638,7 @@ function musrActualizarAvatar(){
   const nombre = qs('#musr_nombre')?.value || '';
   const iniciales = nombre.trim().split(' ').filter(Boolean).map(p=>p[0]).join('').toUpperCase().slice(0,2) || '?';
   const av = qs('#musr-avatar');
-  if(av){ av.textContent = iniciales; av.style.cssText = 'width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#ff7aa2,#7aa2ff);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0'; }
+  if(av){ av.textContent = iniciales; av.style.cssText = 'width:44px;height:44px;border-radius:50%;background:var(--brand);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;flex-shrink:0'; }
 }
 
 function musrAplicarRolBase(){
@@ -7720,12 +7790,12 @@ function aplicarPermisos(){
     pill.innerHTML=`<span class="rol-ico-tb">${rolIcoSvg(CURRENT_USR_ID ? 'user' : rol.ico,14,14)}</span><span class="rol-lbl-tb" style="margin-left:4px">${esc(nomCorto)}</span>`;
     if(pillWrap) pillWrap.style.display='';
     const bg={admin:'#ffe3ee',empleado:'#e8efff',produccion:'#e8f5e9',lectura:'#f3f4f6'};
-    pill.style.background=bg[CURRENT_ROL]||'#f3f4f6';
+    pill.style.background=bg[CURRENT_ROL]||'var(--bg)';
   }
   // Llenar menú dropdown con botones y SVGs reales
   if(pillMenu){
     const btnStyle='width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border:0;background:transparent;color:var(--ink);font-family:inherit;font-size:13px;font-weight:500;text-align:left;cursor:pointer;border-radius:8px;transition:background .12s';
-    const hoverBg='linear-gradient(120deg,#ffe8ee,#eef2ff)';
+    const hoverBg='#fdf1f6';
     pillMenu.innerHTML = `
       <button style="${btnStyle}" onmouseover="this.style.background='${hoverBg}'" onmouseout="this.style.background='transparent'" onclick="abrirSelectorRol();cerrarRolMenu()">
         <span style="display:inline-flex;width:20px;height:20px;color:var(--brand)">${rolIcoSvg('users',18,18)}</span>
@@ -8605,7 +8675,7 @@ function renderSaldosMoneda(){
     ${Object.keys(byMet).length?`
     <div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap">
       ${Object.entries(byMet).map(([lbl,v])=>`
-        <div class="pill" style="background:#f3f4f6;gap:4px">
+        <div class="pill" style="gap:4px">
           <span style="font-size:11px;color:var(--muted)">${lbl}</span>
           <span style="font-size:11px;color:var(--ok);font-weight:600">+${fmt(v.ing)}</span>
           ${v.gas>0?`<span style="font-size:11px;color:var(--danger);font-weight:600">−${fmt(v.gas)}</span>`:''}
@@ -9557,7 +9627,7 @@ function cotImprimir(id){
   // Construir filas de ítems — igual que WA: USD/u + Bs/u + total Bs (o USD directo)
   const itemsHtml = itemsRecalc.map((it,i) => {
     if(enBs && bcvR > 0){
-      return `<tr style="background:${i%2===0?'#fff':'#fafafa'}">
+      return `<tr style="background:${i%2===0?'var(--card)':'var(--bg)'}">
         <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">${it.nombre||''}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px">${it.cant}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px">
@@ -9570,7 +9640,7 @@ function cotImprimir(id){
         </td>
       </tr>`;
     } else {
-      return `<tr style="background:${i%2===0?'#fff':'#fafafa'}">
+      return `<tr style="background:${i%2===0?'var(--card)':'var(--bg)'}">
         <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">${it.nombre||''}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px">${it.cant}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px">
@@ -9662,7 +9732,7 @@ function cotImprimir(id){
 
   const logoHtml = CFG.logo
     ? `<img src="${CFG.logo}" style="max-height:60px;max-width:140px;object-fit:contain;display:block;margin-bottom:6px"/>`
-    : `<div style="font-size:24px;font-weight:900;color:#ff7aa2;letter-spacing:-0.5px">${neg}</div>`;
+    : `<div style="font-size:24px;font-weight:900;color:#ea8db9;letter-spacing:-0.5px">${neg}</div>`;
 
   const clienteNom = c.cliente_nom || (c.cliente ? (c.cliente.nombre||'')+(c.cliente.apellido?' '+c.cliente.apellido:'') : '') || 'Sin identificar';
   const clienteTel = c.cliente_tel || c.cliente?.telefono || '';
@@ -9676,13 +9746,13 @@ function cotImprimir(id){
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#222;background:#fff;padding:0}
     .page{max-width:780px;margin:0 auto;padding:36px 40px}
-    .top-bar{height:8px;background:linear-gradient(90deg,#ff7aa2,#7aa2ff);margin-bottom:32px}
-    .bottom-bar{height:8px;background:linear-gradient(90deg,#ff7aa2,#7aa2ff);margin-top:36px}
+    .top-bar{height:8px;background:var(--brand);margin-bottom:32px}
+    .bottom-bar{height:8px;background:var(--brand);margin-top:36px}
     .header-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px}
     .neg-name{font-size:18px;font-weight:800;color:#111;margin-bottom:2px}
     .neg-sub{font-size:12px;color:#666;line-height:1.9}
     .recibo-title{font-size:36px;font-weight:900;color:#f0f0f0;letter-spacing:-1px;text-align:right;line-height:1}
-    .recibo-num{font-size:12px;font-weight:700;color:#7aa2ff;text-align:right;margin-top:4px;letter-spacing:1px}
+    .recibo-num{font-size:12px;font-weight:700;color:#8a3a5b;text-align:right;margin-top:4px;letter-spacing:1px}
     .info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:28px;padding-bottom:20px;border-bottom:1.5px solid #eee}
     .info-col .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#999;margin-bottom:5px}
     .info-col .val{font-size:13px;color:#222;line-height:1.7}
@@ -9692,8 +9762,8 @@ function cotImprimir(id){
     .validez{background:#e8f4fd;border-radius:8px;padding:10px 14px;margin-top:14px;font-size:12px;color:#1565c0;display:flex;justify-content:space-between;align-items:center}
     .conditions{margin-top:24px;padding-top:16px;border-top:1px solid #eee;font-size:12px;color:#666;line-height:1.8}
     .conditions .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#999;margin-bottom:5px}
-    .slogan{text-align:center;font-style:italic;color:#ff7aa2;font-size:13px;margin:16px 0 6px;font-weight:600}
-    .print-btn{display:block;width:100%;padding:12px;background:#7aa2ff;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:18px;font-family:inherit}
+    .slogan{text-align:center;font-style:italic;color:#ea8db9;font-size:13px;margin:16px 0 6px;font-weight:600}
+    .print-btn{display:block;width:100%;padding:12px;background:#8a3a5b;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:18px;font-family:inherit}
     @media print{.print-btn{display:none}}
   </style></head><body>
   <button class="print-btn" onclick="window.print()">
@@ -10325,7 +10395,7 @@ function recalcVenta(){
   const mr=qs('#mv_pill_rec'); if(mr) mr.textContent = metodoBsV ? 'Bs '+fmtBs(rec) : euro(rec);
   const mv=qs('#mv_pill_vuelto'); if(mv) mv.textContent = metodoBsV ? 'Bs '+fmtBs(vuelto>0?vuelto:-falta) : euro(vuelto>0?vuelto:-falta);
   const vw=qs('#mv_pill_vuelto_wrap');
-  if(vw){ vw.style.background=vuelto>0?'#dcfce7':(falta>0?'#fee2e2':'#f3f4f6'); }
+  if(vw){ vw.style.background=vuelto>0?'rgba(34,197,94,.15)':(falta>0?'rgba(239,68,68,.15)':'var(--bg)'); }
 }
 
 // ── Guardar venta ──
@@ -10473,14 +10543,14 @@ function renderVentas(){
     const autorBadge=v.usuario_nom?`<span class="chip" style="font-size:10px;background:#f0f4ff">👤 ${v.usuario_nom.split(' ')[0]}</span>`:'';
     const item=document.createElement('div'); item.className='list-item'; item.style.cssText='margin-bottom:10px;flex-wrap:wrap;gap:8px';
     item.innerHTML=`
-      <div class="li-ico" style="background:linear-gradient(135deg,#e8efff,#dcfce7);font-size:12px;font-weight:700;color:#1e40af">${v.numero.replace('VEN-','#')}</div>
+      <div class="li-ico" style="background:#eef2f5;font-size:12px;font-weight:700;color:#1e40af">${v.numero.replace('VEN-','#')}</div>
       <div class="li-body" style="min-width:160px">
         <div class="li-name">${v.cliente?(v.cliente.nombre+' '+v.cliente.apellido):'Sin cliente'}</div>
         <div class="li-meta" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:3px">
           <span class="chip ${tipoChip}" style="font-size:10px">${tipoLbl}</span>
           <span class="chip chip-info" style="font-size:10px">${METODOS_LABEL[v.metodo]||v.metodo}</span>
           <span class="chip" style="font-size:10px;${canalStyle}">${canalLbl}</span>
-          <span class="chip" style="font-size:10px;background:#f3f4f6">${new Date(v.fecha).toLocaleDateString('es-ES')}</span>
+          <span class="chip" style="font-size:10px">${new Date(v.fecha).toLocaleDateString('es-ES')}</span>
           ${autorBadge}
         </div>
       </div>
@@ -10544,7 +10614,7 @@ function verVenta(idx){
       <span class="chip chip-ok">✓ Completada</span>
       <span class="chip chip-info">${METODOS_LABEL[v.metodo]||v.metodo}</span>
       ${v.canal?`<span class="chip" style="${CANALES_COLOR[v.canal]||CANALES_COLOR.local}">${CANALES_LABEL[v.canal]||CANALES_LABEL.local}</span>`:''}
-      <span class="chip" style="background:#f3f4f6">${new Date(v.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'})}</span>
+      <span class="chip">${new Date(v.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'})}</span>
       ${v.usuario_nom?`<span class="chip" style="background:#f0f4ff;color:#3b5bdb;font-weight:600">👤 ${v.usuario_nom}</span>`:''}
       ${v.estado==='anulada'?'<span class="chip chip-danger">ANULADA</span>':''}
     </div>
@@ -10603,7 +10673,7 @@ function imprimirComprobante(){
     const puCliente = (it.precio_unit||0) * factorPrecio;
     const ptCliente = puCliente * it.cant;
     const ptBs      = ptCliente * bcvRec;
-    return `<tr style="background:${i%2===0?'#fff':'#fafafa'}">
+    return `<tr style="background:${i%2===0?'var(--card)':'var(--bg)'}">
       <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">${it.nombre}</td>
       <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px">${it.cant}</td>
       <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px">
@@ -10622,7 +10692,7 @@ function imprimirComprobante(){
 
   const logoHtml = CFG.logo
     ? `<img src="${CFG.logo}" style="max-height:60px;max-width:140px;object-fit:contain;display:block;margin-bottom:6px"/>`
-    : `<div style="font-size:24px;font-weight:900;color:#ff7aa2;letter-spacing:-0.5px">${neg}</div>`;
+    : `<div style="font-size:24px;font-weight:900;color:#ea8db9;letter-spacing:-0.5px">${neg}</div>`;
 
   // Bloque de total — limpio, sin mencionar diferencial
   const totalesHtml = metodoBsRec && bcvRec > 0 ? `
@@ -10661,13 +10731,13 @@ function imprimirComprobante(){
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#222;background:#fff;padding:0}
     .page{max-width:780px;margin:0 auto;padding:36px 40px}
-    .top-bar{height:8px;background:linear-gradient(90deg,#ff7aa2,#7aa2ff);margin-bottom:32px}
-    .bottom-bar{height:8px;background:linear-gradient(90deg,#ff7aa2,#7aa2ff);margin-top:36px}
+    .top-bar{height:8px;background:var(--brand);margin-bottom:32px}
+    .bottom-bar{height:8px;background:var(--brand);margin-top:36px}
     .header-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px}
     .neg-name{font-size:18px;font-weight:800;color:#111;margin-bottom:2px}
     .neg-sub{font-size:12px;color:#666;line-height:1.9}
     .recibo-title{font-size:36px;font-weight:900;color:#f0f0f0;letter-spacing:-1px;text-align:right;line-height:1}
-    .recibo-num{font-size:13px;font-weight:700;color:#ff7aa2;text-align:right;margin-top:4px;letter-spacing:1px}
+    .recibo-num{font-size:13px;font-weight:700;color:#ea8db9;text-align:right;margin-top:4px;letter-spacing:1px}
     .info-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:20px;margin-bottom:28px;padding-bottom:20px;border-bottom:1.5px solid #eee}
     .info-col .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#999;margin-bottom:5px}
     .info-col .val{font-size:13px;color:#222;line-height:1.7}
@@ -10678,9 +10748,9 @@ function imprimirComprobante(){
     .cobro-row{display:flex;justify-content:space-between}
     .conditions{margin-top:24px;padding-top:16px;border-top:1px solid #eee;font-size:12px;color:#666;line-height:1.8}
     .conditions .label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#999;margin-bottom:5px}
-    .slogan{text-align:center;font-style:italic;color:#ff7aa2;font-size:13px;margin:16px 0 6px;font-weight:600}
+    .slogan{text-align:center;font-style:italic;color:#ea8db9;font-size:13px;margin:16px 0 6px;font-weight:600}
     .anulada{background:#fee2e2;color:#991b1b;text-align:center;padding:8px;font-weight:700;border-radius:6px;margin-bottom:16px}
-    .print-btn{display:block;width:100%;padding:12px;background:#ff7aa2;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:18px;font-family:inherit}
+    .print-btn{display:block;width:100%;padding:12px;background:#ea8db9;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:18px;font-family:inherit}
     @media print{.print-btn{display:none}}
   </style></head><body>
   <button class="print-btn" onclick="window.print()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg> Imprimir recibo</button>
@@ -10719,7 +10789,7 @@ function imprimirComprobante(){
       </div>
       <div class="info-col">
         <div class="label">N° de recibo</div>
-        <div class="val" style="font-weight:700;color:#ff7aa2">${v.numero}</div>
+        <div class="val" style="font-weight:700;color:#ea8db9">${v.numero}</div>
         <div class="label" style="margin-top:10px">Método de pago</div>
         <div class="val">${metLbl}</div>
         <div class="label" style="margin-top:10px">Canal</div>
@@ -10745,7 +10815,7 @@ function imprimirComprobante(){
       ${(v.vuelto||0)>0?`<div class="cobro-row"><span>Vuelto</span><strong>${metodoBsRec&&bcvRec>0?fmtBs(v.vuelto*factorPrecio*bcvRec):fmtUsd(v.vuelto)}</strong></div>`:''}
     </div>
 
-    ${v.notas?`<div style="margin-top:14px;padding:10px 14px;border-left:3px solid #ff7aa2;background:#fff8fb;font-size:12px;color:#666"><strong>Notas:</strong> ${v.notas}</div>`:''}
+    ${v.notas?`<div style="margin-top:14px;padding:10px 14px;border-left:3px solid var(--brand);background:rgba(234,141,185,.08);font-size:12px;color:var(--ink)"><strong>Notas:</strong> ${v.notas}</div>`:''}
     ${slogan?`<div class="slogan">${slogan}</div>`:''}
 
     <div class="conditions">
@@ -11131,7 +11201,7 @@ function renderCaja(){
         <div style="font-size:11px;color:var(--muted);margin-top:2px">${m.fecha}</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px">
           <span class="chip chip-info" style="font-size:10px">${METODOS_LABEL[m.metodo]||m.metodo}</span>
-          <span class="chip" style="font-size:10px;background:#f3f4f6">${m.categoria||m.tipo}</span>
+          <span class="chip" style="font-size:10px">${m.categoria||m.tipo}</span>
         </div>
         ${subFmt?`<div style="font-size:10px;color:var(--muted);margin-top:3px">${subFmt}</div>`:''}
       </div>
@@ -11728,7 +11798,7 @@ function _renderVarianteItemEdit(it, i) {
   if (enEdicion && prod) {
     const tallaOpts = tallas.map(t => '<option value="'+esc(t)+'"'+(it.talla===t?' selected':'')+'>'+esc(t)+'</option>').join('');
     const colorOpts = colores.map(c => '<option value="'+esc(c)+'"'+(it.color===c?' selected':'')+'>'+esc(c)+'</option>').join('');
-    html += '<div style="margin-top:6px;padding:8px 10px;background:#fff0f8;border:1px solid #e07ab0;border-radius:8px">';
+    html += '<div style="margin-top:6px;padding:8px 10px;background:rgba(234,141,185,.10);border:1px solid rgba(234,141,185,.45);border-radius:8px">';
     html += '<div style="font-size:11px;font-weight:600;color:#be185d;margin-bottom:6px">✏ Editar variante</div>';
     html += '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">';
     html += '<div style="flex:1;min-width:80px"><label style="font-size:10px;color:var(--muted)">Talla</label>';
@@ -11771,8 +11841,8 @@ ${it._necesita_variante ? (()=>{
   const prod = it._prod_ref || (it.id_prod ? loadCat().find(p=>String(p.id)===String(it.id_prod)) : null);
   const tallas = prod ? tallasParaGrupos(gruposTallaDeProducto(prod)) : [];
   const colores = prod ? (prod.textil_colores||[]) : [];
-  return `<div style="margin-top:6px;padding:8px 10px;background:#fff8f0;border:1px solid #f59e0b;border-radius:8px">
-    <div style="font-size:11px;font-weight:600;color:#92400e;margin-bottom:6px">⚠ Selecciona talla y color para este producto</div>
+  return `<div style="margin-top:6px;padding:8px 10px;background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.45);border-radius:8px">
+    <div style="font-size:11px;font-weight:600;color:var(--warn);margin-bottom:6px">⚠ Selecciona talla y color para este producto</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">
       <div style="flex:1;min-width:80px"><label style="font-size:10px;color:var(--muted)">Talla *</label>
         <select id="_pv_talla_${i}" style="font-size:12px;padding:4px 6px;width:100%"><option value="">—</option>${tallas.map(t=>`<option value="${t}">${t}</option>`).join('')}</select>
@@ -12349,7 +12419,7 @@ function renderPedidos(){
     item.onclick=_pedSeleccionMultiple?(()=>_pedToggleSeleccion(p.id)):(()=>verPedido(ri));
     item.innerHTML=`
       ${_pedSeleccionMultiple?`<div style="display:flex;align-items:center;padding-right:2px" onclick="event.stopPropagation();_pedToggleSeleccion('${p.id}')"><input type="checkbox" ${seleccionado?'checked':''} style="width:18px;height:18px;cursor:pointer" onclick="event.stopPropagation();_pedToggleSeleccion('${p.id}')"/></div>`:''}
-      <div class="li-ico" style="background:linear-gradient(135deg,#ffe3ee,#e8efff);font-size:13px;font-weight:700;color:var(--brand)">${p.numero.replace('PED-','#')}</div>
+      <div class="li-ico" style="background:#fdf1f6;font-size:13px;font-weight:700;color:var(--brand)">${p.numero.replace('PED-','#')}</div>
       <div class="li-body" style="min-width:180px">
         <div class="li-name">${p.cliente?(p.cliente.nombre+' '+p.cliente.apellido):'Sin cliente'}</div>
         <div class="li-meta" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:3px">
@@ -12892,7 +12962,7 @@ function verPedido(idx){
       <span class="chip ${CHIP_PAGO[ep]||'chip-warn'}">${PED_PAGOS[ep]}</span>
       ${p.canal?`<span class="chip" style="${CANALES_COLOR[normalizarCanalVenta(p.canal)]||CANALES_COLOR.local}">${CANALES_LABEL[normalizarCanalVenta(p.canal)]||CANALES_LABEL.local}</span>`:''}
       ${p.fecha_entrega?`<span class="chip chip-info">Entrega: ${fmtFecha(p.fecha_entrega)}</span>`:''}
-      ${p.fecha_pedido?`<span class="chip" style="background:#f3f4f6">Pedido: ${fmtFecha(p.fecha_pedido)}</span>`:''}
+      ${p.fecha_pedido?`<span class="chip">Pedido: ${fmtFecha(p.fecha_pedido)}</span>`:''}
       ${p.usuario_nom?`<span class="chip" style="background:#f0f4ff;color:#3b5bdb;font-weight:600">👤 ${p.usuario_nom}</span>`:''}
     </div>
     ${_clienteCard}
@@ -12953,7 +13023,7 @@ function verPedido(idx){
         })()}</div>`:'<div class="pill ok">✓ Saldo completo</div>'}
       </div>
     </div>
-    ${p.notas?`<div class="card" style="padding:12px;border:1.5px solid #fed7d7;background:#fff5f5"><div style="font-size:12px;color:#c0392b;font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:3px"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Notas</div><p style="font-size:13px;color:#c0392b;font-weight:600">${p.notas}</p></div>`:''}`;
+    ${p.notas?`<div class="card" style="padding:12px;border:1.5px solid rgba(239,68,68,.35);background:rgba(239,68,68,.08)"><div style="font-size:12px;color:var(--danger);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:3px"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Notas</div><p style="font-size:13px;color:var(--danger);font-weight:600">${p.notas}</p></div>`:''}`;
 
   // Select de cambio de estado
   const estSel=qs('#mvped-estado-sel');
@@ -13555,8 +13625,11 @@ function renderDashPed(){
   const entHoy=ped.filter(p=>p.fecha_entrega===hoy&&p.estado!=='entregado'&&p.estado!=='cancelado').length;
   const vencidos=ped.filter(p=>p.fecha_entrega&&p.fecha_entrega<hoy&&p.estado!=='entregado'&&p.estado!=='cancelado').length;
   const dped=qs('#d-ped'); if(dped) dped.textContent=pend;
-  const dEnt=qs('#d-ent-hoy'); if(dEnt){ dEnt.textContent=entHoy; dEnt.closest('.kpi')&&(dEnt.closest('.kpi').style.outline=entHoy>0?'2px solid #EF9F27':''); }
-  const dVenc=qs('#d-ped-venc'); if(dVenc){ dVenc.textContent=vencidos; dVenc.closest('.kpi')&&(dVenc.closest('.kpi').style.outline=vencidos>0?'2px solid #E24B4A':''); }
+  const dEnt=qs('#d-ent-hoy'); if(dEnt) dEnt.textContent=entHoy;
+  qs('#dh-alert-ent')?.classList.toggle('show', entHoy>0);
+  const dVenc=qs('#d-ped-venc'); if(dVenc) dVenc.textContent=vencidos;
+  qs('#dh-alert-venc')?.classList.toggle('show', vencidos>0);
+  _dhAlertOkCheck();
   const dp=qs('#d-peds'); if(!dp) return; // vista dashboard no activa
   const rec=[...ped].reverse().slice(0,4);
   dp.innerHTML=rec.length?rec.map(p=>{
@@ -13600,7 +13673,7 @@ function renderRepInventario(){
     else alertWrap.innerHTML = bajos.map(it=>`
       <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #f3f3f8;font-size:12px">
         <div style="flex:1"><div style="font-weight:600">${it.nombre}</div><div style="color:var(--muted);font-size:11px">${it.tipo} · Mín: ${it.stock_min||0} ${it.unidad||'uds'}</div></div>
-        <div style="background:#f3f4f6;border-radius:6px;height:8px;width:80px;overflow:hidden"><div style="height:100%;width:${Math.min(100,((it.stock||0)/Math.max(it.stock_min||1,1))*100).toFixed(0)}%;background:var(--danger);border-radius:6px"></div></div>
+        <div style="background:var(--bg);border-radius:6px;height:8px;width:80px;overflow:hidden"><div style="height:100%;width:${Math.min(100,((it.stock||0)/Math.max(it.stock_min||1,1))*100).toFixed(0)}%;background:var(--danger);border-radius:6px"></div></div>
         <div style="font-weight:700;color:var(--danger);min-width:60px;text-align:right">${it.stock||0} ${it.unidad||'uds'}</div>
       </div>`).join('');
   }
@@ -14214,7 +14287,7 @@ function verInsumo(idx){
 
   qs('#mverins-body').innerHTML=`
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-      ${item.sku?`<span class="chip" style="background:#f3f4f6">SKU: ${item.sku}</span>`:''}
+      ${item.sku?`<span class="chip">SKU: ${item.sku}</span>`:''}
       ${item.categoria?`<span class="chip chip-info">${item.categoria}</span>`:''}
       <span class="chip ${alerta?'chip-danger':'chip-ok'}">${alerta?'Stock bajo':'Stock OK'}</span>
     </div>
@@ -14688,6 +14761,8 @@ function exportInvCSV(){
 function renderDashInv(){
   const alertas=contarAlertas();
   const da=qs('#d-inv-alertas'); if(da) da.textContent=alertas;
+  qs('#dh-alert-inv')?.classList.toggle('show', alertas>0);
+  _dhAlertOkCheck();
   const dai=qs('#d-inv-ins');    if(dai) dai.textContent=loadIns().length;
 }
 
@@ -15118,7 +15193,7 @@ function texImprimirOrden(){
   const negocio=cfg.negocio||'GestioMada';
   const fecha=new Date().toLocaleDateString('es-VE',{day:'2-digit',month:'2-digit',year:'numeric'});
   const totalUnd=filas.reduce((a,r)=>a+r.cant,0);
-  const rows=filas.map((r,i)=>`<tr style="background:${i%2?'#f9f9f9':'#fff'}">
+  const rows=filas.map((r,i)=>`<tr style="background:${i%2?'var(--bg)':'var(--card)'}">
     <td style="padding:8px 10px;font-weight:600">${r.nombre}</td>
     <td style="padding:8px 10px;text-align:center"><span style="background:#ffe3ee;color:#be185d;font-size:12px;padding:2px 10px;border-radius:999px;font-weight:700">${r.talla||'—'}</span></td>
     <td style="padding:8px 10px">${r.color||'—'}</td>
@@ -15253,8 +15328,8 @@ function renderRepVentas(){
         days.slice(-14).map(([d,v])=>`
           <div style="display:flex;align-items:center;gap:8px;font-size:12px">
             <div style="min-width:70px;color:var(--muted);font-size:11px">${fmtDiaCorto(d)}</div>
-            <div style="flex:1;background:#f3f4f6;border-radius:6px;height:18px;overflow:hidden">
-              <div style="height:100%;width:${(v/maxD*100).toFixed(1)}%;background:linear-gradient(90deg,var(--brand),var(--brand2));border-radius:6px;transition:width .3s"></div>
+            <div style="flex:1;background:var(--bg);border-radius:6px;height:18px;overflow:hidden">
+              <div style="height:100%;width:${(v/maxD*100).toFixed(1)}%;background:var(--brand);border-radius:6px;transition:width .3s"></div>
             </div>
             <div style="min-width:72px;text-align:right;font-weight:700;color:var(--brand)">${euro(v)}</div>
           </div>`).join('') + `</div>`;
@@ -15272,7 +15347,7 @@ function renderRepVentas(){
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
         <div style="width:10px;height:10px;border-radius:50%;background:${COLORES[k]||'#aaa'};flex-shrink:0"></div>
         <div style="flex:1">${METODOS_LABEL[k]||k}</div>
-        <div style="flex:2;background:#f3f4f6;border-radius:6px;height:16px;overflow:hidden">
+        <div style="flex:2;background:var(--bg);border-radius:6px;height:16px;overflow:hidden">
           <div style="height:100%;width:${(v/total*100).toFixed(1)}%;background:${COLORES[k]||'#aaa'};opacity:.8;border-radius:6px"></div>
         </div>
         <div style="min-width:90px;text-align:right;font-weight:700">${euro(v)}</div>
@@ -15314,7 +15389,7 @@ function renderRepVentas(){
           const pct = (v/totalCan*100).toFixed(1);
           return `<div style="display:flex;align-items:center;gap:8px;font-size:12px">
             <div style="min-width:110px;font-weight:600">${CANAL_LABEL_REP[c]||c}</div>
-            <div style="flex:1;background:#f3f4f6;border-radius:6px;height:18px;overflow:hidden">
+            <div style="flex:1;background:var(--bg);border-radius:6px;height:18px;overflow:hidden">
               <div style="height:100%;width:${pct}%;background:${col};opacity:.85;border-radius:6px;transition:width .3s"></div>
             </div>
             <div style="min-width:80px;text-align:right;font-weight:700;color:var(--brand)">${euro(v)}</div>
@@ -15411,8 +15486,8 @@ function renderRepProductos(){
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12px">
         <div style="min-width:20px;font-weight:700;color:${i<3?'var(--brand)':'var(--muted)'};font-size:13px">${i+1}</div>
         <div style="flex:2;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600">${p.nombre}</div>
-        <div style="flex:1;background:#f3f4f6;border-radius:6px;height:14px;overflow:hidden">
-          <div style="height:100%;width:${(p.total/maxT*100).toFixed(1)}%;background:linear-gradient(90deg,var(--brand),var(--brand2));border-radius:6px"></div>
+        <div style="flex:1;background:var(--bg);border-radius:6px;height:14px;overflow:hidden">
+          <div style="height:100%;width:${(p.total/maxT*100).toFixed(1)}%;background:var(--brand);border-radius:6px"></div>
         </div>
         <div style="min-width:40px;text-align:center;color:var(--muted)">${p.cant} uds</div>
         <div style="min-width:80px;text-align:right;font-weight:700;color:var(--brand)">${euro(p.total)}</div>
@@ -15441,8 +15516,8 @@ function renderRepProductos(){
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;font-size:12px">
         <div style="min-width:20px;font-weight:700;color:${i<3?'var(--brand)':'var(--muted)'};font-size:13px">${i+1}</div>
         <div style="flex:2;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:600">${cat}</div>
-        <div style="flex:1;background:#f3f4f6;border-radius:6px;height:14px;overflow:hidden">
-          <div style="height:100%;width:${(v.total/maxCat*100).toFixed(1)}%;background:linear-gradient(90deg,var(--brand),var(--brand2));border-radius:6px"></div>
+        <div style="flex:1;background:var(--bg);border-radius:6px;height:14px;overflow:hidden">
+          <div style="height:100%;width:${(v.total/maxCat*100).toFixed(1)}%;background:var(--brand);border-radius:6px"></div>
         </div>
         <div style="min-width:40px;text-align:center;color:var(--muted)">${v.cant} uds</div>
         <div style="min-width:80px;text-align:right;font-weight:700;color:var(--brand)">${euro(v.total)}</div>
@@ -15543,7 +15618,7 @@ function renderRepPedidos(){
       return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
         <div style="width:10px;height:10px;border-radius:50%;background:${col};flex-shrink:0"></div>
         <div style="flex:1;font-weight:600">${CANAL_LABEL_P[c]||c}</div>
-        <div style="flex:2;background:#f3f4f6;border-radius:6px;height:16px;overflow:hidden"><div style="height:100%;width:${(v/Math.max(...Object.values(byCanP)))*100}%;background:${col};opacity:.8;border-radius:6px"></div></div>
+        <div style="flex:2;background:var(--bg);border-radius:6px;height:16px;overflow:hidden"><div style="height:100%;width:${(v/Math.max(...Object.values(byCanP)))*100}%;background:${col};opacity:.8;border-radius:6px"></div></div>
         <div style="min-width:30px;text-align:right;font-weight:700">${v}</div>
         <div style="min-width:38px;text-align:right;color:var(--muted)">${pct}%</div>
       </div>`;
@@ -15568,7 +15643,7 @@ function renderRepPedidos(){
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
         <div style="width:10px;height:10px;border-radius:50%;background:${COLORES_M[k]||'#aaa'};flex-shrink:0"></div>
         <div style="flex:1">${METODOS_LABEL[k]||k}</div>
-        <div style="flex:2;background:#f3f4f6;border-radius:6px;height:16px;overflow:hidden"><div style="height:100%;width:${(v/totalMP*100).toFixed(1)}%;background:${COLORES_M[k]||'#aaa'};opacity:.8;border-radius:6px"></div></div>
+        <div style="flex:2;background:var(--bg);border-radius:6px;height:16px;overflow:hidden"><div style="height:100%;width:${(v/totalMP*100).toFixed(1)}%;background:${COLORES_M[k]||'#aaa'};opacity:.8;border-radius:6px"></div></div>
         <div style="min-width:80px;text-align:right;font-weight:700">${euro(v)}</div>
         <div style="min-width:38px;text-align:right;color:var(--muted)">${(v/totalMP*100).toFixed(0)}%</div>
       </div>`).join('') || '<p style="font-size:12px;color:var(--muted)">Sin pagos registrados</p>';
@@ -15794,13 +15869,13 @@ function renderRepCaja(){
         <div style="font-size:11px;color:var(--muted);margin-bottom:2px">${fmtDiaCorto(d)}</div>
         <div style="display:flex;align-items:center;gap:6px;font-size:11px">
           <div style="min-width:70px;color:var(--ok)">＋${euro(v.ing)}</div>
-          <div style="flex:1;background:#f3f4f6;border-radius:4px;height:12px;overflow:hidden;position:relative">
+          <div style="flex:1;background:var(--bg);border-radius:4px;height:12px;overflow:hidden;position:relative">
             <div style="position:absolute;left:0;top:0;height:100%;width:${(v.ing/maxV*100).toFixed(1)}%;background:var(--ok);opacity:.7;border-radius:4px"></div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;font-size:11px;margin-bottom:4px">
           <div style="min-width:70px;color:var(--danger)">−${euro(v.gas)}</div>
-          <div style="flex:1;background:#f3f4f6;border-radius:4px;height:12px;overflow:hidden;position:relative">
+          <div style="flex:1;background:var(--bg);border-radius:4px;height:12px;overflow:hidden;position:relative">
             <div style="position:absolute;left:0;top:0;height:100%;width:${(v.gas/maxV*100).toFixed(1)}%;background:var(--danger);opacity:.5;border-radius:4px"></div>
           </div>
         </div>`).join('') + `</div>`;
@@ -15829,7 +15904,7 @@ function renderRepCaja(){
         if(v.netoBs !== 0)  partes.push(`<span style="color:${v.netoBs>=0?'var(--ok)':'var(--danger)'};font-weight:700">${fmtBsR(v.netoBs)}</span>`);
         return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
           <div style="min-width:90px;font-weight:600;text-transform:capitalize">${k}</div>
-          <div style="flex:1;background:#f3f4f6;border-radius:6px;height:16px;overflow:hidden">
+          <div style="flex:1;background:var(--bg);border-radius:6px;height:16px;overflow:hidden">
             <div style="height:100%;width:${(Math.abs(totalEqUsd)/maxC*100).toFixed(1)}%;background:${totalEqUsd>=0?'var(--ok)':'var(--danger)'};opacity:.7;border-radius:6px"></div>
           </div>
           <div style="min-width:170px;text-align:right">${partes.join(' · ')||'—'}</div>
@@ -15874,8 +15949,8 @@ function _barras(obj, labels, total){
   return Object.entries(obj).sort(([,a],[,b])=>b-a).map(([k,v])=>`
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
       <div style="min-width:120px;font-weight:600">${labels[k]||k}</div>
-      <div style="flex:1;background:#f3f4f6;border-radius:6px;height:16px;overflow:hidden">
-        <div style="height:100%;width:${(v/max*100).toFixed(1)}%;background:linear-gradient(90deg,var(--brand),var(--brand2));opacity:.7;border-radius:6px"></div>
+      <div style="flex:1;background:var(--bg);border-radius:6px;height:16px;overflow:hidden">
+        <div style="height:100%;width:${(v/max*100).toFixed(1)}%;background:var(--brand);opacity:.7;border-radius:6px"></div>
       </div>
       <div style="min-width:30px;text-align:right;font-weight:700">${v}</div>
       <div style="min-width:38px;text-align:right;color:var(--muted)">${total>0?((v/total)*100).toFixed(0):0}%</div>
@@ -16303,7 +16378,7 @@ function renderFinCxC(){
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
         <div style="width:10px;height:10px;border-radius:50%;background:${d.color};flex-shrink:0"></div>
         <div style="flex:1;font-weight:600">${d.label}</div>
-        <div style="flex:2;background:#f3f4f6;border-radius:6px;height:16px;overflow:hidden"><div style="height:100%;width:${(d.v/max*100).toFixed(1)}%;background:${d.color};opacity:.85;border-radius:6px"></div></div>
+        <div style="flex:2;background:var(--bg);border-radius:6px;height:16px;overflow:hidden"><div style="height:100%;width:${(d.v/max*100).toFixed(1)}%;background:${d.color};opacity:.85;border-radius:6px"></div></div>
         <div style="min-width:80px;text-align:right;font-weight:700">${euro(d.v)}</div>
         <div style="min-width:30px;text-align:right;color:var(--muted)">${d.c}</div>
       </div>
@@ -16390,7 +16465,7 @@ function renderFinCxC(){
         const telLimpio = (cli.tel||'').replace(/\D/g,'');
         return `
         <div style="border:1px solid var(--border);border-radius:10px;margin-bottom:8px;overflow:hidden">
-          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fafafa;cursor:pointer" onclick="toggleFinCxCCliente(${i})">
+          <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg);cursor:pointer" onclick="toggleFinCxCCliente(${i})">
             <div style="width:8px;height:36px;border-radius:3px;background:${colorBucket};flex-shrink:0"></div>
             <div style="flex:1;min-width:0">
               <div style="font-weight:700;font-size:13px">${esc(cli.nombre)}</div>
@@ -16402,9 +16477,9 @@ function renderFinCxC(){
             ${telLimpio ? `<button class="btn btn-sm" style="font-size:11px;padding:4px 8px" onclick="event.stopPropagation();finCxCWhatsApp(${i})" title="Recordatorio WhatsApp"><svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" style="display:inline-block;vertical-align:middle"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg></button>` : ''}
             <span id="fincxc-arr-${i}" style="color:var(--muted);font-size:14px">▼</span>
           </div>
-          <div id="fincxc-det-${i}" style="display:none;padding:10px 12px;border-top:1px solid var(--border);background:#fff">
+          <div id="fincxc-det-${i}" style="display:none;padding:10px 12px;border-top:1px solid var(--border);background:var(--card)">
             ${cli.pedidos.sort((a,b)=>b.diasVencido-a.diasVencido).map(x => `
-              <div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;border-bottom:1px solid #f3f4f6">
+              <div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;border-bottom:1px solid var(--border)">
                 <div style="font-weight:600;min-width:80px"><a href="#" onclick="event.preventDefault();closeAllModals();nav('pedidos',document.querySelector('[data-v=pedidos]'));setTimeout(()=>{const inp=qs('#ped_q');if(inp){inp.value='${esc(x.ped.numero)}';inp.dispatchEvent(new Event('input'));}},100)" style="color:var(--brand);text-decoration:none">${esc(x.ped.numero)}</a></div>
                 <div style="flex:1;color:var(--muted);font-size:11px">Vence: ${esc(x.fechaVenc)} · ${x.diasVencido<=0?'Vigente':_finFmtDias(x.diasVencido)+' vencido'}</div>
                 <div style="font-weight:700">${euro(x.saldo)}</div>
@@ -16430,7 +16505,7 @@ function renderFinCxC(){
         <div style="overflow-x:auto">
           <table style="width:100%;font-size:12px;border-collapse:collapse">
             <thead>
-              <tr style="background:#fafafa;text-align:left">
+              <tr style="background:var(--bg);text-align:left">
                 <th style="padding:8px 10px">#</th>
                 <th style="padding:8px 10px">Cliente</th>
                 <th style="padding:8px 10px">Vence</th>
@@ -16561,7 +16636,7 @@ function renderFinPyL(){
     .map(([k,v]) => {
       const pct = ingresos>0 ? (v/ingresos*100).toFixed(1) : '0';
       const color = SUBCAT_GASTO_COLOR[k] || '#6b7280';
-      return `<tr style="border-bottom:1px solid #f3f4f6">
+      return `<tr style="border-bottom:1px solid var(--border)">
         <td style="padding:8px 12px;padding-left:32px;color:var(--muted);font-size:12px">
           <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px"></span>
           ${esc(SUBCAT_GASTO_LABEL[k] || k)}
@@ -16593,7 +16668,7 @@ function renderFinPyL(){
           </tr>
           <tr><td colspan="3" style="padding:8px 12px;font-weight:700;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.05em">Gastos operativos</td></tr>
           ${subcatRows || '<tr><td colspan="3" style="padding:14px 12px;text-align:center;color:var(--muted);font-style:italic;font-size:12px">Sin gastos operativos en el período</td></tr>'}
-          <tr style="background:#fafafa;border-top:1px solid var(--border)">
+          <tr style="background:var(--bg);border-top:1px solid var(--border)">
             <td style="padding:10px 12px;font-weight:700">Total gastos operativos</td>
             <td style="padding:10px 12px;text-align:right;font-weight:600">(${ingresos>0?(totalGastosOper/ingresos*100).toFixed(1):'0'}%)</td>
             <td style="padding:10px 12px;text-align:right;font-weight:700">−${euro(totalGastosOper)}</td>
@@ -16634,7 +16709,7 @@ function renderFinPyL(){
               return `<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:12px">
                 <div style="width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0"></div>
                 <div style="flex:1;font-weight:600">${esc(SUBCAT_GASTO_LABEL[k] || k)}</div>
-                <div style="flex:2;background:#f3f4f6;border-radius:6px;height:14px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${color};opacity:.85"></div></div>
+                <div style="flex:2;background:var(--bg);border-radius:6px;height:14px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${color};opacity:.85"></div></div>
                 <div style="min-width:80px;text-align:right;font-weight:700">${euro(v)}</div>
                 <div style="min-width:38px;text-align:right;color:var(--muted)">${pct}%</div>
               </div>`;
@@ -16788,7 +16863,7 @@ function renderFinFlujo(){
       <div style="overflow-x:auto">
         <table style="width:100%;font-size:12px;border-collapse:collapse">
           <thead>
-            <tr style="background:#fafafa;text-align:left">
+            <tr style="background:var(--bg);text-align:left">
               <th style="padding:8px 10px">Día</th>
               <th style="padding:8px 10px">Fecha</th>
               <th style="padding:8px 10px;text-align:right">+ Cobros</th>
@@ -16827,7 +16902,7 @@ function renderFinFlujo(){
       cob.innerHTML = '<p style="font-size:12px;color:var(--muted);padding:12px 0">No hay cobros proyectados en el horizonte.</p>';
     } else {
       cob.innerHTML = todosCobros.slice(0, 12).map(c => `
-        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;border-bottom:1px solid #f3f4f6">
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;border-bottom:1px solid var(--border)">
           <div style="font-weight:600;color:var(--brand);min-width:74px">${esc(c.numero)}</div>
           <div style="flex:1">${esc(c.cliente)}</div>
           <div style="color:var(--muted);font-size:11px">${esc(c.fecha)}</div>
@@ -16846,7 +16921,7 @@ function renderFinFlujo(){
       const totalMes = gastosRec.reduce((a,g)=>a+(g.monto||0), 0);
       rec.innerHTML = gastosRec.sort((a,b)=>a.dia-b.dia).map((g,i) => {
         const color = SUBCAT_GASTO_COLOR[g.cat] || '#6b7280';
-        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;border-bottom:1px solid #f3f4f6">
+        return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;font-size:12px;border-bottom:1px solid var(--border)">
           <div style="width:8px;height:8px;border-radius:50%;background:${color};flex-shrink:0"></div>
           <div style="flex:1">
             <div style="font-weight:600">${esc(g.nombre)}</div>
@@ -17022,7 +17097,7 @@ function renderFinCambiario(){
         <div style="display:flex;align-items:flex-end;gap:2px;height:80px;padding:0 4px;border-bottom:1px solid var(--border)">
           ${ordenadas.map(([f,t]) => {
             const h = max>min ? ((t-min)/(max-min)*100) : 50;
-            return `<div title="${f}: Bs ${fmtBs(t)}" style="flex:1;background:linear-gradient(180deg,var(--brand) 0%,#a78bfa 100%);height:${Math.max(h,3)}%;border-radius:2px 2px 0 0;cursor:pointer"></div>`;
+            return `<div title="${f}: Bs ${fmtBs(t)}" style="flex:1;background:var(--brand);height:${Math.max(h,3)}%;border-radius:2px 2px 0 0;cursor:pointer"></div>`;
           }).join('')}
         </div>
         <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:4px">
@@ -17044,7 +17119,7 @@ function renderFinCambiario(){
         <div style="overflow-x:auto">
           <table style="width:100%;font-size:12px;border-collapse:collapse">
             <thead>
-              <tr style="background:#fafafa;text-align:left">
+              <tr style="background:var(--bg);text-align:left">
                 <th style="padding:8px 10px">Pedido</th>
                 <th style="padding:8px 10px">Cliente</th>
                 <th style="padding:8px 10px;text-align:right">Saldo USD</th>
@@ -17664,7 +17739,7 @@ function renderDashFinanzas(){
 </nav>
 
 <!-- ══ BOTTOM NAV: panel "Más" ══ -->
-<div id="bn-mas-panel" style="display:none;position:fixed;bottom:58px;left:0;right:0;z-index:199;background:var(--card);border-top:1px solid #f0f0f5;box-shadow:0 -8px 24px rgba(0,0,0,.12);padding:12px 16px;border-radius:20px 20px 0 0">
+<div id="bn-mas-panel" style="display:none;position:fixed;bottom:64px;left:0;right:0;z-index:199;background:var(--card);border-top:1px solid #f0f0f5;box-shadow:0 -8px 24px rgba(0,0,0,.12);padding:12px 16px;border-radius:20px 20px 0 0">
   <div style="width:36px;height:4px;background:#e5e7eb;border-radius:2px;margin:0 auto 14px"></div>
   <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
     <button class="bn-mas-btn" onclick="bnNav('caja',null);bnCloseMas()">
@@ -17723,10 +17798,15 @@ function toggleSidebar(){
   const ov=document.getElementById('sidebar-overlay');
   const isOpen=sb.classList.toggle('open');
   ov.classList.toggle('open',isOpen);
+  // FIX v15.21: sin esto, en móvil el scroll del body detrás del drawer podía
+  // "chainear" con el scroll interno del sidebar (rebote al soltar el dedo).
+  if(isOpen) document.body.style.overflow = 'hidden';
+  else if(!_modalStack.length) document.body.style.overflow = '';
 }
 function closeSidebar(){
   document.querySelector('.sidebar').classList.remove('open');
   document.getElementById('sidebar-overlay').classList.remove('open');
+  if(!_modalStack.length) document.body.style.overflow = '';
 }
 
 /* ── Nav unificado: sidebar drawer + bottom nav sync ── */
@@ -17924,7 +18004,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_17';
+  const APP_VERSION = 'v15_21';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -18401,7 +18481,7 @@ function imprimirEtiquetaEnvio(idx){
   const neg=CFG?.negocio||'SubliMada';
   const logo=CFG?.logo||'';
   const logoHtml=logo?`<img src="${logo}" style="height:50px;object-fit:contain"/>`:
-    `<span style="font-size:22px;font-weight:900;color:#ff7aa2">${neg}</span>`;
+    `<span style="font-size:22px;font-weight:900;color:#ea8db9">${neg}</span>`;
   const fragHtml=envio.fragil?`
     <div style="margin-top:18px;text-align:center">
       <div style="font-size:82px;font-weight:900;letter-spacing:4px;font-family:'Arial Black',Impact,sans-serif;color:#000;line-height:1">FRÁGIL</div>
