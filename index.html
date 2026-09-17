@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_54">
+<html lang="es" data-app-version="GestioMada_V15_59">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -20,6 +20,13 @@ const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsI
 const SUPA = supabase.createClient(SUPA_URL, SUPA_KEY, {
   realtime: { params: { eventsPerSecond: 10 } }
 });
+
+// Resuelve cuando ya sabemos si hay sesión real de Supabase y, de haberla,
+// terminamos de aplicar el perfil (rol/permisos) del usuario logueado.
+// El arranque principal espera esto antes de decidir si muestra la pantalla
+// de "selecciona tu usuario" — así se evita el parpadeo de esa pantalla.
+let _authReadyResolve;
+const _authReadyPromise = new Promise(r=>{ _authReadyResolve = r; });
 
 // Mapa de tablas Supabase → localStorage
 const SUPA_TABLAS = [
@@ -1199,7 +1206,7 @@ body.dark{
 body.dark .card{background:#151924;box-shadow:none;border:1px solid #23283a}
 body.dark .pill{background:#1b2030;border-color:#2a3147;color:#e5e7eb}
 body.dark .chip{background:#1b2030;border-color:#2a3147;color:#e5e7eb}
-body.dark input[type="text"],body.dark input[type="number"],body.dark input[type="date"],body.dark input[type="tel"],body.dark select,body.dark textarea{background:#0f1115;color:#e5e7eb;border-color:#2a3147}
+body.dark input[type="text"],body.dark input[type="number"],body.dark input[type="date"],body.dark input[type="tel"],body.dark input[type="email"],body.dark input[type="password"],body.dark select,body.dark textarea{background:#0f1115;color:#e5e7eb;border-color:#2a3147}
 body.dark input[type="text"]:focus,body.dark input[type="number"]:focus,body.dark select:focus,body.dark textarea:focus{border-color:var(--brand);background:#0f1115}
 body.dark .copy-btn{background:#1b2030;color:#e5e7eb;border-color:#2a3147}
 body.dark .btn{background:#1b2030;color:#e5e7eb;border-color:#2a3147}
@@ -1649,7 +1656,7 @@ body.dark .ham-btn:hover{background:#1b2030}
 
 /* ═══════════════ FORMS ═══════════════ */
 label{font-size:12px;color:var(--muted);display:block;margin:0 0 4px;font-weight:600}
-input[type=text],input[type=number],input[type=email],input[type=tel],select,textarea{
+input[type=text],input[type=number],input[type=email],input[type=tel],input[type=password],select,textarea{
   width:100%;padding:10px 12px;border-radius:12px;
   border:1px solid #e5e7eb;background:#fff;
   font-size:13px;font-family:inherit;color:var(--ink);
@@ -1788,6 +1795,65 @@ body.dark .dh-row{border-bottom-color:#23283a}
 body.dark .dh-alert.red{background:#3a1616;color:#f87171}
 body.dark .dh-alert.amber{background:#3a2c10;color:#fbbf24}
 body.dark .dh-alert-ok{background:#132a17;color:#4ade80}
+
+/* ── Dashboard bento (V15.55) ── */
+:root{--dh-h1:#993556;--dh-h1-bg:#FBEAF0;--dh-h2:#185FA5;--dh-h2-bg:#E6F1FB;--dh-h3:#534AB7;--dh-h3-bg:#EEEDFE;--dh-h4:#854F0B;--dh-h4-bg:#FAEEDA}
+body.dark{--dh-h1:#f472b6;--dh-h1-bg:#2a1620;--dh-h2:#60a5fa;--dh-h2-bg:#16202f;--dh-h3:#a78bfa;--dh-h3-bg:#211a35;--dh-h4:#fbbf24;--dh-h4-bg:#3a2c10}
+.dh-greet{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.dh-greet-h1{font-size:21px;font-weight:800;letter-spacing:-.01em}
+.dh-greet-sub{font-size:12px;color:var(--muted);margin-top:3px;text-transform:capitalize}
+.dh-greet-right{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.dh-bcv-chip{font-size:11.5px;font-weight:600;padding:6px 12px;border-radius:999px;background:var(--card);border:1px solid #eee;color:var(--muted)}
+.dh-qa{font-size:12px;font-weight:700;padding:9px 16px;border-radius:12px;border:none;cursor:pointer;font-family:inherit;transition:filter .15s}
+.dh-qa:hover{filter:brightness(.95)}
+.dh-qa-brand{background:var(--brand);color:#fff}
+.dh-qa-ghost{background:var(--card);border:1px solid #eee;color:var(--ink)}
+.dh-bento{display:flex;gap:12px;margin-bottom:16px;align-items:stretch}
+.dh-feat{flex:1.15;border-radius:18px;padding:20px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;background:var(--dh-h1-bg);transition:transform .15s}
+.dh-feat:hover{transform:translateY(-2px)}
+.dh-feat-top{display:flex;justify-content:space-between;align-items:flex-start}
+.dh-feat-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--dh-h1)}
+.dh-feat-val{font-size:32px;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+.dh-feat-trend{font-size:12px;font-weight:600;color:var(--dh-h1);margin-top:3px}
+.dh-donut{width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,.55);color:var(--dh-h1);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+body.dark .dh-donut{background:rgba(0,0,0,.25)}
+.dh-donut-inner{display:flex}
+.dh-tiles{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dh-tile{border-radius:18px;padding:16px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;transition:transform .15s;border:1px solid #f0f0f5}
+.dh-tile:hover{transform:translateY(-2px)}
+.dh-tile-wide{grid-column:1/-1}
+.dh-tile.h2{background:var(--dh-h2-bg);border-color:transparent}
+.dh-tile.h3{background:var(--dh-h3-bg);border-color:transparent}
+.dh-tile.h4{background:var(--dh-h4-bg);border-color:transparent}
+.dh-tile-lbl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.dh-tile.h2 .dh-tile-lbl{color:var(--dh-h2)}
+.dh-tile.h3 .dh-tile-lbl{color:var(--dh-h3)}
+.dh-tile.h4 .dh-tile-lbl{color:var(--dh-h4)}
+.dh-tile-val{font-size:22px;font-weight:800;color:var(--ink)}
+.dh-finwrap{display:grid;grid-template-columns:1fr 1fr;border-radius:16px;background:var(--card);box-shadow:var(--shadow);margin-bottom:16px}
+.dh-fincol{padding:16px 20px}
+.dh-fincol+.dh-fincol{border-left:1px solid #f0f0f5}
+.dh-fincol-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:10px}
+.dh-finchip-row{display:flex;gap:8px;flex-wrap:wrap}
+.dh-finchip{padding:8px 13px;border-radius:12px;background:var(--bg);cursor:pointer;min-width:84px}
+.dh-finchip-lbl{font-size:9.5px;color:var(--muted);white-space:nowrap;display:block}
+.dh-finchip-val{font-size:13.5px;font-weight:700;display:block;margin-top:1px}
+.dh-finchip.bad{background:#FCEBEB}
+.dh-finchip.bad .dh-finchip-lbl{color:#A32D2D}
+body.dark .dh-finchip.bad{background:#3a1616}
+body.dark .dh-finchip.bad .dh-finchip-lbl{color:#f87171}
+.dh-actcard{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px}
+.dh-actcard-title{font-size:12px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+.dh-actcard-title .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+body.dark .dh-bcv-chip{background:#151924;border-color:#2a3147;color:#9ca3af}
+body.dark .dh-qa-ghost{background:#151924;border-color:#2a3147;color:#e5e7eb}
+body.dark .dh-tile{background:#151924;border-color:#23283a}
+body.dark .dh-finwrap{background:#151924;box-shadow:none;border:1px solid #23283a}
+body.dark .dh-fincol+.dh-fincol{border-left-color:#23283a}
+body.dark .dh-finchip{background:#1b2030}
+body.dark .dh-actcard{background:#151924;box-shadow:none;border:1px solid #23283a}
+@media(max-width:900px){.dh-bento{flex-direction:column}}
+@media(max-width:640px){.dh-tiles{grid-template-columns:1fr}.dh-finwrap{grid-template-columns:1fr}.dh-fincol+.dh-fincol{border-left:none;border-top:1px solid #f0f0f5}.dh-greet{flex-direction:column;align-items:flex-start}}
 
 /* ═══════════════ PRODUCT GRID ═══════════════ */
 .prod-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
@@ -2619,6 +2685,29 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
 <!-- ══════════════════════════════════════
      APP WRAPPER
 ══════════════════════════════════════ -->
+<!-- ══ PANTALLA DE INICIO DE SESIÓN (Supabase Auth) ══ -->
+<div id="auth-screen" style="position:fixed;inset:0;z-index:1300;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px">
+  <div style="width:100%;max-width:380px">
+    <div style="text-align:center;margin-bottom:24px">
+      <div style="width:52px;height:52px;border-radius:16px;background:var(--brand);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;box-shadow:var(--shadow)">
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V8a5 5 0 0 1 10 0v3"/></svg>
+      </div>
+      <div class="dh-greet-h1" style="font-size:22px">GestioMada</div>
+      <div class="dh-greet-sub" style="text-transform:none;margin-top:4px">Inicia sesión para continuar</div>
+    </div>
+    <div style="background:var(--card);border-radius:var(--r-xl);padding:26px 22px;box-shadow:var(--shadow)">
+      <div id="auth-login-fields">
+        <div class="fg"><label>Correo</label><input type="email" id="auth_email" placeholder="tucorreo@gmail.com" autocomplete="username" onkeydown="if(event.key==='Enter'){event.preventDefault();authLogin();}"/></div>
+        <div class="fg" style="margin-bottom:6px"><label>Contraseña</label><input type="password" id="auth_pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();authLogin();}"/></div>
+        <div style="text-align:right;margin-bottom:16px"><a href="#" style="font-size:11.5px;color:var(--muted)" onclick="authOlvidoPass();return false">¿Olvidaste tu contraseña?</a></div>
+        <button class="btn btn-brand" style="width:100%;justify-content:center" onclick="authLogin()" id="auth-login-btn">Entrar</button>
+        <div id="auth-error" style="font-size:12px;color:var(--danger);margin-top:12px;min-height:16px;text-align:center;font-weight:600"></div>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:16px">Acceso restringido al equipo de GestioMada</div>
+  </div>
+</div>
+
 <!-- ══ PANTALLA DE SELECCIÓN DE ROL ══ -->
 <div id="lock-screen" style="position:fixed;inset:0;z-index:1000;background:var(--bg);flex-direction:column;align-items:center;justify-content:center;padding:24px">
   <div style="text-align:center;margin-bottom:32px">
@@ -2808,6 +2897,19 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
       ══════════════════════════════════════ -->
       <div class="view active" id="view-dashboard">
 
+        <!-- Saludo + acciones rápidas -->
+        <div class="dh-greet">
+          <div>
+            <div class="dh-greet-h1" id="dh-greet-name">Hola 👋</div>
+            <div class="dh-greet-sub" id="dh-greet-date">—</div>
+          </div>
+          <div class="dh-greet-right">
+            <span class="dh-bcv-chip" id="dh-greet-bcv">BCV —</span>
+            <button class="dh-qa dh-qa-ghost" onclick="nav('pedidos',document.querySelector('[data-v=pedidos]'));setTimeout(()=>{if(typeof abrirNuevoPedido==='function')abrirNuevoPedido();},150)">+ Pedido</button>
+            <button class="dh-qa dh-qa-brand" onclick="nav('ventas',document.querySelector('[data-v=ventas]'))">+ Venta</button>
+          </div>
+        </div>
+
         <!-- Alertas: solo aparecen si hay algo que requiera atención -->
         <div class="dh-alerts" id="dh-alerts-wrap">
           <div class="dh-alert amber" id="dh-alert-ent" onclick="nav('pedidos',document.querySelector('[data-v=pedidos]'))">
@@ -2828,67 +2930,75 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
           </div>
         </div>
 
-        <!-- Hero: pulso del día -->
-        <div class="dh-hero">
-          <div class="dh-card" onclick="nav('ventas',document.querySelector('[data-v=ventas]'))">
-            <div class="dh-card-top"><div class="dh-card-ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div><div class="dh-card-lbl">Ventas hoy</div></div>
-            <div class="dh-card-val" id="d-ven-num">0</div>
-            <div class="dh-card-sub">transacciones →</div>
+        <!-- KPIs bento -->
+        <div class="dh-bento">
+          <div class="dh-feat" onclick="nav('ventas',document.querySelector('[data-v=ventas]'))">
+            <div class="dh-feat-top">
+              <div class="dh-feat-lbl">Ingresos hoy</div>
+              <div class="dh-donut"><div class="dh-donut-inner"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></div></div>
+            </div>
+            <div>
+              <div class="dh-feat-val" id="d-ven-hoy">$ 0,00</div>
+              <div class="dh-feat-trend">total cobrado hoy →</div>
+            </div>
           </div>
-          <div class="dh-card" onclick="nav('ventas',document.querySelector('[data-v=ventas]'))">
-            <div class="dh-card-top"><div class="dh-card-ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></div><div class="dh-card-lbl">Ingresos hoy</div></div>
-            <div class="dh-card-val" id="d-ven-hoy">$ 0,00</div>
-            <div class="dh-card-sub">total cobrado →</div>
-          </div>
-          <div class="dh-card" onclick="nav('reportes',document.querySelector('[data-v=reportes]'))">
-            <div class="dh-card-top"><div class="dh-card-ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg></div><div class="dh-card-lbl">Utilidad hoy</div></div>
-            <div class="dh-card-val" id="d-util-hoy">$ 0,00</div>
-            <div class="dh-card-sub">ganancia neta →</div>
-          </div>
-          <div class="dh-card" onclick="nav('pedidos',document.querySelector('[data-v=pedidos]'))">
-            <div class="dh-card-top"><div class="dh-card-ico"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></div><div class="dh-card-lbl">Pedidos activos</div></div>
-            <div class="dh-card-val" id="d-ped">0</div>
-            <div class="dh-card-sub">en proceso →</div>
+          <div class="dh-tiles">
+            <div class="dh-tile h2" onclick="nav('ventas',document.querySelector('[data-v=ventas]'))">
+              <div class="dh-tile-lbl">Ventas hoy</div>
+              <div class="dh-tile-val" id="d-ven-num">0</div>
+            </div>
+            <div class="dh-tile h3" onclick="nav('reportes',document.querySelector('[data-v=reportes]'))">
+              <div class="dh-tile-lbl">Utilidad hoy</div>
+              <div class="dh-tile-val" id="d-util-hoy">$ 0,00</div>
+            </div>
+            <div class="dh-tile h4 dh-tile-wide" onclick="nav('pedidos',document.querySelector('[data-v=pedidos]'))">
+              <div class="dh-tile-lbl">Pedidos activos</div>
+              <div class="dh-tile-val" id="d-ped">0</div>
+            </div>
           </div>
         </div>
 
-        <!-- Resumen compacto -->
-        <div class="dh-summary">
-          <div class="dh-sec">
-            <div class="dh-sec-title">Negocio</div>
-            <div class="dh-row" onclick="nav('catalogo',document.querySelector('[data-v=catalogo]'))"><span class="dh-row-lbl">Catálogo</span><span class="dh-row-val" id="d-cat">0</span></div>
-            <div class="dh-row" onclick="nav('catalogo',document.querySelector('[data-v=catalogo]'))"><span class="dh-row-lbl">Productos activos</span><span class="dh-row-val" id="d-act">0</span></div>
-            <div class="dh-row" onclick="nav('clientes',document.querySelector('[data-v=clientes]'))"><span class="dh-row-lbl">Clientes registrados</span><span class="dh-row-val" id="d-cli">0</span></div>
-            <div class="dh-row" onclick="nav('caja',document.querySelector('[data-v=caja]'))"><span class="dh-row-lbl">Saldo caja Bs</span><span class="dh-row-val" id="d-caja-bs">Bs 0,00</span></div>
-            <div class="dh-row" onclick="nav('caja',document.querySelector('[data-v=caja]'))"><span class="dh-row-lbl">Saldo caja USD</span><span class="dh-row-val" id="d-caja-usd">$ 0,00</span></div>
+        <!-- Negocio / Finanzas -->
+        <div class="dh-finwrap">
+          <div class="dh-fincol">
+            <div class="dh-fincol-title">Negocio</div>
+            <div class="dh-finchip-row">
+              <div class="dh-finchip" onclick="nav('catalogo',document.querySelector('[data-v=catalogo]'))"><span class="dh-finchip-lbl">Catálogo</span><b class="dh-finchip-val" id="d-cat">0</b></div>
+              <div class="dh-finchip" onclick="nav('catalogo',document.querySelector('[data-v=catalogo]'))"><span class="dh-finchip-lbl">Activos</span><b class="dh-finchip-val" id="d-act">0</b></div>
+              <div class="dh-finchip" onclick="nav('clientes',document.querySelector('[data-v=clientes]'))"><span class="dh-finchip-lbl">Clientes</span><b class="dh-finchip-val" id="d-cli">0</b></div>
+              <div class="dh-finchip" onclick="nav('caja',document.querySelector('[data-v=caja]'))"><span class="dh-finchip-lbl">Caja Bs</span><b class="dh-finchip-val" id="d-caja-bs">Bs 0,00</b></div>
+              <div class="dh-finchip" onclick="nav('caja',document.querySelector('[data-v=caja]'))"><span class="dh-finchip-lbl">Caja USD</span><b class="dh-finchip-val" id="d-caja-usd">$ 0,00</b></div>
+            </div>
           </div>
           <!-- Fila Finanzas (V14_33): solo visible si admin -->
-          <div class="dh-sec" id="d-finanzas-row" style="display:none">
-            <div class="dh-sec-title">Finanzas</div>
-            <div class="dh-row" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'))"><span class="dh-row-lbl">Por cobrar <small id="d-fin-cxc-sub" style="color:var(--muted);font-weight:400">— pedidos</small></span><span class="dh-row-val" id="d-fin-cxc">$ 0,00</span></div>
-            <div class="dh-row" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'))"><span class="dh-row-lbl">CxC vencida <small id="d-fin-vencido-sub" style="color:var(--muted);font-weight:400">— pedidos vencidos</small></span><span class="dh-row-val" id="d-fin-vencido">$ 0,00</span></div>
-            <div class="dh-row" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'));setTimeout(()=>{const t=document.querySelectorAll('#fin-tabs .tab-btn')[3];if(t)t.click();},150)"><span class="dh-row-lbl">Pérdida cambiaria <small id="d-fin-fx-sub" style="color:var(--muted);font-weight:400">este mes</small></span><span class="dh-row-val" id="d-fin-fx">$ 0,00</span></div>
-            <div class="dh-row" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'));setTimeout(()=>{const t=document.querySelectorAll('#fin-tabs .tab-btn')[2];if(t)t.click();},150)"><span class="dh-row-lbl">Saldo proyectado <small id="d-fin-flujo-sub" style="color:var(--muted);font-weight:400">en 15 días</small></span><span class="dh-row-val" id="d-fin-flujo">$ 0,00</span></div>
+          <div class="dh-fincol" id="d-finanzas-row" style="display:none">
+            <div class="dh-fincol-title">Finanzas</div>
+            <div class="dh-finchip-row">
+              <div class="dh-finchip" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'))"><span class="dh-finchip-lbl" id="d-fin-cxc-sub">Por cobrar</span><b class="dh-finchip-val" id="d-fin-cxc">$ 0,00</b></div>
+              <div class="dh-finchip bad" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'))"><span class="dh-finchip-lbl" id="d-fin-vencido-sub">CxC vencida</span><b class="dh-finchip-val" id="d-fin-vencido">$ 0,00</b></div>
+              <div class="dh-finchip" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'));setTimeout(()=>{const t=document.querySelectorAll('#fin-tabs .tab-btn')[3];if(t)t.click();},150)"><span class="dh-finchip-lbl" id="d-fin-fx-sub">Pérdida cambiaria</span><b class="dh-finchip-val" id="d-fin-fx">$ 0,00</b></div>
+              <div class="dh-finchip" onclick="nav('finanzas',document.querySelector('[data-v=finanzas]'));setTimeout(()=>{const t=document.querySelectorAll('#fin-tabs .tab-btn')[2];if(t)t.click();},150)"><span class="dh-finchip-lbl" id="d-fin-flujo-sub">Saldo proyectado</span><b class="dh-finchip-val" id="d-fin-flujo">$ 0,00</b></div>
+            </div>
           </div>
         </div>
 
         <div class="grid g2" style="margin-bottom:14px">
-          <div class="card">
-            <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Últimos pedidos</div>
+          <div class="dh-actcard">
+            <div class="dh-actcard-title"><span class="dot" style="background:var(--dh-h1)"></span>Últimos pedidos</div>
             <div id="d-peds"></div>
           </div>
-          <div class="card">
-            <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Últimos movimientos de caja</div>
+          <div class="dh-actcard">
+            <div class="dh-actcard-title"><span class="dot" style="background:var(--dh-h2)"></span>Últimos movimientos de caja</div>
             <div id="d-movs-caja"></div>
           </div>
         </div>
         <div class="grid g2">
-          <div class="card">
-            <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> Últimos clientes</div>
+          <div class="dh-actcard">
+            <div class="dh-actcard-title"><span class="dot" style="background:var(--dh-h3)"></span>Últimos clientes</div>
             <div id="d-clis"></div>
           </div>
-          <div class="card">
-            <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Productos más vendidos</div>
+          <div class="dh-actcard">
+            <div class="dh-actcard-title"><span class="dot" style="background:var(--dh-h4)"></span>Productos más vendidos</div>
             <div id="d-prods"></div>
           </div>
         </div>
@@ -5819,7 +5929,7 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v15.54: FIX Ventas (POS) \u2014 el orden de productos en la grilla del m\u00f3dulo Ventas ahora es exactamente el mismo que el orden personalizado del Cat\u00e1logo (bot\u00f3n \u00abReordenar\u00bb, arrastrar y soltar). Causa: renderCatalogo() ya aplicaba el orden guardado (_applyCatOrder, sincronizado entre dispositivos v\u00eda config.cat_order en Supabase) antes de pintar las tarjetas, pero posRenderProductos() (la grilla de Ventas) le\u00eda el cat\u00e1logo directo sin aplicar ese orden, as\u00ed que pod\u00eda mostrar los productos en otra secuencia (por ejemplo, el orden en que llegaron de Supabase tras un sync). Ahora ambos m\u00f3dulos usan la misma funci\u00f3n de ordenamiento, as\u00ed que cualquier cambio de orden hecho en Cat\u00e1logo se refleja de inmediato tambi\u00e9n en Ventas, sin pasos adicionales. \\nv15.53: NUEVO \u2014 Pedidos: al agregar un \u00edtem manual ahora hay una casilla \u00abYa es c/dif\u00bb junto al campo Precio unit. Antes, el precio de un \u00edtem manual siempre se guardaba como precio base y el sistema le aplicaba el diferencial cambiario vigente para mostrar el c/dif \u2014 si quer\u00edas cobrar exactamente $8 c/dif por un servicio, ten\u00edas que calcular a mano cu\u00e1nto era eso en base ($8 \u00f7 diferencial) antes de escribirlo. Ahora, si marcas la casilla, el precio que escribes se toma como el monto final c/dif que quieres cobrar y la app calcula sola el precio base equivalente (precio \u00f7 diferencial vigente) para guardarlo igual que cualquier otro \u00edtem \u2014 as\u00ed el c/dif mostrado en el carrito y en el pedido coincide exactamente con lo que escribiste. Sin marcar, el campo funciona exactamente igual que antes (precio base, c/dif se calcula multiplicando). \\nv15.52: NUEVO \u2014 Pedidos: aviso en vivo mientras el detalle de un pedido est\u00e1 abierto. Si otro dispositivo modifica ESE MISMO pedido (cambia estado, registra un pago, reprograma la fecha, etc.) mientras lo tienes abierto, Realtime ahora compara la versi\u00f3n entrante contra la que ten\u00edas en pantalla (usando la misma \u00abhuella\u00bb introducida en v15.51: estado, fecha de entrega, subtotal, notas, pagos) y, si de verdad cambi\u00f3 algo, muestra un toast (\u00abPedido PED-XXXX modificado en otro dispositivo \u2014 datos actualizados\u00bb) y refresca el modal al instante con los datos nuevos, sin que tengas que cerrarlo y volver a abrirlo. La comparaci\u00f3n de huellas evita falsos avisos: Realtime tambi\u00e9n notifica al propio dispositivo que hizo el cambio, y sin este chequeo cualquier guardado propio se hubiera visto a s\u00ed mismo como \u00abmodificado en otro dispositivo\u00bb. Complementa al aviso que ya exist\u00eda desde v15.34 (que solo revisaba UNA vez al abrir el detalle) y a los conflictos de reconexi\u00f3n de v15.51 (que se detectan reci\u00e9n al volver a conectar) \u2014 este es el tercer momento: mientras ambos dispositivos est\u00e1n en l\u00ednea y uno edita justo lo que el otro tiene abierto. \nv15.51: NUEVO \u2014 Protecci\u00f3n de conflictos de sincronizaci\u00f3n en Pedidos, complemento del fix de reconexi\u00f3n de v15.50. Escenario que cubre: dos dispositivos editan el MISMO pedido mientras ambos est\u00e1n sin conexi\u00f3n (ej. uno reprograma la fecha, otro cobra el restante); al reconectar, como upsertFila() reemplaza la fila completa, el que sube segundo pisaba por completo al primero \u2014 sin aviso, con el toast de \u00e9xito enga\u00f1ando a ambos dispositivos. Soluci\u00f3n: cada dispositivo guarda una \u00abhuella\u00bb (estado, fecha de entrega, subtotal, notas, pagos) del pedido en el momento de su \u00faltima sincronizaci\u00f3n real con Supabase. Al subir un cambio pendiente de la cola (v15.50), si la huella actual en la nube ya no coincide con esa huella base NI con la versi\u00f3n que este dispositivo intenta subir, se detecta como conflicto: NO se sobrescribe autom\u00e1ticamente en ning\u00fan sentido, el cambio se saca de la cola normal y pasa a una nueva tarjeta \u00abConflictos de sincronizaci\u00f3n\u00bb en Configuraci\u00f3n (con badge de aviso en el men\u00fa lateral), donde se ven ambas versiones (estado, fecha de entrega, pagos registrados) lado a lado y se elige manualmente \u00abUsar mi versi\u00f3n\u00bb (sube la copia de este dispositivo a Supabase) o \u00abDescartar mi cambio\u00bb (adopta la versi\u00f3n de la nube en este dispositivo). Un toast avisa en el momento en que se detecta el conflicto. Alcance actual: solo Pedidos \u2014 es la tabla del caso reportado (PED-0277) y la de mayor impacto de negocio; las dem\u00e1s tablas (ventas, caja, clientes, etc.) siguen con el comportamiento de \u00faltima-escritura-gana sin detecci\u00f3n, igual que antes de v15.50. \nv15.50: FIX CR\u00cdTICO Sincronizaci\u00f3n \u2014 causa ra\u00edz de por qu\u00e9 algunos cambios (reportado con Reprogramar fechas, PED-0277: qued\u00f3 con la fecha nueva en un dispositivo pero la vieja en Supabase y en el resto) no llegaban a la nube. window._supaConectado se verificaba UNA SOLA VEZ al abrir la app; si esa verificaci\u00f3n fallaba (red lenta o inestable en ese instante), la bandera quedaba en false el resto de la sesi\u00f3n \u2014 sin reintento ni aviso \u2014 y upsertFila() (la funci\u00f3n que sube cualquier cambio de Pedidos, Ventas, Caja, Clientes, etc.) simplemente no hac\u00eda nada cuando la bandera estaba en false, sin mostrar error. El dispositivo afectado sub\u00eda cambios completos localmente (fecha, estado, etc.) que nunca llegaban a Supabase ni a otros dispositivos, sin ninguna se\u00f1al de que algo estaba fallando. Corregido con dos piezas: (1) Vigilancia de reconexi\u00f3n \u2014 nuevo listener del evento \u2018online\u2019 del navegador m\u00e1s un reintento autom\u00e1tico cada 20s mientras la app est\u00e9 offline, que revalida la conexi\u00f3n real contra Supabase (no solo el evento del navegador, que no es confiable con portales cautivos o redes m\u00f3viles inestables). (2) Cola de cambios pendientes \u2014 upsertFila() ahora, en vez de fallar en silencio, guarda cada cambio que no pudo subir (por falta de conexi\u00f3n o por error de red a mitad del request) en una cola persistida en localStorage; al reconectar, esa cola se sube PRIMERO, antes de traer los datos de Supabase \u2014 orden cr\u00edtico, porque para tablas \u00abfuente de verdad\u00bb (pedidos, ventas, caja, etc.) un pull hecho antes de subir lo pendiente sobreescribir\u00eda el cambio local con la versi\u00f3n vieja de la nube, perdi\u00e9ndolo del todo. Al terminar de sincronizar los pendientes se muestra un toast confirmando cu\u00e1ntos cambios se subieron. Esto no es un bug exclusivo de Reprogramar fechas: aplica a cualquier acci\u00f3n que dependa de upsertFila (editar pedido, marcar entregado, registrar venta, movimientos de caja, etc.) si la conexi\u00f3n fall\u00f3 justo al abrir la app. PED-0277 espec\u00edficamente qued\u00f3 con la fecha vieja (2026-09-12) en Supabase \u2014 requiere correcci\u00f3n manual aparte, este fix solo previene que vuelva a pasar. \nv15.49: NUEVO \u2014 Pedidos: la opci\u00f3n \u00abReprogramar fechas\u00bb, que hasta ahora solo trabajaba por lote (vencidos, por fecha, sin fecha, por estado, todos), ahora tambi\u00e9n se puede usar sobre una selecci\u00f3n manual de pedidos. Activando \u00abSelecci\u00f3n m\u00faltiple\u00bb en Pedidos (el mismo modo que ya exist\u00eda para \u00abCambiar estado\u00bb) y marcando uno o varios pedidos con su checkbox, aparece un nuevo bot\u00f3n \u00abReprogramar fechas\u2026\u00bb junto a \u00abCambiar estado\u2026\u00bb en la barra de selecci\u00f3n; abre el mismo modal de reprogramaci\u00f3n pero fijado a esos pedidos marcados (el selector de criterio se oculta porque ya no aplica), con la misma vista previa y confirmaci\u00f3n antes de aplicar. Al confirmar, se sincroniza con Supabase igual que el resto de los flujos de reprogramaci\u00f3n, y la selecci\u00f3n se limpia automáticamente. \nv15.48: FIX CRÍTICO Inventario — los movimientos de inventario (entradas/salidas/ajustes) nunca se subían a Supabase individualmente: _soloLogMovInv() y _registrarMovInv() (las dos funciones que registran cada movimiento) solo guardaban en el localStorage del dispositivo, sin llamar a subir el registro a la nube — el último movimiento real en Supabase databa de abril, pese a cientos de ventas posteriores. Además, la única subida masiva que sí había ocurrido (carga inicial de la tabla) usaba nombres de campo equivocados en el mapeo hacia Supabase (item_tipo/cantidad/locacion en vez de los reales tipo_item/cant/loc del objeto local), así que esos pocos registros llegaron con cantidad en 0 en todos los casos. Esto es lo que causaba que anular una Venta rápida (v15.46) no restaurara el inventario cuando se anulaba desde un dispositivo distinto al que hizo la venta — ese dispositivo nunca había recibido el movimiento a revertir. Corregido: (1) mapearParaSupa() ahora lee los nombres de campo correctos, (2) ambas funciones de registro ahora sí suben cada movimiento individualmente a Supabase, (3) los IDs generados para estos movimientos ahora usan un offset entero aleatorio (mismo patrón que Comisiones) en vez de Math.random() decimal, que colisionaba con frecuencia entre movimientos del mismo milisegundo (ej. varios ítems de una misma venta) y podía perder registros al subir. REVERTIDO de v15.47: inventario_movimientos se había agregado a la lista de tablas «fuente de verdad», pero con la copia en Supabase todavía vacía/corrupta eso habría borrado el historial local bueno de cada dispositivo en su próximo sync — se quitó de esa lista (se mantiene en Realtime, que ahora sí sirve porque los movimientos se suben correctamente) hasta acumular suficiente historial limpio. inventario_terminados se mantiene en fuente de verdad — esa tabla sí mantenía sus upserts correctamente desde antes. Los ≈30 registros históricos de abril con cantidad 0 quedan como están (no afectan cálculos, son solo auditoría); las ventas ya anuladas antes de esta versión pueden requerir corrección manual de stock si su movimiento original nunca llegó a Supabase. \nv15.47: FIX Inventario — cierra un hueco de sincronización que dejaba la nueva anulación de Venta rápida (v15.46) incompleta entre dispositivos: inventario_terminados e inventario_movimientos NO estaban en la lista de tablas «fuente de verdad» ni en Realtime (mismo patrón de bug ya corregido para Ventas en v15.37 y para otras 6 tablas en v15.38), así que un movimiento de inventario eliminado en un dispositivo podía seguir apareciendo indefinidamente como «fantasma» en la lista de Movimientos de otro dispositivo que ya lo tenía en caché local, y la restauración de stock de productos terminados solo llegaba a otros dispositivos en el siguiente sync manual, no en vivo. Agregadas ambas tablas a _TABLAS_FUENTE_VERDAD y a Realtime (mismo tratamiento que ya tenían caja_movimientos e inventario_insumos) — ahora eliminar un movimiento de inventario (o restaurar stock de terminados) se propaga al instante a los dispositivos abiertos y correctamente a los que sincronicen después, sin restaurarse por accidente. No cambia ningún cálculo ni comportamiento visible fuera de la sincronización multi-dispositivo. \nv15.46: NUEVO — Ventas: anular una Venta rápida ahora revierte todo lo que generó al registrarse, no solo cambia su estado a «Anulada». (1) Caja: el/los movimiento(s) de Caja vinculados a esa venta (ref_tipo=venta) se eliminan (no se dejan como registro histórico). (2) Inventario: el stock descontado se restaura (terminados e insumos por receta) y los movimientos de inventario_movimientos generados por esa venta se eliminan, identificándolos por su nota exacta («Venta VEN-XXXX»). (3) Comisiones: si la venta había generado comisión a algún vendedor, se desactiva (mismo patrón ya usado al cancelar un pedido). Las ventas de tipo Abono o Pago restante (vinculadas a un pedido) NO se pueden anular por ahora — quedan bloqueadas con un aviso, porque revertir su pago en el pedido (saldo y posible cambio de estado a Entregado) requiere un flujo aparte. \nv15.45: FIX Caja \u2014 los movimientos de Caja vinculados a un pedido (abono y pago final) guardaban el campo ref_id vac\u00edo en Supabase, aunque localmente s\u00ed se generaba con el id real del pedido (ref_id: p.id) y la columna ref_id ya exist\u00eda en la tabla caja_movimientos. Causa: mapearParaSupa() \u2014 la funci\u00f3n que arma qu\u00e9 campos de cada registro viajan a Supabase \u2014 no inclu\u00eda ref_id en su mapeo para caja_movimientos, as\u00ed que se perd\u00eda justo antes de subir el registro, quedando en null en la nube. El v\u00ednculo entre un movimiento de Caja y su pedido depend\u00eda entonces por completo de que el texto de la nota (ej: \u00abPED-0239\u00bb) coincidiera, sin respaldo por id real. Se agreg\u00f3 ref_id al mapeo (mismo patr\u00f3n que ref_tipo, ya presente). Se hizo tambi\u00e9n un backfill one-time en Supabase para poblar ref_id en los movimientos hist\u00f3ricos de caja_movimientos que ya ten\u00edan un pedido identificable por el n\u00famero en su nota. No cambia ning\u00fan c\u00e1lculo, monto ni comportamiento visible \u2014 es un fix de robustez para que la relaci\u00f3n Caja\u2194Pedido tenga una llave real ademas del texto de la nota. \nv15.44: FIX Dashboard \u2014 la tarjeta \u00abUltimos movimientos de caja\u00bb mostraba TODOS los montos con s\u00edmbolo $ (d\u00f3lar), incluso los movimientos registrados en bol\u00edvares, mostrando por ejemplo \u00ab$ 7589,47\u00bb cuando el monto real era Bs 7.589,47 (el mismo n\u00famero, s\u00edmbolo incorrecto) \u2014 se notaba al comparar contra el m\u00f3dulo Caja, que s\u00ed mostraba el monto correcto en Bs. Causa: el dashboard usaba siempre el helper euro() (que antepone el s\u00edmbolo de moneda de Configuraci\u00f3n, $ por defecto) sin revisar el campo real m.moneda del movimiento, a diferencia del m\u00f3dulo Caja que s\u00ed distingue Bs vs USD por movimiento. Ahora el dashboard usa la misma l\u00f3gica que Caja: si m.moneda es \u0027usd\u0027 muestra $ con 2 decimales, de lo contrario muestra Bs con fmtBs() (formato de miles con punto y decimales con coma). \nv15.43: FIX CRÍTICO Pedidos — cobrar el restante marcaba el pedido como "Entregado" automáticamente, sin que el producto hubiera sido realmente retirado. Causa: tres rutas de registro de pago (Cobrar restante desde el modal de detalle/POS, y el Abono en Bs vinculado a un pedido desde Caja) marcaban el pedido como entregado en cuanto el saldo llegaba a 0, confundiendo "pagado" con "entregado" — un cliente puede cancelar el restante mientras su pedido sigue en producción y retirarlo después. Ahora registrar un pago (por cualquiera de esas vías) SOLO actualiza el saldo/pagos del pedido; el estado nunca cambia a "Entregado" como efecto secundario. Marcar como entregado sigue siendo una acción explícita: el botón "Cobrar y entregar" (cobra el saldo y entrega en un solo paso) o el selector manual de estado en el detalle del pedido. Caso real corregido: PED-0218 quedó marcado "Entregado" tras cobrarle el restante estando aún en producción; se corrigió manualmente en Supabase a "Listo".\nv15.42: Menú lateral e inferior — al tocar el ítem de un módulo (Pedidos, Ventas, Caja, etc.) en la barra de navegación, ahora siempre se sube al inicio del contenido, incluso si ya se estaba dentro de ese mismo módulo. Antes, si se había hecho scroll hacia abajo (por ejemplo revisando pedidos antiguos), volver a tocar "Pedidos" en el menú no movía la vista, obligando a hacer scroll manual hasta arriba para ver el pedido más reciente. v15.41: Envíos — el campo "Vincular a pedido" del formulario de Nuevo Envío / Editar Envío dejó de ser una lista desplegable simple (que solo mostraba los últimos 60 pedidos en orden) y pasó a ser un buscador en vivo, igual que en Pedidos: escribe el nombre del cliente, su teléfono o el número de pedido (#PED-XXXX) y aparecen las coincidencias al instante (reutiliza el mismo motor de búsqueda difusa de Pedidos — tolera acentos, orden de palabras y coincidencias parciales). Al elegir un resultado se muestra un chip de confirmación con el pedido vinculado y un enlace "Quitar" para desvincularlo sin tener que reabrir el formulario. v15.40: Envíos — optimización del módulo. (1) Orden: la lista ahora muestra los envíos más recientes primero (igual que Pedidos), en vez de los más antiguos arriba. (2) Fechas: cada tarjeta muestra la fecha de registro del envío y, si ya fue enviado, la fecha de envío; nuevo campo "Fecha de envío" en el formulario (se autocompleta con la fecha de hoy al marcar como Enviado, editable manualmente). (3) Estados simplificados: se eliminó el estado "Entregado" (redundante con el flujo real del negocio) y "Despachado" se renombró a "Enviado" en toda la interfaz (KPI, filtro, formulario, tarjetas) — el valor interno se mantiene igual para no romper datos ya guardados. KPIs reducidos de 4 a 3 columnas (Preparando / Enviados / Total). (4) Iconos: los botones de acción de cada tarjeta (Editar, Imprimir etiqueta, Eliminar) usaban emojis; ahora usan los mismos íconos SVG del sistema de íconos reutilizable de GestioMada (gmIco), consistentes con el resto de la app. v15.39: FIX Caja — el selector visible "Categoría" del modal de movimientos (Ingreso/Gasto/Compra insumos/Abono/Retiro) podía quedar desincronizado del tipo real e interno del movimiento: si al registrar, por ejemplo, un "Retiro" el usuario tocaba manualmente el selector de Categoría, el campo oculto que define el tipo real no se actualizaba, dejando el registro con datos contradictorios (p.ej. clasificado como Retiro en la lista pero contado como Gasto en Reportes/Estado de Resultados, o viceversa) — causa del caso donde no era posible distinguir con certeza si un movimiento borrado había sido un gasto o un retiro. Ahora cambiar la Categoría dentro del modal sincroniza al instante el tipo real, el título del modal, la etiqueta/placeholder de "Nombre o Referencia" y el panel de vinculación a pedido (solo para Abono) — el registro guardado siempre coincide en icono, color, clasificación de reportes y nombre mostrado, sin importar si el tipo se eligió desde los botones de Acciones rápidas o cambiando el selector de Categoría dentro del modal. v15.38: FIX CRÍTICO (auditoría general de datos desactualizados por dispositivo) — dos problemas de la misma familia que el fix de Ventas en v15.37, encontrados al revisar todos los módulos: (1) SINCRONIZACIÓN — Clientes, Cotizaciones, Insumos de inventario, Cuentas por Pagar, Envíos y Personalizados (borradores del editor) tenían el mismo hueco que Ventas: no estaban en la lista de tablas "fuente de verdad", así que un registro eliminado en un dispositivo (o directo en Supabase) podía seguir apareciendo indefinidamente en otros dispositivos sin importar cuántas veces se presionara "Sincronizar". Las 6 tablas se agregaron a la lista de fuente-de-verdad, preservando toda la lógica especial que ya tenían (fotos locales, campos de costeo de Personalizados). (2) CUENTAS POR PAGAR — riesgo de pago duplicado: si un dispositivo tenía el saldo de una deuda desactualizado (ya pagada o abonada desde otro dispositivo), podía registrar un pago sobre saldo que ya no existía, generando un gasto real duplicado en Caja — mismo patrón que causó las entregas duplicadas de Pedidos (v15.33/34). Ahora, al abrir el modal de "Registrar pago" se consulta el estado real en Supabase en segundo plano (corrige el saldo mostrado si está desactualizado, o cierra el modal avisando si ya fue pagada), y además — como red de seguridad final — el botón "Registrar pago" vuelve a verificar contra Supabase justo antes de confirmar el gasto, bloqueando el pago si la deuda ya fue saldada en otro dispositivo. Comisiones también tiene una acción de "marcar pagada" con el mismo tipo de riesgo, pero de impacto menor (no genera movimiento de Caja, solo pisa una fecha) — se dejó fuera de este fix por ahora. v15.37: FIX CRÍTICO — Ventas eliminadas en Supabase reaparecían en otros dispositivos incluso después de presionar "Sincronizar". Causa: en el motor de sincronización, la tabla "ventas" no estaba en la lista de tablas donde Supabase es fuente de verdad absoluta (Caja, Pedidos, Productos, Usuarios) — caía en la ruta de "merge seguro" pensada para no perder registros creados offline, la cual nunca elimina localmente un registro que ya no está en Supabase. Resultado: una venta borrada directamente en la nube (o desde otro dispositivo) seguía viéndose indefinidamente en cualquier dispositivo que ya la tuviera en su caché local, sin importar cuántas veces sincronizara. Agregada "ventas" a la lista de tablas fuente-de-verdad, con la misma normalización de cliente_snapshot→cliente que ya recibía en la ruta de merge. Con recargar la app o presionar "Sincronizar" una vez desplegada esta versión, cualquier venta borrada en la nube desaparece también localmente. v15.36: NUEVO — Pedidos: el buscador ahora también encuentra por número de teléfono del cliente, en cualquier formato: con código de país ("+58 414-4205318"), con el 0 inicial venezolano ("04144205318"), sin él ("4144205318"), o solo los últimos dígitos ("5318"). Todos los formatos se normalizan a un mismo "núcleo" de dígitos para compararlos entre sí, así que no importa cómo esté guardado el teléfono del cliente ni cómo lo escriba quien busca. Requiere mínimo 4 dígitos en la búsqueda para evitar falsos positivos con números muy cortos. Sigue funcionando igual que antes para buscar por nombre de cliente o número de pedido (PED-XXXX). v15.35: NUEVO — Respaldo y restauración completa del negocio (Configuración → Datos). El botón "Descargar respaldo completo" ahora lee directo de Supabase (la nube, fuente de verdad de todos los dispositivos) en vez de solo el localStorage del dispositivo actual, y descarga un único archivo JSON con TODOS los módulos: catálogo, personalizados, pedidos, ventas, caja, comisiones, clientes, cotizaciones, envíos, cuentas por pagar, inventario (insumos/terminados/movimientos), usuarios y configuración — antes el respaldo dejaba fuera comisiones, cotizaciones, envíos y cuentas por pagar. Si no hay conexión a Supabase al momento de respaldar, cae automáticamente a un respaldo local de emergencia (avisando que puede estar incompleto). "Restaurar respaldo" ahora también escribe de vuelta en Supabase (antes solo tocaba el localStorage del dispositivo, así que el siguiente sync silenciosamente deshacía la restauración) — sube cada tabla en bloques respetando el orden de llaves foráneas (usuarios/clientes/productos antes de pedidos/ventas), y al terminar recarga la app para que quede sincronizada. Es una restauración no-destructiva: solo agrega o actualiza registros por ID, nunca borra lo que no esté en el archivo. Por ser una operación que afecta a todos los dispositivos, se agregó una confirmación reforzada (escribir la palabra "RESTAURAR") además de mostrar la fecha, origen y cantidad de registros por tabla del respaldo antes de aplicarlo. v15.34: FIX Pedidos — refresco individual contra Supabase al abrir el detalle de un pedido. Antes, el modal de detalle solo mostraba lo que ya estaba en el localStorage del dispositivo; si ese pedido había sido modificado desde otro dispositivo (p.ej. marcado "Entregado") mientras este estaba desconectado o simplemente no recibió el evento de Realtime a tiempo, el detalle seguía mostrando el estado viejo y permitía repetir acciones ya hechas (causa raíz del bug de ventas duplicadas corregido en v15.33). Ahora, al abrir el detalle de un pedido, la app consulta en segundo plano la versión real en Supabase; si detecta una diferencia de estado o de pagos registrados, corrige el dato local, refresca el modal abierto y avisa con un toast ("Este pedido ya fue entregado desde otro dispositivo — datos actualizados"). No bloquea ni retrasa la apertura del modal — la verificación ocurre en paralelo. v15.33: FIX Pedidos — se agregó una validación de seguridad para evitar entregas duplicadas: si un pedido ya está marcado como "Entregado", los flujos individuales de entrega (botón "Cobrar y entregar" y el selector de estado del detalle de pedido) ahora rechazan la acción con un aviso ("Este pedido ya fue entregado anteriormente") en vez de generar una Venta nueva. Antes, esta protección solo existía en el cambio de estado masivo; los flujos individuales no la tenían, lo que permitió que un pedido ya entregado y cobrado generara una Venta duplicada (sin movimiento de Caja, porque el dinero ya se había registrado antes) si se volvía a intentar "entregar" desde un dispositivo con datos locales desactualizados. v15.32: FIX Editor de Producto (Personalizados) — al editar un producto ACTIVO desde el Catálogo, el campo \"Estado\" a veces aparecía como Inactivo (o viceversa) aunque el producto estuviera activo. Causa: el editor cargaba el Estado desde la \"foto\" del cálculo guardada (calculo.estado), la cual queda congelada al momento de crear/guardar el producto; activar o desactivar un producto directamente desde el Catálogo (individual o en selección múltiple) solo actualizaba el estado real del producto, sin tocar esa foto del cálculo, por lo que ambos valores podían quedar desincronizados. Ahora el editor siempre toma el Estado real y actual del producto en el Catálogo (igual que ya hacía con Tipo de venta), y además activar/desactivar mantiene sincronizada la foto del cálculo para evitar que el problema reaparezca. v15.31: Configuración/Caja/Finanzas — FIX conceptual de tasas: cuando el diferencial cambiario está congelado (opción [=] Congelado), la "Tasa Paralela" que se ve en Configuración pasa a ser una tasa sintética (BCV × diferencial congelado) pensada para mantener estables los precios del catálogo — pero Caja y Finanzas seguían usando por error esa misma tasa sintética para convertir gastos/ingresos en Bs a USD, en vez de la tasa real de mercado (Binance/paralelo actual). Ahora existe una tasa independiente — "Paralela real (mercado)" — que se obtiene siempre del valor real (Auto: se actualiza sola con cada fetch; Manual: se edita a mano en un campo nuevo que aparece solo cuando el diferencial está congelado). Nuevo selector en Configuración → Tasas de cambio → "Uso de la tasa paralela por módulo": permite elegir, por separado para Caja y para Finanzas, si sus movimientos internos (gastos, ingresos, compras, retiros, pagos a proveedores) usan la Paralela real (mercado, nuevo default), la Paralela de venta (congelada, comportamiento anterior) o la Tasa BCV. Catálogo, Ventas y Pedidos NO son configurables — siempre usan la paralela de venta, porque de eso depende el precio pactado con el cliente. Excepción respetada: un "Abono" de Caja vinculado a un pedido sigue usando la paralela de venta (el saldo del pedido está expresado en esos términos), sin importar el criterio configurado. Pensado como base para que GestioMada sea configurable por cualquier negocio con manejo de tasa dual, no solo el flujo actual. v15.30: Catálogo — nueva opción de <strong>selección múltiple</strong> para cambiar el estado de varios productos a la vez. Botón &quot;Selección múltiple&quot; en la barra de filtros muestra un checkbox en cada tarjeta; con uno o más productos marcados aparece una barra de acciones (Seleccionar todos visibles, Limpiar selección, Activar, Desactivar). Los cambios se sincronizan con Supabase igual que un cambio de estado individual (mismo mecanismo de verProd → toggleEstado). Reutiliza el mismo patrón visual que la selección múltiple ya existente en Pedidos. v15.29: FIX CRÍTICO — el ítem "Cuentas por Pagar" era invisible en el menú incluso para el Admin, en v15.27 y v15.28. Causa: GestioMada tiene un sistema de permisos por rol (aplicarPermisos()/canView()) que oculta cualquier nav-item cuyo id de vista no esté en la lista "vistas" del rol — y ese id ("cxp") nunca se agregó a ROLES.admin.vistas al crear el módulo, así que quedaba oculto por diseño del sistema de permisos, no por un problema de despliegue. Agregado "cxp" a la lista de vistas del rol Admin y a TODAS_VISTAS/VISTA_LABELS (para que también aparezca como opción al configurar permisos personalizados de otros usuarios en Configuración → Usuarios). v15.28: Cuentas por Pagar — sincronización con Supabase. Creada la tabla &quot;cuentas_pagar&quot; en el proyecto (mismo patrón de RLS/policy que el resto: allow_all para anon+authenticated, Realtime activado, REPLICA IDENTITY FULL). La app ahora sube, descarga y escucha en tiempo real los cambios de esta tabla igual que Clientes, Pedidos, Caja, etc. — crear, editar, pagar o eliminar una cuenta por pagar en un dispositivo se refleja automáticamente en todos los demás. v15.27: Cuentas por Pagar — reubicado como módulo propio en el menú lateral (Operaciones, junto a Caja), en vez de estar dentro de Finanzas → Balance General. Ahora tiene su propia pantalla con KPIs (total por pagar, vencido, cantidad registrada), buscador, filtro (pendientes/vencidas/pagadas) y badge en el menú con la cantidad de deudas pendientes. Finanzas → Balance General se simplificó a un resumen de solo lectura (top deudas pendientes) con botón directo al nuevo módulo para gestionar (crear, editar, pagar, eliminar). v15.26: Finanzas — nueva pestaña &quot;Balance General&quot; (Activos = Pasivos + Patrimonio), estimada a partir de los módulos existentes: Caja (efectivo USD+Bs), Cuentas por Cobrar (mismo cálculo que la pestaña CxC), Inventario (insumos y productos terminados valorizados al costo) y Activos fijos (CAPEX histórico). Nuevo módulo &quot;Cuentas por Pagar&quot; para registrar deudas con proveedores/acreedores (crear, editar, eliminar) — al registrar un pago se crea automáticamente el gasto real en Caja (subcategoría &quot;Pago a proveedores&quot;, vinculado con ref_tipo=cxp) y se actualiza el saldo de la deuda. Nuevo campo &quot;Capital inicial aportado&quot; en Configuración → Reglas de negocio, sincronizado entre dispositivos, usado para calcular el Patrimonio (Capital inicial + utilidad acumulada histórica − retiros acumulados). El balance es una estimación de gestión (cash-basis), no un balance contable formal de partida doble. v15.25: Catálogo — las tarjetas de producto ahora muestran el monto de ganancia en dólares junto al porcentaje de margen (ej: &quot;Margen: 45.0% ($ 4,50)&quot;), calculado como Precio de Venta − Costo. v15.24: Editor de Producto (Personalizados) — el campo &quot;Precio manual de venta&quot; ahora se precarga automáticamente con el &quot;Precio de Venta&quot; calculado (costos + ganancia + impuestos) a medida que se ajustan los valores del producto, en vez de quedar en 0,00 hasta que el usuario lo escribiera a mano. Si el usuario edita el campo manualmente, deja de autocompletarse (se respeta el valor manual) hasta resetear el editor o cargar otro producto sin precio manual guardado. v15.23: Configuración — la tarjeta \"Versión\" mostraba un resumen ESTÁTICO y desactualizado (quedó congelado en v13.42 / v15.03 mientras el modal completo seguía recibiendo cada entrega nueva), porque el changelog vivía duplicado en dos lugares distintos del código. Se eliminó esa copia estática (~44KB de HTML muerto) y ahora la tarjeta se genera dinámicamente a partir de la misma fuente que usa \"Ver historial completo de cambios\" (nueva función compartida _gmChangelogRaw()) — la versión y el resumen más reciente que se ven en Configuración siempre van a coincidir con el modal completo, sin mantenimiento manual en dos sitios de aquí en adelante. v15.22: FIX CRÍTICO — menú lateral en móvil: \"Configuración\" (último ítem) quedaba inalcanzable al hacer scroll. Causa real: el menú inferior (.bottom-nav) tenía z-index:200, más alto que el drawer del menú lateral (z-index:100) — al abrir el menú, la barra inferior se quedaba tapando y capturando los toques sobre la parte baja del drawer, así que el scroll sí llegaba pero no había forma de tocar/ver el último ítem. Subido el z-index del drawer a 210 y el de su overlay oscuro a 205 (ambos por encima del menú inferior), y agregado padding inferior de 70px al contenido del drawer como margen de seguridad adicional. v15.21: FIXES móviles y modo oscuro. (1) Menú lateral en móvil: el scroll ya no \"rebota\" — la altura del drawer pasó de 100% a 100dvh (evita el recálculo cuando Chrome oculta/muestra la barra de direcciones durante el gesto) y ahora se bloquea el scroll del body mientras el menú está abierto (mismo mecanismo que los modales), evitando que el scroll del sidebar se encadene con el del fondo. (2) Menú inferior: íconos 25% más grandes (20px→25px), el texto queda igual; barra ajustada de 58 a 64px de alto. (3) Modo oscuro — auditoría y corrección de contrastes rotos: fila expandible de Finanzas/CxC con fondo blanco fijo que dejaba el texto casi ilegible (ahora usa var(--card)/var(--bg)); varios chips y una pill traían un color de fondo inline que anulaba por especificidad la regla de modo oscuro ya definida en su clase (quitado); ~16 barras de progreso de Reportes y el zebra-striping de tablas de Finanzas/Reportes tenían fondos grises fijos (#fff/#fafafa/#f9f9f9/#f3f4f6) — ahora usan variables temáticas; botones y cajas de aviso (Cambiar estado, Eliminar pedido, restante de pago, notas de venta/pedido/cotización, variante textil pendiente, indicador de vuelto/falta en Caja) usaban colores pastel sólidos que quedaban como parches brillantes o de bajo contraste sobre fondo oscuro — pasados a un patrón semi-transparente que se adapta a ambos temas. Bordes y scrollbar sin variante oscura agregados. Las plantillas de impresión (recibos, pedidos) se dejaron intactas — siempre deben verse en claro para el papel. v15.20: FIX CRÍTICO — botón \"Sincronizar\" mostraba \"Error al sincronizar: cannot add postgres_changes callbacks for realtime:rt-ventas after subscribe()\". Causa: initSupabaseSync() llamaba a iniciarRealtime() en cada sincronización (la inicial y cada vez que se presionaba el botón), y volver a suscribir los mismos canales de Realtime ya activos no está permitido por Supabase. Ahora iniciarRealtime() se ejecuta una sola vez por sesión (guardado con window._realtimeIniciado); los syncs posteriores solo refrescan datos sin reabrir los canales. v15.19: Dashboard — \"Productos más vendidos\" pasó de lista a gráfica de barras + línea de tendencia (estilo combo), usando la paleta sólida de la app: barras en rosa, línea y puntos en vino. Cada barra muestra su valor arriba, y debajo el ranking (#1..#5) y el nombre del producto truncado con el nombre completo visible al pasar el mouse. Se adapta a modo oscuro. v15.18: Dashboard — rediseño completo para reducir saturación visual: las 16 tarjetas KPI se reorganizaron en (1) una franja de alertas que solo aparece cuando hay algo pendiente (pedidos por entregar hoy, pedidos vencidos, alertas de inventario) con mensaje \"Sin pendientes urgentes hoy\" cuando no hay nada, (2) una fila de 4 métricas principales del día (Ventas, Ingresos, Utilidad, Pedidos activos) y (3) dos tarjetas de resumen compacto en formato lista (Negocio y Finanzas, esta última solo visible para admin) en vez de tarjetas grandes repetidas. Paleta — eliminados todos los degradados (30+ usos en toda la app: botones, avatares, barras de progreso, menú de usuarios, comprobantes impresos) y reemplazados por colores sólidos: rosa principal #ea8db9, vino #8a3a5b para énfasis. Los íconos con fondo pastel del Dashboard se sustituyeron por un solo tono de acento. Los demás módulos (Reportes, Pedidos, Caja, Finanzas) no se tocaron — siguen usando el sistema de tarjetas KPI existente sin cambios. v14.42: FIX Inventario — descuento de stock corregido en ventas y entregas de pedidos. (1) Doble descuento eliminado: _registrarMovInv restaba stock además de logear el movimiento, causando conflicto con el descuento directo de descontarInventarioDeItems; cambiado a _soloLogMovInv. (2) Flag _modificado nunca se asignaba: los upserts a Supabase no se ejecutaban, así que los cambios de stock no se sincronizaban entre dispositivos; ahora cada item modificado se marca y se upsertea. (3) Fallback inteligente: si modo_inventario es ninguno pero existe un registro en inventario_terminados vinculado al producto (prod_id), se descuenta automáticamente — antes solo descontaba con modo terminado o insumos explícito. Logs de depuración en consola para rastrear cada operación de descuento. v14.41: FIX Dashboard — KPIs de finanzas (Por cobrar, CxC vencida, Pérdida cambiaria, Saldo proyectado) desaparecían tras cargar porque can() no tenía fallback al rol cuando el usuario personalizado fue creado antes de que existiera el permiso \"finanzas\". Ahora can() replica el mismo patrón de canView(): si el permiso no está en la lista personal del usuario pero SÍ lo tiene su rol, se permite. FIX versión APP_VERSION desincronizada (era v14_35 vs HTML v14_40). v14.27: Blindaje de datos Fase 1 continuación — indicador visual offline/online (banner amarillo cuando se pierde conexión, confirma reconexión con verde). Migración automática al cargar: elimina fotos base64 redundantes del catálogo local cuando el producto ya tiene foto_url de Supabase (libera MB de localStorage). Monitor de uso de localStorage en Config (barra visual KB usados / 5MB con alerta por color). Sync merge ya no preserva base64 cuando Supabase tiene foto_url. v14.26: Blindaje de datos Fase 1 — nuevo helper esc() sanitiza HTML en todos los innerHTML que interpolan datos del usuario (nombres de productos, clientes, categorías, etc.) previniendo inyección XSS. Nuevo wrapper _lsSet() centraliza todos los localStorage.setItem con try/catch: si el almacenamiento se llena, muestra toast de alerta en vez de fallar silenciosamente. v14.24: Flujo de entrega corregido — marcar "Entregado" ahora solo funciona si el pedido está 100% pagado (crea Venta + descuenta inventario). Si tiene saldo pendiente, bloquea y avisa. Nuevo botón "Cobrar y entregar": registra el pago restante (con método de pago seleccionado), crea movimiento en Caja, marca entregado, crea Venta vinculada y descuenta inventario en un solo paso. Se elimina el registro automático de pagos fantasma en Caja al entregar. v14.16: Pedidos — montos Bs unificados entre lista, detalle y edición: productos aplican diferencial con redondeo previo; delivery/envío/diseño/extras no llevan diferencial; conversión final siempre usa usdToBs(). v14.06: Extras visibles en pedidos — tarjetas de lista muestran chips violeta de Diseño/Envío/Delivery cuando aplican. Impresión de lista (vista principal y KPIs) incluye extras debajo de productos. Modal de KPI detalle también muestra extras. v14.05: KPIs de pedidos ahora caben 5 en una fila en desktop — grid cambiado de g4 a g5 (5 columnas). Responsive: 2 columnas en tablet, 1 en móvil. v14.04: Nuevo estado de pedido "Impresión" — se inserta entre "En producción" y "Listo" en el flujo de estados. Incluye: filtro en lista de pedidos, opción en formulario de pedido, KPI card con ícono de impresora (violeta), badge en impresión de listado, flujo de avance (Producción → Impresión → Listo), soporte en reportes, historial de cliente y modal de detalle. FIX precisión Bs en pedidos — el problema raíz era que pagadoCDif acumulaba errores de floating point sin redondear, causando restante c/dif con decimales fantasma. Corregido en todos los puntos de cálculo con parseFloat(toFixed(2)). v14.02: Ventas/Cotización WhatsApp — los montos del texto ahora usan exactamente el mismo motor de redondeo del carrito POS: productos redondeados por línea (cantidad × precio × diferencial), extras sin diferencial, total Bs/USD y ancla USD iguales a la barra del carrito. v14.01: Sincronización completa de configuraciones entre dispositivos — todas las opciones de Configuración ahora se propagan automáticamente via Supabase + Realtime: toggle "Tasas de cambio Auto/Manual" (incluyendo los valores de BCV y Paralela al obtenerlos), regla "Restante USD puro", impuestos (on/off y porcentaje), métodos de pago activos, categorías de productos, monedas, y diferencial congelado. Realtime activado en tabla config: cualquier cambio en un dispositivo se refleja al instante en todos los demás sin recargar. v14.00: FIX regla "Restante USD puro" — cuando el checkbox está activo y todos los pagos son en USD/Zelle, ahora la tarjeta del pedido muestra TODO en dólar base: total sin diferencial (ej: $40,00 en vez de $52,08), sin equivalente en Bs, y restante solo en USD (ej: $15,00). Lo mismo en el modal de detalle: total, pagado y restante en USD base sin c/dif ni Bs. v13.99: Configuración — nueva sección "Reglas de negocio" con checkbox "Restante en USD puro si el abono fue en dólares". Cuando está activo y TODOS los pagos del pedido son en USD Efectivo o Zelle/Binance, el restante se muestra solo en dólar paralelo (precio base sin diferencial, sin equivalente en Bs). Aplica en: lista de pedidos, modal detalle, POS panel pedido, e impresión. Se sincroniza con Supabase. Diseñado como opción configurable para no imponer reglas de negocio específicas a futuros usuarios de GestioMada. v13.98: Pedidos — botón "Imprimir" en la vista principal (junto a "+ Nuevo Pedido") que imprime el listado de pedidos según los filtros activos. Botón de imprimir dentro de cada popup de KPI (Pendientes, En producción, etc.). La lista impresa incluye: checkbox para rayar, #pedido, cliente con teléfono, productos, estado, pago, total c/dif y fecha entrega. Formato landscape optimizado para papel. v13.97: Pedidos — nuevo botón "Imprimir" en el modal de detalle del pedido. Genera una página limpia con logo del negocio, datos del cliente, tabla de productos (cant, precio, subtotal), totales con diferencial y Bs, historial de pagos, restante y notas. Se abre en ventana nueva y lanza la impresión automáticamente. Eliminado selector de temporalidad de KPIs (innecesario — los KPIs siempre muestran el estado actual). v13.96: KPIs Pedidos — cards limpios que siempre muestran el estado actual real del negocio (sin filtro de temporalidad innecesario); al hacer clic se abre popup con resumen de productos agrupados y detalle por pedido. FIX CRÍTICO zona horaria — todas las fechas "hoy" usan hora local (Venezuela UTC-4) en vez de UTC; antes, después de las 8pm el sistema pensaba que era el día siguiente. Nuevo helper hoyLocal(), corregidas 31+ instancias en toda la app. v13.95: KPIs Pedidos — cada card ahora muestra los productos agrupados con cantidades totales (ej: Taza dorada ×8), máximo 4 productos visibles con "+N más…". Nuevo selector de temporalidad (Hoy, 7 días, 1 mes, 3 meses, Todo) que filtra los KPIs por fecha de creación del pedido. v13.94: Pedidos — cada tarjeta de pedido ahora muestra los productos del cliente (cantidad × nombre) debajo de los badges, sin precio. En desktop se muestra en una línea con "…" si es muy largo; en móvil se expande completo. v13.93: Font-size inputs restaurado a 13px en desktop (el zoom iOS se previene con viewport maximum-scale). Descuento y abono en POS y Pedidos ahora usan placeholder en vez de value="0,00" — campo vacío al crear, muestra valor solo si hay dato al editar. v13.92: FIX precisión Bs en cotización WhatsApp — aplicada la misma fórmula round2(USD×dif) × BCV a la cotización: precio por ítem, total productos, total general y abono en Bs. Antes el texto de WhatsApp mostraba centavos distintos al total del POS. v13.91: FIX precisión Bs — fórmula corregida en toda la app: ahora se calcula round2(USD×dif) × BCV en vez de USD×dif×BCV directo, eliminando diferencias de centavos por redondeo floating point. Aplica en: POS total y carrito, cobrar, catálogo info moneda, caja movimientos, pedidos recalc. Pedidos — nuevo filtro "Fecha específica" con selector de fecha para buscar pedidos por fecha de entrega exacta. iOS — corregido zoom automático al enfocar inputs (viewport maximum-scale + font-size 16px global). Filtros de pedidos en móvil con font-size 14px para evitar textos cortados. Extra en ventas/pedidos muestra campo vacío con placeholder en vez de 0. v13.89: Ventas/Cotización — activar Diseño ya no oculta ni desactiva el abono; solamente Envío omite el bloque de abono automático en la cotización WhatsApp. v13.83: Tipos de venta simplificados — eliminado "Pago de pedido" (redundante con "Pago restante"). Quedan 3 tipos: Venta rápida, Abono, Pago restante. v13.82: Formato decimal unificado — todos los montos en Bs y USD usan coma (,) como separador decimal y punto (.) como separador de miles en toda la app (catálogo, POS, pedidos, ventas, caja, reportes, cotizador WhatsApp, recibo). Nuevo helper global fmtBs(). Restante Bs en lista de pedidos y panel "Pedido a cobrar" muestra 2 decimales. v13.81: Pedidos/Ventas — el restante de pedidos ahora muestra también el equivalente en Bs (Restante × tasa BCV del día) tanto en la lista de pedidos como en el panel "Pedido a cobrar" del POS y modal de ventas. v13.85: POS móvil — el menú desplegable de Canal ahora abre hacia la izquierda para evitar desbordes laterales. v13.84: Ventas — corregido recibo/modal de Pago restante para mostrar el monto real cobrado al cliente y no el monto interno base; Canal en POS móvil ahora muestra solo el ícono para dar más espacio a Tipo de venta. v13.80: Ventas/Pedidos — el POS ahora lee el mismo Total/Pagado/Restante c/dif del módulo Pedidos al vincular un pedido, evitando diferencias entre módulos. v13.79: Clientes/Pedidos — unificado el registro de cliente en un solo campo "Nombre completo"; al editar clientes antiguos se muestra nombre + apellido juntos y se guarda sin separar el apellido. v13.73: FIX CRÍTICO: (1) Topbar pill — el menú de usuario no funcionaba porque los SVGs estaban como template literals en HTML estático. Reescrito: menú generado desde JS en aplicarPermisos() con SVGs reales. Tres opciones: "Cambiar usuario", "Bloquear pantalla", "Cerrar sesión" (en rojo). (2) Modal de usuario reescrito con clases estándar de GestioMada (modal-bg + modal) — antes usaba clases inexistentes (modal-box, modal-hd, modal-body) que no tenían CSS, causando que el modal se mostrara sin overlay, sin centrado y sin estilo. (3) Checkboxes de módulos/acciones rediseñados con estilo GestioMada — custom checkbox con animación de check, colores de la marca, hover con borde rosado, dark mode, responsive a 1 columna en móvil. v13.72: Usuarios sincronizados con Supabase — tabla \'usuarios\' como fuente de verdad con sync bidireccional + Realtime. Crear, editar, cambiar PIN y eliminar usuarios se propaga automáticamente a todos los dispositivos. Eliminaciones se propagan sin restaurar registros borrados. El PIN hasheado (no texto plano) viaja entre dispositivos. Al recibir cambio Realtime se refresca la lista de usuarios en Configuración y el lock screen. v13.71: Usuarios y acceso — auditoría y corrección de 7 bugs: (1) CRÍTICO: lock screen en modo genérico mostraba el texto "user" en vez del ícono SVG. (2) Topbar pill con menú dropdown "Cambiar usuario" y "Bloquear pantalla". (3) Typo gradiente CSS corregido. (4) Movimientos de caja graban usuario_id/usuario_nom. (5) No se puede eliminar el usuario logueado ni el último admin activo. (6) PIN default 0000 solo para Admin. v13.70: Pedidos — nuevo filtro por categoría. Las categorías se leen del catálogo por id_prod (porque el item del carrito no guarda categoría). Se puebla dinámicamente con las categorías presentes en los pedidos existentes. v13.69: Caja — eliminado campo manual "Tasa Bs/USD" del modal de movimientos; ahora se usa automáticamente la tasa paralela del sistema (BCV × diferencial) para conversiones Bs↔USD, equivalentes y registro histórico. El pill de equivalente muestra la tasa usada. v13.68: Acciones rápidas de Caja — (1) "Abono recibido" ahora ofrece vincular opcionalmente a un pedido pendiente (híbrido): si se vincula, el pago se registra automáticamente en el pedido reduciendo su saldo, y el movimiento de caja queda referenciado con ref_tipo=\'pedido\'. Si es en Bs, se preserva monto_bs_ingresado usando tasa paralela (bcv×dif) para que cuadre con el saldo del pedido. (2) Nuevo campo "Nombre / Referencia" en todos los movimientos (Ingreso/Gasto/Compra/Abono/Retiro) — etiqueta contextual según el tipo (proveedor, cliente, quien retira, etc.). Al seleccionar pedido en abono, autocompleta el nombre del cliente. (3) La moneda del monto ahora se bloquea automáticamente cuando el método la determina (Bs efectivo/PM/transferencia → Bs; USD efectivo/Zelle → USD). Solo "Otro" permite elegir moneda libre. v13.67: Selects de Canal y Envío rediseñados con gm-select custom SVG minimalistas. v13.66: Pedidos/Caja/Reportes — al editar un pedido y agregar/cambiar cliente, se actualizan los movimientos vinculados en Caja; canales normalizados para Reportes (Local/WhatsApp/Online, incluyendo variantes mal escritas). v13.65: Reportes — FIX crítico cálculos de datos: (1) KPI "Equivalente en Bs" ahora aplica el factor correcto por método de pago (Bs usa BCV×diferencial, USD usa BCV plano). (2) Tab Productos y Categorías: precios en USD base sin inflar con diferencial — los totales cuadran con suma de ventas. (3) Categoría se lee desde el catálogo por id_prod (el item del carrito no la guarda). (4) Tab Caja: ingresos/gastos separados por moneda (Bs y USD) — deja de sumar mezclado dos monedas distintas; KPIs "Saldo USD" y "Saldo Bs" independientes; gráfico diario en equivalente USD para comparar. v13.64: Corrección error SyntaxError byEst/ins duplicados en Reportes. v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.';
+  return 'v15.59: FIX \u2014 el chip de canal (\u00abWhatsApp\u00bb/\u00abLocal\u00bb/\u00abOnline\u00bb) en la tarjeta de pedido mostraba el c\u00f3digo SVG del \u00edcono como texto crudo en vez del \u00edcono. Causa: en el blindaje XSS de v15.56 se envolvi\u00f3 por error CANALES_LABEL con esc() \u2014 esa constante es HTML fijo de la app (\u00edcono + palabra), no texto escrito por un cliente, as\u00ed que no deb\u00eda escaparse. Revertido solo ese punto; el resto del blindaje XSS (campos de cliente/pedido/nota, que s\u00ed son texto libre) sigue igual. \nv15.58: MEJORA \u2014 Bloqueo de pantalla ya no muestra la grilla \u00abSelecciona tu usuario\u00bb (con todo el equipo) cuando quien bloquea ya inici\u00f3 sesi\u00f3n real con su correo (Supabase Auth, v\u00e9ase v15.57): ahora va directo a pedir el PIN de esa persona, mostrando solo su propia tarjeta. El login real ahora se enlaza autom\u00e1ticamente con el perfil de usuarios (rol y permisos) apenas se completa, sin pasos extra. Se ajust\u00f3 el arranque de la app para esperar a que el login se resuelva antes de decidir si pide PIN, evitando un parpadeo de la pantalla de selecci\u00f3n en la carga inicial. \nv15.57: NUEVO \u2014 Login real con Supabase Auth (correo + contrase\u00f1a), paso previo a cerrar el acceso an\u00f3nimo en Supabase (v\u00e9ase v15.56). Pantalla de inicio de sesi\u00f3n con el mismo estilo del dashboard (tarjeta redondeada, rosa de marca, sin gradientes); incluye \u00abOlvid\u00e9 mi contrase\u00f1a\u00bb (env\u00eda enlace de recuperaci\u00f3n por correo). El PIN de 4 d\u00edgitos se mantiene exactamente igual que antes, pero ahora es solo un bloqueo r\u00e1pido de pantalla durante el turno \u2014 el acceso real a los datos lo controla el login. \u00abCerrar sesi\u00f3n\u00bb en el men\u00fa de usuario ahora s\u00ed cierra la sesi\u00f3n real (antes, por un descuido, hac\u00eda lo mismo que \u00abBloquear pantalla\u00bb). FIX XSS adicional encontrado en esta revisi\u00f3n: nombre de cliente en el dashboard (\u00abUltimos clientes\u00bb) y nombre de usuario en la pantalla de bloqueo no pasaban por esc(). \nv15.56: FIX SEGURIDAD \u2014 auditor\u00eda solicitada por Daniel. (1) XSS: decenas de innerHTML/document.write en Pedidos, Clientes, Ventas, Cotizaciones, Env\u00edos y comprobantes impresos interpolaban nombre/apellido/c\u00e9dula/tel\u00e9fono/direcci\u00f3n/notas/\u00edtem sin pasar por esc(), permitiendo inyecci\u00f3n de HTML si esos campos contienen c\u00f3digo (por ejemplo si se escriben directo en Supabase). Todos esos puntos ahora escapan con esc(). (2) PIN: nuevo bloqueo anti fuerza-bruta \u2014 tras 5 intentos fallidos consecutivos la entrada de PIN se bloquea con tiempo creciente (30s, 1min, 2min... tope 5min); se resetea al acertar. El PIN sigue siendo solo un bloqueo de pantalla local, no un control de acceso real a los datos (eso depende de las pol\u00edticas RLS de Supabase, pendientes de revisi\u00f3n aparte). \nv15.55: Dashboard \u2014 rediseño visual del layout principal a un formato tipo \u00abbento\u00bb (tarjetas de distintos tama\u00f1os en cuadr\u00edcula). Nuevo encabezado de saludo con el nombre del usuario, la fecha del d\u00eda y un chip con la tasa BCV en vivo; dos botones de acceso r\u00e1pido (\u00ab+ Pedido\u00bb y \u00ab+ Venta\u00bb). Las mismas m\u00e9tricas de siempre (Ventas, Ingresos, Utilidad, Pedidos activos, Cat\u00e1logo, Clientes, Caja Bs/USD, Finanzas) se reorganizaron visualmente en el nuevo formato \u2014 no cambia ning\u00fan c\u00e1lculo ni fuente de datos. \\nv15.54: FIX Ventas (POS) \u2014 el orden de productos en la grilla del m\u00f3dulo Ventas ahora es exactamente el mismo que el orden personalizado del Cat\u00e1logo (bot\u00f3n \u00abReordenar\u00bb, arrastrar y soltar). Causa: renderCatalogo() ya aplicaba el orden guardado (_applyCatOrder, sincronizado entre dispositivos v\u00eda config.cat_order en Supabase) antes de pintar las tarjetas, pero posRenderProductos() (la grilla de Ventas) le\u00eda el cat\u00e1logo directo sin aplicar ese orden, as\u00ed que pod\u00eda mostrar los productos en otra secuencia (por ejemplo, el orden en que llegaron de Supabase tras un sync). Ahora ambos m\u00f3dulos usan la misma funci\u00f3n de ordenamiento, as\u00ed que cualquier cambio de orden hecho en Cat\u00e1logo se refleja de inmediato tambi\u00e9n en Ventas, sin pasos adicionales. \\nv15.53: NUEVO \u2014 Pedidos: al agregar un \u00edtem manual ahora hay una casilla \u00abYa es c/dif\u00bb junto al campo Precio unit. Antes, el precio de un \u00edtem manual siempre se guardaba como precio base y el sistema le aplicaba el diferencial cambiario vigente para mostrar el c/dif \u2014 si quer\u00edas cobrar exactamente $8 c/dif por un servicio, ten\u00edas que calcular a mano cu\u00e1nto era eso en base ($8 \u00f7 diferencial) antes de escribirlo. Ahora, si marcas la casilla, el precio que escribes se toma como el monto final c/dif que quieres cobrar y la app calcula sola el precio base equivalente (precio \u00f7 diferencial vigente) para guardarlo igual que cualquier otro \u00edtem \u2014 as\u00ed el c/dif mostrado en el carrito y en el pedido coincide exactamente con lo que escribiste. Sin marcar, el campo funciona exactamente igual que antes (precio base, c/dif se calcula multiplicando). \\nv15.52: NUEVO \u2014 Pedidos: aviso en vivo mientras el detalle de un pedido est\u00e1 abierto. Si otro dispositivo modifica ESE MISMO pedido (cambia estado, registra un pago, reprograma la fecha, etc.) mientras lo tienes abierto, Realtime ahora compara la versi\u00f3n entrante contra la que ten\u00edas en pantalla (usando la misma \u00abhuella\u00bb introducida en v15.51: estado, fecha de entrega, subtotal, notas, pagos) y, si de verdad cambi\u00f3 algo, muestra un toast (\u00abPedido PED-XXXX modificado en otro dispositivo \u2014 datos actualizados\u00bb) y refresca el modal al instante con los datos nuevos, sin que tengas que cerrarlo y volver a abrirlo. La comparaci\u00f3n de huellas evita falsos avisos: Realtime tambi\u00e9n notifica al propio dispositivo que hizo el cambio, y sin este chequeo cualquier guardado propio se hubiera visto a s\u00ed mismo como \u00abmodificado en otro dispositivo\u00bb. Complementa al aviso que ya exist\u00eda desde v15.34 (que solo revisaba UNA vez al abrir el detalle) y a los conflictos de reconexi\u00f3n de v15.51 (que se detectan reci\u00e9n al volver a conectar) \u2014 este es el tercer momento: mientras ambos dispositivos est\u00e1n en l\u00ednea y uno edita justo lo que el otro tiene abierto. \nv15.51: NUEVO \u2014 Protecci\u00f3n de conflictos de sincronizaci\u00f3n en Pedidos, complemento del fix de reconexi\u00f3n de v15.50. Escenario que cubre: dos dispositivos editan el MISMO pedido mientras ambos est\u00e1n sin conexi\u00f3n (ej. uno reprograma la fecha, otro cobra el restante); al reconectar, como upsertFila() reemplaza la fila completa, el que sube segundo pisaba por completo al primero \u2014 sin aviso, con el toast de \u00e9xito enga\u00f1ando a ambos dispositivos. Soluci\u00f3n: cada dispositivo guarda una \u00abhuella\u00bb (estado, fecha de entrega, subtotal, notas, pagos) del pedido en el momento de su \u00faltima sincronizaci\u00f3n real con Supabase. Al subir un cambio pendiente de la cola (v15.50), si la huella actual en la nube ya no coincide con esa huella base NI con la versi\u00f3n que este dispositivo intenta subir, se detecta como conflicto: NO se sobrescribe autom\u00e1ticamente en ning\u00fan sentido, el cambio se saca de la cola normal y pasa a una nueva tarjeta \u00abConflictos de sincronizaci\u00f3n\u00bb en Configuraci\u00f3n (con badge de aviso en el men\u00fa lateral), donde se ven ambas versiones (estado, fecha de entrega, pagos registrados) lado a lado y se elige manualmente \u00abUsar mi versi\u00f3n\u00bb (sube la copia de este dispositivo a Supabase) o \u00abDescartar mi cambio\u00bb (adopta la versi\u00f3n de la nube en este dispositivo). Un toast avisa en el momento en que se detecta el conflicto. Alcance actual: solo Pedidos \u2014 es la tabla del caso reportado (PED-0277) y la de mayor impacto de negocio; las dem\u00e1s tablas (ventas, caja, clientes, etc.) siguen con el comportamiento de \u00faltima-escritura-gana sin detecci\u00f3n, igual que antes de v15.50. \nv15.50: FIX CR\u00cdTICO Sincronizaci\u00f3n \u2014 causa ra\u00edz de por qu\u00e9 algunos cambios (reportado con Reprogramar fechas, PED-0277: qued\u00f3 con la fecha nueva en un dispositivo pero la vieja en Supabase y en el resto) no llegaban a la nube. window._supaConectado se verificaba UNA SOLA VEZ al abrir la app; si esa verificaci\u00f3n fallaba (red lenta o inestable en ese instante), la bandera quedaba en false el resto de la sesi\u00f3n \u2014 sin reintento ni aviso \u2014 y upsertFila() (la funci\u00f3n que sube cualquier cambio de Pedidos, Ventas, Caja, Clientes, etc.) simplemente no hac\u00eda nada cuando la bandera estaba en false, sin mostrar error. El dispositivo afectado sub\u00eda cambios completos localmente (fecha, estado, etc.) que nunca llegaban a Supabase ni a otros dispositivos, sin ninguna se\u00f1al de que algo estaba fallando. Corregido con dos piezas: (1) Vigilancia de reconexi\u00f3n \u2014 nuevo listener del evento \u2018online\u2019 del navegador m\u00e1s un reintento autom\u00e1tico cada 20s mientras la app est\u00e9 offline, que revalida la conexi\u00f3n real contra Supabase (no solo el evento del navegador, que no es confiable con portales cautivos o redes m\u00f3viles inestables). (2) Cola de cambios pendientes \u2014 upsertFila() ahora, en vez de fallar en silencio, guarda cada cambio que no pudo subir (por falta de conexi\u00f3n o por error de red a mitad del request) en una cola persistida en localStorage; al reconectar, esa cola se sube PRIMERO, antes de traer los datos de Supabase \u2014 orden cr\u00edtico, porque para tablas \u00abfuente de verdad\u00bb (pedidos, ventas, caja, etc.) un pull hecho antes de subir lo pendiente sobreescribir\u00eda el cambio local con la versi\u00f3n vieja de la nube, perdi\u00e9ndolo del todo. Al terminar de sincronizar los pendientes se muestra un toast confirmando cu\u00e1ntos cambios se subieron. Esto no es un bug exclusivo de Reprogramar fechas: aplica a cualquier acci\u00f3n que dependa de upsertFila (editar pedido, marcar entregado, registrar venta, movimientos de caja, etc.) si la conexi\u00f3n fall\u00f3 justo al abrir la app. PED-0277 espec\u00edficamente qued\u00f3 con la fecha vieja (2026-09-12) en Supabase \u2014 requiere correcci\u00f3n manual aparte, este fix solo previene que vuelva a pasar. \nv15.49: NUEVO \u2014 Pedidos: la opci\u00f3n \u00abReprogramar fechas\u00bb, que hasta ahora solo trabajaba por lote (vencidos, por fecha, sin fecha, por estado, todos), ahora tambi\u00e9n se puede usar sobre una selecci\u00f3n manual de pedidos. Activando \u00abSelecci\u00f3n m\u00faltiple\u00bb en Pedidos (el mismo modo que ya exist\u00eda para \u00abCambiar estado\u00bb) y marcando uno o varios pedidos con su checkbox, aparece un nuevo bot\u00f3n \u00abReprogramar fechas\u2026\u00bb junto a \u00abCambiar estado\u2026\u00bb en la barra de selecci\u00f3n; abre el mismo modal de reprogramaci\u00f3n pero fijado a esos pedidos marcados (el selector de criterio se oculta porque ya no aplica), con la misma vista previa y confirmaci\u00f3n antes de aplicar. Al confirmar, se sincroniza con Supabase igual que el resto de los flujos de reprogramaci\u00f3n, y la selecci\u00f3n se limpia automáticamente. \nv15.48: FIX CRÍTICO Inventario — los movimientos de inventario (entradas/salidas/ajustes) nunca se subían a Supabase individualmente: _soloLogMovInv() y _registrarMovInv() (las dos funciones que registran cada movimiento) solo guardaban en el localStorage del dispositivo, sin llamar a subir el registro a la nube — el último movimiento real en Supabase databa de abril, pese a cientos de ventas posteriores. Además, la única subida masiva que sí había ocurrido (carga inicial de la tabla) usaba nombres de campo equivocados en el mapeo hacia Supabase (item_tipo/cantidad/locacion en vez de los reales tipo_item/cant/loc del objeto local), así que esos pocos registros llegaron con cantidad en 0 en todos los casos. Esto es lo que causaba que anular una Venta rápida (v15.46) no restaurara el inventario cuando se anulaba desde un dispositivo distinto al que hizo la venta — ese dispositivo nunca había recibido el movimiento a revertir. Corregido: (1) mapearParaSupa() ahora lee los nombres de campo correctos, (2) ambas funciones de registro ahora sí suben cada movimiento individualmente a Supabase, (3) los IDs generados para estos movimientos ahora usan un offset entero aleatorio (mismo patrón que Comisiones) en vez de Math.random() decimal, que colisionaba con frecuencia entre movimientos del mismo milisegundo (ej. varios ítems de una misma venta) y podía perder registros al subir. REVERTIDO de v15.47: inventario_movimientos se había agregado a la lista de tablas «fuente de verdad», pero con la copia en Supabase todavía vacía/corrupta eso habría borrado el historial local bueno de cada dispositivo en su próximo sync — se quitó de esa lista (se mantiene en Realtime, que ahora sí sirve porque los movimientos se suben correctamente) hasta acumular suficiente historial limpio. inventario_terminados se mantiene en fuente de verdad — esa tabla sí mantenía sus upserts correctamente desde antes. Los ≈30 registros históricos de abril con cantidad 0 quedan como están (no afectan cálculos, son solo auditoría); las ventas ya anuladas antes de esta versión pueden requerir corrección manual de stock si su movimiento original nunca llegó a Supabase. \nv15.47: FIX Inventario — cierra un hueco de sincronización que dejaba la nueva anulación de Venta rápida (v15.46) incompleta entre dispositivos: inventario_terminados e inventario_movimientos NO estaban en la lista de tablas «fuente de verdad» ni en Realtime (mismo patrón de bug ya corregido para Ventas en v15.37 y para otras 6 tablas en v15.38), así que un movimiento de inventario eliminado en un dispositivo podía seguir apareciendo indefinidamente como «fantasma» en la lista de Movimientos de otro dispositivo que ya lo tenía en caché local, y la restauración de stock de productos terminados solo llegaba a otros dispositivos en el siguiente sync manual, no en vivo. Agregadas ambas tablas a _TABLAS_FUENTE_VERDAD y a Realtime (mismo tratamiento que ya tenían caja_movimientos e inventario_insumos) — ahora eliminar un movimiento de inventario (o restaurar stock de terminados) se propaga al instante a los dispositivos abiertos y correctamente a los que sincronicen después, sin restaurarse por accidente. No cambia ningún cálculo ni comportamiento visible fuera de la sincronización multi-dispositivo. \nv15.46: NUEVO — Ventas: anular una Venta rápida ahora revierte todo lo que generó al registrarse, no solo cambia su estado a «Anulada». (1) Caja: el/los movimiento(s) de Caja vinculados a esa venta (ref_tipo=venta) se eliminan (no se dejan como registro histórico). (2) Inventario: el stock descontado se restaura (terminados e insumos por receta) y los movimientos de inventario_movimientos generados por esa venta se eliminan, identificándolos por su nota exacta («Venta VEN-XXXX»). (3) Comisiones: si la venta había generado comisión a algún vendedor, se desactiva (mismo patrón ya usado al cancelar un pedido). Las ventas de tipo Abono o Pago restante (vinculadas a un pedido) NO se pueden anular por ahora — quedan bloqueadas con un aviso, porque revertir su pago en el pedido (saldo y posible cambio de estado a Entregado) requiere un flujo aparte. \nv15.45: FIX Caja \u2014 los movimientos de Caja vinculados a un pedido (abono y pago final) guardaban el campo ref_id vac\u00edo en Supabase, aunque localmente s\u00ed se generaba con el id real del pedido (ref_id: p.id) y la columna ref_id ya exist\u00eda en la tabla caja_movimientos. Causa: mapearParaSupa() \u2014 la funci\u00f3n que arma qu\u00e9 campos de cada registro viajan a Supabase \u2014 no inclu\u00eda ref_id en su mapeo para caja_movimientos, as\u00ed que se perd\u00eda justo antes de subir el registro, quedando en null en la nube. El v\u00ednculo entre un movimiento de Caja y su pedido depend\u00eda entonces por completo de que el texto de la nota (ej: \u00abPED-0239\u00bb) coincidiera, sin respaldo por id real. Se agreg\u00f3 ref_id al mapeo (mismo patr\u00f3n que ref_tipo, ya presente). Se hizo tambi\u00e9n un backfill one-time en Supabase para poblar ref_id en los movimientos hist\u00f3ricos de caja_movimientos que ya ten\u00edan un pedido identificable por el n\u00famero en su nota. No cambia ning\u00fan c\u00e1lculo, monto ni comportamiento visible \u2014 es un fix de robustez para que la relaci\u00f3n Caja\u2194Pedido tenga una llave real ademas del texto de la nota. \nv15.44: FIX Dashboard \u2014 la tarjeta \u00abUltimos movimientos de caja\u00bb mostraba TODOS los montos con s\u00edmbolo $ (d\u00f3lar), incluso los movimientos registrados en bol\u00edvares, mostrando por ejemplo \u00ab$ 7589,47\u00bb cuando el monto real era Bs 7.589,47 (el mismo n\u00famero, s\u00edmbolo incorrecto) \u2014 se notaba al comparar contra el m\u00f3dulo Caja, que s\u00ed mostraba el monto correcto en Bs. Causa: el dashboard usaba siempre el helper euro() (que antepone el s\u00edmbolo de moneda de Configuraci\u00f3n, $ por defecto) sin revisar el campo real m.moneda del movimiento, a diferencia del m\u00f3dulo Caja que s\u00ed distingue Bs vs USD por movimiento. Ahora el dashboard usa la misma l\u00f3gica que Caja: si m.moneda es \u0027usd\u0027 muestra $ con 2 decimales, de lo contrario muestra Bs con fmtBs() (formato de miles con punto y decimales con coma). \nv15.43: FIX CRÍTICO Pedidos — cobrar el restante marcaba el pedido como "Entregado" automáticamente, sin que el producto hubiera sido realmente retirado. Causa: tres rutas de registro de pago (Cobrar restante desde el modal de detalle/POS, y el Abono en Bs vinculado a un pedido desde Caja) marcaban el pedido como entregado en cuanto el saldo llegaba a 0, confundiendo "pagado" con "entregado" — un cliente puede cancelar el restante mientras su pedido sigue en producción y retirarlo después. Ahora registrar un pago (por cualquiera de esas vías) SOLO actualiza el saldo/pagos del pedido; el estado nunca cambia a "Entregado" como efecto secundario. Marcar como entregado sigue siendo una acción explícita: el botón "Cobrar y entregar" (cobra el saldo y entrega en un solo paso) o el selector manual de estado en el detalle del pedido. Caso real corregido: PED-0218 quedó marcado "Entregado" tras cobrarle el restante estando aún en producción; se corrigió manualmente en Supabase a "Listo".\nv15.42: Menú lateral e inferior — al tocar el ítem de un módulo (Pedidos, Ventas, Caja, etc.) en la barra de navegación, ahora siempre se sube al inicio del contenido, incluso si ya se estaba dentro de ese mismo módulo. Antes, si se había hecho scroll hacia abajo (por ejemplo revisando pedidos antiguos), volver a tocar "Pedidos" en el menú no movía la vista, obligando a hacer scroll manual hasta arriba para ver el pedido más reciente. v15.41: Envíos — el campo "Vincular a pedido" del formulario de Nuevo Envío / Editar Envío dejó de ser una lista desplegable simple (que solo mostraba los últimos 60 pedidos en orden) y pasó a ser un buscador en vivo, igual que en Pedidos: escribe el nombre del cliente, su teléfono o el número de pedido (#PED-XXXX) y aparecen las coincidencias al instante (reutiliza el mismo motor de búsqueda difusa de Pedidos — tolera acentos, orden de palabras y coincidencias parciales). Al elegir un resultado se muestra un chip de confirmación con el pedido vinculado y un enlace "Quitar" para desvincularlo sin tener que reabrir el formulario. v15.40: Envíos — optimización del módulo. (1) Orden: la lista ahora muestra los envíos más recientes primero (igual que Pedidos), en vez de los más antiguos arriba. (2) Fechas: cada tarjeta muestra la fecha de registro del envío y, si ya fue enviado, la fecha de envío; nuevo campo "Fecha de envío" en el formulario (se autocompleta con la fecha de hoy al marcar como Enviado, editable manualmente). (3) Estados simplificados: se eliminó el estado "Entregado" (redundante con el flujo real del negocio) y "Despachado" se renombró a "Enviado" en toda la interfaz (KPI, filtro, formulario, tarjetas) — el valor interno se mantiene igual para no romper datos ya guardados. KPIs reducidos de 4 a 3 columnas (Preparando / Enviados / Total). (4) Iconos: los botones de acción de cada tarjeta (Editar, Imprimir etiqueta, Eliminar) usaban emojis; ahora usan los mismos íconos SVG del sistema de íconos reutilizable de GestioMada (gmIco), consistentes con el resto de la app. v15.39: FIX Caja — el selector visible "Categoría" del modal de movimientos (Ingreso/Gasto/Compra insumos/Abono/Retiro) podía quedar desincronizado del tipo real e interno del movimiento: si al registrar, por ejemplo, un "Retiro" el usuario tocaba manualmente el selector de Categoría, el campo oculto que define el tipo real no se actualizaba, dejando el registro con datos contradictorios (p.ej. clasificado como Retiro en la lista pero contado como Gasto en Reportes/Estado de Resultados, o viceversa) — causa del caso donde no era posible distinguir con certeza si un movimiento borrado había sido un gasto o un retiro. Ahora cambiar la Categoría dentro del modal sincroniza al instante el tipo real, el título del modal, la etiqueta/placeholder de "Nombre o Referencia" y el panel de vinculación a pedido (solo para Abono) — el registro guardado siempre coincide en icono, color, clasificación de reportes y nombre mostrado, sin importar si el tipo se eligió desde los botones de Acciones rápidas o cambiando el selector de Categoría dentro del modal. v15.38: FIX CRÍTICO (auditoría general de datos desactualizados por dispositivo) — dos problemas de la misma familia que el fix de Ventas en v15.37, encontrados al revisar todos los módulos: (1) SINCRONIZACIÓN — Clientes, Cotizaciones, Insumos de inventario, Cuentas por Pagar, Envíos y Personalizados (borradores del editor) tenían el mismo hueco que Ventas: no estaban en la lista de tablas "fuente de verdad", así que un registro eliminado en un dispositivo (o directo en Supabase) podía seguir apareciendo indefinidamente en otros dispositivos sin importar cuántas veces se presionara "Sincronizar". Las 6 tablas se agregaron a la lista de fuente-de-verdad, preservando toda la lógica especial que ya tenían (fotos locales, campos de costeo de Personalizados). (2) CUENTAS POR PAGAR — riesgo de pago duplicado: si un dispositivo tenía el saldo de una deuda desactualizado (ya pagada o abonada desde otro dispositivo), podía registrar un pago sobre saldo que ya no existía, generando un gasto real duplicado en Caja — mismo patrón que causó las entregas duplicadas de Pedidos (v15.33/34). Ahora, al abrir el modal de "Registrar pago" se consulta el estado real en Supabase en segundo plano (corrige el saldo mostrado si está desactualizado, o cierra el modal avisando si ya fue pagada), y además — como red de seguridad final — el botón "Registrar pago" vuelve a verificar contra Supabase justo antes de confirmar el gasto, bloqueando el pago si la deuda ya fue saldada en otro dispositivo. Comisiones también tiene una acción de "marcar pagada" con el mismo tipo de riesgo, pero de impacto menor (no genera movimiento de Caja, solo pisa una fecha) — se dejó fuera de este fix por ahora. v15.37: FIX CRÍTICO — Ventas eliminadas en Supabase reaparecían en otros dispositivos incluso después de presionar "Sincronizar". Causa: en el motor de sincronización, la tabla "ventas" no estaba en la lista de tablas donde Supabase es fuente de verdad absoluta (Caja, Pedidos, Productos, Usuarios) — caía en la ruta de "merge seguro" pensada para no perder registros creados offline, la cual nunca elimina localmente un registro que ya no está en Supabase. Resultado: una venta borrada directamente en la nube (o desde otro dispositivo) seguía viéndose indefinidamente en cualquier dispositivo que ya la tuviera en su caché local, sin importar cuántas veces sincronizara. Agregada "ventas" a la lista de tablas fuente-de-verdad, con la misma normalización de cliente_snapshot→cliente que ya recibía en la ruta de merge. Con recargar la app o presionar "Sincronizar" una vez desplegada esta versión, cualquier venta borrada en la nube desaparece también localmente. v15.36: NUEVO — Pedidos: el buscador ahora también encuentra por número de teléfono del cliente, en cualquier formato: con código de país ("+58 414-4205318"), con el 0 inicial venezolano ("04144205318"), sin él ("4144205318"), o solo los últimos dígitos ("5318"). Todos los formatos se normalizan a un mismo "núcleo" de dígitos para compararlos entre sí, así que no importa cómo esté guardado el teléfono del cliente ni cómo lo escriba quien busca. Requiere mínimo 4 dígitos en la búsqueda para evitar falsos positivos con números muy cortos. Sigue funcionando igual que antes para buscar por nombre de cliente o número de pedido (PED-XXXX). v15.35: NUEVO — Respaldo y restauración completa del negocio (Configuración → Datos). El botón "Descargar respaldo completo" ahora lee directo de Supabase (la nube, fuente de verdad de todos los dispositivos) en vez de solo el localStorage del dispositivo actual, y descarga un único archivo JSON con TODOS los módulos: catálogo, personalizados, pedidos, ventas, caja, comisiones, clientes, cotizaciones, envíos, cuentas por pagar, inventario (insumos/terminados/movimientos), usuarios y configuración — antes el respaldo dejaba fuera comisiones, cotizaciones, envíos y cuentas por pagar. Si no hay conexión a Supabase al momento de respaldar, cae automáticamente a un respaldo local de emergencia (avisando que puede estar incompleto). "Restaurar respaldo" ahora también escribe de vuelta en Supabase (antes solo tocaba el localStorage del dispositivo, así que el siguiente sync silenciosamente deshacía la restauración) — sube cada tabla en bloques respetando el orden de llaves foráneas (usuarios/clientes/productos antes de pedidos/ventas), y al terminar recarga la app para que quede sincronizada. Es una restauración no-destructiva: solo agrega o actualiza registros por ID, nunca borra lo que no esté en el archivo. Por ser una operación que afecta a todos los dispositivos, se agregó una confirmación reforzada (escribir la palabra "RESTAURAR") además de mostrar la fecha, origen y cantidad de registros por tabla del respaldo antes de aplicarlo. v15.34: FIX Pedidos — refresco individual contra Supabase al abrir el detalle de un pedido. Antes, el modal de detalle solo mostraba lo que ya estaba en el localStorage del dispositivo; si ese pedido había sido modificado desde otro dispositivo (p.ej. marcado "Entregado") mientras este estaba desconectado o simplemente no recibió el evento de Realtime a tiempo, el detalle seguía mostrando el estado viejo y permitía repetir acciones ya hechas (causa raíz del bug de ventas duplicadas corregido en v15.33). Ahora, al abrir el detalle de un pedido, la app consulta en segundo plano la versión real en Supabase; si detecta una diferencia de estado o de pagos registrados, corrige el dato local, refresca el modal abierto y avisa con un toast ("Este pedido ya fue entregado desde otro dispositivo — datos actualizados"). No bloquea ni retrasa la apertura del modal — la verificación ocurre en paralelo. v15.33: FIX Pedidos — se agregó una validación de seguridad para evitar entregas duplicadas: si un pedido ya está marcado como "Entregado", los flujos individuales de entrega (botón "Cobrar y entregar" y el selector de estado del detalle de pedido) ahora rechazan la acción con un aviso ("Este pedido ya fue entregado anteriormente") en vez de generar una Venta nueva. Antes, esta protección solo existía en el cambio de estado masivo; los flujos individuales no la tenían, lo que permitió que un pedido ya entregado y cobrado generara una Venta duplicada (sin movimiento de Caja, porque el dinero ya se había registrado antes) si se volvía a intentar "entregar" desde un dispositivo con datos locales desactualizados. v15.32: FIX Editor de Producto (Personalizados) — al editar un producto ACTIVO desde el Catálogo, el campo \"Estado\" a veces aparecía como Inactivo (o viceversa) aunque el producto estuviera activo. Causa: el editor cargaba el Estado desde la \"foto\" del cálculo guardada (calculo.estado), la cual queda congelada al momento de crear/guardar el producto; activar o desactivar un producto directamente desde el Catálogo (individual o en selección múltiple) solo actualizaba el estado real del producto, sin tocar esa foto del cálculo, por lo que ambos valores podían quedar desincronizados. Ahora el editor siempre toma el Estado real y actual del producto en el Catálogo (igual que ya hacía con Tipo de venta), y además activar/desactivar mantiene sincronizada la foto del cálculo para evitar que el problema reaparezca. v15.31: Configuración/Caja/Finanzas — FIX conceptual de tasas: cuando el diferencial cambiario está congelado (opción [=] Congelado), la "Tasa Paralela" que se ve en Configuración pasa a ser una tasa sintética (BCV × diferencial congelado) pensada para mantener estables los precios del catálogo — pero Caja y Finanzas seguían usando por error esa misma tasa sintética para convertir gastos/ingresos en Bs a USD, en vez de la tasa real de mercado (Binance/paralelo actual). Ahora existe una tasa independiente — "Paralela real (mercado)" — que se obtiene siempre del valor real (Auto: se actualiza sola con cada fetch; Manual: se edita a mano en un campo nuevo que aparece solo cuando el diferencial está congelado). Nuevo selector en Configuración → Tasas de cambio → "Uso de la tasa paralela por módulo": permite elegir, por separado para Caja y para Finanzas, si sus movimientos internos (gastos, ingresos, compras, retiros, pagos a proveedores) usan la Paralela real (mercado, nuevo default), la Paralela de venta (congelada, comportamiento anterior) o la Tasa BCV. Catálogo, Ventas y Pedidos NO son configurables — siempre usan la paralela de venta, porque de eso depende el precio pactado con el cliente. Excepción respetada: un "Abono" de Caja vinculado a un pedido sigue usando la paralela de venta (el saldo del pedido está expresado en esos términos), sin importar el criterio configurado. Pensado como base para que GestioMada sea configurable por cualquier negocio con manejo de tasa dual, no solo el flujo actual. v15.30: Catálogo — nueva opción de <strong>selección múltiple</strong> para cambiar el estado de varios productos a la vez. Botón &quot;Selección múltiple&quot; en la barra de filtros muestra un checkbox en cada tarjeta; con uno o más productos marcados aparece una barra de acciones (Seleccionar todos visibles, Limpiar selección, Activar, Desactivar). Los cambios se sincronizan con Supabase igual que un cambio de estado individual (mismo mecanismo de verProd → toggleEstado). Reutiliza el mismo patrón visual que la selección múltiple ya existente en Pedidos. v15.29: FIX CRÍTICO — el ítem "Cuentas por Pagar" era invisible en el menú incluso para el Admin, en v15.27 y v15.28. Causa: GestioMada tiene un sistema de permisos por rol (aplicarPermisos()/canView()) que oculta cualquier nav-item cuyo id de vista no esté en la lista "vistas" del rol — y ese id ("cxp") nunca se agregó a ROLES.admin.vistas al crear el módulo, así que quedaba oculto por diseño del sistema de permisos, no por un problema de despliegue. Agregado "cxp" a la lista de vistas del rol Admin y a TODAS_VISTAS/VISTA_LABELS (para que también aparezca como opción al configurar permisos personalizados de otros usuarios en Configuración → Usuarios). v15.28: Cuentas por Pagar — sincronización con Supabase. Creada la tabla &quot;cuentas_pagar&quot; en el proyecto (mismo patrón de RLS/policy que el resto: allow_all para anon+authenticated, Realtime activado, REPLICA IDENTITY FULL). La app ahora sube, descarga y escucha en tiempo real los cambios de esta tabla igual que Clientes, Pedidos, Caja, etc. — crear, editar, pagar o eliminar una cuenta por pagar en un dispositivo se refleja automáticamente en todos los demás. v15.27: Cuentas por Pagar — reubicado como módulo propio en el menú lateral (Operaciones, junto a Caja), en vez de estar dentro de Finanzas → Balance General. Ahora tiene su propia pantalla con KPIs (total por pagar, vencido, cantidad registrada), buscador, filtro (pendientes/vencidas/pagadas) y badge en el menú con la cantidad de deudas pendientes. Finanzas → Balance General se simplificó a un resumen de solo lectura (top deudas pendientes) con botón directo al nuevo módulo para gestionar (crear, editar, pagar, eliminar). v15.26: Finanzas — nueva pestaña &quot;Balance General&quot; (Activos = Pasivos + Patrimonio), estimada a partir de los módulos existentes: Caja (efectivo USD+Bs), Cuentas por Cobrar (mismo cálculo que la pestaña CxC), Inventario (insumos y productos terminados valorizados al costo) y Activos fijos (CAPEX histórico). Nuevo módulo &quot;Cuentas por Pagar&quot; para registrar deudas con proveedores/acreedores (crear, editar, eliminar) — al registrar un pago se crea automáticamente el gasto real en Caja (subcategoría &quot;Pago a proveedores&quot;, vinculado con ref_tipo=cxp) y se actualiza el saldo de la deuda. Nuevo campo &quot;Capital inicial aportado&quot; en Configuración → Reglas de negocio, sincronizado entre dispositivos, usado para calcular el Patrimonio (Capital inicial + utilidad acumulada histórica − retiros acumulados). El balance es una estimación de gestión (cash-basis), no un balance contable formal de partida doble. v15.25: Catálogo — las tarjetas de producto ahora muestran el monto de ganancia en dólares junto al porcentaje de margen (ej: &quot;Margen: 45.0% ($ 4,50)&quot;), calculado como Precio de Venta − Costo. v15.24: Editor de Producto (Personalizados) — el campo &quot;Precio manual de venta&quot; ahora se precarga automáticamente con el &quot;Precio de Venta&quot; calculado (costos + ganancia + impuestos) a medida que se ajustan los valores del producto, en vez de quedar en 0,00 hasta que el usuario lo escribiera a mano. Si el usuario edita el campo manualmente, deja de autocompletarse (se respeta el valor manual) hasta resetear el editor o cargar otro producto sin precio manual guardado. v15.23: Configuración — la tarjeta \"Versión\" mostraba un resumen ESTÁTICO y desactualizado (quedó congelado en v13.42 / v15.03 mientras el modal completo seguía recibiendo cada entrega nueva), porque el changelog vivía duplicado en dos lugares distintos del código. Se eliminó esa copia estática (~44KB de HTML muerto) y ahora la tarjeta se genera dinámicamente a partir de la misma fuente que usa \"Ver historial completo de cambios\" (nueva función compartida _gmChangelogRaw()) — la versión y el resumen más reciente que se ven en Configuración siempre van a coincidir con el modal completo, sin mantenimiento manual en dos sitios de aquí en adelante. v15.22: FIX CRÍTICO — menú lateral en móvil: \"Configuración\" (último ítem) quedaba inalcanzable al hacer scroll. Causa real: el menú inferior (.bottom-nav) tenía z-index:200, más alto que el drawer del menú lateral (z-index:100) — al abrir el menú, la barra inferior se quedaba tapando y capturando los toques sobre la parte baja del drawer, así que el scroll sí llegaba pero no había forma de tocar/ver el último ítem. Subido el z-index del drawer a 210 y el de su overlay oscuro a 205 (ambos por encima del menú inferior), y agregado padding inferior de 70px al contenido del drawer como margen de seguridad adicional. v15.21: FIXES móviles y modo oscuro. (1) Menú lateral en móvil: el scroll ya no \"rebota\" — la altura del drawer pasó de 100% a 100dvh (evita el recálculo cuando Chrome oculta/muestra la barra de direcciones durante el gesto) y ahora se bloquea el scroll del body mientras el menú está abierto (mismo mecanismo que los modales), evitando que el scroll del sidebar se encadene con el del fondo. (2) Menú inferior: íconos 25% más grandes (20px→25px), el texto queda igual; barra ajustada de 58 a 64px de alto. (3) Modo oscuro — auditoría y corrección de contrastes rotos: fila expandible de Finanzas/CxC con fondo blanco fijo que dejaba el texto casi ilegible (ahora usa var(--card)/var(--bg)); varios chips y una pill traían un color de fondo inline que anulaba por especificidad la regla de modo oscuro ya definida en su clase (quitado); ~16 barras de progreso de Reportes y el zebra-striping de tablas de Finanzas/Reportes tenían fondos grises fijos (#fff/#fafafa/#f9f9f9/#f3f4f6) — ahora usan variables temáticas; botones y cajas de aviso (Cambiar estado, Eliminar pedido, restante de pago, notas de venta/pedido/cotización, variante textil pendiente, indicador de vuelto/falta en Caja) usaban colores pastel sólidos que quedaban como parches brillantes o de bajo contraste sobre fondo oscuro — pasados a un patrón semi-transparente que se adapta a ambos temas. Bordes y scrollbar sin variante oscura agregados. Las plantillas de impresión (recibos, pedidos) se dejaron intactas — siempre deben verse en claro para el papel. v15.20: FIX CRÍTICO — botón \"Sincronizar\" mostraba \"Error al sincronizar: cannot add postgres_changes callbacks for realtime:rt-ventas after subscribe()\". Causa: initSupabaseSync() llamaba a iniciarRealtime() en cada sincronización (la inicial y cada vez que se presionaba el botón), y volver a suscribir los mismos canales de Realtime ya activos no está permitido por Supabase. Ahora iniciarRealtime() se ejecuta una sola vez por sesión (guardado con window._realtimeIniciado); los syncs posteriores solo refrescan datos sin reabrir los canales. v15.19: Dashboard — \"Productos más vendidos\" pasó de lista a gráfica de barras + línea de tendencia (estilo combo), usando la paleta sólida de la app: barras en rosa, línea y puntos en vino. Cada barra muestra su valor arriba, y debajo el ranking (#1..#5) y el nombre del producto truncado con el nombre completo visible al pasar el mouse. Se adapta a modo oscuro. v15.18: Dashboard — rediseño completo para reducir saturación visual: las 16 tarjetas KPI se reorganizaron en (1) una franja de alertas que solo aparece cuando hay algo pendiente (pedidos por entregar hoy, pedidos vencidos, alertas de inventario) con mensaje \"Sin pendientes urgentes hoy\" cuando no hay nada, (2) una fila de 4 métricas principales del día (Ventas, Ingresos, Utilidad, Pedidos activos) y (3) dos tarjetas de resumen compacto en formato lista (Negocio y Finanzas, esta última solo visible para admin) en vez de tarjetas grandes repetidas. Paleta — eliminados todos los degradados (30+ usos en toda la app: botones, avatares, barras de progreso, menú de usuarios, comprobantes impresos) y reemplazados por colores sólidos: rosa principal #ea8db9, vino #8a3a5b para énfasis. Los íconos con fondo pastel del Dashboard se sustituyeron por un solo tono de acento. Los demás módulos (Reportes, Pedidos, Caja, Finanzas) no se tocaron — siguen usando el sistema de tarjetas KPI existente sin cambios. v14.42: FIX Inventario — descuento de stock corregido en ventas y entregas de pedidos. (1) Doble descuento eliminado: _registrarMovInv restaba stock además de logear el movimiento, causando conflicto con el descuento directo de descontarInventarioDeItems; cambiado a _soloLogMovInv. (2) Flag _modificado nunca se asignaba: los upserts a Supabase no se ejecutaban, así que los cambios de stock no se sincronizaban entre dispositivos; ahora cada item modificado se marca y se upsertea. (3) Fallback inteligente: si modo_inventario es ninguno pero existe un registro en inventario_terminados vinculado al producto (prod_id), se descuenta automáticamente — antes solo descontaba con modo terminado o insumos explícito. Logs de depuración en consola para rastrear cada operación de descuento. v14.41: FIX Dashboard — KPIs de finanzas (Por cobrar, CxC vencida, Pérdida cambiaria, Saldo proyectado) desaparecían tras cargar porque can() no tenía fallback al rol cuando el usuario personalizado fue creado antes de que existiera el permiso \"finanzas\". Ahora can() replica el mismo patrón de canView(): si el permiso no está en la lista personal del usuario pero SÍ lo tiene su rol, se permite. FIX versión APP_VERSION desincronizada (era v14_35 vs HTML v14_40). v14.27: Blindaje de datos Fase 1 continuación — indicador visual offline/online (banner amarillo cuando se pierde conexión, confirma reconexión con verde). Migración automática al cargar: elimina fotos base64 redundantes del catálogo local cuando el producto ya tiene foto_url de Supabase (libera MB de localStorage). Monitor de uso de localStorage en Config (barra visual KB usados / 5MB con alerta por color). Sync merge ya no preserva base64 cuando Supabase tiene foto_url. v14.26: Blindaje de datos Fase 1 — nuevo helper esc() sanitiza HTML en todos los innerHTML que interpolan datos del usuario (nombres de productos, clientes, categorías, etc.) previniendo inyección XSS. Nuevo wrapper _lsSet() centraliza todos los localStorage.setItem con try/catch: si el almacenamiento se llena, muestra toast de alerta en vez de fallar silenciosamente. v14.24: Flujo de entrega corregido — marcar "Entregado" ahora solo funciona si el pedido está 100% pagado (crea Venta + descuenta inventario). Si tiene saldo pendiente, bloquea y avisa. Nuevo botón "Cobrar y entregar": registra el pago restante (con método de pago seleccionado), crea movimiento en Caja, marca entregado, crea Venta vinculada y descuenta inventario en un solo paso. Se elimina el registro automático de pagos fantasma en Caja al entregar. v14.16: Pedidos — montos Bs unificados entre lista, detalle y edición: productos aplican diferencial con redondeo previo; delivery/envío/diseño/extras no llevan diferencial; conversión final siempre usa usdToBs(). v14.06: Extras visibles en pedidos — tarjetas de lista muestran chips violeta de Diseño/Envío/Delivery cuando aplican. Impresión de lista (vista principal y KPIs) incluye extras debajo de productos. Modal de KPI detalle también muestra extras. v14.05: KPIs de pedidos ahora caben 5 en una fila en desktop — grid cambiado de g4 a g5 (5 columnas). Responsive: 2 columnas en tablet, 1 en móvil. v14.04: Nuevo estado de pedido "Impresión" — se inserta entre "En producción" y "Listo" en el flujo de estados. Incluye: filtro en lista de pedidos, opción en formulario de pedido, KPI card con ícono de impresora (violeta), badge en impresión de listado, flujo de avance (Producción → Impresión → Listo), soporte en reportes, historial de cliente y modal de detalle. FIX precisión Bs en pedidos — el problema raíz era que pagadoCDif acumulaba errores de floating point sin redondear, causando restante c/dif con decimales fantasma. Corregido en todos los puntos de cálculo con parseFloat(toFixed(2)). v14.02: Ventas/Cotización WhatsApp — los montos del texto ahora usan exactamente el mismo motor de redondeo del carrito POS: productos redondeados por línea (cantidad × precio × diferencial), extras sin diferencial, total Bs/USD y ancla USD iguales a la barra del carrito. v14.01: Sincronización completa de configuraciones entre dispositivos — todas las opciones de Configuración ahora se propagan automáticamente via Supabase + Realtime: toggle "Tasas de cambio Auto/Manual" (incluyendo los valores de BCV y Paralela al obtenerlos), regla "Restante USD puro", impuestos (on/off y porcentaje), métodos de pago activos, categorías de productos, monedas, y diferencial congelado. Realtime activado en tabla config: cualquier cambio en un dispositivo se refleja al instante en todos los demás sin recargar. v14.00: FIX regla "Restante USD puro" — cuando el checkbox está activo y todos los pagos son en USD/Zelle, ahora la tarjeta del pedido muestra TODO en dólar base: total sin diferencial (ej: $40,00 en vez de $52,08), sin equivalente en Bs, y restante solo en USD (ej: $15,00). Lo mismo en el modal de detalle: total, pagado y restante en USD base sin c/dif ni Bs. v13.99: Configuración — nueva sección "Reglas de negocio" con checkbox "Restante en USD puro si el abono fue en dólares". Cuando está activo y TODOS los pagos del pedido son en USD Efectivo o Zelle/Binance, el restante se muestra solo en dólar paralelo (precio base sin diferencial, sin equivalente en Bs). Aplica en: lista de pedidos, modal detalle, POS panel pedido, e impresión. Se sincroniza con Supabase. Diseñado como opción configurable para no imponer reglas de negocio específicas a futuros usuarios de GestioMada. v13.98: Pedidos — botón "Imprimir" en la vista principal (junto a "+ Nuevo Pedido") que imprime el listado de pedidos según los filtros activos. Botón de imprimir dentro de cada popup de KPI (Pendientes, En producción, etc.). La lista impresa incluye: checkbox para rayar, #pedido, cliente con teléfono, productos, estado, pago, total c/dif y fecha entrega. Formato landscape optimizado para papel. v13.97: Pedidos — nuevo botón "Imprimir" en el modal de detalle del pedido. Genera una página limpia con logo del negocio, datos del cliente, tabla de productos (cant, precio, subtotal), totales con diferencial y Bs, historial de pagos, restante y notas. Se abre en ventana nueva y lanza la impresión automáticamente. Eliminado selector de temporalidad de KPIs (innecesario — los KPIs siempre muestran el estado actual). v13.96: KPIs Pedidos — cards limpios que siempre muestran el estado actual real del negocio (sin filtro de temporalidad innecesario); al hacer clic se abre popup con resumen de productos agrupados y detalle por pedido. FIX CRÍTICO zona horaria — todas las fechas "hoy" usan hora local (Venezuela UTC-4) en vez de UTC; antes, después de las 8pm el sistema pensaba que era el día siguiente. Nuevo helper hoyLocal(), corregidas 31+ instancias en toda la app. v13.95: KPIs Pedidos — cada card ahora muestra los productos agrupados con cantidades totales (ej: Taza dorada ×8), máximo 4 productos visibles con "+N más…". Nuevo selector de temporalidad (Hoy, 7 días, 1 mes, 3 meses, Todo) que filtra los KPIs por fecha de creación del pedido. v13.94: Pedidos — cada tarjeta de pedido ahora muestra los productos del cliente (cantidad × nombre) debajo de los badges, sin precio. En desktop se muestra en una línea con "…" si es muy largo; en móvil se expande completo. v13.93: Font-size inputs restaurado a 13px en desktop (el zoom iOS se previene con viewport maximum-scale). Descuento y abono en POS y Pedidos ahora usan placeholder en vez de value="0,00" — campo vacío al crear, muestra valor solo si hay dato al editar. v13.92: FIX precisión Bs en cotización WhatsApp — aplicada la misma fórmula round2(USD×dif) × BCV a la cotización: precio por ítem, total productos, total general y abono en Bs. Antes el texto de WhatsApp mostraba centavos distintos al total del POS. v13.91: FIX precisión Bs — fórmula corregida en toda la app: ahora se calcula round2(USD×dif) × BCV en vez de USD×dif×BCV directo, eliminando diferencias de centavos por redondeo floating point. Aplica en: POS total y carrito, cobrar, catálogo info moneda, caja movimientos, pedidos recalc. Pedidos — nuevo filtro "Fecha específica" con selector de fecha para buscar pedidos por fecha de entrega exacta. iOS — corregido zoom automático al enfocar inputs (viewport maximum-scale + font-size 16px global). Filtros de pedidos en móvil con font-size 14px para evitar textos cortados. Extra en ventas/pedidos muestra campo vacío con placeholder en vez de 0. v13.89: Ventas/Cotización — activar Diseño ya no oculta ni desactiva el abono; solamente Envío omite el bloque de abono automático en la cotización WhatsApp. v13.83: Tipos de venta simplificados — eliminado "Pago de pedido" (redundante con "Pago restante"). Quedan 3 tipos: Venta rápida, Abono, Pago restante. v13.82: Formato decimal unificado — todos los montos en Bs y USD usan coma (,) como separador decimal y punto (.) como separador de miles en toda la app (catálogo, POS, pedidos, ventas, caja, reportes, cotizador WhatsApp, recibo). Nuevo helper global fmtBs(). Restante Bs en lista de pedidos y panel "Pedido a cobrar" muestra 2 decimales. v13.81: Pedidos/Ventas — el restante de pedidos ahora muestra también el equivalente en Bs (Restante × tasa BCV del día) tanto en la lista de pedidos como en el panel "Pedido a cobrar" del POS y modal de ventas. v13.85: POS móvil — el menú desplegable de Canal ahora abre hacia la izquierda para evitar desbordes laterales. v13.84: Ventas — corregido recibo/modal de Pago restante para mostrar el monto real cobrado al cliente y no el monto interno base; Canal en POS móvil ahora muestra solo el ícono para dar más espacio a Tipo de venta. v13.80: Ventas/Pedidos — el POS ahora lee el mismo Total/Pagado/Restante c/dif del módulo Pedidos al vincular un pedido, evitando diferencias entre módulos. v13.79: Clientes/Pedidos — unificado el registro de cliente en un solo campo "Nombre completo"; al editar clientes antiguos se muestra nombre + apellido juntos y se guarda sin separar el apellido. v13.73: FIX CRÍTICO: (1) Topbar pill — el menú de usuario no funcionaba porque los SVGs estaban como template literals en HTML estático. Reescrito: menú generado desde JS en aplicarPermisos() con SVGs reales. Tres opciones: "Cambiar usuario", "Bloquear pantalla", "Cerrar sesión" (en rojo). (2) Modal de usuario reescrito con clases estándar de GestioMada (modal-bg + modal) — antes usaba clases inexistentes (modal-box, modal-hd, modal-body) que no tenían CSS, causando que el modal se mostrara sin overlay, sin centrado y sin estilo. (3) Checkboxes de módulos/acciones rediseñados con estilo GestioMada — custom checkbox con animación de check, colores de la marca, hover con borde rosado, dark mode, responsive a 1 columna en móvil. v13.72: Usuarios sincronizados con Supabase — tabla \'usuarios\' como fuente de verdad con sync bidireccional + Realtime. Crear, editar, cambiar PIN y eliminar usuarios se propaga automáticamente a todos los dispositivos. Eliminaciones se propagan sin restaurar registros borrados. El PIN hasheado (no texto plano) viaja entre dispositivos. Al recibir cambio Realtime se refresca la lista de usuarios en Configuración y el lock screen. v13.71: Usuarios y acceso — auditoría y corrección de 7 bugs: (1) CRÍTICO: lock screen en modo genérico mostraba el texto "user" en vez del ícono SVG. (2) Topbar pill con menú dropdown "Cambiar usuario" y "Bloquear pantalla". (3) Typo gradiente CSS corregido. (4) Movimientos de caja graban usuario_id/usuario_nom. (5) No se puede eliminar el usuario logueado ni el último admin activo. (6) PIN default 0000 solo para Admin. v13.70: Pedidos — nuevo filtro por categoría. Las categorías se leen del catálogo por id_prod (porque el item del carrito no guarda categoría). Se puebla dinámicamente con las categorías presentes en los pedidos existentes. v13.69: Caja — eliminado campo manual "Tasa Bs/USD" del modal de movimientos; ahora se usa automáticamente la tasa paralela del sistema (BCV × diferencial) para conversiones Bs↔USD, equivalentes y registro histórico. El pill de equivalente muestra la tasa usada. v13.68: Acciones rápidas de Caja — (1) "Abono recibido" ahora ofrece vincular opcionalmente a un pedido pendiente (híbrido): si se vincula, el pago se registra automáticamente en el pedido reduciendo su saldo, y el movimiento de caja queda referenciado con ref_tipo=\'pedido\'. Si es en Bs, se preserva monto_bs_ingresado usando tasa paralela (bcv×dif) para que cuadre con el saldo del pedido. (2) Nuevo campo "Nombre / Referencia" en todos los movimientos (Ingreso/Gasto/Compra/Abono/Retiro) — etiqueta contextual según el tipo (proveedor, cliente, quien retira, etc.). Al seleccionar pedido en abono, autocompleta el nombre del cliente. (3) La moneda del monto ahora se bloquea automáticamente cuando el método la determina (Bs efectivo/PM/transferencia → Bs; USD efectivo/Zelle → USD). Solo "Otro" permite elegir moneda libre. v13.67: Selects de Canal y Envío rediseñados con gm-select custom SVG minimalistas. v13.66: Pedidos/Caja/Reportes — al editar un pedido y agregar/cambiar cliente, se actualizan los movimientos vinculados en Caja; canales normalizados para Reportes (Local/WhatsApp/Online, incluyendo variantes mal escritas). v13.65: Reportes — FIX crítico cálculos de datos: (1) KPI "Equivalente en Bs" ahora aplica el factor correcto por método de pago (Bs usa BCV×diferencial, USD usa BCV plano). (2) Tab Productos y Categorías: precios en USD base sin inflar con diferencial — los totales cuadran con suma de ventas. (3) Categoría se lee desde el catálogo por id_prod (el item del carrito no la guarda). (4) Tab Caja: ingresos/gastos separados por moneda (Bs y USD) — deja de sumar mezclado dos monedas distintas; KPIs "Saldo USD" y "Saldo Bs" independientes; gráfico diario en equivalente USD para comparar. v13.64: Corrección error SyntaxError byEst/ins duplicados en Reportes. v13.63: Reportes — revisión completa: KPIs globales en Bs, Tab Pedidos con canal/método/tabla, Tab Productos por categoría, Tab Clientes con nuevos/recurrentes/inactivos, Tab Caja con KPIs totales, Tab Inventario con stock actual y alertas. v13.62: Reportes — sección Canales de venta con KPIs, barras y columna canal en tabla de ventas. v13.61: Pedidos — filtro por tipo de envío (Delivery / Envío / Sin envío) y filtro por producto. v13.60: Pedidos muestran Pagado cuando el restante queda en 0 o dentro de tolerancia por redondeo. v13.31: Catálogo sync inmediato por registro — cada cambio se propaga al instante. SKU = ID único automático. Toggle congelar diferencial cambiario. v13.30: Pedidos como fuente de verdad en Supabase — eliminaciones se propagan a todos los dispositivos. Botón WhatsApp, montos USD/Bs, restante congelado en USD, eliminar pedido. Fix cálculo Bs en caja. v13.28: Pedidos — botones de items responsivos en móvil, cliente nuevo inline sin popup. v13.27: Precios en catálogo y ventas móvil muestran los 3 valores sin etiquetas. Layout POS móvil en 2 columnas con info completa. v13.26: Colores de precios corregidos: base=negro, c/dif=rosado, Bs=negro. Catálogo móvil en 1 columna con imagen grande. v13.25: Catálogo muestra los 3 precios (USD, c/dif, Bs) en tarjetas responsivas. v13.24: Detección de actualizaciones corregida — consulta el servidor en tiempo real. v13.23: Botones de inventario responsivos en móvil — ya no se desbordan. v13.22: Fotos de productos sincronizadas via Supabase Storage — se ven en todos los dispositivos automáticamente. v13.21: Mecanismo de actualización PWA mejorado — detecta versiones correctamente con updateViaCache:none. v13.20: Sync Producto Personalizable con Supabase — nunca se pierden los productos del editor. v13.19: Tipos de venta con conexión a pedidos pendientes (pago de pedido, abono, pago restante). KPIs de caja separados por moneda Bs/USD. v13.17: Caja sincronizada con Supabase como fuente de verdad — eliminaciones propagadas sin restaurar registros. v13.16 (base estable): Sync completo con Supabase + Realtime. Eliminaciones propagadas a todos los dispositivos con await. Merge inteligente sin restaurar borrados. v13.15: deleteFromSupabase en productos, clientes, caja y insumos. REPLICA IDENTITY FULL en Supabase. v13.14: Carrito POS muestra precio con dif cuando método es Bs. v13.13: Barra y botón del carrito con valor exacto consistente. v13.12: Logo del negocio sincronizado a Supabase Storage. v13.11: Datos del negocio guardados en Supabase desde Configuración. v13.10: Recibo limpio sin referencias al diferencial. v13.9: Recibo con precios Bs+dif, campos RIF/Instagram/slogan, equivalente USD en caja. v13.8: Caja registra moneda correcta (Bs/USD) según método de pago. v13.7: mapearParaSupa completo para todos los módulos. v13.6: Sync de ventas corregido (FK omitidas). v13.5: Realtime activado en 6 tablas. v13.4: Helper getFoto() — foto_url Supabase sobre base64 local. v13.3: Integración Supabase dual sync. v13.2: Canales Local/WhatsApp/Online, recibo A4, diferencial cambiario.';
 }
 
 function _gmVersionCardUpdate(){
@@ -7224,8 +7334,8 @@ function renderClientes(){
     item.innerHTML=`
       <div class="li-ico" style="font-size:15px;font-weight:700;color:var(--brand)">${ini}</div>
       <div class="li-body">
-        <div class="li-name">${cli.nombre} ${cli.apellido||''}</div>
-        <div class="li-meta">${cli.cedula?cli.cedula+' · ':''}${cli.telefono||'Sin teléfono'}</div>
+        <div class="li-name">${esc(cli.nombre+' '+(cli.apellido||''))}</div>
+        <div class="li-meta">${cli.cedula?esc(cli.cedula)+' · ':''}${esc(cli.telefono||'Sin teléfono')}</div>
         <div class="li-meta" style="margin-top:2px;display:flex;gap:10px;flex-wrap:wrap">
           <span style="color:var(--ok);font-weight:600">Total: ${euro(_totalCli)}</span>
           <span>Última compra: ${_ultimaCli}</span>
@@ -7248,11 +7358,11 @@ function verCliente(idx){
   qs('#mvc-title').textContent=c.nombre+' '+(c.apellido||'');
   qs('#mvc-body').innerHTML=`
     <div class="frow" style="margin-bottom:12px">
-      ${c.cedula?`<div><label>Cédula/Doc.</label><strong>${c.cedula}</strong></div>`:''}
-      ${c.telefono?`<div><label>Teléfono</label><strong>${c.telefono}</strong></div>`:''}
+      ${c.cedula?`<div><label>Cédula/Doc.</label><strong>${esc(c.cedula)}</strong></div>`:''}
+      ${c.telefono?`<div><label>Teléfono</label><strong>${esc(c.telefono)}</strong></div>`:''}
     </div>
-    ${c.direccion?`<div class="fg"><label>Dirección</label><p style="font-size:13px">${c.direccion}</p></div>`:''}
-    ${c.notas?`<div class="fg"><label>Notas</label><p style="font-size:13px;color:var(--muted)">${c.notas}</p></div>`:''}
+    ${c.direccion?`<div class="fg"><label>Dirección</label><p style="font-size:13px">${esc(c.direccion)}</p></div>`:''}
+    ${c.notas?`<div class="fg"><label>Notas</label><p style="font-size:13px;color:var(--muted)">${esc(c.notas)}</p></div>`:''}
     <div class="sep"></div>
     <div class="frow" style="margin-bottom:10px">
       <div><label>Pedidos</label><strong>${(c.pedidos||[]).length}</strong></div>
@@ -7480,7 +7590,13 @@ function _dhChartTopProds(data){
     ${labels}
   </svg>`;
 }
+function _dhGreeting(){
+  const g=qs('#dh-greet-name'); if(g) g.textContent='Hola, '+((_pinUsrObj&&_pinUsrObj.nombre)?_pinUsrObj.nombre.split(' ')[0]:(ROLES[CURRENT_ROL]?.label||'')) +' 👋';
+  const d=qs('#dh-greet-date'); if(d) d.textContent=new Date().toLocaleDateString('es-ES',{weekday:'long',day:'numeric',month:'long'});
+  const b=qs('#dh-greet-bcv'); if(b){ const bcv=(typeof getTasaBCV==='function')?getTasaBCV():0; b.textContent= bcv>0 ? ('BCV Bs '+bcv.toFixed(2).replace('.',',')) : 'BCV —'; }
+}
 function renderDash(){
+  _dhGreeting();
   const cat=loadCat(), cli=loadCli();
   const act=cat.filter(p=>p.estado==='activo').length;
   const cats=[...new Set(cat.filter(p=>p.categoria).map(p=>p.categoria))].length;
@@ -7512,7 +7628,7 @@ function renderDash(){
     const ini=(c.nombre[0]||'?').toUpperCase()+(c.apellido?c.apellido[0].toUpperCase():'');
     return `<div class="list-item" style="margin-bottom:8px">
       <div class="li-ico" style="font-size:14px;font-weight:700;color:var(--brand)">${ini}</div>
-      <div class="li-body"><div class="li-name">${c.nombre} ${c.apellido||''}</div><div class="li-meta">${c.cedula||''} ${c.telefono?'· '+c.telefono:''}</div></div>
+      <div class="li-body"><div class="li-name">${esc(c.nombre+' '+(c.apellido||''))}</div><div class="li-meta">${esc(c.cedula||'')} ${c.telefono?'· '+esc(c.telefono):''}</div></div>
     </div>`;
   }).join('') : `<div class="empty" style="padding:24px"><div><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><p><a href="#" onclick="nav('clientes',document.querySelector('[data-v=clientes]'));return false" style="color:var(--brand)">Registrar primer cliente →</a></p></div>`;
 
@@ -7840,6 +7956,122 @@ function pinCorrecto(rol, intento){
   return stored === hashPin(intento);
 }
 
+/* ── Bloqueo anti fuerza-bruta del PIN ──
+   Tras 5 intentos fallidos consecutivos, bloquea la entrada un tiempo creciente
+   (30s, 1min, 2min, 4min... tope 5min). Se resetea al acertar el PIN. */
+const LS_PIN_LOCK = 'POS.pin_lock';
+function _pinLockGet(){ try{ return JSON.parse(localStorage.getItem(LS_PIN_LOCK)||'{}'); }catch(e){ return {}; } }
+function _pinLockSet(o){ try{ localStorage.setItem(LS_PIN_LOCK, JSON.stringify(o)); }catch(e){} }
+function _pinLockRestanteMs(){
+  const l=_pinLockGet();
+  if(!l.bloqueadoHasta) return 0;
+  return Math.max(0, l.bloqueadoHasta - Date.now());
+}
+function _pinLockRegistrarFallo(){
+  const l=_pinLockGet();
+  const intentos=(l.intentos||0)+1;
+  let bloqueadoHasta=l.bloqueadoHasta||0;
+  if(intentos>=5){
+    const nivel = (l.nivel||0)+1;
+    const segundos = Math.min(300, 30*Math.pow(2,nivel-1));
+    bloqueadoHasta = Date.now() + segundos*1000;
+    _pinLockSet({ intentos:0, nivel, bloqueadoHasta });
+  } else {
+    _pinLockSet({ intentos, nivel:l.nivel||0, bloqueadoHasta });
+  }
+}
+function _pinLockResetear(){ _pinLockSet({ intentos:0, nivel:0, bloqueadoHasta:0 }); }
+
+/* ── Autenticación real (Supabase Auth) ──
+   Esta capa es la que de verdad controla el acceso a los datos (Supabase RLS
+   exige sesión autenticada). El PIN de arriba sigue existiendo, pero ahora es
+   solo un bloqueo rápido de pantalla para el día a día — quien entra aquí ya
+   pasó por un login real con su correo y contraseña. */
+function _authMostrarPantalla(){ const el=qs('#auth-screen'); if(el) el.style.display='flex'; }
+function _authOcultarPantalla(){ const el=qs('#auth-screen'); if(el) el.style.display='none'; }
+
+async function authLogin(){
+  const email=(qs('#auth_email')?.value||'').trim();
+  const pass = qs('#auth_pass')?.value||'';
+  const errEl=qs('#auth-error');
+  if(errEl) errEl.textContent='';
+  if(!email || !pass){ if(errEl) errEl.textContent='Ingresa tu correo y contraseña.'; return; }
+  const btn=qs('#auth-login-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Entrando…'; }
+  try{
+    const { error } = await SUPA.auth.signInWithPassword({ email, password: pass });
+    if(error){
+      if(errEl) errEl.textContent = 'Correo o contraseña incorrectos.';
+      return;
+    }
+    _authOcultarPantalla();
+    await _authAplicarUsuarioDesdeSesion();
+  } catch(e){
+    if(errEl) errEl.textContent = 'No se pudo conectar. Revisa tu internet.';
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent='Entrar'; }
+  }
+}
+
+/* Tras un login real (o al recuperar sesión al abrir la app), busca el usuario de
+   GestioMada enlazado a esa cuenta (usuarios.auth_uid) y entra directo con su rol
+   y permisos — sin pedirle tocar su nombre ni el PIN otra vez. Si esa cuenta de
+   Supabase Auth todavía no está enlazada a ningún usuario (ej. se creó el login
+   pero falta vincularlo en Configuración → Usuarios), no rompe nada: simplemente
+   se muestra la pantalla de selección de siempre como respaldo. */
+async function _authAplicarUsuarioDesdeSesion(){
+  try{
+    const { data:{ user } } = await SUPA.auth.getUser();
+    if(!user) return false;
+    let u = loadUsuarios().find(x=>x.auth_uid===user.id && x.estado==='activo');
+    if(!u){
+      const { data, error } = await SUPA.from('usuarios').select('*').eq('auth_uid', user.id).eq('estado','activo').maybeSingle();
+      if(!error && data) u = data;
+    }
+    if(!u) return false;
+    CURRENT_ROL     = u.rol;
+    CURRENT_USR_ID  = u.id;
+    CURRENT_USR_NOM = u.nombre;
+    guardarSesionRol(CURRENT_ROL, CURRENT_USR_ID, CURRENT_USR_NOM);
+    desbloquearPantalla();
+    if(typeof aplicarPermisos==='function') aplicarPermisos();
+    return true;
+  }catch(e){ return false; }
+}
+
+async function authOlvidoPass(){
+  const email=(qs('#auth_email')?.value||'').trim();
+  if(!email){ toast('Escribe tu correo primero','warn'); return; }
+  try{
+    const { error } = await SUPA.auth.resetPasswordForEmail(email);
+    if(error){ toast('No se pudo enviar el correo de recuperación','warn'); return; }
+    toast('Te enviamos un enlace a tu correo para restablecer la contraseña','ok');
+  }catch(e){ toast('No se pudo conectar','warn'); }
+}
+
+async function authLogout(){
+  try{ await SUPA.auth.signOut(); }catch(e){}
+  localStorage.removeItem(LS_SESION_R);
+  location.reload();
+}
+
+async function _authInit(){
+  let haySesion=false;
+  try{
+    const { data:{ session } } = await SUPA.auth.getSession();
+    if(session){ haySesion=true; _authOcultarPantalla(); } else { _authMostrarPantalla(); }
+  }catch(e){
+    // Sin conexión o falla al verificar: dejamos ver el login, no asumimos acceso.
+    _authMostrarPantalla();
+  }
+  if(haySesion) await _authAplicarUsuarioDesdeSesion();
+  SUPA.auth.onAuthStateChange((event)=>{
+    if(event==='SIGNED_OUT') _authMostrarPantalla();
+  });
+  _authReadyResolve();
+}
+document.addEventListener('DOMContentLoaded', _authInit);
+
 let CURRENT_ROL = localStorage.getItem(LS_ROL) || 'admin';
 let _pinBuffer = '';
 let _pinRolTarget = '';
@@ -7903,8 +8135,32 @@ function sesionValida(){
 function bloquearPantalla(){
   if(_sesionTimer) clearTimeout(_sesionTimer);
   localStorage.removeItem(LS_SESION_R);
+  // Si ya sabemos quién eres (por el login real con Supabase Auth), no hace
+  // falta preguntarte de nuevo — se muestra solo tu propia tarjeta (no la
+  // grilla con todo el equipo) y se pide directo tu PIN.
+  const u = CURRENT_USR_ID ? loadUsuarios().find(x=>x.id===CURRENT_USR_ID) : null;
+  if(u && u.auth_uid){
+    renderLockScreenUsuarioActual(u);
+    qs('#lock-screen').classList.add('visible');
+    abrirPinModal(u.rol, 'entrar', u);
+    return;
+  }
   renderLockScreen();
   qs('#lock-screen').classList.add('visible');
+}
+function renderLockScreenUsuarioActual(u){
+  const grid = qs('#lock-roles-grid'); if(!grid) return;
+  window._lockUsuarios = [u];
+  grid.style.gridTemplateColumns = '1fr';
+  grid.style.maxWidth = '220px';
+  const hint = qs('#lock-hint'); if(hint) hint.textContent = 'Ingresa tu PIN para continuar';
+  const iniciales = u.nombre.trim().split(' ').map(p=>p[0]).join('').toUpperCase().slice(0,2);
+  const rolDesc = ROLES[u.rol]?.label || u.rol;
+  grid.innerHTML = `<div class="lock-rol-card" onclick="abrirPinModal('${u.rol}','entrar',window._lockUsuarios[0])">
+    <div class="lock-rol-ico" style="background:#ea8db9;border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;margin:0 auto 6px">${esc(iniciales)}</div>
+    <div class="lock-rol-name">${esc(u.nombre.split(' ')[0])}</div>
+    <div class="lock-rol-desc">${esc(rolDesc)}</div>
+  </div>`;
 }
 function desbloquearPantalla(){
   qs('#lock-screen').classList.remove('visible');
@@ -7926,8 +8182,8 @@ function renderLockScreen(){
       const rolDesc = ROLES[u.rol]?.label || u.rol;
       return `<div class="lock-rol-card" onclick="abrirPinModalUsuario(${idx})">
         <div class="lock-rol-ico" style="background:${grad};border-radius:50%;width:44px;height:44px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;color:#fff;margin:0 auto 6px">${iniciales}</div>
-        <div class="lock-rol-name">${u.nombre.split(' ')[0]}</div>
-        <div class="lock-rol-desc">${rolDesc}</div>
+        <div class="lock-rol-name">${esc(u.nombre.split(' ')[0])}</div>
+        <div class="lock-rol-desc">${esc(rolDesc)}</div>
       </div>`;
     }).join('');
   } else {
@@ -8087,6 +8343,14 @@ function verificarPin(){
     return;
   }
   // Modo entrar
+  const _restanteMs = _pinLockRestanteMs();
+  if(_restanteMs>0){
+    const seg=Math.ceil(_restanteMs/1000);
+    qs('#pin-error').textContent = `Demasiados intentos. Espera ${seg>=60?Math.ceil(seg/60)+' min':seg+'s'}.`;
+    const teclado = qs('.pin-teclado'); if(teclado){ teclado.classList.add('pin-shake'); setTimeout(()=>teclado.classList.remove('pin-shake'),400); }
+    setTimeout(()=>{ _pinBuffer=''; actualizarPinDots(); },800);
+    return;
+  }
   let correcto = false;
   if(_pinUsrObj){
     // Validar contra PIN del usuario real
@@ -8095,6 +8359,7 @@ function verificarPin(){
     correcto = pinCorrecto(_pinRolTarget, _pinBuffer);
   }
   if(correcto){
+    _pinLockResetear();
     CURRENT_ROL = _pinRolTarget;
     if(_pinUsrObj){
       CURRENT_USR_ID  = _pinUsrObj.id;
@@ -8110,6 +8375,7 @@ function verificarPin(){
     const nombreBienvenida = _pinUsrObj ? _pinUsrObj.nombre.split(' ')[0] : (ROLES[CURRENT_ROL]?.ico||'')+' '+ROLES[CURRENT_ROL]?.label;
     toast('Bienvenido, '+nombreBienvenida,'ok');
   } else {
+    _pinLockRegistrarFallo();
     for(let i=0;i<4;i++){ const d=qs('#pd'+i); if(d) d.classList.add('error'); }
     const teclado = qs('.pin-teclado'); if(teclado){ teclado.classList.add('pin-shake'); setTimeout(()=>teclado.classList.remove('pin-shake'),400); }
     qs('#pin-error').textContent = 'PIN incorrecto. Inténtalo de nuevo.';
@@ -8479,16 +8745,12 @@ function aplicarPermisos(){
     const btnStyle='width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border:0;background:transparent;color:var(--ink);font-family:inherit;font-size:13px;font-weight:500;text-align:left;cursor:pointer;border-radius:8px;transition:background .12s';
     const hoverBg='#fdf1f6';
     pillMenu.innerHTML = `
-      <button style="${btnStyle}" onmouseover="this.style.background='${hoverBg}'" onmouseout="this.style.background='transparent'" onclick="abrirSelectorRol();cerrarRolMenu()">
-        <span style="display:inline-flex;width:20px;height:20px;color:var(--brand)">${rolIcoSvg('users',18,18)}</span>
-        <span>Cambiar usuario</span>
-      </button>
       <button style="${btnStyle}" onmouseover="this.style.background='${hoverBg}'" onmouseout="this.style.background='transparent'" onclick="bloquearPantalla();cerrarRolMenu()">
         <span style="display:inline-flex;width:20px;height:20px;color:var(--brand)">${rolIcoSvg('lock',18,18)}</span>
         <span>Bloquear pantalla</span>
       </button>
       <div style="border-top:1px solid var(--border,#e5e7eb);margin:4px 0"></div>
-      <button style="${btnStyle};color:var(--danger)" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='transparent'" onclick="bloquearPantalla();cerrarRolMenu()">
+      <button style="${btnStyle};color:var(--danger)" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='transparent'" onclick="authLogout();cerrarRolMenu()">
         <span style="display:inline-flex;width:20px;height:20px;color:var(--danger)">${rolIcoSvg('power',18,18)}</span>
         <span>Cerrar sesión</span>
       </button>`;
@@ -8540,13 +8802,16 @@ document.addEventListener('DOMContentLoaded',()=>{
   // Defer badge/dash update until after full DOM paint
   _offlineInit();
   _migrarFotosBase64();
-  requestAnimationFrame(()=>{
+  requestAnimationFrame(async ()=>{
     updateBadges();
     renderDash();
     aplicarMetodosActivos();
     renderCfgPins();
     // Verificar cierre automático de caja (sesión de día anterior)
     _verificarCierreAutomatico();
+    // Esperar a que se resuelva el login real (Supabase Auth) antes de decidir
+    // si hace falta pedir rol/PIN — evita el parpadeo de la pantalla de selección.
+    await _authReadyPromise;
     // Verificar sesión activa (válida y no expirada)
     const sesion = sesionValida();
     if(sesion && ROLES[sesion.rol]){
@@ -10359,7 +10624,7 @@ function cotImprimir(id){
   const itemsHtml = itemsRecalc.map((it,i) => {
     if(enBs && bcvR > 0){
       return `<tr style="background:${i%2===0?'var(--card)':'var(--bg)'}">
-        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">${it.nombre||''}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">${esc(it.nombre||'')}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px">${it.cant}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px">
           <div style="font-weight:600">${fmtBsL(it.pvCotBs)}</div>
@@ -10372,7 +10637,7 @@ function cotImprimir(id){
       </tr>`;
     } else {
       return `<tr style="background:${i%2===0?'var(--card)':'var(--bg)'}">
-        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">${it.nombre||''}</td>
+        <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">${esc(it.nombre||'')}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px">${it.cant}</td>
         <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px">
           <div style="font-weight:600">${fmtUsd(it.pvCotUsd)}</div>
@@ -10472,7 +10737,7 @@ function cotImprimir(id){
   if(!win){ toast('Activa las ventanas emergentes para imprimir','warn'); return; }
 
   win.document.write(`<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">
-  <title>Cotización — ${clienteNom}</title>
+  <title>Cotización — ${esc(clienteNom)}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0}
     body{font-family:'Segoe UI',Arial,sans-serif;font-size:13px;color:#222;background:#fff;padding:0}
@@ -10507,12 +10772,12 @@ function cotImprimir(id){
     <div class="header-row">
       <div>
         ${logoHtml}
-        <div class="neg-name">${neg}</div>
+        <div class="neg-name">${esc(neg)}</div>
         <div class="neg-sub">
-          ${rif?'RIF: '+rif+'<br>':''}
-          ${dir?dir+'<br>':''}
-          ${tel?'Tel/WhatsApp: '+tel+'<br>':''}
-          ${instagram?'Instagram: '+instagram:''}
+          ${rif?'RIF: '+esc(rif)+'<br>':''}
+          ${dir?esc(dir)+'<br>':''}
+          ${tel?'Tel/WhatsApp: '+esc(tel)+'<br>':''}
+          ${instagram?'Instagram: '+esc(instagram):''}
         </div>
       </div>
       <div>
@@ -10524,7 +10789,7 @@ function cotImprimir(id){
     <div class="info-grid">
       <div class="info-col">
         <div class="label">Cliente</div>
-        <div class="val">${clienteNom}${clienteTel?'<br>'+clienteTel:''}</div>
+        <div class="val">${esc(clienteNom)}${clienteTel?'<br>'+esc(clienteTel):''}</div>
       </div>
       <div class="info-col">
         <div class="label">Fecha</div>
@@ -10554,7 +10819,7 @@ function cotImprimir(id){
 
     ${c.notas ? `<div class="conditions" style="margin-top:16px">
       <div class="label">Notas</div>
-      <div>${c.notas}</div>
+      <div>${esc(c.notas)}</div>
     </div>` : ''}
 
     <div class="validez">
@@ -11326,7 +11591,7 @@ function verVenta(idx){
   qs('#mvven-title').textContent=v.numero+(v.cliente?' — '+v.cliente.nombre+' '+v.cliente.apellido:'');
   const itemsHtml=v.items.map(it=>`
     <div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f3f3f8">
-      <div><div style="font-weight:600;font-size:13px">${it.nombre}</div><div style="font-size:11px;color:var(--muted)">×${it.cant} · ${euro(it.precio_unit)}</div></div>
+      <div><div style="font-weight:600;font-size:13px">${esc(it.nombre)}</div><div style="font-size:11px;color:var(--muted)">×${it.cant} · ${euro(it.precio_unit)}</div></div>
       <div style="font-weight:700">${euro(it.precio_unit*it.cant)}</div>
     </div>`).join('');
   const _vcBcv = getTasaBCV();
@@ -11346,7 +11611,7 @@ function verVenta(idx){
       <span class="chip chip-info">${METODOS_LABEL[v.metodo]||v.metodo}</span>
       ${v.canal?`<span class="chip" style="${CANALES_COLOR[v.canal]||CANALES_COLOR.local}">${CANALES_LABEL[v.canal]||CANALES_LABEL.local}</span>`:''}
       <span class="chip">${new Date(v.fecha).toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'})}</span>
-      ${v.usuario_nom?`<span class="chip" style="background:#f0f4ff;color:#3b5bdb;font-weight:600">👤 ${v.usuario_nom}</span>`:''}
+      ${v.usuario_nom?`<span class="chip" style="background:#f0f4ff;color:#3b5bdb;font-weight:600">👤 ${esc(v.usuario_nom)}</span>`:''}
       ${v.estado==='anulada'?'<span class="chip chip-danger">ANULADA</span>':''}
     </div>
     <div class="card" style="padding:12px;margin-bottom:10px">
@@ -11367,7 +11632,7 @@ function verVenta(idx){
       <div><label>Utilidad</label><strong style="color:var(--ok)">${euro(v.utilidad||0)}</strong></div>
     </div>
     ${_vcBcv>0?`<div style="font-size:11px;color:var(--muted);margin-top:8px;background:var(--bg);padding:6px 10px;border-radius:8px">Tasa BCV al momento: ${fmtBs(_vcBcv)} Bs/$</div>`:''}
-    ${v.notas?`<div style="margin-top:10px"><label>Notas</label><p style="font-size:13px">${v.notas}</p></div>`:''}` ;
+    ${v.notas?`<div style="margin-top:10px"><label>Notas</label><p style="font-size:13px">${esc(v.notas)}</p></div>`:''}` ;
   openModal('m-ver-ven');
 }
 
@@ -11405,7 +11670,7 @@ function imprimirComprobante(){
     const ptCliente = puCliente * it.cant;
     const ptBs      = ptCliente * bcvRec;
     return `<tr style="background:${i%2===0?'var(--card)':'var(--bg)'}">
-      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">${it.nombre}</td>
+      <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;font-size:13px">${esc(it.nombre)}</td>
       <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:center;font-size:13px">${it.cant}</td>
       <td style="padding:9px 12px;border-bottom:1px solid #f0f0f0;text-align:right;font-size:13px">
         <div style="font-weight:600">${fmtUsd(puCliente)}</div>
@@ -11492,12 +11757,12 @@ function imprimirComprobante(){
     <div class="header-row">
       <div>
         ${logoHtml}
-        <div class="neg-name">${neg}</div>
+        <div class="neg-name">${esc(neg)}</div>
         <div class="neg-sub">
-          ${rif?'RIF: '+rif+'<br>':''}
-          ${dir?dir+'<br>':''}
-          ${tel?'Tel/WhatsApp: '+tel+'<br>':''}
-          ${instagram?'Instagram: '+instagram:''}
+          ${rif?'RIF: '+esc(rif)+'<br>':''}
+          ${dir?esc(dir)+'<br>':''}
+          ${tel?'Tel/WhatsApp: '+esc(tel)+'<br>':''}
+          ${instagram?'Instagram: '+esc(instagram):''}
         </div>
       </div>
       <div>
@@ -11509,8 +11774,8 @@ function imprimirComprobante(){
     <div class="info-grid">
       <div class="info-col">
         <div class="label">Cliente</div>
-        <div class="val">${v.cliente?(v.cliente.nombre+' '+(v.cliente.apellido||'')):'—'}<br>
-        ${v.cliente?.cedula||''} ${v.cliente?.telefono?'<br>'+v.cliente.telefono:''}</div>
+        <div class="val">${v.cliente?esc(v.cliente.nombre+' '+(v.cliente.apellido||'')):'—'}<br>
+        ${esc(v.cliente?.cedula||'')} ${v.cliente?.telefono?'<br>'+esc(v.cliente.telefono):''}</div>
       </div>
       <div class="info-col">
         <div class="label">Fecha</div>
@@ -11525,7 +11790,7 @@ function imprimirComprobante(){
         <div class="val">${metLbl}</div>
         <div class="label" style="margin-top:10px">Canal</div>
         <div class="val">${CANALES_LABEL[v.canal]||CANALES_LABEL.local}</div>
-        ${v.usuario_nom?`<div class="label" style="margin-top:10px">Atendido por</div><div class="val">${v.usuario_nom}</div>`:''}
+        ${v.usuario_nom?`<div class="label" style="margin-top:10px">Atendido por</div><div class="val">${esc(v.usuario_nom)}</div>`:''}
       </div>
     </div>
 
@@ -11546,7 +11811,7 @@ function imprimirComprobante(){
       ${(v.vuelto||0)>0?`<div class="cobro-row"><span>Vuelto</span><strong>${metodoBsRec&&bcvRec>0?fmtBs(v.vuelto*factorPrecio*bcvRec):fmtUsd(v.vuelto)}</strong></div>`:''}
     </div>
 
-    ${v.notas?`<div style="margin-top:14px;padding:10px 14px;border-left:3px solid var(--brand);background:rgba(234,141,185,.08);font-size:12px;color:var(--ink)"><strong>Notas:</strong> ${v.notas}</div>`:''}
+    ${v.notas?`<div style="margin-top:14px;padding:10px 14px;border-left:3px solid var(--brand);background:rgba(234,141,185,.08);font-size:12px;color:var(--ink)"><strong>Notas:</strong> ${esc(v.notas)}</div>`:''}
     ${slogan?`<div class="slogan">${slogan}</div>`:''}
 
     <div class="conditions">
@@ -13297,16 +13562,16 @@ function renderPedidos(){
       ${_pedSeleccionMultiple?`<div style="display:flex;align-items:center;padding-right:2px" onclick="event.stopPropagation();_pedToggleSeleccion('${p.id}')"><input type="checkbox" ${seleccionado?'checked':''} style="width:18px;height:18px;cursor:pointer" onclick="event.stopPropagation();_pedToggleSeleccion('${p.id}')"/></div>`:''}
       <div class="li-ico" style="background:#fdf1f6;font-size:13px;font-weight:700;color:var(--brand)">${p.numero.replace('PED-','#')}</div>
       <div class="li-body" style="min-width:180px">
-        <div class="li-name">${p.cliente?(p.cliente.nombre+' '+p.cliente.apellido):'Sin cliente'}</div>
+        <div class="li-name">${p.cliente?esc(p.cliente.nombre+' '+p.cliente.apellido):'Sin cliente'}</div>
         <div class="li-meta" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:3px">
           <span class="chip ${CHIP_EST[p.estado]||'chip-warn'}">${PED_ESTADOS[p.estado]||p.estado}</span>
           <span class="chip ${CHIP_PAGO[ep]||'chip-warn'}">${PED_PAGOS[ep]||ep}</span>
           ${vencido?'<span class="chip chip-danger">Vencido</span>':''}
           ${p.canal?`<span class="chip" style="font-size:10px;${CANALES_COLOR[normalizarCanalVenta(p.canal)]||CANALES_COLOR.local}">${CANALES_LABEL[normalizarCanalVenta(p.canal)]||CANALES_LABEL.local}</span>`:''}
-          ${p.usuario_nom?`<span class="chip" style="font-size:10px;background:#f0f4ff;color:#3b5bdb">👤 ${p.usuario_nom.split(' ')[0]}</span>`:''}
+          ${p.usuario_nom?`<span class="chip" style="font-size:10px;background:#f0f4ff;color:#3b5bdb">👤 ${esc(p.usuario_nom.split(' ')[0])}</span>`:''}
         </div>
-        ${(p.items&&p.items.length)?`<div class="ped-items-preview">${p.items.map(it=>`<span style="display:inline-block;margin-right:6px">${it.cant}× ${it.nombre}${(it.talla||it.color||it.caracteristica)?` <span style="font-size:10px;color:#be185d;font-weight:600">${[it.talla,it.color,it.caracteristica].filter(Boolean).join(' · ')}</span>`:''}</span>`).join('')}</div>`:''}
-        ${(()=>{ const notasLimpias=(p.notas||'').split(' | ').filter(s=>!s.startsWith('Delivery:')&&!s.startsWith('Envío:')&&!s.startsWith('Diseño:')&&!s.startsWith('Extras:')).join(' | ').trim(); return notasLimpias?`<div class="ped-items-preview" style="color:#e53e3e;margin-top:2px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:3px"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>${notasLimpias}</div>`:''; })()}
+        ${(p.items&&p.items.length)?`<div class="ped-items-preview">${p.items.map(it=>`<span style="display:inline-block;margin-right:6px">${it.cant}× ${esc(it.nombre)}${(it.talla||it.color||it.caracteristica)?` <span style="font-size:10px;color:#be185d;font-weight:600">${esc([it.talla,it.color,it.caracteristica].filter(Boolean).join(' · '))}</span>`:''}</span>`).join('')}</div>`:''}
+        ${(()=>{ const notasLimpias=(p.notas||'').split(' | ').filter(s=>!s.startsWith('Delivery:')&&!s.startsWith('Envío:')&&!s.startsWith('Diseño:')&&!s.startsWith('Extras:')).join(' | ').trim(); return notasLimpias?`<div class="ped-items-preview" style="color:#e53e3e;margin-top:2px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:3px"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>${esc(notasLimpias)}</div>`:''; })()}
         ${(()=>{const _ex=[];if(_numPedido(p.delivery_usd)>0)_ex.push('Delivery');if(_numPedido(p.envio_usd)>0)_ex.push('Envío');if(_numPedido(p.diseno_usd)>0)_ex.push('Diseño');return _ex.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">${_ex.map(e=>`<span class="chip" style="font-size:9px;background:#f0eaff;color:#7c3aed">${e}</span>`).join('')}</div>`:''})()}
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;min-width:120px">
@@ -13411,14 +13676,14 @@ function mostrarKpiDetalle(grupo, titulo){
   // Resumen de productos
   let resumenHtml='<div style="margin-bottom:14px"><div style="font-weight:700;font-size:13px;margin-bottom:8px;color:var(--brand)">Resumen de productos</div>';
   prods.forEach(([nom,cant])=>{
-    resumenHtml+=`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;border-bottom:1px solid rgba(0,0,0,.04)"><span>${nom}</span><span style="font-weight:700;color:var(--brand)">×${cant}</span></div>`;
+    resumenHtml+=`<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:13px;border-bottom:1px solid rgba(0,0,0,.04)"><span>${esc(nom)}</span><span style="font-weight:700;color:var(--brand)">×${cant}</span></div>`;
   });
   resumenHtml+='</div>';
 
   // Detalle por pedido
   const pedList=pedidos.map(p=>{
-    const cli=p.cliente?(p.cliente.nombre+(p.cliente.apellido?' '+p.cliente.apellido:'')).trim():'Sin cliente';
-    const items=(p.items||[]).map(it=>`${it.cant}× ${it.nombre}`).join(', ');
+    const cli=esc(p.cliente?(p.cliente.nombre+(p.cliente.apellido?' '+p.cliente.apellido:'')).trim():'Sin cliente');
+    const items=esc((p.items||[]).map(it=>`${it.cant}× ${it.nombre}`).join(', '));
     const _extKpi=[];if(_numPedido(p.delivery_usd)>0)_extKpi.push('Delivery');if(_numPedido(p.envio_usd)>0)_extKpi.push('Envío');if(_numPedido(p.diseno_usd)>0)_extKpi.push('Diseño');
     const extKpiTag=_extKpi.length?' · <span style="color:#7c3aed;font-weight:600">'+_extKpi.join(' · ')+'</span>':'';
     const fecha=p.fecha_entrega?` · Entrega: ${fmtFecha(p.fecha_entrega)}`:'';
@@ -13485,7 +13750,7 @@ td.center,th.center{text-align:center}
   // Header
   html+=`<div class="header">`;
   if(logo) html+=`<img src="${logo}" alt=""/>`;
-  if(negocio.nombre) html+=`<h2>${negocio.nombre}</h2>`;
+  if(negocio.nombre) html+=`<h2>${esc(negocio.nombre)}</h2>`;
   html+=`<p>${titulo} · ${new Date().toLocaleDateString('es-VE')} · ${pedidos.length} pedidos</p></div>`;
 
   // Tabla
@@ -13503,10 +13768,10 @@ td.center,th.center{text-align:center}
   pedidos.forEach(p=>{
     const ep=estadoPago(p);
     const totalCDif=(typeof pedidoTotalCDifCalc==='function')?pedidoTotalCDifCalc(p,dif):(p.total_cdif||(p.total*(dif>0?dif:1)));
-    const cli=p.cliente?(p.cliente.nombre+' '+(p.cliente.apellido||'')).trim():'—';
-    const items=(p.items||[]).map(it=>`${it.cant}× ${it.nombre}`).join(', ');
+    const cli=esc(p.cliente?(p.cliente.nombre+' '+(p.cliente.apellido||'')).trim():'—');
+    const items=esc((p.items||[]).map(it=>`${it.cant}× ${it.nombre}`).join(', '));
     const _notasPrint=(p.notas||'').split(' | ').filter(s=>!s.startsWith('Delivery:')&&!s.startsWith('Envío:')&&!s.startsWith('Diseño:')&&!s.startsWith('Extras:')).join(' | ').trim();
-    const notasHtml=_notasPrint?'<br><span style="font-size:10px;color:#c0392b;font-weight:600"><svg viewBox=\"0 0 24 24\" width=\"11\" height=\"11\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"display:inline-block;vertical-align:middle;margin-right:2px\"><path d=\"M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2\"/><rect x=\"9\" y=\"3\" width=\"6\" height=\"4\" rx=\"1\"/><line x1=\"9\" y1=\"12\" x2=\"15\" y2=\"12\"/><line x1=\"9\" y1=\"16\" x2=\"13\" y2=\"16\"/></svg>'+_notasPrint+'</span>':'';
+    const notasHtml=_notasPrint?'<br><span style="font-size:10px;color:#c0392b;font-weight:600"><svg viewBox=\"0 0 24 24\" width=\"11\" height=\"11\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"display:inline-block;vertical-align:middle;margin-right:2px\"><path d=\"M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2\"/><rect x=\"9\" y=\"3\" width=\"6\" height=\"4\" rx=\"1\"/><line x1=\"9\" y1=\"12\" x2=\"15\" y2=\"12\"/><line x1=\"9\" y1=\"16\" x2=\"13\" y2=\"16\"/></svg>'+esc(_notasPrint)+'</span>':'';
     const _extPrint=[];if(_numPedido(p.delivery_usd)>0)_extPrint.push('Delivery');if(_numPedido(p.envio_usd)>0)_extPrint.push('Envío');if(_numPedido(p.diseno_usd)>0)_extPrint.push('Diseño');
     const extrasHtml=_extPrint.length?'<br><span style="font-size:9px;color:#7c3aed;font-weight:600">'+_extPrint.join(' · ')+'</span>':'';
     const estCls={pendiente:'b-pend',produccion:'b-prod',impresion:'b-impr',listo:'b-listo',entregado:'b-entreg',cancelado:'b-cancel'}[p.estado]||'b-pend';
@@ -13515,7 +13780,7 @@ td.center,th.center{text-align:center}
     html+=`<tr>
       <td class="check-col"><span class="check-box"></span></td>
       <td style="font-weight:700;white-space:nowrap">${p.numero.replace('PED-','#')}</td>
-      <td style="font-weight:600">${cli}${p.cliente?.telefono?'<br><span style="font-size:10px;color:#888">'+p.cliente.telefono+'</span>':''}</td>
+      <td style="font-weight:600">${cli}${p.cliente?.telefono?'<br><span style="font-size:10px;color:#888">'+esc(p.cliente.telefono)+'</span>':''}</td>
       <td class="productos">${items}${extrasHtml}${notasHtml}</td>
       <td class="center"><span class="badge ${estCls}">${PED_ESTADOS[p.estado]||p.estado}</span></td>
       <td class="center"><span class="badge ${pagCls}">${PED_PAGOS[ep]||ep}</span></td>
@@ -13663,9 +13928,9 @@ function imprimirPedido(){
   const negocio=JSON.parse(localStorage.getItem('POS.negocio')||'{}');
   const logo=negocio.logo_url||negocio.logo||'';
 
-  const cli=p.cliente?(p.cliente.nombre+' '+(p.cliente.apellido||'')).trim():'Sin cliente';
-  const cliTel=p.cliente?.telefono||'';
-  const cliCed=p.cliente?.cedula||'';
+  const cli=esc(p.cliente?(p.cliente.nombre+' '+(p.cliente.apellido||'')).trim():'Sin cliente');
+  const cliTel=esc(p.cliente?.telefono||'');
+  const cliCed=esc(p.cliente?.cedula||'');
 
   let html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>${p.numero}</title>
 <style>
@@ -13698,8 +13963,8 @@ td.right,th.right{text-align:right}
   // Header
   html+=`<div class="header">`;
   if(logo) html+=`<img src="${logo}" alt="Logo"/>`;
-  if(negocio.nombre) html+=`<h2>${negocio.nombre}</h2>`;
-  html+=`<p>${[negocio.rif,negocio.instagram,negocio.telefono].filter(Boolean).join(' · ')}</p>`;
+  if(negocio.nombre) html+=`<h2>${esc(negocio.nombre)}</h2>`;
+  html+=`<p>${esc([negocio.rif,negocio.instagram,negocio.telefono].filter(Boolean).join(' · '))}</p>`;
   html+=`</div>`;
 
   // Info pedido
@@ -13709,7 +13974,7 @@ td.right,th.right{text-align:right}
     <div><strong>Cliente:</strong> ${cli}</div>
     <div><strong>Teléfono:</strong> ${cliTel||'—'}</div>
     ${cliCed?`<div><strong>Cédula:</strong> ${cliCed}</div>`:'<div></div>'}
-    ${p.canal?`<div><strong>Canal:</strong> ${p.canal}</div>`:'<div></div>'}
+    ${p.canal?`<div><strong>Canal:</strong> ${esc(p.canal)}</div>`:'<div></div>'}
     ${p.fecha_pedido?`<div><strong>Fecha pedido:</strong> ${fmtFecha(p.fecha_pedido)}</div>`:''}
     ${p.fecha_entrega?`<div><strong>Fecha entrega:</strong> ${fmtFecha(p.fecha_entrega)}</div>`:''}
   </div>`;
@@ -13718,7 +13983,7 @@ td.right,th.right{text-align:right}
   html+=`<table><thead><tr><th>Producto</th><th class="right">Cant.</th><th class="right">P. Unit.</th><th class="right">Subtotal</th></tr></thead><tbody>`;
   (p.items||[]).forEach(it=>{
     const pu=it.precio_unit||0;
-    html+=`<tr><td>${it.nombre}</td><td class="right">${it.cant}</td><td class="right">${euro(pu)}</td><td class="right">${euro(pu*it.cant)}</td></tr>`;
+    html+=`<tr><td>${esc(it.nombre)}</td><td class="right">${it.cant}</td><td class="right">${euro(pu)}</td><td class="right">${euro(pu*it.cant)}</td></tr>`;
   });
   html+=`</tbody></table>`;
 
@@ -13740,7 +14005,7 @@ td.right,th.right{text-align:right}
       const esBsPg=['efectivo_bs','pago_movil','transferencia'].includes(pg.metodo);
       let montoStr=euro(pg.monto);
       if(esBsPg && pg.monto_bs_ingresado>0) montoStr='Bs '+fmtBs(pg.monto_bs_ingresado);
-      html+=`<div class="pago-row"><span>${fmtFecha(pg.fecha.slice(0,10))} · ${METODOS[pg.metodo]||pg.metodo}${pg.nota?' · '+pg.nota:''}</span><span style="font-weight:600">${montoStr}</span></div>`;
+      html+=`<div class="pago-row"><span>${fmtFecha(pg.fecha.slice(0,10))} · ${esc(METODOS[pg.metodo]||pg.metodo)}${pg.nota?' · '+esc(pg.nota):''}</span><span style="font-weight:600">${montoStr}</span></div>`;
     });
     html+=`<div class="pago-row" style="border-top:1px solid #ccc;font-weight:700"><span>Pagado:</span><span>${euro(pag)}</span></div>`;
     if(restCDif>PED_SALDO_TOLERANCIA){
@@ -13755,7 +14020,7 @@ td.right,th.right{text-align:right}
   }
 
   // Notas
-  if(p.notas) html+=`<div class="notas"><strong>Notas:</strong> ${p.notas}</div>`;
+  if(p.notas) html+=`<div class="notas"><strong>Notas:</strong> ${esc(p.notas)}</div>`;
 
   // Footer
   html+=`<div class="footer">Impreso desde GestioMada · ${new Date().toLocaleString('es-VE')}</div>`;
@@ -13826,7 +14091,7 @@ function verPedido(idx){
   const _pedFmtTotal = n => euro(n);
   const itemsHtml=p.items.map(it=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f3f3f8">
-      <div><div style="font-weight:600;font-size:13px">${it.nombre}</div><div style="font-size:11px;color:var(--muted)">×${it.cant} · ${_pedFmtMon(it.precio_unit)}</div>${(it.talla||it.color||it.caracteristica)?`<div style="margin-top:2px;display:flex;gap:3px;flex-wrap:wrap">${[it.talla,it.color,it.caracteristica].filter(Boolean).map(v=>`<span style="font-size:10px;padding:1px 6px;border-radius:999px;background:#ffe3ee;color:#be185d;font-weight:600">${v}</span>`).join('')}</div>`:''}</div>
+      <div><div style="font-weight:600;font-size:13px">${esc(it.nombre)}</div><div style="font-size:11px;color:var(--muted)">×${it.cant} · ${_pedFmtMon(it.precio_unit)}</div>${(it.talla||it.color||it.caracteristica)?`<div style="margin-top:2px;display:flex;gap:3px;flex-wrap:wrap">${[it.talla,it.color,it.caracteristica].filter(Boolean).map(v=>`<span style="font-size:10px;padding:1px 6px;border-radius:999px;background:#ffe3ee;color:#be185d;font-weight:600">${esc(v)}</span>`).join('')}</div>`:''}</div>
       <div style="font-weight:700">${_pedFmtMon(it.precio_unit*it.cant)}</div>
     </div>`).join('');
 
@@ -13850,7 +14115,7 @@ function verPedido(idx){
       : null;
     return `<div style="padding:5px 0;border-bottom:1px solid #f3f3f8;font-size:12px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div>${fmtFecha(pg.fecha.slice(0,10))} · <span class="chip chip-info" style="font-size:10px">${METODOS[pg.metodo]||pg.metodo}</span> ${pg.nota?'· '+pg.nota:''}</div>
+        <div>${fmtFecha(pg.fecha.slice(0,10))} · <span class="chip chip-info" style="font-size:10px">${esc(METODOS[pg.metodo]||pg.metodo)}</span> ${pg.nota?'· '+esc(pg.nota):''}</div>
         <div style="text-align:right;flex-shrink:0;margin-left:8px">
           ${montoBsPago ? `<div style="font-weight:700;color:var(--ok)">Bs ${montoBsPago}</div>` : ''}
           ${montoCDif ? `<div style="font-size:11px;color:#e07ab0;font-weight:600">$ ${montoCDif} c/dif</div>` : `<div style="font-weight:700;color:var(--ok)">${euro(pg.monto)}</div>`}
@@ -13865,7 +14130,7 @@ function verPedido(idx){
   const _cliTel = p.cliente?.telefono||'';
   const _waNum  = _fmtWA(_cliTel);
   const _waMsg  = encodeURIComponent('Hola '+(p.cliente?.nombre||'')+', le contactamos por su pedido '+p.numero+' \uD83D\uDE0A');
-  const _clienteCard = p.cliente ? ('<div class="card" style="padding:12px;margin-bottom:10px;background:var(--bg);border:1.5px solid var(--border)"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div style="display:flex;align-items:center;gap:10px"><div style="width:38px;height:38px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0">'+(p.cliente.nombre[0]||'?').toUpperCase()+'</div><div><div style="font-weight:700;font-size:14px">'+(p.cliente.nombre+' '+(p.cliente.apellido||'')).trim()+'</div><div style="font-size:12px;color:var(--muted)">'+(p.cliente.cedula?p.cliente.cedula+' · ':'')+(_cliTel||'Sin teléfono')+'</div></div></div>'+(_waNum?'<a href="https://wa.me/'+_waNum+'?text='+_waMsg+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;border-radius:20px;padding:7px 14px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> WhatsApp '+_cliTel+'</a>':'<span style="font-size:12px;color:var(--muted)">Sin número</span>')+'</div></div>') : '';
+  const _clienteCard = p.cliente ? ('<div class="card" style="padding:12px;margin-bottom:10px;background:var(--bg);border:1.5px solid var(--border)"><div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px"><div style="display:flex;align-items:center;gap:10px"><div style="width:38px;height:38px;border-radius:50%;background:var(--brand);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px;flex-shrink:0">'+esc((p.cliente.nombre[0]||'?').toUpperCase())+'</div><div><div style="font-weight:700;font-size:14px">'+esc((p.cliente.nombre+' '+(p.cliente.apellido||'')).trim())+'</div><div style="font-size:12px;color:var(--muted)">'+esc((p.cliente.cedula?p.cliente.cedula+' · ':'')+(_cliTel||'Sin teléfono'))+'</div></div></div>'+(_waNum?'<a href="https://wa.me/'+_waNum+'?text='+_waMsg+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;background:#25D366;color:#fff;border-radius:20px;padding:7px 14px;font-weight:700;font-size:13px;text-decoration:none;white-space:nowrap"><svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg> WhatsApp '+esc(_cliTel)+'</a>':'<span style="font-size:12px;color:var(--muted)">Sin número</span>')+'</div></div>') : '';
 
   qs('#mvped-body').innerHTML=`
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
@@ -13874,7 +14139,7 @@ function verPedido(idx){
       ${p.canal?`<span class="chip" style="${CANALES_COLOR[normalizarCanalVenta(p.canal)]||CANALES_COLOR.local}">${CANALES_LABEL[normalizarCanalVenta(p.canal)]||CANALES_LABEL.local}</span>`:''}
       ${p.fecha_entrega?`<span class="chip chip-info">Entrega: ${fmtFecha(p.fecha_entrega)}</span>`:''}
       ${p.fecha_pedido?`<span class="chip">Pedido: ${fmtFecha(p.fecha_pedido)}</span>`:''}
-      ${p.usuario_nom?`<span class="chip" style="background:#f0f4ff;color:#3b5bdb;font-weight:600">👤 ${p.usuario_nom}</span>`:''}
+      ${p.usuario_nom?`<span class="chip" style="background:#f0f4ff;color:#3b5bdb;font-weight:600">👤 ${esc(p.usuario_nom)}</span>`:''}
     </div>
     ${_clienteCard}
     <div class="card" style="padding:12px;margin-bottom:10px">
@@ -13934,7 +14199,7 @@ function verPedido(idx){
         })()}</div>`:'<div class="pill ok">✓ Saldo completo</div>'}
       </div>
     </div>
-    ${p.notas?`<div class="card" style="padding:12px;border:1.5px solid rgba(239,68,68,.35);background:rgba(239,68,68,.08)"><div style="font-size:12px;color:var(--danger);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:3px"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Notas</div><p style="font-size:13px;color:var(--danger);font-weight:600">${p.notas}</p></div>`:''}`;
+    ${p.notas?`<div class="card" style="padding:12px;border:1.5px solid rgba(239,68,68,.35);background:rgba(239,68,68,.08)"><div style="font-size:12px;color:var(--danger);font-weight:700;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:3px"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Notas</div><p style="font-size:13px;color:var(--danger);font-weight:600">${esc(p.notas)}</p></div>`:''}`;
 
   // Select de cambio de estado
   const estSel=qs('#mvped-estado-sel');
@@ -19387,7 +19652,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_54';
+  const APP_VERSION = 'v15_59';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -19736,16 +20001,16 @@ function renderEnvios(){
       <div style="display:flex;align-items:flex-start;gap:10px">
         <div style="flex:1;min-width:0">
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:4px">
-            <span style="font-weight:700;font-size:14px">${e.nombre||'—'}</span>
+            <span style="font-weight:700;font-size:14px">${esc(e.nombre||'—')}</span>
             <span style="font-size:11px;padding:2px 8px;border-radius:8px;font-weight:600;background:${color}22;color:${color}">${lbl}</span>
-            <span style="font-size:11px;font-weight:600;color:var(--muted);background:var(--bg);border-radius:8px;padding:2px 8px">${e.transportista||'—'}</span>
+            <span style="font-size:11px;font-weight:600;color:var(--muted);background:var(--bg);border-radius:8px;padding:2px 8px">${esc(e.transportista||'—')}</span>
             ${e.fragil?'<span style="font-size:10px;font-weight:800;color:#fff;background:#e74c3c;border-radius:6px;padding:2px 7px;letter-spacing:.05em">FRÁGIL</span>':''}
           </div>
-          ${e.cedula?`<div style="font-size:12px;color:var(--muted)">CI: ${e.cedula}${e.telefono?' · Tel: '+e.telefono:''}</div>`:''}
-          ${e.guia?`<div style="font-size:12px;color:var(--brand)">Guía: <strong>${e.guia}</strong></div>`:''}
-          ${e.pedido_num?`<div style="font-size:11px;color:var(--muted)">Pedido vinculado: <strong>#${e.pedido_num}</strong></div>`:''}
-          <div style="font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.direccion||'Sin dirección'}</div>
-          ${e.contenido?`<div style="font-size:11px;color:var(--muted);font-style:italic">${e.contenido}</div>`:''}
+          ${e.cedula?`<div style="font-size:12px;color:var(--muted)">CI: ${esc(e.cedula)}${e.telefono?' · Tel: '+esc(e.telefono):''}</div>`:''}
+          ${e.guia?`<div style="font-size:12px;color:var(--brand)">Guía: <strong>${esc(e.guia)}</strong></div>`:''}
+          ${e.pedido_num?`<div style="font-size:11px;color:var(--muted)">Pedido vinculado: <strong>#${esc(e.pedido_num)}</strong></div>`:''}
+          <div style="font-size:12px;color:var(--muted);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(e.direccion||'Sin dirección')}</div>
+          ${e.contenido?`<div style="font-size:11px;color:var(--muted);font-style:italic">${esc(e.contenido)}</div>`:''}
           <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:5px">
             ${e.fecha_creado?`<span style="font-size:11px;color:var(--muted)">Registrado: ${fmtFechaHora(e.fecha_creado)}</span>`:''}
             ${e.fecha_envio?`<span style="font-size:11px;color:var(--brand);font-weight:600">Enviado: ${fmtFecha(e.fecha_envio)}</span>`:''}
@@ -19981,18 +20246,18 @@ function imprimirEtiquetaEnvio(idx){
     ${logoHtml}
     <div class="titulo">Orden de Envío</div>
     <div style="text-align:right;font-size:12px">
-      ${envio.transportista?`<strong>${envio.transportista}</strong><br/>`:''}
-      ${envio.pedido_num?`Pedido #${envio.pedido_num}`:''}
+      ${envio.transportista?`<strong>${esc(envio.transportista)}</strong><br/>`:''}
+      ${envio.pedido_num?`Pedido #${esc(envio.pedido_num)}`:''}
     </div>
   </div>
   <table>
-    <tr><td>Nombre:</td><td>${envio.nombre||'—'}</td></tr>
-    ${envio.cedula?`<tr><td>Cédula:</td><td>${envio.cedula}</td></tr>`:''}
-    ${envio.telefono?`<tr><td>Teléfono:</td><td>${envio.telefono}</td></tr>`:''}
-    <tr><td>Dirección:</td><td>${(envio.direccion||'—').replace(/\n/g,'<br/>')}</td></tr>
-    ${envio.contenido?`<tr><td>Contenido:</td><td>${envio.contenido}</td></tr>`:''}
+    <tr><td>Nombre:</td><td>${esc(envio.nombre||'—')}</td></tr>
+    ${envio.cedula?`<tr><td>Cédula:</td><td>${esc(envio.cedula)}</td></tr>`:''}
+    ${envio.telefono?`<tr><td>Teléfono:</td><td>${esc(envio.telefono)}</td></tr>`:''}
+    <tr><td>Dirección:</td><td>${esc(envio.direccion||'—').replace(/\n/g,'<br/>')}</td></tr>
+    ${envio.contenido?`<tr><td>Contenido:</td><td>${esc(envio.contenido)}</td></tr>`:''}
   </table>
-  ${envio.guia?`<div class="guia">Guía: ${envio.guia}</div>`:''}
+  ${envio.guia?`<div class="guia">Guía: ${esc(envio.guia)}</div>`:''}
   ${fragHtml}
 </div>
 <script>window.onload=function(){window.print();}<\/script>
