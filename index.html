@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_83">
+<html lang="es" data-app-version="GestioMada_V15_84">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -2523,25 +2523,37 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg2);border-radius:10px;margin-bottom:10px">
       <div>
         <div style="font-size:13px;font-weight:600">Es producto textil</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">Habilita talla y/o color. Si no eliges grupo de tallas, el producto usa solo color (ej. bambalinas)</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Habilita talla y color para este producto</div>
       </div>
       <label class="gm-toggle-mini">
         <input type="checkbox" id="mc_es_textil" onchange="mcToggleTextil()"/>
         <span class="gm-toggle-track"><span class="gm-toggle-thumb"></span></span>
       </label>
     </div>
+    <div id="mc_usa_colores_row" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg2);border-radius:10px;margin-bottom:10px">
+      <div>
+        <div style="font-size:13px;font-weight:600">Tiene variantes de color</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Para productos que vienen en varios colores (ej. bambalinas). Cada color se controla por separado en Inventario.</div>
+      </div>
+      <label class="gm-toggle-mini">
+        <input type="checkbox" id="mc_usa_colores" onchange="mcToggleTextil()"/>
+        <span class="gm-toggle-track"><span class="gm-toggle-thumb"></span></span>
+      </label>
+    </div>
     <div id="mc_textil_wrap" style="display:none;border-left:2px solid var(--brand);padding:2px 0 2px 12px;margin-bottom:10px">
-      <div class="fg"><label>Grupo(s) de tallas (opcional — déjalo vacío si solo tiene colores)</label>
-        <div id="mc_textil_grupos_list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      <div id="mc_tallas_part">
+        <div class="fg"><label>Grupo(s) de tallas</label>
+          <div id="mc_textil_grupos_list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+        <div class="fg" id="mc_textil_recargos"></div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Las características especiales (Con C/B · Sin C/B) se aplican automáticamente a todos los productos textiles.</div>
       </div>
       <div class="fg">
         <label>Colores habilitados para este producto</label>
         <div id="mc_textil_colores_list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
         <div style="font-size:11px;color:var(--muted);margin-top:6px">¿Falta un color? Agrégalo en Configuración → Textiles.</div>
       </div>
-      <div class="fg" id="mc_textil_recargos"></div>
       <div class="fg" id="mc_textil_recargos_color"></div>
-      <div style="font-size:11px;color:var(--muted)">Las características especiales (Con C/B · Sin C/B) se aplican automáticamente a todos los productos textiles.</div>
     </div>
     <div id="mc_moneda_info" style="display:block;font-size:11px;padding:8px 12px;border-radius:8px;background:var(--bg);margin-bottom:8px;color:var(--muted)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> El precio se registra en <strong>USD ($)</strong>. El equivalente en <strong>Bs</strong> se calcula automáticamente con la tasa BCV al momento de vender.</div>
     <input type="hidden" id="mc_moneda_prod" value="usd"/>
@@ -2630,25 +2642,37 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
     <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg2);border-radius:10px;margin-bottom:10px">
       <div>
         <div style="font-size:13px;font-weight:600">Es producto textil</div>
-        <div style="font-size:11px;color:var(--muted);margin-top:2px">Habilita talla y/o color. Si no eliges grupo de tallas, el producto usa solo color (ej. bambalinas)</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Habilita talla y color para este producto</div>
       </div>
       <label class="gm-toggle-mini">
         <input type="checkbox" id="mpm_es_textil" onchange="mpmToggleTextil()"/>
         <span class="gm-toggle-track"><span class="gm-toggle-thumb"></span></span>
       </label>
     </div>
+    <div id="mpm_usa_colores_row" style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg2);border-radius:10px;margin-bottom:10px">
+      <div>
+        <div style="font-size:13px;font-weight:600">Tiene variantes de color</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Para productos que vienen en varios colores (ej. bambalinas). Cada color se controla por separado en Inventario.</div>
+      </div>
+      <label class="gm-toggle-mini">
+        <input type="checkbox" id="mpm_usa_colores" onchange="mpmToggleTextil()"/>
+        <span class="gm-toggle-track"><span class="gm-toggle-thumb"></span></span>
+      </label>
+    </div>
     <div id="mpm_textil_wrap" style="display:none;border-left:2px solid var(--brand);padding:2px 0 2px 12px;margin-bottom:10px">
-      <div class="fg"><label>Grupo(s) de tallas (opcional — déjalo vacío si solo tiene colores)</label>
-        <div id="mpm_textil_grupos_list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+      <div id="mpm_tallas_part">
+        <div class="fg"><label>Grupo(s) de tallas</label>
+          <div id="mpm_textil_grupos_list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+        </div>
+        <div class="fg" id="mpm_textil_recargos"></div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Las características especiales (Con C/B · Sin C/B) se aplican automáticamente a todos los productos textiles.</div>
       </div>
       <div class="fg">
         <label>Colores habilitados para este producto</label>
         <div id="mpm_textil_colores_list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
         <div style="font-size:11px;color:var(--muted);margin-top:6px">¿Falta un color? Agrégalo en Configuración → Textiles.</div>
       </div>
-      <div class="fg" id="mpm_textil_recargos"></div>
       <div class="fg" id="mpm_textil_recargos_color"></div>
-      <div style="font-size:11px;color:var(--muted)">Las características especiales (Con C/B · Sin C/B) se aplican automáticamente a todos los productos textiles.</div>
     </div>
     <div id="mpm_moneda_info" style="display:block;font-size:11px;padding:8px 12px;border-radius:8px;background:var(--bg);margin-bottom:8px;color:var(--muted)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Precio en <strong>USD</strong>. El equivalente en Bs se calcula con tasa BCV.</div>
     <div style="display:flex;gap:8px">
@@ -5774,6 +5798,8 @@ function recargoTallaProd(prod, talla){
   return recargoDefaultTalla(talla);
 }
 // Cambia la variante de una línea: quita el recargo anterior y aplica el nuevo (talla + color), así el precio queda siempre "todo junto".
+// V15_84: un producto tiene variantes si es textil o si tiene colores propios (ej. bambalinas), sin ser textil
+function prodConVariantes(p){ return !!p && (!!p.es_textil || (Array.isArray(p.textil_colores) && p.textil_colores.length>0)); }
 function prodTieneTallas(prod){ return !!prod && gruposTallaDeProducto(prod).length>0; }
 function recargoColorProd(prod, color){
   const r=prod && prod.textil_recargos;
@@ -5870,7 +5896,7 @@ function recargosSet(pre,t,campo,v){
   st[t][campo]=Math.max(0,round2(parseEU(v)||0));
 }
 function recargosLeer(pre){
-  const grupos = pre==='mpm' ? _mpmTextilGruposSel : _mcTextilGruposSel;
+  const grupos = !(qs('#'+pre+'_es_textil')?.checked) ? [] : (pre==='mpm' ? _mpmTextilGruposSel : _mcTextilGruposSel);
   const st=_recState(pre), out={};
   tallasParaGrupos(grupos).forEach(t=>{ if(st[t] && (st[t].p||st[t].c)) out[t]={p:st[t].p||0,c:st[t].c||0}; else if(st[t]) out[t]={p:0,c:0}; });
   const cols = pre==='mpm' ? _mpmTextilColoresSel : _mcTextilColoresSel, cs=_recColState(pre), oc={};
@@ -6278,7 +6304,8 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v15.83: NUEVO (Inventario) \u2014 (1) Opci\u00f3n por producto "Descontar inventario: al entregar / al registrar el pedido"; al registrar descuenta de una vez, no vuelve a descontar al entregar, se ajusta si editas el pedido y se devuelve si lo cancelas o eliminas. (2) Alerta de stock insuficiente al registrar un pedido (todos los productos) con opci\u00f3n de registrar igual: el inventario puede quedar en negativo y se avisa en Dashboard e Inventario. (3) Merma: bot\u00f3n Merma en Inventario y en el pedido, valorada al costo, con resumen del mes; la p\u00e9rdida se resta de la utilidad (Finanzas). Requiere columna inv_momento en productos (Supabase). '
+  return 'v15.84: AJUSTE (Variantes) \u2014 los colores ya no dependen de "producto textil": nuevo interruptor "Tiene variantes de color" para cualquier producto (ej. bambalinas). Textil sigue igual (tallas + colores). El recargo por color y el control de stock por color funcionan en ambos. No requiere cambios en Supabase. '
+    + 'v15.83: NUEVO (Inventario) \u2014 (1) Opci\u00f3n por producto "Descontar inventario: al entregar / al registrar el pedido"; al registrar descuenta de una vez, no vuelve a descontar al entregar, se ajusta si editas el pedido y se devuelve si lo cancelas o eliminas. (2) Alerta de stock insuficiente al registrar un pedido (todos los productos) con opci\u00f3n de registrar igual: el inventario puede quedar en negativo y se avisa en Dashboard e Inventario. (3) Merma: bot\u00f3n Merma en Inventario y en el pedido, valorada al costo, con resumen del mes; la p\u00e9rdida se resta de la utilidad (Finanzas). Requiere columna inv_momento en productos (Supabase). '
     + 'v15.82: NUEVO (Variantes) \u2014 productos con variante solo de color (sin tallas), ej. Bambalinas 7 cm. En el producto activas "textil", dejas los grupos de tallas vac\u00edos y eliges los colores; cada color se registra por separado en Inventario y se descuenta por color. Nuevo recargo opcional por color (precio final y costo) que se suma solo al elegir el color. No requiere cambios en Supabase. '
     + 'v15.81: AJUSTE (Textil) \u2014 el recargo por talla ahora es el monto final que cobras (ya con diferencial; se convierte a base al agregar) y el costo real sube $0,80 en XXL y $1,60 en XXXL. El mensaje de la cotizaci\u00f3n (WhatsApp, cotizaci\u00f3n guardada/PDF y listas de pedidos) ahora muestra talla y color de cada producto. '
     + 'v15.80: NUEVO (Textil) \u2014 recargo de precio y costo por talla. En el producto defines cu\u00e1nto sube cada talla (por defecto precio final c/dif: XL +$2, XXL +$4, XXXL +$6; costo real XXL +$0,80, XXXL +$1,60). Al elegir la talla en POS, pedido o cotizaci\u00f3n el precio ya sale todo junto, sin sumar extras a mano. Requiere columna textil_recargos en Supabase. '
@@ -6988,13 +7015,16 @@ function abrirCatalogo(){
     }
     if(catExist && catExist.es_textil){
       qs('#mc_es_textil').checked=true;
+      { const _u=qs('#mc_usa_colores'); if(_u) _u.checked=false; }
       _mcTextilGruposSel=gruposTallaDeProducto(catExist).slice();
       _mcTextilColoresSel=(catExist.textil_colores||[]).slice();
       recargosCargar('mc', catExist.textil_recargos);
     } else {
       qs('#mc_es_textil').checked=false;
+      const _ucMc = !!(catExist && (catExist.textil_colores||[]).length);
+      const _ucMcEl = qs('#mc_usa_colores'); if(_ucMcEl) _ucMcEl.checked = _ucMc;
       _mcTextilGruposSel=[];
-      _mcTextilColoresSel=[]; recargosCargar('mc', {});
+      _mcTextilColoresSel = _ucMc ? catExist.textil_colores.slice() : []; recargosCargar('mc', _ucMc ? catExist.textil_recargos : {});
     }
     mcToggleTextil();
   }
@@ -7018,9 +7048,15 @@ function persAbrirRegistrarInsumo(){
 let _mcTextilColoresSel=[]; // colores marcados en el modal Agregar al Catálogo
 let _mcTextilGruposSel=[]; // grupos de tallas marcados en el modal Agregar al Catálogo
 function mcToggleTextil(){
-  const on=qs('#mc_es_textil')?.checked||false;
+  const tx=qs('#mc_es_textil')?.checked||false;
+  const uc=qs('#mc_usa_colores');
+  if(tx && uc) uc.checked=false;           // textil ya incluye colores
+  const row=qs('#mc_usa_colores_row'); if(row) row.style.display=tx?'none':'flex';
+  const on = tx || !!(uc && uc.checked);
   const w=qs('#mc_textil_wrap'); if(w) w.style.display=on?'block':'none';
-  if(on){ mcRenderTextilColores(); mcRenderTextilGrupos(); recargosRender('mc'); }
+  const tp=qs('#mc_tallas_part'); if(tp) tp.style.display=tx?'':'none';
+  if(on){ mcRenderTextilColores(); recargosColorRender('mc'); }
+  if(tx){ mcRenderTextilGrupos(); recargosRender('mc'); }
 }
 function mcRenderTextilGrupos(){
   const wrap=qs('#mc_textil_grupos_list'); if(!wrap) return;
@@ -7115,7 +7151,8 @@ function confirmarCatalogo(){
   const fotoLocal = fotoPendienteStorage ? '' : _foto3;
   const fotoUrlExistente = ei>=0 ? (cat[ei].foto_url||'') : '';
   const mcEsTextil=qs('#mc_es_textil')?.checked||false;
-  const nuevo={ id:prodId, nombre:nom, sku:skuFinal, categoria:qs('#mc_cat').value, foto:fotoLocal, foto_url:fotoPendienteStorage?'':fotoUrlExistente, costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, tipo_venta:qs('#pers_tipo_venta')?.value||'detal', modo_inventario:modoInv, inv_loc:invLoc, inv_momento:(qs('#mc_inv_momento')?.value||'entrega'), moneda_prod:monedaProd, insumos_receta:receta, es_textil:mcEsTextil, textil_grupo_talla:'', textil_grupos_talla:mcEsTextil?[..._mcTextilGruposSel]:[], textil_colores:mcEsTextil?[..._mcTextilColoresSel]:[], textil_recargos:mcEsTextil?recargosLeer('mc'):{}, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
+  const mcConVar = mcEsTextil || !!qs('#mc_usa_colores')?.checked;   // V15_84: textil o solo colores
+  const nuevo={ id:prodId, nombre:nom, sku:skuFinal, categoria:qs('#mc_cat').value, foto:fotoLocal, foto_url:fotoPendienteStorage?'':fotoUrlExistente, costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, tipo_venta:qs('#pers_tipo_venta')?.value||'detal', modo_inventario:modoInv, inv_loc:invLoc, inv_momento:(qs('#mc_inv_momento')?.value||'entrega'), moneda_prod:monedaProd, insumos_receta:receta, es_textil:mcEsTextil, textil_grupo_talla:'', textil_grupos_talla:mcEsTextil?[..._mcTextilGruposSel]:[], textil_colores:mcConVar?[..._mcTextilColoresSel]:[], textil_recargos:mcConVar?recargosLeer('mc'):{}, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
   // No embeber foto base64 dentro de calculo — ocupa MB redundantes en localStorage
   if(nuevo.calculo && typeof nuevo.calculo==='object' && nuevo.calculo.foto && nuevo.calculo.foto.startsWith('data:')) nuevo.calculo.foto='';
   let _prodSyncEd;
@@ -7139,7 +7176,7 @@ function confirmarCatalogo(){
   const rw=qs('#mc_receta_lines'); if(rw) rw.innerHTML='';
   const mcInv=qs('#mc_modo_inv'); if(mcInv){ mcInv.value='ninguno'; mcToggleReceta(); } { const _m=qs('#mc_inv_momento'); if(_m) _m.value='entrega'; }
   const mcLocRst=qs('#mc_inv_loc'); if(mcLocRst) mcLocRst.value='deposito';
-  qs('#mc_es_textil').checked=false; _mcTextilGruposSel=[]; _mcTextilColoresSel=[]; recargosCargar('mc', {}); mcToggleTextil();
+  qs('#mc_es_textil').checked=false; { const _u=qs('#mc_usa_colores'); if(_u) _u.checked=false; } _mcTextilGruposSel=[]; _mcTextilColoresSel=[]; recargosCargar('mc', {}); mcToggleTextil();
 }
 /* ══ PRODUCTO MANUAL ══ */
 let _mpmIdx=null; // null=nuevo, número=editar índice
@@ -7178,6 +7215,7 @@ function abrirProdManual(idx=null){
     mpmToggleReceta();
     const _esTextil=!!p.es_textil;
     qs('#mpm_es_textil').checked=_esTextil;
+    { const _u=qs('#mpm_usa_colores'); if(_u) _u.checked = !_esTextil && (p.textil_colores||[]).length>0; }
     _mpmTextilGruposSel=gruposTallaDeProducto(p).slice();
     _mpmTextilColoresSel=(p.textil_colores||[]).slice();
     recargosCargar('mpm', p.textil_recargos);
@@ -7191,7 +7229,7 @@ function abrirProdManual(idx=null){
     qs('#mpm_estado').value='activo'; qs('#mpm_inv').value='ninguno'; const _locRst=qs('#mpm_inv_loc'); if(_locRst) _locRst.value='deposito'; const _momRst=qs('#mpm_inv_momento'); if(_momRst) _momRst.value='entrega';
     const _tvRst=qs('#mpm_tipo_venta'); if(_tvRst) _tvRst.value='detal';
     mpmToggleReceta();
-    qs('#mpm_es_textil').checked=false; _mpmTextilGruposSel=[];
+    qs('#mpm_es_textil').checked=false; { const _u=qs('#mpm_usa_colores'); if(_u) _u.checked=false; } _mpmTextilGruposSel=[];
     _mpmTextilColoresSel=[]; recargosCargar('mpm', {});
     mpmToggleTextil();
     const rw=qs('#mpm_receta_lines'); if(rw) rw.innerHTML='';
@@ -7210,9 +7248,15 @@ function mpmToggleReceta(){
   const w=qs('#mpm_receta_wrap'); if(w) w.style.display=(v==='insumos')?'block':'none';
 }
 function mpmToggleTextil(){
-  const on=qs('#mpm_es_textil')?.checked||false;
+  const tx=qs('#mpm_es_textil')?.checked||false;
+  const uc=qs('#mpm_usa_colores');
+  if(tx && uc) uc.checked=false;           // textil ya incluye colores
+  const row=qs('#mpm_usa_colores_row'); if(row) row.style.display=tx?'none':'flex';
+  const on = tx || !!(uc && uc.checked);
   const w=qs('#mpm_textil_wrap'); if(w) w.style.display=on?'block':'none';
-  if(on){ mpmRenderTextilColores(); mpmRenderTextilGrupos(); recargosRender('mpm'); }
+  const tp=qs('#mpm_tallas_part'); if(tp) tp.style.display=tx?'':'none';
+  if(on){ mpmRenderTextilColores(); recargosColorRender('mpm'); }
+  if(tx){ mpmRenderTextilGrupos(); recargosRender('mpm'); }
 }
 let _mpmTextilGruposSel=[]; // grupos de tallas marcados en el modal Nuevo producto
 function mpmRenderTextilGrupos(){
@@ -7279,6 +7323,7 @@ function guardarProdManual(){
   const mpmLoc=qs('#mpm_inv_loc')?.value||'deposito';
   const mpmMoneda=qs('#mpm_moneda_prod')?.value||'usd';
   const esTextil=qs('#mpm_es_textil')?.checked||false;
+  const mpmConVar = esTextil || !!qs('#mpm_usa_colores')?.checked;   // V15_84: textil o solo colores
   const skuNuevo=(qs('#mpm_sku').value||'').trim();
   // Verificar SKU duplicado (solo en productos nuevos o si cambia el SKU)
   if(skuNuevo){
@@ -7302,8 +7347,8 @@ function guardarProdManual(){
     es_textil:esTextil,
     textil_grupo_talla:'',
     textil_grupos_talla:esTextil?[..._mpmTextilGruposSel]:[],
-    textil_colores:esTextil?[..._mpmTextilColoresSel]:[],
-    textil_recargos:esTextil?recargosLeer('mpm'):{},
+    textil_colores:mpmConVar?[..._mpmTextilColoresSel]:[],
+    textil_recargos:mpmConVar?recargosLeer('mpm'):{},
     notas:qs('#mpm_notas').value.trim(), origen:'manual' };
   if(esModoEdit){ cat[_mpmIdx]={...cat[_mpmIdx],...obj}; }
   else {
@@ -7782,6 +7827,7 @@ function verProd(idx){
           <div><label>Estado</label><span class="chip ${p.estado==='activo'?'chip-ok':'chip-warn'}">${p.estado}</span></div>
           ${CFG.tipos_venta_on?`<div><label>Tipo venta</label><span class="chip" style="font-size:10px;${p.tipo_venta==='mayor'?'background:#dbeafe;color:#1e40af':'background:#fef3c7;color:#92400e'}">${p.tipo_venta==='mayor'?'Al mayor ('+getComisionPct('mayor')+'%)':'Al detal ('+getComisionPct('detal')+'%)'}</span></div>`:''}
           <div><label>Control inv.</label><span style="font-size:12px">${(()=>{ const m={ninguno:'Sin control',insumos:'Receta insumos',terminado:'Stock terminado'}[p.modo_inventario||'ninguno']||'Sin control'; const l=p.inv_loc==='local'?'Local':'Depósito'; return m!=='Sin control'?m+' · '+l:m; })()}</span></div>
+          ${(!p.es_textil && p.textil_colores && p.textil_colores.length)?`<div><label>Colores</label><span style="font-size:12px">${esc(p.textil_colores.join(', '))}</span></div>`:''}
           ${p.es_textil?`<div><label>Textil</label><span style="font-size:12px">${labelGruposTalla(gruposTallaDeProducto(p))}${(p.textil_colores&&p.textil_colores.length)?' · '+p.textil_colores.join(', '):''}</span></div>`:''}
         </div>
         <div class="frow" style="flex-wrap:wrap;gap:8px">
@@ -10671,7 +10717,7 @@ let _posProdTextilPendiente = null; // producto textil esperando selección de v
 function posAgregarProd(idProd){
   const prod = loadCat().find(p => String(p.id) === String(idProd));
   if(!prod){ toast('Producto no encontrado','warn'); return; }
-  if(prod.es_textil){
+  if(prodConVariantes(prod)){
     _posProdTextilPendiente = prod;
     const titulo = qs('#pos_textil_picker_titulo');
     if(titulo) titulo.textContent = prod.nombre + ' — variante';
@@ -10707,8 +10753,8 @@ function posAgregarSinVariante(){
 function posAgregarProdDirecto(prod, talla, color, caracteristica){
   const existe = _posItems.findIndex(it => {
     if(!it.id_prod || String(it.id_prod) !== String(prod.id)) return false;
-    if(prod.es_textil && (talla||color)) return (it.talla||'')===talla && (it.color||'')===color && (it.caracteristica||'')===caracteristica;
-    if(prod.es_textil && !talla && !color) return !it.talla && !it.color;
+    if(prodConVariantes(prod) && (talla||color)) return (it.talla||'')===talla && (it.color||'')===color && (it.caracteristica||'')===caracteristica;
+    if(prodConVariantes(prod) && !talla && !color) return !it.talla && !it.color;
     return true;
   });
   if(existe >= 0){
@@ -11563,7 +11609,7 @@ function cotCrearPedido(id){
       recargo_c: it.recargo_c || 0
     };
     // Marcar textiles sin variante para que el formulario pida completarlos
-    if(prod && prod.es_textil && !item.talla && !item.color){
+    if(prod && prodConVariantes(prod) && !item.talla && !item.color){
       item._necesita_variante = true;
       item._prod_ref = prod; // referencia para poblar los selects
     }
@@ -13417,7 +13463,7 @@ function mpSelProducto(id){  const prod = loadCat().find(p=>String(p.id)===Strin
   if(nom){ nom.textContent = prod.nombre+' · SKU: '+(prod.sku||'—')+' · '+euro(prod.precio_venta); nom.style.display='block'; }
   // Mostrar panel de variante si es textil
   const picker=qs('#mp_textil_picker');
-  if(prod.es_textil && picker){
+  if(prodConVariantes(prod) && picker){
     picker.style.display='block';
     const tallas=tallasParaGrupos(gruposTallaDeProducto(prod));
     const tSel=qs('#mp_textil_talla');
@@ -13539,7 +13585,7 @@ function agregarProductoPedido(){
   const prod = loadCat().find(p=>String(p.id)===String(prodId));
   if(!prod){ toast('Producto no encontrado en catálogo','warn'); return; }
   let talla='', color='', caracteristica='';
-  if(prod.es_textil){
+  if(prodConVariantes(prod)){
     talla=(qs('#mp_textil_talla')?.value||'').trim();
     color=(qs('#mp_textil_color')?.value||'').trim();
     caracteristica=(qs('#mp_textil_caract')?.value||'').trim();
@@ -13553,14 +13599,14 @@ function agregarProductoPedido(){
   // Coincidencia: mismo id_prod + misma variante (textil) o solo mismo id_prod
   const existe = _pedItems.findIndex(it=>{
     if(!it.id_prod || String(it.id_prod)!==String(prodId)) return false;
-    if(prod.es_textil) return (it.talla||'')===talla && (it.color||'')===color && (it.caracteristica||'')===caracteristica;
+    if(prodConVariantes(prod)) return (it.talla||'')===talla && (it.color||'')===color && (it.caracteristica||'')===caracteristica;
     return true;
   });
   if(existe>=0){
     _pedItems[existe].cant++;
   } else {
     const item={ tipo:'catalogo', nombre:prod.nombre, precio_unit:prod.precio_venta, costo_unit:prod.costo||0, alq_unit:_finAlqUnitDeProd(prod), cant:1, id_prod:prod.id, moneda_prod:'usd' };
-    if(prod.es_textil){ item.talla=talla; item.color=color; item.caracteristica=caracteristica; aplicarRecargoTallaItem(item, prod, talla, color); }
+    if(prodConVariantes(prod)){ item.talla=talla; item.color=color; item.caracteristica=caracteristica; aplicarRecargoTallaItem(item, prod, talla, color); }
     _pedItems.push(item);
   }
   sel.value=''; renderItemsFormulario(); recalcPedido();
@@ -13596,7 +13642,7 @@ function _renderVarianteItemEdit(it, i) {
   html += [it.talla, it.color, it.caracteristica].filter(Boolean)
     .map(v => '<span style="font-size:10px;padding:1px 7px;border-radius:999px;background:#ffe3ee;color:#be185d;font-weight:600">'+esc(v)+'</span>')
     .join('');
-  if (prod && prod.es_textil) {
+  if (prod && prodConVariantes(prod)) {
     html += '<button type="button" onclick="pedToggleEditVariante('+i+')" style="font-size:10px;padding:1px 8px;border-radius:999px;border:1px solid #e07ab0;color:#be185d;background:transparent;cursor:pointer;margin-left:2px">✏ Cambiar</button>';
     html += '<button type="button" onclick="pedLimpiarVariante('+i+')" style="font-size:10px;padding:1px 8px;border-radius:999px;border:1px solid #e07ab0;color:#be185d;background:transparent;cursor:pointer">✕ Quitar</button>';
   }
@@ -16406,7 +16452,7 @@ function terProdSeleccionado(){
   const prodId=qs('#ter_prod_sel')?.value;
   const wrap=qs('#ter_textil_wrap');
   const prod=loadCat().find(p=>String(p.id)===String(prodId));
-  if(prod && prod.es_textil){
+  if(prod && prodConVariantes(prod)){
     if(wrap) wrap.style.display='block';
     textilAjustarPicker('ter', prod);
     const tallas=tallasParaGrupos(gruposTallaDeProducto(prod));
@@ -16425,7 +16471,7 @@ function guardarTerminado(){
   if(!prodId){ toast('Selecciona un producto','warn'); return; }
   const cat=loadCat(), prod=cat.find(p=>String(p.id)===String(prodId));
   if(!prod){ toast('Producto no encontrado','warn'); return; }
-  const esTextil=!!prod.es_textil;
+  const esTextil=!!prodConVariantes(prod);
   let talla='', color='', caracteristica='';
   if(esTextil){
     talla=qs('#ter_talla')?.value||'';
@@ -16545,7 +16591,7 @@ function faltantesInventarioDeItems(items){
     const campo=((prod.inv_loc||'deposito')==='deposito')?'stock_dep':'stock';
     const cant=parseFloat(it.cant)||1;
     if(modo==='terminado' || modo==='ninguno'){
-      const esTextilIt=!!(prod.es_textil && (it.talla||it.color));
+      const esTextilIt=!!(prodConVariantes(prod) && (it.talla||it.color));
       const t=ter.find(t=>{
         const matchProd=(t.producto_id&&String(t.producto_id)===String(prod.id))||(String(t.prod_id)===String(prod.id));
         if(!matchProd) return false;
@@ -16688,7 +16734,7 @@ function descontarInventarioDeItems(items, nota, momento){
 
     if(modo==='terminado' || modo==='ninguno'){
       // Para textiles: buscar por prod_id + variante; para no textiles: solo por prod_id
-      const esTextilIt=!!(prod.es_textil && (it.talla||it.color));
+      const esTextilIt=!!(prodConVariantes(prod) && (it.talla||it.color));
       const tidx=ter.findIndex(t=>{
         const matchProd=(t.producto_id&&String(t.producto_id)===String(prod.id))||(String(t.prod_id)===String(prod.id));
         if(!matchProd) return false;
@@ -16741,7 +16787,7 @@ function costoUnitMerma(tipo_item, item){
   const prod = loadCat().find(p=>String(p.id)===String(item.prod_id));
   if(!prod) return 0;
   let c = parseFloat(prod.costo)||0;
-  if(prod.es_textil){ c += (recargoTallaProd(prod, item.talla).c||0) + (recargoColorProd(prod, item.color).c||0); }
+  if(prodConVariantes(prod)){ c += (recargoTallaProd(prod, item.talla).c||0) + (recargoColorProd(prod, item.color).c||0); }
   return round2(c);
 }
 function abrirMerma(tipo_item, id, notaExtra){
@@ -16815,7 +16861,7 @@ function abrirMermaDesdePedidoItem(i){
     if(!prod) return false;
     const matchProd = (t.producto_id&&String(t.producto_id)===String(prod.id)) || String(t.prod_id)===String(prod.id);
     if(!matchProd) return false;
-    if(prod.es_textil && (it.talla||it.color)) return (t.talla||'')===(it.talla||'') && (t.color||'')===(it.color||'') && (t.caracteristica||'')===(it.caracteristica||'');
+    if(prodConVariantes(prod) && (it.talla||it.color)) return (t.talla||'')===(it.talla||'') && (t.color||'')===(it.color||'') && (t.caracteristica||'')===(it.caracteristica||'');
     return true;
   });
   if(!t){ toast('Ese producto no tiene stock registrado en Inventario. Regístralo primero para poder cargar la merma.','warn'); return; }
@@ -21829,7 +21875,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_83';
+  const APP_VERSION = 'v15_84';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
