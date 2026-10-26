@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_86">
+<html lang="es" data-app-version="GestioMada_V15_87">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -6304,7 +6304,8 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v15.86: AJUSTE (Dashboard) \u2014 "Utilidad del mes" ahora muestra la utilidad NETA del mes (ventas menos costo, gastos operativos y merma), igual que Finanzas. '
+  return 'v15.87: FIX (Clientes) \u2014 el m\u00f3dulo Clientes ya no se congela al abrirlo: los totales, \u00faltima compra y conteos de todos los clientes se calculan en una sola pasada en vez de releer todas las ventas y pedidos por cada cliente (con 400 clientes, 3.000 ventas y 2.000 pedidos pas\u00f3 de ~17 s a menos de 1 s). '
+    + 'v15.86: AJUSTE (Dashboard) \u2014 "Utilidad del mes" ahora muestra la utilidad NETA del mes (ventas menos costo, gastos operativos y merma), igual que Finanzas. '
     + 'v15.85: AJUSTE (Dashboard e Inventario) \u2014 los KPIs "Ingresos hoy" y "Utilidad hoy" pasan a "Ingresos del mes" y "Utilidad del mes" (la utilidad ya descuenta la merma del mes). En el formulario del producto, los campos de inventario se renombran "Qu\u00e9 se descuenta / De d\u00f3nde sale / Cu\u00e1ndo se descuenta" y los dos \u00faltimos se ocultan si el producto no tiene control de inventario. '
     + 'v15.84: AJUSTE (Variantes) \u2014 los colores ya no dependen de "producto textil": nuevo interruptor "Tiene variantes de color" para cualquier producto (ej. bambalinas). Textil sigue igual (tallas + colores). El recargo por color y el control de stock por color funcionan en ambos. No requiere cambios en Supabase. '
     + 'v15.83: NUEVO (Inventario) \u2014 (1) Opci\u00f3n por producto "Descontar inventario: al entregar / al registrar el pedido"; al registrar descuenta de una vez, no vuelve a descontar al entregar, se ajusta si editas el pedido y se devuelve si lo cancelas o eliminas. (2) Alerta de stock insuficiente al registrar un pedido (todos los productos) con opci\u00f3n de registrar igual: el inventario puede quedar en negativo y se avisa en Dashboard e Inventario. (3) Merma: bot\u00f3n Merma en Inventario y en el pedido, valorada al costo, con resumen del mes; la p\u00e9rdida se resta de la utilidad (Finanzas). Requiere columna inv_momento en productos (Supabase). '
@@ -7935,17 +7936,41 @@ function guardarCliente(){
   }
   _cliIdx=null;
 }
+/* V15_87: resumen de TODOS los clientes en una sola pasada (antes se leían y filtraban ventas y pedidos
+   completos 3 veces por cada cliente, lo que congelaba la app al abrir Clientes). Mismas reglas que
+   calcTotalCli / ultimaCompraCli. */
+function _cliResumenTodos(){
+  const mapa = new Map();
+  const get = id => { const k = String(id ?? ''); let r = mapa.get(k); if(!r){ r = { total:0, ultima:0, numPed:0, numVen:0 }; mapa.set(k, r); } return r; };
+  loadVen().forEach(v=>{
+    if(!v.cliente || v.estado==='anulada') return;
+    const r = get(v.cliente.id);
+    r.total += parseFloat(v.total)||0; r.numVen++;
+    const t = cliFechaVal(cliMovFecha(v)); if(t > r.ultima) r.ultima = t;
+  });
+  loadPed().forEach(p=>{
+    if(!p.cliente) return;
+    const r = get(p.cliente.id);
+    r.total += (p.pagos||[]).reduce((a,pg)=>a+(parseFloat(pg.monto)||0),0) + (parseFloat(p.abono)||0);
+    r.numPed++;
+    const t = cliFechaVal(cliMovFecha(p)); if(t > r.ultima) r.ultima = t;
+  });
+  return mapa;
+}
 function renderClientes(){
   const all=loadCli(), q=(qs('#cli_q')?.value||'').toLowerCase();
   const fil=all.filter(c=>{ if(!q) return true; return (c.nombre+' '+(c.apellido||'')).toLowerCase().includes(q)||(c.cedula||'').toLowerCase().includes(q)||(c.telefono||'').toLowerCase().includes(q); });
   const c=qs('#cli-container');
-  if(!fil.length){ c.innerHTML=`<div class="empty"><div class=\"empty-ico\"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><h3>${all.length?'Sin resultados':'Sin clientes'}</h3><p>${all.length?'Prueba otra búsqueda.':'Registra tu primer cliente.'}</p><button class="btn btn-brand btn-sm" onclick="abrirNuevoCliente()">＋ Nuevo Cliente</button></div>`; return; }
-  c.innerHTML='';
+  if(!fil.length){ c.innerHTML=`<div class="empty"><div class=\"empty-ico\"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div><p>${q?'Sin resultados':'No hay clientes registrados'}</p></div>`; return; }
+  const resumen=_cliResumenTodos();
+  const idxDe=new Map(all.map((cl,i)=>[cl,i]));
+  const frag=document.createDocumentFragment();
   fil.forEach(cli=>{
-    const ri=all.indexOf(cli);
+    const ri=idxDe.get(cli);
     const item=document.createElement('div'); item.className='list-item';
     const ini=(cli.nombre[0]||'?').toUpperCase()+(cli.apellido?cli.apellido[0].toUpperCase():'');
-    const _totalCli=calcTotalCli(cli), _ultimaCli=ultimaCompraCli(cli), _numPed=(loadPed().filter(p=>p.cliente&&p.cliente.id===cli.id).length), _numVen=(loadVen().filter(v=>v.cliente&&v.cliente.id===cli.id&&v.estado!=='anulada').length);
+    const _r=resumen.get(String(cli.id ?? ''))||{total:0,ultima:0,numPed:0,numVen:0};
+    const _totalCli=_r.total, _ultimaCli=_r.ultima?new Date(_r.ultima).toLocaleDateString('es-ES'):'—', _numPed=_r.numPed, _numVen=_r.numVen;
     item.innerHTML=`
       <div class="li-ico" style="font-size:15px;font-weight:700;color:var(--brand)">${ini}</div>
       <div class="li-body">
@@ -7964,8 +7989,10 @@ function renderClientes(){
           <button class="btn btn-danger btn-sm" onclick="eliminarCliente2(${ri})">✕</button>
         </div>
       </div>`;
-    c.appendChild(item);
+    frag.appendChild(item);
   });
+  c.innerHTML='';
+  c.appendChild(frag);
 }
 function verCliente(idx){
   const all=loadCli(), c=all[idx]; if(!c) return;
@@ -21902,7 +21929,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_86';
+  const APP_VERSION = 'v15_87';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
