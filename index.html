@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_84">
+<html lang="es" data-app-version="GestioMada_V15_86">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -2558,24 +2558,24 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
     <div id="mc_moneda_info" style="display:block;font-size:11px;padding:8px 12px;border-radius:8px;background:var(--bg);margin-bottom:8px;color:var(--muted)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> El precio se registra en <strong>USD ($)</strong>. El equivalente en <strong>Bs</strong> se calcula automáticamente con la tasa BCV al momento de vender.</div>
     <input type="hidden" id="mc_moneda_prod" value="usd"/>
     <div style="display:flex;gap:8px">
-      <div class="fg" style="flex:2"><label>Control de inventario</label>
+      <div class="fg" style="flex:2"><label>Qué se descuenta</label>
         <select id="mc_modo_inv" onchange="mcToggleReceta()">
-          <option value="ninguno">Sin control de inventario</option>
+          <option value="ninguno">Nada (sin control de inventario)</option>
           <option value="terminado">Descuenta stock terminado</option>
           <option value="insumos">Descuenta insumos por receta</option>
         </select>
       </div>
-      <div class="fg" id="mc_loc_wrap" style="flex:1"><label>Descontar desde</label>
+      <div class="fg" id="mc_loc_wrap" style="flex:1"><label>De dónde sale</label>
         <select id="mc_inv_loc">
           <option value="deposito" selected>Depósito</option>
           <option value="local">🏪 Local</option>
         </select>
       </div>
     </div>
-    <div class="fg" id="mc_momento_wrap"><label>Descontar inventario</label>
+    <div class="fg" id="mc_momento_wrap"><label>Cuándo se descuenta</label>
       <select id="mc_inv_momento">
         <option value="entrega" selected>Al entregar el pedido (como hasta ahora)</option>
-        <option value="registro">Al registrar el pedido (reserva el stock desde el inicio)</option>
+        <option value="registro">Al registrar el pedido (reserva stock)</option>
       </select>
     </div>
     <!-- Receta visible solo cuando modo=insumos -->
@@ -2676,24 +2676,24 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
     </div>
     <div id="mpm_moneda_info" style="display:block;font-size:11px;padding:8px 12px;border-radius:8px;background:var(--bg);margin-bottom:8px;color:var(--muted)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Precio en <strong>USD</strong>. El equivalente en Bs se calcula con tasa BCV.</div>
     <div style="display:flex;gap:8px">
-      <div class="fg" style="flex:2"><label>Control de inventario</label>
+      <div class="fg" style="flex:2"><label>Qué se descuenta</label>
         <select id="mpm_inv" onchange="mpmToggleReceta()">
-          <option value="ninguno">Sin control de inventario</option>
+          <option value="ninguno">Nada (sin control de inventario)</option>
           <option value="terminado">Descuenta stock terminado</option>
           <option value="insumos">Descuenta insumos por receta</option>
         </select>
       </div>
-      <div class="fg" id="mpm_loc_wrap" style="flex:1"><label>Descontar desde</label>
+      <div class="fg" id="mpm_loc_wrap" style="flex:1"><label>De dónde sale</label>
         <select id="mpm_inv_loc">
           <option value="deposito" selected>Depósito</option>
           <option value="local">🏪 Local</option>
         </select>
       </div>
     </div>
-    <div class="fg" id="mpm_momento_wrap"><label>Descontar inventario</label>
+    <div class="fg" id="mpm_momento_wrap"><label>Cuándo se descuenta</label>
       <select id="mpm_inv_momento">
         <option value="entrega" selected>Al entregar el pedido (como hasta ahora)</option>
-        <option value="registro">Al registrar el pedido (reserva el stock desde el inicio)</option>
+        <option value="registro">Al registrar el pedido (reserva stock)</option>
       </select>
     </div>
     <!-- Sección receta — visible solo cuando modo=insumos -->
@@ -3090,12 +3090,12 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
         <div class="dh-bento">
           <div class="dh-feat" onclick="nav('ventas',document.querySelector('[data-v=ventas]'))">
             <div class="dh-feat-top">
-              <div class="dh-feat-lbl">Ingresos hoy</div>
+              <div class="dh-feat-lbl">Ingresos del mes</div>
               <div class="dh-donut"><div class="dh-donut-inner"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg></div></div>
             </div>
             <div>
               <div class="dh-feat-val" id="d-ven-hoy">$ 0,00</div>
-              <div class="dh-feat-trend">total cobrado hoy →</div>
+              <div class="dh-feat-trend">total vendido este mes →</div>
             </div>
           </div>
           <div class="dh-tiles">
@@ -3104,7 +3104,7 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
               <div class="dh-tile-val" id="d-ven-num">0</div>
             </div>
             <div class="dh-tile h3" onclick="nav('reportes',document.querySelector('[data-v=reportes]'))">
-              <div class="dh-tile-lbl">Utilidad hoy</div>
+              <div class="dh-tile-lbl">Utilidad neta del mes</div>
               <div class="dh-tile-val" id="d-util-hoy">$ 0,00</div>
             </div>
             <div class="dh-tile h4 dh-tile-wide" onclick="nav('pedidos',document.querySelector('[data-v=pedidos]'))">
@@ -6304,7 +6304,9 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v15.84: AJUSTE (Variantes) \u2014 los colores ya no dependen de "producto textil": nuevo interruptor "Tiene variantes de color" para cualquier producto (ej. bambalinas). Textil sigue igual (tallas + colores). El recargo por color y el control de stock por color funcionan en ambos. No requiere cambios en Supabase. '
+  return 'v15.86: AJUSTE (Dashboard) \u2014 "Utilidad del mes" ahora muestra la utilidad NETA del mes (ventas menos costo, gastos operativos y merma), igual que Finanzas. '
+    + 'v15.85: AJUSTE (Dashboard e Inventario) \u2014 los KPIs "Ingresos hoy" y "Utilidad hoy" pasan a "Ingresos del mes" y "Utilidad del mes" (la utilidad ya descuenta la merma del mes). En el formulario del producto, los campos de inventario se renombran "Qu\u00e9 se descuenta / De d\u00f3nde sale / Cu\u00e1ndo se descuenta" y los dos \u00faltimos se ocultan si el producto no tiene control de inventario. '
+    + 'v15.84: AJUSTE (Variantes) \u2014 los colores ya no dependen de "producto textil": nuevo interruptor "Tiene variantes de color" para cualquier producto (ej. bambalinas). Textil sigue igual (tallas + colores). El recargo por color y el control de stock por color funcionan en ambos. No requiere cambios en Supabase. '
     + 'v15.83: NUEVO (Inventario) \u2014 (1) Opci\u00f3n por producto "Descontar inventario: al entregar / al registrar el pedido"; al registrar descuenta de una vez, no vuelve a descontar al entregar, se ajusta si editas el pedido y se devuelve si lo cancelas o eliminas. (2) Alerta de stock insuficiente al registrar un pedido (todos los productos) con opci\u00f3n de registrar igual: el inventario puede quedar en negativo y se avisa en Dashboard e Inventario. (3) Merma: bot\u00f3n Merma en Inventario y en el pedido, valorada al costo, con resumen del mes; la p\u00e9rdida se resta de la utilidad (Finanzas). Requiere columna inv_momento en productos (Supabase). '
     + 'v15.82: NUEVO (Variantes) \u2014 productos con variante solo de color (sin tallas), ej. Bambalinas 7 cm. En el producto activas "textil", dejas los grupos de tallas vac\u00edos y eliges los colores; cada color se registra por separado en Inventario y se descuenta por color. Nuevo recargo opcional por color (precio final y costo) que se suma solo al elegir el color. No requiere cambios en Supabase. '
     + 'v15.81: AJUSTE (Textil) \u2014 el recargo por talla ahora es el monto final que cobras (ya con diferencial; se convierte a base al agregar) y el costo real sube $0,80 en XXL y $1,60 en XXXL. El mensaje de la cotizaci\u00f3n (WhatsApp, cotizaci\u00f3n guardada/PDF y listas de pedidos) ahora muestra talla y color de cada producto. '
@@ -7033,6 +7035,10 @@ function abrirCatalogo(){
 function mcToggleReceta(){
   const v=qs('#mc_modo_inv')?.value;
   const w=qs('#mc_receta_wrap'); if(w) w.style.display=(v==='insumos')?'block':'none';
+  // V15_85: "De dónde" y "Cuándo" solo tienen sentido si el producto descuenta algo
+  const _con = v && v!=='ninguno';
+  const _lw=qs('#mc_loc_wrap'); if(_lw) _lw.style.display=_con?'':'none';
+  const _mw=qs('#mc_momento_wrap'); if(_mw) _mw.style.display=_con?'':'none';
 }
 function persAbrirRegistrarInsumo(){
   persUpdate(); // asegura que window._lastDirT esté al día con lo que se ve en pantalla
@@ -7152,7 +7158,7 @@ function confirmarCatalogo(){
   const fotoUrlExistente = ei>=0 ? (cat[ei].foto_url||'') : '';
   const mcEsTextil=qs('#mc_es_textil')?.checked||false;
   const mcConVar = mcEsTextil || !!qs('#mc_usa_colores')?.checked;   // V15_84: textil o solo colores
-  const nuevo={ id:prodId, nombre:nom, sku:skuFinal, categoria:qs('#mc_cat').value, foto:fotoLocal, foto_url:fotoPendienteStorage?'':fotoUrlExistente, costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, tipo_venta:qs('#pers_tipo_venta')?.value||'detal', modo_inventario:modoInv, inv_loc:invLoc, inv_momento:(qs('#mc_inv_momento')?.value||'entrega'), moneda_prod:monedaProd, insumos_receta:receta, es_textil:mcEsTextil, textil_grupo_talla:'', textil_grupos_talla:mcEsTextil?[..._mcTextilGruposSel]:[], textil_colores:mcConVar?[..._mcTextilColoresSel]:[], textil_recargos:mcConVar?recargosLeer('mc'):{}, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
+  const nuevo={ id:prodId, nombre:nom, sku:skuFinal, categoria:qs('#mc_cat').value, foto:fotoLocal, foto_url:fotoPendienteStorage?'':fotoUrlExistente, costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, tipo_venta:qs('#pers_tipo_venta')?.value||'detal', modo_inventario:modoInv, inv_loc:invLoc, inv_momento:(modoInv==='ninguno'?'entrega':(qs('#mc_inv_momento')?.value||'entrega')), moneda_prod:monedaProd, insumos_receta:receta, es_textil:mcEsTextil, textil_grupo_talla:'', textil_grupos_talla:mcEsTextil?[..._mcTextilGruposSel]:[], textil_colores:mcConVar?[..._mcTextilColoresSel]:[], textil_recargos:mcConVar?recargosLeer('mc'):{}, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
   // No embeber foto base64 dentro de calculo — ocupa MB redundantes en localStorage
   if(nuevo.calculo && typeof nuevo.calculo==='object' && nuevo.calculo.foto && nuevo.calculo.foto.startsWith('data:')) nuevo.calculo.foto='';
   let _prodSyncEd;
@@ -7246,6 +7252,10 @@ function mpmActualizarMargen(){
 function mpmToggleReceta(){
   const v=qs('#mpm_inv')?.value;
   const w=qs('#mpm_receta_wrap'); if(w) w.style.display=(v==='insumos')?'block':'none';
+  // V15_85: "De dónde" y "Cuándo" solo tienen sentido si el producto descuenta algo
+  const _con = v && v!=='ninguno';
+  const _lw=qs('#mpm_loc_wrap'); if(_lw) _lw.style.display=_con?'':'none';
+  const _mw=qs('#mpm_momento_wrap'); if(_mw) _mw.style.display=_con?'':'none';
 }
 function mpmToggleTextil(){
   const tx=qs('#mpm_es_textil')?.checked||false;
@@ -7341,7 +7351,7 @@ function guardarProdManual(){
   const obj={ nombre:nom, sku:skuNuevo, categoria:qs('#mpm_cat').value, foto:guardarFotoLocal?foto:'',
     foto_url: fotoBase64Cambio ? '' : fotoUrlExistente,
     costo:parseEU(qs('#mpm_costo')?.value||'0'), precio_venta:pv,
-    estado:qs('#mpm_estado').value, modo_inventario:modoInv, inv_loc:mpmLoc, inv_momento:(qs('#mpm_inv_momento')?.value||'entrega'), moneda_prod:mpmMoneda,
+    estado:qs('#mpm_estado').value, modo_inventario:modoInv, inv_loc:mpmLoc, inv_momento:(modoInv==='ninguno'?'entrega':(qs('#mpm_inv_momento')?.value||'entrega')), moneda_prod:mpmMoneda,
     tipo_venta:qs('#mpm_tipo_venta')?.value||'detal',
     insumos_receta:receta,
     es_textil:esTextil,
@@ -13114,13 +13124,30 @@ function exportCajaCSV(){
 }
 
 /* ═══ Dashboard extensión Ventas/Caja ════ */
+/* V15_86: utilidad neta del mes en curso, calculada con las mismas reglas que Finanzas (KPI "Utilidad neta") */
+function utilNetaMesDash(){
+  const h=hoyLocal(), d0=h.slice(0,7)+'-01';
+  const gDe=_finDesde, gHa=_finHasta;
+  _finDesde=d0; _finHasta=h;
+  try{
+    const ven=loadVen().filter(v=>v.estado!=='anulada' && _finInRango(v.fecha));
+    const utilBruta=ven.reduce((a,v)=>a+(v.utilidad||0),0);
+    const gastos=loadCajaMov().filter(m=>_finInRango(m.fecha)).filter(_finEsGastoOperativo).reduce((a,m)=>a+(m.monto_usd||0),0);
+    const alqK=_finAlquilerPeriodo(ven);
+    return utilBruta + alqK.ajuste - gastos - mermaPerdidaPeriodoFin();
+  } finally { _finDesde=gDe; _finHasta=gHa; }
+}
 function renderDashVenCaja(){
   const ven=loadVen(); const hoy=hoyLocal();
   const venHoy=ven.filter(v=>v.fecha.slice(0,10)===hoy&&v.estado!=='anulada');
-  const ingHoy=venHoy.reduce((a,v)=>a+v.total,0);
-  const utilHoy=venHoy.reduce((a,v)=>a+(v.utilidad||0),0);
-  const dv=qs('#d-ven-hoy'); if(dv) dv.textContent=euro(ingHoy);
-  const du=qs('#d-util-hoy'); if(du) du.textContent=euro(utilHoy);
+  // V15_85: los KPIs principales ahora son del mes en curso (ingresos y utilidad); "Ventas hoy" sigue siendo del día
+  const _mesAct=hoy.slice(0,7);
+  const venMes=ven.filter(v=>v.fecha.slice(0,7)===_mesAct&&v.estado!=='anulada');
+  const ingMes=venMes.reduce((a,v)=>a+v.total,0);
+  let utilMes=0; try{ utilMes=utilNetaMesDash(); }catch(e){ console.warn('[Dashboard] utilidad neta:', e); }
+  //   // utilidad NETA del mes (igual que Finanzas: ventas - gastos operativos - merma)
+  const dv=qs('#d-ven-hoy'); if(dv) dv.textContent=euro(ingMes);
+  const du=qs('#d-util-hoy'); if(du) du.textContent=euro(utilMes);
   const dvn=qs('#d-ven-num'); if(dvn) dvn.textContent=venHoy.length;
   // Saldo de caja en dashboard
   const ses=loadSesion();
@@ -21875,7 +21902,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_84';
+  const APP_VERSION = 'v15_86';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
