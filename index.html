@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_87">
+<html lang="es" data-app-version="GestioMada_V15_91">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -3667,6 +3667,12 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
             <button class="btn btn-brand btn-sm" onclick="agregarCategoriaCfg()">＋ Agregar</button>
           </div>
         </div>
+        <!-- Textiles: tallas -->
+        <div class="card">
+          <div class="card-title">📏 Textiles · tallas</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Tallas que aparecen al marcar un producto como textil. Agrega o quita tallas de cada grupo. En Adultos escribe la talla base (por ejemplo M o XL): el sistema crea solo la versión D (dama) y C (caballero); los números (10, 12…) quedan sin sufijo. Con ◀ ▶ las ordenas (o usa ↕ Ordenar). Con ✎ puedes ponerle otro nombre que se verá en pantalla y tickets (ejemplo: S → Chica), sin cambiar nada de lo guardado.</div>
+          <div id="cfg-tallas-textil-wrap"></div>
+        </div>
         <!-- Textiles: colores base -->
         <div class="card">
           <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Textiles · colores</div>
@@ -5242,6 +5248,7 @@ function loadCfg(){
   // Aplicar categorías dinámicas
   aplicarCategorias();
   aplicarColoresTextil();
+  aplicarTallasTextil();
   // Migración: convertir productos con moneda_prod 'bs' a 'usd' (precio ya se almacena en USD)
   (function migrateMonedaProd(){
     const cat=loadCat(); let changed=false;
@@ -5358,7 +5365,7 @@ async function cargarConfigNegocioDesdeNube(){
     // Todos los campos que se sincronizan via tabla config
     const camposSyncables = ['negocio','rif','rif_visible','telefono','instagram','direccion','slogan','nota_recibo','logo_url',
       'dif_bloqueado','dif_congelado','restante_usd_puro','tipos_venta_on','comision_detal','comision_mayor','caja_auto_apertura','capital_inicial','cat_order','gastos_recurrentes',
-      'tasa_auto','tasa_bcv','tasa_paralela','tasa_paralela_live','criterio_tasa_caja','criterio_tasa_finanzas','imp_on','imp_pct','metodos_activos','metodos_split_binance','categorias','textil_colores_base','moneda','moneda2'];
+      'tasa_auto','tasa_bcv','tasa_paralela','tasa_paralela_live','criterio_tasa_caja','criterio_tasa_finanzas','imp_on','imp_pct','metodos_activos','metodos_split_binance','categorias','textil_colores_base','textil_tallas','textil_tallas_alias','moneda','moneda2'];
     data.forEach(row => {
       if(camposSyncables.includes(row.clave)){
         try {
@@ -5490,6 +5497,7 @@ function _aplicarConfigEnUI(){
   // Categorías
   if(typeof aplicarCategorias === 'function') aplicarCategorias();
   if(typeof aplicarColoresTextil === 'function') aplicarColoresTextil();
+  if(typeof aplicarTallasTextil === 'function') aplicarTallasTextil();
   // Persistir tasa BCV
   if(CFG.tasa_bcv > 0) saveTasa(CFG.tasa_bcv);
 }
@@ -5635,6 +5643,8 @@ async function _sincConfigCompletaSupa(){
       { clave:'metodos_split_binance', valor: JSON.stringify(CFG.metodos_split_binance===true) },
       { clave:'categorias',       valor: JSON.stringify(CFG.categorias||[]) },
       { clave:'textil_colores_base', valor: JSON.stringify(CFG.textil_colores_base||[]) },
+      { clave:'textil_tallas', valor: JSON.stringify(CFG.textil_tallas||{}) },
+      { clave:'textil_tallas_alias', valor: JSON.stringify(CFG.textil_tallas_alias||{}) },
       { clave:'moneda',           valor: JSON.stringify(CFG.moneda||'$') },
       { clave:'moneda2',          valor: JSON.stringify(CFG.moneda2||'') },
       { clave:'restante_usd_puro',valor: JSON.stringify(CFG.restante_usd_puro||false) },
@@ -5742,31 +5752,88 @@ function eliminarCategoriaCfg(idx){
 }
 
 /* ── TEXTILES: tallas fijas + colores dinámicos ── */
-const TALLAS_NINOS=['2','4','6','8','10','12','14','16'];
-const TALLAS_ADULTOS_BASE=['XS','S','M','L','XL','XXL','XXXL'];
-const TALLAS_BODYS=['0-3M','3-6M','6-9M','9-18M','18-24M'];
+const TALLAS_NINOS_DEFAULT=['2','4','6','8'];
+const TALLAS_ADULTOS_DEFAULT=['XS','S','M','L','XL','XXL','XXXL'];
+const TALLAS_BODYS_DEFAULT=['0-3M','3-6M','6-9M','9-18M','18-24M'];
+const TALLAS_GRUPOS_META={
+  ninos:{nombre:'Niños', def:TALLAS_NINOS_DEFAULT},
+  adultos:{nombre:'Adultos', def:TALLAS_ADULTOS_DEFAULT},
+  bodys:{nombre:'Bodys bebé', def:TALLAS_BODYS_DEFAULT}
+};
+// Tallas editables desde Configuración (CFG.textil_tallas). Si no hay nada guardado, usa los defaults.
+function loadTallasTextil(grupo){
+  const t=CFG.textil_tallas;
+  const m=TALLAS_GRUPOS_META[grupo];
+  if(t && Array.isArray(t[grupo]) && t[grupo].length) return t[grupo].slice();
+  return m ? m.def.slice() : [];
+}
+function saveTallasTextil(grupo, arr){
+  if(!CFG.textil_tallas || typeof CFG.textil_tallas!=='object') CFG.textil_tallas={};
+  CFG.textil_tallas[grupo]=arr;
+  _lsSet(LS_CFG, JSON.stringify(CFG));
+  aplicarTallasTextil();
+  _sincTallasTextilSupa();
+}
+// Nombre visible de una talla (alias). La talla interna no cambia; solo lo que se ve en pantalla/ticket.
+function tallaVisible(t){
+  if(t===undefined||t===null||t==='') return t;
+  const al=CFG.textil_tallas_alias;
+  if(!al || typeof al!=='object') return t;
+  const k=String(t);
+  if(al[k]) return al[k];
+  const m=/^(.+?)([CD])$/.exec(k);
+  if(m && al[m[1]]) return al[m[1]]+' '+m[2];
+  return t;
+}
+function editarAliasTallaCfg(grupo,idx){
+  const lista=loadTallasTextil(grupo), t=lista[idx]; if(t===undefined) return;
+  const al=CFG.textil_tallas_alias||{};
+  const actual=al[t]||'';
+  const v=prompt(`Nombre visible para la talla "${t}" (ej: Chica, Pequeña). Déjalo vacío para quitarlo:`, actual);
+  if(v===null) return;
+  const nuevo=Object.assign({}, al);
+  if(v.trim()) nuevo[t]=v.trim(); else delete nuevo[t];
+  CFG.textil_tallas_alias=nuevo;
+  _lsSet(LS_CFG, JSON.stringify(CFG));
+  aplicarTallasTextil(); _sincTallasTextilSupa();
+  toast(v.trim()?'Nombre guardado':'Nombre quitado','ok');
+}
+function aplicarTallasTextil(){
+  if(typeof renderTallasTextilCfg==='function') renderTallasTextilCfg();
+  if(typeof mpmRenderTextilGrupos==='function') mpmRenderTextilGrupos();
+  if(typeof mcRenderTextilGrupos==='function') mcRenderTextilGrupos();
+  if(typeof recargosRender==='function'){ try{ recargosRender('mpm'); recargosRender('mc'); }catch(e){} }
+}
 const TEXTIL_CARACTERISTICAS=['Con C/B','Sin C/B'];
 const COLORES_TEXTIL_DEFAULT=['Negro','Blanco','Gris','Azul','Verde','Rojo','Rosado','Beige'];
 
 function tallasAdultosCompletas(){
   const out=[];
-  TALLAS_ADULTOS_BASE.forEach(t=>out.push(t+'C'));
-  TALLAS_ADULTOS_BASE.forEach(t=>out.push(t+'D'));
+  const base=loadTallasTextil('adultos');
+  const esNum=t=>/^\d+(\.\d+)?$/.test(String(t));
+  // Numéricas (10, 12, 14, 16): una sola vez, sin sufijo, al principio.
+  base.filter(esNum).forEach(t=>out.push(String(t)));
+  // Letras: primero Dama (D) y luego Caballero (C)
+  base.filter(t=>!esNum(t)).forEach(t=>out.push(t+'D'));
+  base.filter(t=>!esNum(t)).forEach(t=>out.push(t+'C'));
   return out;
 }
 function tallasPorGrupo(grupo){
-  if(grupo==='ninos') return TALLAS_NINOS;
-  if(grupo==='bodys') return TALLAS_BODYS;
+  if(grupo==='ninos') return loadTallasTextil('ninos');
+  if(grupo==='bodys') return loadTallasTextil('bodys');
   return tallasAdultosCompletas();
 }
 function labelGrupoTalla(grupo){
-  return {ninos:'Niños (2 – 16)', adultos:'Adultos (XS – XXXL)', bodys:'Bodys bebé (0-3M – 18-24M)'}[grupo] || '';
+  const m=TALLAS_GRUPOS_META[grupo]; if(!m) return '';
+  const l=loadTallasTextil(grupo);
+  if(!l.length) return m.nombre;
+  return l.length===1 ? `${m.nombre} (${l[0]})` : `${m.nombre} (${l[0]} – ${l[l.length-1]})`;
 }
-const TEXTIL_GRUPOS=[
-  {value:'adultos', label:'Adultos (XS – XXXL)'},
-  {value:'ninos', label:'Niños (2 – 16)'},
-  {value:'bodys', label:'Bodys bebé (0-3M – 18-24M)'}
-];
+// Lista dinámica: las etiquetas se calculan con las tallas guardadas en Configuración
+const TEXTIL_GRUPOS=['adultos','ninos','bodys'].map(v=>({
+  value:v,
+  get label(){ return labelGrupoTalla(v); }
+}));
 function labelGruposTalla(grupos){
   return (grupos||[]).map(labelGrupoTalla).filter(Boolean).join(' + ');
 }
@@ -5836,12 +5903,13 @@ function textilAjustarPicker(pre, prod){
   });
 }
 function nombreConVariante(it){
-  const v=[it.talla,it.color,it.caracteristica].filter(Boolean).join(' · ');
+  const v=[tallaVisible(it.talla),it.color,it.caracteristica].filter(Boolean).join(' · ');
   return (it.nombre||'')+(v?' ('+v+')':'');
 }
 function tallaOptLabel(prod, t){
   const r=recargoTallaProd(prod,t);
-  return r.p>0 ? t+' (+$'+String(r.p).replace('.',',')+')' : t;
+  const tv=tallaVisible(t);
+  return r.p>0 ? tv+' (+$'+String(r.p).replace('.',',')+')' : tv;
 }
 let _mpmRecargos={}, _mcRecargos={};
 function _recState(pre){ return pre==='mpm'?_mpmRecargos:_mcRecargos; }
@@ -5885,7 +5953,7 @@ function recargosRender(pre){
   wrap.innerHTML='<label>Recargo por talla (precio final c/dif y costo real)</label>'+
     '<div style="display:flex;flex-direction:column;gap:6px">'+
     tallas.map(t=>`<div style="display:flex;gap:6px;align-items:center;font-size:12px">
-      <span style="width:52px;font-weight:600">${t}</span>
+      <span style="width:52px;font-weight:600">${tallaVisible(t)}</span>
       <span style="color:var(--muted)">Precio final +$</span><input type="text" inputmode="decimal" value="${f(st[t].p)}" onchange="recargosSet('${pre}','${t}','p',this.value)" style="width:64px;padding:4px 6px;font-size:12px;text-align:right"/>
       <span style="color:var(--muted)">Costo +$</span><input type="text" inputmode="decimal" value="${f(st[t].c)}" onchange="recargosSet('${pre}','${t}','c',this.value)" style="width:64px;padding:4px 6px;font-size:12px;text-align:right"/>
     </div>`).join('')+'</div>'+
@@ -5936,6 +6004,74 @@ function eliminarColorTextilCfg(idx){
   const colores=loadColoresTextil();
   if(!confirm(`¿Eliminar el color "${colores[idx]}"?`)) return;
   colores.splice(idx,1); saveColoresTextil(colores); toast('Color eliminado','ok');
+}
+
+
+function renderTallasTextilCfg(){
+  const wrap=qs('#cfg-tallas-textil-wrap'); if(!wrap) return;
+  wrap.innerHTML=['ninos','adultos','bodys'].map(g=>{
+    const m=TALLAS_GRUPOS_META[g], lista=loadTallasTextil(g);
+    const chips=lista.map((t,i)=>`
+      <div style="display:flex;align-items:center;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:4px 10px 4px 12px;font-size:12px">
+        <span>${t}${(CFG.textil_tallas_alias&&CFG.textil_tallas_alias[t])?` <span style="color:var(--brand);font-weight:600">→ ${esc(CFG.textil_tallas_alias[t])}</span>`:''}</span>
+        ${i>0?`<button onclick="moverTallaTextilCfg('${g}',${i},-1)" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;line-height:1;padding:0 2px" title="Mover a la izquierda">◀</button>`:''}${i<lista.length-1?`<button onclick="moverTallaTextilCfg('${g}',${i},1)" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;line-height:1;padding:0 2px" title="Mover a la derecha">▶</button>`:''}
+        <button onclick="editarAliasTallaCfg('${g}',${i})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;line-height:1;padding:0 2px" title="Ponerle otro nombre">✎</button>
+        <button onclick="eliminarTallaTextilCfg('${g}',${i})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;line-height:1;padding:0 2px" title="Eliminar">✕</button>
+      </div>`).join('');
+    return `<div style="margin-bottom:16px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px">${m.nombre}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">${chips||'<span style="font-size:12px;color:var(--muted)">Sin tallas (se usarán las de fábrica)</span>'}</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="cfg_talla_nueva_${g}" placeholder="Nueva talla…" style="flex:1;min-width:120px;max-width:200px" onkeydown="if(event.key==='Enter')agregarTallaTextilCfg('${g}')"/>
+        <button class="btn btn-brand btn-sm" onclick="agregarTallaTextilCfg('${g}')">＋ Agregar</button>
+        <button class="btn btn-sm" onclick="ordenarTallasTextilCfg('${g}')" title="Números de menor a mayor y luego las letras (XS, S, M…)">↕ Ordenar</button>
+        <button class="btn btn-sm" onclick="restaurarTallasTextilCfg('${g}')" title="Volver a las tallas de fábrica">↺ Restaurar</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function agregarTallaTextilCfg(grupo){
+  const inp=qs('#cfg_talla_nueva_'+grupo); if(!inp) return;
+  const val=inp.value.trim().toUpperCase(); if(!val){ toast('Escribe una talla','err'); return; }
+  const lista=loadTallasTextil(grupo);
+  if(lista.map(t=>t.toUpperCase()).includes(val)){ toast('Ya existe','err'); return; }
+  const esNum=/^\d+(\.\d+)?$/.test(val);
+  if(esNum){
+    // los números se colocan en su lugar (antes de XS, S, M…) y de menor a mayor
+    let pos=lista.findIndex(t=>!/^\d+(\.\d+)?$/.test(t) || parseFloat(t)>parseFloat(val));
+    if(pos<0) pos=lista.length;
+    lista.splice(pos,0,val);
+  } else lista.push(val);
+  saveTallasTextil(grupo,lista); toast('Talla agregada','ok');
+}
+function eliminarTallaTextilCfg(grupo,idx){
+  const lista=loadTallasTextil(grupo);
+  if(lista.length<=1){ toast('Debe quedar al menos una talla','err'); return; }
+  if(!confirm(`¿Quitar la talla "${lista[idx]}" de la lista? Los productos que ya la usan no se borran.`)) return;
+  lista.splice(idx,1); saveTallasTextil(grupo,lista); toast('Talla eliminada','ok');
+}
+function moverTallaTextilCfg(grupo,idx,dir){
+  const lista=loadTallasTextil(grupo), j=idx+dir;
+  if(j<0||j>=lista.length) return;
+  const x=lista[idx]; lista[idx]=lista[j]; lista[j]=x;
+  saveTallasTextil(grupo,lista);
+}
+const _ORDEN_LETRAS=['XXXS','XXS','XS','S','M','L','XL','XXL','XXXL','XXXXL'];
+function ordenarTallasTextilCfg(grupo){
+  const lista=loadTallasTextil(grupo);
+  const rank=t=>{
+    if(/^\d+(\.\d+)?$/.test(t)) return [0,parseFloat(t),0];
+    const i=_ORDEN_LETRAS.indexOf(String(t).toUpperCase());
+    if(i>=0) return [1,i,0];
+    return [2,0,lista.indexOf(t)];
+  };
+  lista.sort((a,b)=>{ const x=rank(a), y=rank(b); return x[0]-y[0]||x[1]-y[1]||x[2]-y[2]; });
+  saveTallasTextil(grupo,lista); toast('Tallas ordenadas','ok');
+}
+function restaurarTallasTextilCfg(grupo){
+  const m=TALLAS_GRUPOS_META[grupo]; if(!m) return;
+  if(!confirm(`¿Volver a las tallas de fábrica de ${m.nombre}: ${m.def.join(', ')}?`)) return;
+  saveTallasTextil(grupo,m.def.slice()); toast('Tallas restauradas','ok');
 }
 
 // ── UTILS ──
@@ -6304,7 +6440,11 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v15.87: FIX (Clientes) \u2014 el m\u00f3dulo Clientes ya no se congela al abrirlo: los totales, \u00faltima compra y conteos de todos los clientes se calculan en una sola pasada en vez de releer todas las ventas y pedidos por cada cliente (con 400 clientes, 3.000 ventas y 2.000 pedidos pas\u00f3 de ~17 s a menos de 1 s). '
+  return 'v15.91: CAMBIO (Textiles \u00b7 tallas de adultos) \u2014 las tallas num\u00e9ricas (10, 12, 14, 16) ya no llevan sufijo C/D y salen una sola vez al inicio; luego van las de Dama (D) y despu\u00e9s las de Caballero (C).\n'
+    + 'v15.90: NUEVO (Configuraci\u00f3n \u2192 Textiles \u00b7 tallas) \u2014 las tallas se pueden ordenar con \u25c0 \u25b6 o con el bot\u00f3n \u2195 Ordenar; las tallas num\u00e9ricas (10, 12, 14, 16) se colocan solas antes de XS, S, M. El orden se refleja en POS, pedidos y cotizaciones.\n'
+    + 'v15.89: NUEVO (Configuraci\u00f3n \u2192 Textiles \u00b7 tallas) \u2014 cada talla puede tener un nombre visible (ej: S \u2192 Chica) con el bot\u00f3n \u270e. Se muestra en el POS, pedidos, tickets, inventario y reportes; los datos guardados no cambian y los recargos siguen funcionando. Se sincroniza con la nube.\n'
+    + 'v15.88: NUEVO (Configuraci\u00f3n \u2192 Textiles \u00b7 tallas) \u2014 las tallas de ni\u00f1os, adultos y bodys ahora se editan desde Configuraci\u00f3n (agregar, quitar, restaurar) y se sincronizan con la nube. Ni\u00f1os queda por defecto de la talla 2 a la 8. Los productos ya guardados con otras tallas no se pierden.\n'
+    + 'v15.87: FIX (Clientes) \u2014 el m\u00f3dulo Clientes ya no se congela al abrirlo: los totales, \u00faltima compra y conteos de todos los clientes se calculan en una sola pasada en vez de releer todas las ventas y pedidos por cada cliente (con 400 clientes, 3.000 ventas y 2.000 pedidos pas\u00f3 de ~17 s a menos de 1 s). '
     + 'v15.86: AJUSTE (Dashboard) \u2014 "Utilidad del mes" ahora muestra la utilidad NETA del mes (ventas menos costo, gastos operativos y merma), igual que Finanzas. '
     + 'v15.85: AJUSTE (Dashboard e Inventario) \u2014 los KPIs "Ingresos hoy" y "Utilidad hoy" pasan a "Ingresos del mes" y "Utilidad del mes" (la utilidad ya descuenta la merma del mes). En el formulario del producto, los campos de inventario se renombran "Qu\u00e9 se descuenta / De d\u00f3nde sale / Cu\u00e1ndo se descuenta" y los dos \u00faltimos se ocultan si el producto no tiene control de inventario. '
     + 'v15.84: AJUSTE (Variantes) \u2014 los colores ya no dependen de "producto textil": nuevo interruptor "Tiene variantes de color" para cualquier producto (ej. bambalinas). Textil sigue igual (tallas + colores). El recargo por color y el control de stock por color funcionan en ambos. No requiere cambios en Supabase. '
@@ -6378,7 +6518,7 @@ function nav(id, el){
   if(id==='finanzas'){ renderFinanzas(); }
   if(id==='dashboard') renderDash();
   if(id==='envios'){ if(typeof renderEnvios==='function') renderEnvios(); }
-  if(id==='config'){ renderCatsCfg(); renderColoresTextilCfg(); }
+  if(id==='config'){ renderCatsCfg(); renderColoresTextilCfg(); renderTallasTextilCfg(); }
   if(id==='config'){ renderLsMonitor(); }
   if(id==='config'){ _gmVersionCardUpdate(); }
   if(id==='config'){ if(typeof renderConflictosSync==='function') renderConflictosSync(); }
@@ -9834,6 +9974,18 @@ async function _sincCategoriasSupa(){
   } catch(e){ console.warn('[Config] Error sincronizando categorías:', e.message); }
 }
 
+// Sincronizar tallas de textiles a Supabase
+async function _sincTallasTextilSupa(){
+  if(!window._supaConectado) return;
+  try {
+    await SUPA.from('config').upsert([
+      { clave:'textil_tallas', valor: JSON.stringify(CFG.textil_tallas||{}) },
+      { clave:'textil_tallas_alias', valor: JSON.stringify(CFG.textil_tallas_alias||{}) }
+    ], { onConflict:'clave' });
+    console.log('[Config] Tallas textiles sincronizadas');
+  } catch(e){ console.warn('[Config] Error sincronizando tallas textiles:', e.message); }
+}
+
 // Sincronizar colores base de textiles a Supabase
 async function _sincColoresTextilSupa(){
   if(!window._supaConectado) return;
@@ -10829,7 +10981,7 @@ function posRenderCarrito(){
       : `<div style="font-size:12px;font-weight:700">${euro(puBase)}</div>`;
     return `
     <div class="pos-item">
-      <div class="pos-item-name">${esc(it.nombre)}${(it.talla||it.color||it.caracteristica)?`<span style="display:block;font-size:10px;font-weight:400;color:#be185d;margin-top:1px">${[it.talla,it.color,it.caracteristica].filter(Boolean).join(' · ')}</span>`:''}</div>
+      <div class="pos-item-name">${esc(it.nombre)}${(it.talla||it.color||it.caracteristica)?`<span style="display:block;font-size:10px;font-weight:400;color:#be185d;margin-top:1px">${[tallaVisible(it.talla),it.color,it.caracteristica].filter(Boolean).join(' · ')}</span>`:''}</div>
       <div class="pos-item-qty-ctrl">
         <button class="pos-qty-btn" onclick="posCantItem(${i},-1)">−</button>
         <input type="number" class="pos-item-qty" min="1" value="${it.cant}"
@@ -11258,7 +11410,7 @@ function renderCotizaciones(){
     const fecha = c.fecha_creado ? new Date(c.fecha_creado).toLocaleDateString('es-VE',{day:'2-digit',month:'short'}) : '';
     const nItems = (c.items||[]).reduce((a,it)=>a+(it.cant||1),0);
     const itemsPrev = (c.items||[]).slice(0,3).map(it=>{
-      const _vStr = [it.talla,it.color,it.caracteristica].filter(Boolean).join(' · ');
+      const _vStr = [tallaVisible(it.talla),it.color,it.caracteristica].filter(Boolean).join(' · ');
       const _vPart = _vStr ? ' <span style="color:#e07ab0">('+esc(_vStr)+')</span>' : '';
       return it.cant+'× '+esc(it.nombre||'')+_vPart;
     }).join(', ') + ((c.items||[]).length>3?'…':'');
@@ -13693,7 +13845,7 @@ function _renderVarianteItemEdit(it, i) {
   const colores = prod ? (prod.textil_colores || []) : [];
   const enEdicion = _pedEditVariante.has(i);
   let html = '<div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">';
-  html += [it.talla, it.color, it.caracteristica].filter(Boolean)
+  html += [tallaVisible(it.talla), it.color, it.caracteristica].filter(Boolean)
     .map(v => '<span style="font-size:10px;padding:1px 7px;border-radius:999px;background:#ffe3ee;color:#be185d;font-weight:600">'+esc(v)+'</span>')
     .join('');
   if (prod && prodConVariantes(prod)) {
@@ -14346,7 +14498,7 @@ function renderPedidos(){
           ${p.canal?`<span class="chip" style="font-size:10px;${CANALES_COLOR[normalizarCanalVenta(p.canal)]||CANALES_COLOR.local}">${CANALES_LABEL[normalizarCanalVenta(p.canal)]||CANALES_LABEL.local}</span>`:''}
           ${p.usuario_nom?`<span class="chip" style="font-size:10px;background:#f0f4ff;color:#3b5bdb">👤 ${esc(p.usuario_nom.split(' ')[0])}</span>`:''}
         </div>
-        ${(p.items&&p.items.length)?`<div class="ped-items-preview">${p.items.map(it=>`<span style="display:inline-block;margin-right:6px">${it.cant}× ${esc(it.nombre)}${(it.talla||it.color||it.caracteristica)?` <span style="font-size:10px;color:#be185d;font-weight:600">${esc([it.talla,it.color,it.caracteristica].filter(Boolean).join(' · '))}</span>`:''}</span>`).join('')}</div>`:''}
+        ${(p.items&&p.items.length)?`<div class="ped-items-preview">${p.items.map(it=>`<span style="display:inline-block;margin-right:6px">${it.cant}× ${esc(it.nombre)}${(it.talla||it.color||it.caracteristica)?` <span style="font-size:10px;color:#be185d;font-weight:600">${esc([tallaVisible(it.talla),it.color,it.caracteristica].filter(Boolean).join(' · '))}</span>`:''}</span>`).join('')}</div>`:''}
         ${(()=>{ const notasLimpias=(p.notas||'').split(' | ').filter(s=>!s.startsWith('Delivery:')&&!s.startsWith('Envío:')&&!s.startsWith('Diseño:')&&!s.startsWith('Extras:')).join(' | ').trim(); return notasLimpias?`<div class="ped-items-preview" style="color:#e53e3e;margin-top:2px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:3px"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>${esc(notasLimpias)}</div>`:''; })()}
         ${(()=>{const _ex=[];if(_numPedido(p.delivery_usd)>0)_ex.push('Delivery');if(_numPedido(p.envio_usd)>0)_ex.push('Envío');if(_numPedido(p.diseno_usd)>0)_ex.push('Diseño');return _ex.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">${_ex.map(e=>`<span class="chip" style="font-size:9px;background:#f0eaff;color:#7c3aed">${e}</span>`).join('')}</div>`:''})()}
       </div>
@@ -14867,7 +15019,7 @@ function verPedido(idx){
   const _pedFmtTotal = n => euro(n);
   const itemsHtml=p.items.map((it,_ii)=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f3f3f8">
-      <div><div style="font-weight:600;font-size:13px">${esc(it.nombre)}</div><div style="font-size:11px;color:var(--muted)">×${it.cant} · ${_pedFmtMon(it.precio_unit)}</div>${(it.talla||it.color||it.caracteristica)?`<div style="margin-top:2px;display:flex;gap:3px;flex-wrap:wrap">${[it.talla,it.color,it.caracteristica].filter(Boolean).map(v=>`<span style="font-size:10px;padding:1px 6px;border-radius:999px;background:#ffe3ee;color:#be185d;font-weight:600">${esc(v)}</span>`).join('')}</div>`:''}</div>
+      <div><div style="font-weight:600;font-size:13px">${esc(it.nombre)}</div><div style="font-size:11px;color:var(--muted)">×${it.cant} · ${_pedFmtMon(it.precio_unit)}</div>${(it.talla||it.color||it.caracteristica)?`<div style="margin-top:2px;display:flex;gap:3px;flex-wrap:wrap">${[tallaVisible(it.talla),it.color,it.caracteristica].filter(Boolean).map(v=>`<span style="font-size:10px;padding:1px 6px;border-radius:999px;background:#ffe3ee;color:#be185d;font-weight:600">${esc(v)}</span>`).join('')}</div>`:''}</div>
       <div style="text-align:right"><div style="font-weight:700">${_pedFmtMon(it.precio_unit*it.cant)}</div>${(p.estado!=='cancelado'&&it.id_prod)?`<button type="button" onclick="abrirMermaDesdePedidoItem(${_ii})" style="font-size:10px;padding:1px 8px;margin-top:2px;border-radius:999px;border:1px solid #fdba74;color:#c2410c;background:transparent;cursor:pointer">⚠ Merma</button>`:''}</div>
     </div>`).join('');
 
@@ -16565,7 +16717,7 @@ function guardarTerminado(){
 function renderTerminados(){
   if(typeof renderInvAlertasTop==='function') renderInvAlertasTop();
   const all=loadTer(), cat=loadCat(), q=(qs('#inv_ter_q')?.value||'').toLowerCase();
-  const fil=all.filter(t=>!q||t.nombre.toLowerCase().includes(q)||(t.talla||'').toLowerCase().includes(q)||(t.color||'').toLowerCase().includes(q));
+  const fil=all.filter(t=>!q||t.nombre.toLowerCase().includes(q)||(t.talla||'').toLowerCase().includes(q)||String(tallaVisible(t.talla)||'').toLowerCase().includes(q)||(t.color||'').toLowerCase().includes(q));
   const c=qs('#inv-ter-container'); if(!c) return;
   if(!fil.length){
     c.innerHTML=`<div class="empty"><div class="empty-ico"><svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg></div><h3>${all.length?'Sin resultados':'Sin stock de productos'}</h3><p>Aquí puedes llevar el stock de productos terminados listos para vender.</p><button class="btn btn-brand btn-sm" onclick="abrirNuevoTerminado()">＋ Agregar Stock</button></div>`;
@@ -16579,7 +16731,7 @@ function renderTerminados(){
     el.innerHTML=`
       <div class="li-ico" style="background:${alerta?'#fee2e2':'#e8efff'}">${alerta?'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>':'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>'}</div>
       <div class="li-body">
-        <div class="li-name">${esc(item.nombre)}${(item.talla||item.color||item.caracteristica)?` <span style="font-weight:400;font-size:11px;color:var(--brand)">· ${[item.talla,item.color,item.caracteristica].filter(Boolean).map(esc).join(' · ')}</span>`:''}</div>
+        <div class="li-name">${esc(item.nombre)}${(item.talla||item.color||item.caracteristica)?` <span style="font-weight:400;font-size:11px;color:var(--brand)">· ${[tallaVisible(item.talla),item.color,item.caracteristica].filter(Boolean).map(esc).join(' · ')}</span>`:''}</div>
         <div class="li-meta">
           ${prodVinculado
             ? `<span class="chip chip-ok" style="font-size:10px">Vinculado: ${esc(prodVinculado.nombre)}</span>`
@@ -16653,7 +16805,7 @@ function faltantesInventarioDeItems(items){
         return true;
       });
       if(t){
-        const var_ = esTextilIt ? ' ('+[it.talla,it.color].filter(Boolean).join(' / ')+')' : '';
+        const var_ = esTextilIt ? ' ('+[tallaVisible(it.talla),it.color].filter(Boolean).join(' / ')+')' : '';
         sumar('t:'+t.id+':'+campo, t, (prod.nombre||'Producto')+var_, campo, cant);
       }
     }
@@ -16688,7 +16840,7 @@ function invMomentoProd(prod){ return (prod && prod.inv_momento==='registro') ? 
 function _stockNeg(item){ migrarStock(item); return (parseFloat(item.stock)||0) < -0.0005 || (parseFloat(item.stock_dep)||0) < -0.0005; }
 function stockNegativos(){
   const out=[];
-  const fmtV = t => [t.talla,t.color].filter(Boolean).join(' / ');
+  const fmtV = t => [tallaVisible(t.talla),t.color].filter(Boolean).join(' / ');
   loadTer().forEach(t=>{ if(_stockNeg(t)) out.push({ nombre:(t.nombre||'Producto')+(fmtV(t)?' ('+fmtV(t)+')':''), tipo:'terminado', local:parseFloat(t.stock)||0, dep:parseFloat(t.stock_dep)||0 }); });
   loadIns().forEach(i=>{ if(_stockNeg(i)) out.push({ nombre:i.nombre||'Insumo', tipo:'insumo', local:parseFloat(i.stock)||0, dep:parseFloat(i.stock_dep)||0 }); });
   return out;
@@ -16847,7 +16999,7 @@ function costoUnitMerma(tipo_item, item){
 function abrirMerma(tipo_item, id, notaExtra){
   _mermaNotaExtra = notaExtra || '';
   const sel = qs('#merma_item'); if(!sel) return;
-  const fmtV = t => [t.talla,t.color,t.caracteristica].filter(Boolean).join(' / ');
+  const fmtV = t => [tallaVisible(t.talla),t.color,t.caracteristica].filter(Boolean).join(' / ');
   const ter = loadTer(), ins = loadIns();
   sel.innerHTML = '<optgroup label="Productos terminados">' + ter.map(t=>`<option value="terminado:${t.id}">${esc(t.nombre||'Producto')}${fmtV(t)?' — '+esc(fmtV(t)):''}</option>`).join('') + '</optgroup>'
                 + '<optgroup label="Insumos">' + ins.map(i=>`<option value="insumo:${i.id}">${esc(i.nombre||'Insumo')}</option>`).join('') + '</optgroup>';
@@ -17328,7 +17480,7 @@ function renderRepTextiles(){
   if(kpiWrap) kpiWrap.innerHTML=[
     {label:'Unidades vendidas',val:totalUnids,color:'var(--brand)',ico:'M12 2l9 4.5v11L12 22 3 17.5V6.5L12 2z'},
     {label:'Ingresos USD',val:'$'+round2(totalIngresos).toFixed(2).replace('.',','),color:'#0F6E56',ico:'M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6'},
-    {label:'Variante más vendida',val:top?`${top.talla} · ${top.color}${top.caract?' · '+top.caract:''}`:'-',color:'#7C3AED',small:true,ico:'M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z'},
+    {label:'Variante más vendida',val:top?`${tallaVisible(top.talla)} · ${top.color}${top.caract?' · '+top.caract:''}`:'-',color:'#7C3AED',small:true,ico:'M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z'},
     {label:'Stock crítico / agotado',val:`${stockCritico} / ${stockAgotado}`,color:stockAgotado>0?'#dc2626':'#f59e0b',ico:'M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z'},
   ].map(k=>`<div class="card" style="text-align:center;padding:12px 8px">
     <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${k.label}</div>
@@ -17344,7 +17496,7 @@ function renderRepTextiles(){
     } else {
       tbody.innerHTML=sorted.map((r,i)=>`<tr style="border-bottom:1px solid var(--border);background:${i%2?'var(--bg2)':''}">
         <td style="padding:7px 8px;font-weight:500">${esc(r.nombre)}</td>
-        <td style="padding:7px 8px"><span style="background:#ffe3ee;color:#be185d;font-size:11px;padding:1px 7px;border-radius:999px;font-weight:600">${r.talla||'—'}</span></td>
+        <td style="padding:7px 8px"><span style="background:#ffe3ee;color:#be185d;font-size:11px;padding:1px 7px;border-radius:999px;font-weight:600">${tallaVisible(r.talla)||'—'}</span></td>
         <td style="padding:7px 8px">${esc(r.color||'—')}</td>
         <td style="padding:7px 8px;font-size:11px;color:var(--muted)">${esc(r.caract||'—')}</td>
         <td style="padding:7px 8px;text-align:right;font-weight:700">${r.cant}</td>
@@ -17374,7 +17526,7 @@ function renderRepTextiles(){
                              `<span style="background:#D1FAE5;color:#065F46;font-size:10px;padding:2px 8px;border-radius:999px;font-weight:600">OK</span>`;
         return `<tr style="border-bottom:1px solid var(--border);background:${agotado?'#fff8f8':critico?'#fffbf0':i%2?'var(--bg2)':''}">
           <td style="padding:7px 8px;font-weight:500">${esc(t.nombre)}</td>
-          <td style="padding:7px 8px"><span style="background:#ffe3ee;color:#be185d;font-size:11px;padding:1px 7px;border-radius:999px;font-weight:600">${t.talla||'—'}</span></td>
+          <td style="padding:7px 8px"><span style="background:#ffe3ee;color:#be185d;font-size:11px;padding:1px 7px;border-radius:999px;font-weight:600">${tallaVisible(t.talla)||'—'}</span></td>
           <td style="padding:7px 8px">${esc(t.color||'—')}</td>
           <td style="padding:7px 8px;font-size:11px;color:var(--muted)">${esc(t.caracteristica||'—')}</td>
           <td style="padding:7px 8px;text-align:right">${t.stock||0}</td>
@@ -17426,7 +17578,7 @@ function texAbrirFiltro(e, col){
         <input type="checkbox" value="${v.replace(/"/g,'&quot;')}" ${checked?'checked':''}
           onchange="texFiltroOpcion(this,'${col}')"
           style="accent-color:var(--brand);width:14px;height:14px;flex-shrink:0">
-        <span style="white-space:nowrap">${v}</span>
+        <span style="white-space:nowrap">${col==='talla'?tallaVisible(v):v}</span>
       </label>`;
     }).join('');
   }
@@ -17575,7 +17727,7 @@ function _renderOrdenProduccion(cat, peds, filtroProd){
     ).join('');
     return '<tr style="border-bottom:1px solid var(--border);background:' + (i%2?'var(--bg2)':'') + '">'
       + '<td style="padding:8px 8px;font-weight:600">' + esc(r.nombre) + '</td>'
-      + '<td style="padding:8px 8px"><span style="background:#ffe3ee;color:#be185d;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:700">' + (r.talla||'—') + '</span></td>'
+      + '<td style="padding:8px 8px"><span style="background:#ffe3ee;color:#be185d;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:700">' + (tallaVisible(r.talla)||'—') + '</span></td>'
       + '<td style="padding:8px 8px">' + esc(r.color||'—') + '</td>'
       + '<td style="padding:8px 8px;font-size:11px;color:var(--muted)">' + esc(r.caract||'—') + '</td>'
       + '<td style="padding:8px 8px;text-align:right;font-size:15px;font-weight:800;color:#185FA5">' + r.cant + '</td>'
@@ -17627,7 +17779,7 @@ function texImprimirOrden(){
   const totalUnd=filas.reduce((a,r)=>a+r.cant,0);
   const rows=filas.map((r,i)=>`<tr style="background:${i%2?'var(--bg)':'var(--card)'}">
     <td style="padding:8px 10px;font-weight:600">${esc(r.nombre)}</td>
-    <td style="padding:8px 10px;text-align:center"><span style="background:#ffe3ee;color:#be185d;font-size:12px;padding:2px 10px;border-radius:999px;font-weight:700">${r.talla||'—'}</span></td>
+    <td style="padding:8px 10px;text-align:center"><span style="background:#ffe3ee;color:#be185d;font-size:12px;padding:2px 10px;border-radius:999px;font-weight:700">${tallaVisible(r.talla)||'—'}</span></td>
     <td style="padding:8px 10px">${r.color||'—'}</td>
     <td style="padding:8px 10px;color:#888;font-size:12px">${r.caract||'—'}</td>
     <td style="padding:8px 10px;text-align:center;font-size:16px;font-weight:800;color:#185FA5">${r.cant}</td>
@@ -21929,7 +22081,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_87';
+  const APP_VERSION = 'v15_91';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
