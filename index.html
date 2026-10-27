@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_95">
+<html lang="es" data-app-version="GestioMada_V15_96">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -6410,7 +6410,13 @@ async function _migrarFotosBase64(){
     if(raw){
       const cat=JSON.parse(raw);
       // Fase A: limpiar base64 redundantes (ya tienen foto_url)
+      const _reparadas=[];
       cat.forEach(p=>{
+        // v15.96: reparar productos cuyo enlace de foto quedó en 'foto' y nunca llegó a la nube (foto_url vacío)
+        if(p.foto && /^https?:/i.test(p.foto)){
+          if(!p.foto_url){ p.foto_url=p.foto; _reparadas.push(p); }
+          p.foto=''; limpiados++;
+        }
         if(p.foto && p.foto.startsWith('data:') && p.foto_url && p.foto_url.startsWith('http')){
           p.foto=''; limpiados++;
         }
@@ -6442,6 +6448,8 @@ async function _migrarFotosBase64(){
       }
       if(limpiados>0||subidos>0){
         localStorage.setItem('POS.cat', JSON.stringify(cat));
+        if(window._supaConectado && typeof syncProductoAhora==='function') _reparadas.forEach(p=>syncProductoAhora(p));
+        if(_reparadas.length) console.log('[Migración] Fotos reparadas en la nube:', _reparadas.length);
       }
     }
   }catch(e){ console.warn('[Migración] Error limpiando fotos POS.cat',e); }
@@ -6642,7 +6650,8 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v15.95: NUEVO (Almacenamiento) \u2014 los pedidos ahora se guardan en un almac\u00e9n grande (IndexedDB) fuera del l\u00edmite de ~5 MB de localStorage. La migraci\u00f3n copia, verifica y solo entonces libera el espacio; si algo falla, la app sigue como antes. El resto de la app no cambia.\n'
+  return 'v15.96: FIX (Fotos) \u2014 al agregar al cat\u00e1logo desde el Editor un producto cuya foto ya estaba en la nube, el enlace quedaba solo en este dispositivo y en los dem\u00e1s no se ve\u00eda la imagen (efecto de v15.93). Ahora se guarda como foto_url y se sincroniza; adem\u00e1s, al abrir la app se reparan solos los productos que quedaron as\u00ed.\n'
+    + 'v15.95: NUEVO (Almacenamiento) \u2014 los pedidos ahora se guardan en un almac\u00e9n grande (IndexedDB) fuera del l\u00edmite de ~5 MB de localStorage. La migraci\u00f3n copia, verifica y solo entonces libera el espacio; si algo falla, la app sigue como antes. El resto de la app no cambia.\n'
     + 'v15.94: NUEVO (Configuraci\u00f3n \u2192 Respaldo del negocio) \u2014 bot\u00f3n \ud83d\udd0d Ver detalles: muestra qu\u00e9 datos ocupan el almacenamiento local (tama\u00f1o, porcentaje, cantidad de registros, fotos guardadas dentro del tel\u00e9fono y los 5 registros m\u00e1s pesados de cada m\u00f3dulo).\n'
     + 'v15.93: FIX (Almacenamiento) \u2014 las fotos ya no llenan el tel\u00e9fono: siempre se guardan como JPEG liviano (antes un PNG pesaba 1 MB o m\u00e1s), las del Editor se suben a la nube al elegirlas y solo se guarda el enlace, la limpieza ya no borra fotos (las sube o las recomprime) y el logo tambi\u00e9n se comprime.\n'
     + 'v15.92: FIX (Editor \u2192 Agregar al cat\u00e1logo) \u2014 al abrir el editor con un producto que ya est\u00e1 en el cat\u00e1logo, ahora se encuentra por ID/SKU/nombre con la misma regla con la que se guarda; antes solo buscaba por nombre exacto y, si no lo encontraba, mostraba Textil (y modo de inventario) apagados y al guardar los borraba del producto.\n'
@@ -7517,11 +7526,12 @@ function confirmarCatalogo(){
   }
   const skuFinal = skuNuevo || String(prodId); // SKU = ID del producto si no se ingresó uno manual
   const fotoPendienteStorage = _foto3 && _foto3.startsWith('data:') && window._supaConectado;
-  const fotoLocal = fotoPendienteStorage ? '' : _foto3;
+  const _fotoEsUrl = /^https?:/i.test(_foto3||'');   // v15.96: foto ya subida a la nube (Editor) → es el enlace, no una imagen local
+  const fotoLocal = (fotoPendienteStorage || _fotoEsUrl) ? '' : _foto3;
   const fotoUrlExistente = ei>=0 ? (cat[ei].foto_url||'') : '';
   const mcEsTextil=qs('#mc_es_textil')?.checked||false;
   const mcConVar = mcEsTextil || !!qs('#mc_usa_colores')?.checked;   // V15_84: textil o solo colores
-  const nuevo={ id:prodId, nombre:nom, sku:skuFinal, categoria:qs('#mc_cat').value, foto:fotoLocal, foto_url:fotoPendienteStorage?'':fotoUrlExistente, costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, tipo_venta:qs('#pers_tipo_venta')?.value||'detal', modo_inventario:modoInv, inv_loc:invLoc, inv_momento:(modoInv==='ninguno'?'entrega':(qs('#mc_inv_momento')?.value||'entrega')), moneda_prod:monedaProd, insumos_receta:receta, es_textil:mcEsTextil, textil_grupo_talla:'', textil_grupos_talla:mcEsTextil?[..._mcTextilGruposSel]:[], textil_colores:mcConVar?[..._mcTextilColoresSel]:[], textil_recargos:mcConVar?recargosLeer('mc'):{}, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
+  const nuevo={ id:prodId, nombre:nom, sku:skuFinal, categoria:qs('#mc_cat').value, foto:fotoLocal, foto_url:fotoPendienteStorage?'':(_fotoEsUrl?_foto3:fotoUrlExistente), costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, tipo_venta:qs('#pers_tipo_venta')?.value||'detal', modo_inventario:modoInv, inv_loc:invLoc, inv_momento:(modoInv==='ninguno'?'entrega':(qs('#mc_inv_momento')?.value||'entrega')), moneda_prod:monedaProd, insumos_receta:receta, es_textil:mcEsTextil, textil_grupo_talla:'', textil_grupos_talla:mcEsTextil?[..._mcTextilGruposSel]:[], textil_colores:mcConVar?[..._mcTextilColoresSel]:[], textil_recargos:mcConVar?recargosLeer('mc'):{}, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
   // No embeber foto base64 dentro de calculo — ocupa MB redundantes en localStorage
   if(nuevo.calculo && typeof nuevo.calculo==='object' && nuevo.calculo.foto && nuevo.calculo.foto.startsWith('data:')) nuevo.calculo.foto='';
   let _prodSyncEd;
@@ -7711,8 +7721,9 @@ function guardarProdManual(){
   const fotoUrlExistente = esModoEdit ? (cat[_mpmIdx].foto_url||'') : '';
   const fotoBase64Cambio = foto && foto.startsWith('data:') && foto !== (esModoEdit ? cat[_mpmIdx].foto : '');
   const guardarFotoLocal = !(fotoBase64Cambio && window._supaConectado);
-  const obj={ nombre:nom, sku:skuNuevo, categoria:qs('#mpm_cat').value, foto:guardarFotoLocal?foto:'',
-    foto_url: fotoBase64Cambio ? '' : fotoUrlExistente,
+  const _mpmFotoUrl = /^https?:/i.test(foto||'');   // v15.96: si la foto es un enlace, va en foto_url
+  const obj={ nombre:nom, sku:skuNuevo, categoria:qs('#mpm_cat').value, foto:guardarFotoLocal?(_mpmFotoUrl?'':foto):'',
+    foto_url: fotoBase64Cambio ? '' : (_mpmFotoUrl?foto:fotoUrlExistente),
     costo:parseEU(qs('#mpm_costo')?.value||'0'), precio_venta:pv,
     estado:qs('#mpm_estado').value, modo_inventario:modoInv, inv_loc:mpmLoc, inv_momento:(modoInv==='ninguno'?'entrega':(qs('#mpm_inv_momento')?.value||'entrega')), moneda_prod:mpmMoneda,
     tipo_venta:qs('#mpm_tipo_venta')?.value||'detal',
@@ -22332,7 +22343,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_95';
+  const APP_VERSION = 'v15_96';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
