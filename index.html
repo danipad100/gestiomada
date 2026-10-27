@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_93">
+<html lang="es" data-app-version="GestioMada_V15_94">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -6425,6 +6425,72 @@ async function _resolverConflictoSync(tabla, id, ganador){
   if(typeof renderDash === 'function') renderDash();
 }
 
+// ── Detalle del almacenamiento: qué datos ocupan el espacio ──
+let _lsDetalleAbierto=false;
+const _LS_NOMBRES={
+  'POS.pers':'Productos del Editor (costos + foto)','POS.ped':'Pedidos','POS.ven':'Ventas','POS.cat':'Catálogo de productos',
+  'POS.cli':'Clientes','POS.caja':'Caja (movimientos)','POS.cfg':'Configuración','POS.hist_costos':'Historial de costos',
+  'POS.cot':'Cotizaciones','POS.insumos':'Inventario de insumos','POS.terminados':'Inventario de terminados',
+  'POS.invmov':'Movimientos de inventario','POS.comisiones':'Comisiones','POS.envios':'Envíos','POS.cxp':'Cuentas por pagar',
+  'POS.cuentas':'Cuentas','POS.ctamov':'Movimientos de cuentas','POS.usuarios':'Usuarios','POS.sesiones_hist':'Historial de cierres de caja',
+  'POS.sesion':'Sesión de caja actual','POS.gastos_recurrentes':'Gastos recurrentes','POS.cat_order':'Orden del catálogo',
+  'POS._borrados':'Lista de borrados (sincronización)','POS._colaUpsertsPendientes':'Pendientes por subir a la nube',
+  'POS._conflictosSync':'Conflictos de sincronización','POS._pedBaseline':'Control de cambios de pedidos','POS.tasa':'Tasas de cambio'
+};
+// suma el tamaño de textos tipo foto (data:image…) dentro de cualquier dato
+function _lsBytesFotos(v){
+  if(typeof v==='string') return v.startsWith('data:') ? v.length : 0;
+  if(Array.isArray(v)) return v.reduce((a,x)=>a+_lsBytesFotos(x),0);
+  if(v && typeof v==='object'){ let t=0; for(const k in v) t+=_lsBytesFotos(v[k]); return t; }
+  return 0;
+}
+function _lsEtiquetaReg(r,i){
+  if(r===null||typeof r!=='object') return '#'+(i+1);
+  const n=r.name||r.nombre||r.numero||(r.cliente&&(r.cliente.nombre||r.cliente))||r.desc||r.concepto||r.id;
+  return (typeof n==='object'?'':String(n||'')).slice(0,40)||('#'+(i+1));
+}
+function _lsDetalleHtml(){
+  const kbDe=c=>Math.round(c*2/1024);
+  const filas=[]; let fotosTot=0, total=0;
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i), raw=localStorage.getItem(k)||'';
+      const chars=k.length+raw.length; total+=chars;
+      const f={k,kb:kbDe(chars),nombre:_LS_NOMBRES[k]||(k.startsWith('POS.')?k.slice(4):'Otros (sistema)'),regs:'',fotosKB:0,pesados:[]};
+      if(k.startsWith('POS.')){
+        try{
+          const d=JSON.parse(raw);
+          if(Array.isArray(d)){
+            f.regs=d.length+' registros';
+            f.fotosKB=kbDe(_lsBytesFotos(d)); 
+            f.pesados=d.map((r,ix)=>({n:_lsEtiquetaReg(r,ix),kb:kbDe(JSON.stringify(r).length),foto:kbDe(_lsBytesFotos(r))})).sort((a,b)=>b.kb-a.kb).slice(0,5);
+          } else if(d && typeof d==='object'){ f.regs=Object.keys(d).length+' elementos'; f.fotosKB=kbDe(_lsBytesFotos(d)); }
+        }catch(e){}
+      }
+      fotosTot+=f.fotosKB;
+      filas.push(f);
+    }
+  }catch(e){}
+  filas.sort((a,b)=>b.kb-a.kb);
+  const totKB=kbDe(total)||1;
+  const tabla=filas.map(f=>{
+    const pc=Math.round(f.kb/totKB*100);
+    const ft=f.fotosKB>0?'<span style="color:#dc3545;font-weight:600">'+f.fotosKB+' KB</span>':'—';
+    return '<tr><td style="padding:5px 6px">'+esc(f.nombre)+'</td><td style="padding:5px 6px;text-align:right;white-space:nowrap"><strong>'+f.kb+' KB</strong></td>'
+      +'<td style="padding:5px 6px;min-width:70px"><div style="background:var(--border);border-radius:4px;height:6px"><div style="width:'+pc+'%;background:var(--brand);height:6px;border-radius:4px"></div></div><span style="font-size:10px;color:var(--muted)">'+pc+'%</span></td>'
+      +'<td style="padding:5px 6px;font-size:11px;color:var(--muted);white-space:nowrap">'+esc(f.regs)+'</td><td style="padding:5px 6px;text-align:right;font-size:11px">'+ft+'</td></tr>';
+  }).join('');
+  const pesadosHtml=filas.filter(f=>f.pesados.length && f.kb>=100).slice(0,4).map(f=>
+    '<div style="margin-top:10px"><div style="font-weight:600;font-size:12px">'+esc(f.nombre)+' — los 5 registros más pesados</div>'
+    +f.pesados.map(r=>'<div style="display:flex;justify-content:space-between;gap:8px;font-size:11px;padding:2px 0;border-bottom:1px dashed var(--border)"><span>'+esc(r.n)+'</span><span style="white-space:nowrap">'+r.kb+' KB'+(r.foto>0?' <span style="color:#dc3545">(foto '+r.foto+' KB)</span>':'')+'</span></div>').join('')+'</div>').join('');
+  const aviso=fotosTot>0
+    ? '<div style="margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(220,53,69,.08);font-size:12px"><strong>Fotos guardadas dentro del teléfono: '+fotosTot+' KB.</strong> Con internet, el botón "Limpiar fotos base64" las sube a la nube y deja solo el enlace.</div>'
+    : '<div style="margin-top:8px;padding:8px 10px;border-radius:8px;background:rgba(40,167,69,.10);font-size:12px">Ya no hay fotos pesadas guardadas dentro del teléfono.</div>';
+  return '<div style="margin-top:10px;max-height:380px;overflow:auto;border:1px solid var(--border);border-radius:10px;padding:8px">'
+    +'<table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="text-align:left;color:var(--muted);font-size:11px"><th style="padding:4px 6px">Dato</th><th style="padding:4px 6px;text-align:right">Tamaño</th><th style="padding:4px 6px">Del total</th><th style="padding:4px 6px">Cantidad</th><th style="padding:4px 6px;text-align:right">Fotos dentro</th></tr></thead><tbody>'+tabla+'</tbody></table>'
+    +aviso+pesadosHtml+'</div>';
+}
+function _lsToggleDetalle(){ _lsDetalleAbierto=!_lsDetalleAbierto; renderLsMonitor(); }
 function renderLsMonitor(){
   const el=document.getElementById('ls-monitor');
   if(!el) return;
@@ -6436,7 +6502,7 @@ function renderLsMonitor(){
   try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); const sz=Math.round((k.length+(localStorage.getItem(k)||'').length)*2/1024); items.push({k,sz}); } }catch(e){}
   items.sort((a,b)=>b.sz-a.sz);
   const top3=items.slice(0,3).map(i=>i.k.replace('POS.','')+'&nbsp;('+i.sz+'&nbsp;KB)').join(', ');
-  el.innerHTML='<span style="font-size:12px;color:var(--muted)">Almacenamiento local: <strong>'+kb+' KB</strong> de ~5.120 KB ('+pct+'%)</span><div class="ls-meter"><div class="ls-meter-fill" style="width:'+pct+'%;background:'+color+'"></div></div><div style="font-size:11px;color:var(--muted);margin-top:4px">Mayor uso: '+top3+'</div>'+(pct>60?'<button class="btn btn-sm" style="margin-top:6px;font-size:11px" onclick="_limpiarFotosBase64Manual()">Limpiar fotos base64 (catálogo + editor)</button>':'');
+  el.innerHTML='<span style="font-size:12px;color:var(--muted)">Almacenamiento local: <strong>'+kb+' KB</strong> de ~5.120 KB ('+pct+'%)</span><div class="ls-meter"><div class="ls-meter-fill" style="width:'+pct+'%;background:'+color+'"></div></div><div style="font-size:11px;color:var(--muted);margin-top:4px">Mayor uso: '+top3+'</div>'+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-sm" style="font-size:11px" onclick="_lsToggleDetalle()">'+(_lsDetalleAbierto?'▲ Ocultar detalles':'🔍 Ver detalles')+'</button>'+(pct>60?'<button class="btn btn-sm" style="font-size:11px" onclick="_limpiarFotosBase64Manual()">Limpiar fotos base64 (catálogo + editor)</button>':'')+'</div>'+(_lsDetalleAbierto?_lsDetalleHtml():'');
 }
 async function _limpiarFotosBase64Manual(){
   toast('Limpiando fotos base64…','info');
@@ -6446,7 +6512,8 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v15.93: FIX (Almacenamiento) \u2014 las fotos ya no llenan el tel\u00e9fono: siempre se guardan como JPEG liviano (antes un PNG pesaba 1 MB o m\u00e1s), las del Editor se suben a la nube al elegirlas y solo se guarda el enlace, la limpieza ya no borra fotos (las sube o las recomprime) y el logo tambi\u00e9n se comprime.\n'
+  return 'v15.94: NUEVO (Configuraci\u00f3n \u2192 Respaldo del negocio) \u2014 bot\u00f3n \ud83d\udd0d Ver detalles: muestra qu\u00e9 datos ocupan el almacenamiento local (tama\u00f1o, porcentaje, cantidad de registros, fotos guardadas dentro del tel\u00e9fono y los 5 registros m\u00e1s pesados de cada m\u00f3dulo).\n'
+    + 'v15.93: FIX (Almacenamiento) \u2014 las fotos ya no llenan el tel\u00e9fono: siempre se guardan como JPEG liviano (antes un PNG pesaba 1 MB o m\u00e1s), las del Editor se suben a la nube al elegirlas y solo se guarda el enlace, la limpieza ya no borra fotos (las sube o las recomprime) y el logo tambi\u00e9n se comprime.\n'
     + 'v15.92: FIX (Editor \u2192 Agregar al cat\u00e1logo) \u2014 al abrir el editor con un producto que ya est\u00e1 en el cat\u00e1logo, ahora se encuentra por ID/SKU/nombre con la misma regla con la que se guarda; antes solo buscaba por nombre exacto y, si no lo encontraba, mostraba Textil (y modo de inventario) apagados y al guardar los borraba del producto.\n'
     + 'v15.91: CAMBIO (Textiles \u00b7 tallas de adultos) \u2014 las tallas num\u00e9ricas (10, 12, 14, 16) ya no llevan sufijo C/D y salen una sola vez al inicio; luego van las de Dama (D) y despu\u00e9s las de Caballero (C).\n'
     + 'v15.90: NUEVO (Configuraci\u00f3n \u2192 Textiles \u00b7 tallas) \u2014 las tallas se pueden ordenar con \u25c0 \u25b6 o con el bot\u00f3n \u2195 Ordenar; las tallas num\u00e9ricas (10, 12, 14, 16) se colocan solas antes de XS, S, M. El orden se refleja en POS, pedidos y cotizaciones.\n'
@@ -22134,7 +22201,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_93';
+  const APP_VERSION = 'v15_94';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
