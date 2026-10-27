@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_91">
+<html lang="es" data-app-version="GestioMada_V15_92">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -6440,7 +6440,8 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v15.91: CAMBIO (Textiles \u00b7 tallas de adultos) \u2014 las tallas num\u00e9ricas (10, 12, 14, 16) ya no llevan sufijo C/D y salen una sola vez al inicio; luego van las de Dama (D) y despu\u00e9s las de Caballero (C).\n'
+  return 'v15.92: FIX (Editor \u2192 Agregar al cat\u00e1logo) \u2014 al abrir el editor con un producto que ya est\u00e1 en el cat\u00e1logo, ahora se encuentra por ID/SKU/nombre con la misma regla con la que se guarda; antes solo buscaba por nombre exacto y, si no lo encontraba, mostraba Textil (y modo de inventario) apagados y al guardar los borraba del producto.\n'
+    + 'v15.91: CAMBIO (Textiles \u00b7 tallas de adultos) \u2014 las tallas num\u00e9ricas (10, 12, 14, 16) ya no llevan sufijo C/D y salen una sola vez al inicio; luego van las de Dama (D) y despu\u00e9s las de Caballero (C).\n'
     + 'v15.90: NUEVO (Configuraci\u00f3n \u2192 Textiles \u00b7 tallas) \u2014 las tallas se pueden ordenar con \u25c0 \u25b6 o con el bot\u00f3n \u2195 Ordenar; las tallas num\u00e9ricas (10, 12, 14, 16) se colocan solas antes de XS, S, M. El orden se refleja en POS, pedidos y cotizaciones.\n'
     + 'v15.89: NUEVO (Configuraci\u00f3n \u2192 Textiles \u00b7 tallas) \u2014 cada talla puede tener un nombre visible (ej: S \u2192 Chica) con el bot\u00f3n \u270e. Se muestra en el POS, pedidos, tickets, inventario y reportes; los datos guardados no cambian y los recargos siguen funcionando. Se sincroniza con la nube.\n'
     + 'v15.88: NUEVO (Configuraci\u00f3n \u2192 Textiles \u00b7 tallas) \u2014 las tallas de ni\u00f1os, adultos y bodys ahora se editan desde Configuraci\u00f3n (agregar, quitar, restaurar) y se sincronizan con la nube. Ni\u00f1os queda por defecto de la talla 2 a la 8. Los productos ya guardados con otras tallas no se pierden.\n'
@@ -7125,6 +7126,22 @@ function dl(content,type,name){ const a=document.createElement('a'); a.href=URL.
    CATÁLOGO
 ════════════════════════════════════════════ */
 let _catIdx=null;
+// Busca el producto del catálogo que el editor va a actualizar, con la MISMA regla que usa confirmarCatalogo:
+// 1) por ID de edición, 2) por SKU exacto, 3) por nombre (sin importar mayúsculas/espacios) solo si no hay SKU.
+function _catExistenteParaEditor(){
+  const cat=loadCat();
+  const norm=v=>String(v||'').trim().replace(/\s+/g,' ').toLowerCase();
+  const nom=norm(qs('#mc_nombre')?.value);
+  const sku=norm(qs('#mc_sku')?.value);
+  let p=null;
+  if(window._editCatProdId!=null){
+    p=cat.find(x=>String(x.id)===String(window._editCatProdId))||null;
+    if(p && sku && norm(p.sku) && norm(p.sku)!==sku) p=null;
+  }
+  if(!p && sku) p=cat.find(x=>norm(x.sku)===sku)||null;
+  if(!p && !sku) p=cat.find(x=>norm(x.nombre)===nom)||null;
+  return p;
+}
 function abrirCatalogo(){
   qs('#mc_nombre').value=pName?.value?.trim()||'';
   const costoNum=window._lastSub||0;
@@ -7142,8 +7159,7 @@ function abrirCatalogo(){
   // Restaurar modo inventario y receta del producto existente (si ya está en catálogo)
   const mcInv=qs('#mc_modo_inv');
   if(mcInv){
-    const nom=(qs('#mc_nombre').value||'').toLowerCase();
-    const catExist=loadCat().find(p=>p.nombre.toLowerCase()===nom);
+    const catExist=_catExistenteParaEditor();
     if(catExist && catExist.modo_inventario && catExist.modo_inventario!=='ninguno'){
       mcInv.value=catExist.modo_inventario;
       mcToggleReceta();
@@ -7280,7 +7296,7 @@ function confirmarCatalogo(){
   // 2) Emparejar por SKU exacto (identidad real del producto).
   if(ei<0 && skuLower) ei=cat.findIndex(p=>(p.sku||'').toLowerCase()===skuLower);
   // 3) Último recurso: por nombre exacto SOLO si no se ingresó SKU.
-  if(ei<0 && !skuLower) ei=cat.findIndex(p=>(p.nombre||'').toLowerCase()===nom.toLowerCase());
+  if(ei<0 && !skuLower){ const _n=v=>String(v||'').trim().replace(/\s+/g,' ').toLowerCase(); ei=cat.findIndex(p=>_n(p.nombre)===_n(nom)); }
   const prodId = ei>=0 ? cat[ei].id : Date.now();
   const _fImg3=qs('#pers_foto_img'); const _foto3=_fImg3&&_fImg3.style.display!=='none'?_fImg3.src:'';
   const modoInv=qs('#mc_modo_inv')?.value||'ninguno';
@@ -22081,7 +22097,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_91';
+  const APP_VERSION = 'v15_92';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
