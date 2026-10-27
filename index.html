@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_94">
+<html lang="es" data-app-version="GestioMada_V15_95">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -14,6 +14,132 @@
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf-autotable.min.js"></script>
 <script>
+// ══════════════════════════════════════════════
+//  ALMACÉN GRANDE (IndexedDB) — v15.95
+//  Los datos que más crecen (hoy: pedidos) salen de localStorage (límite ~5 MB) y viven en IndexedDB.
+//  El resto de la app NO cambia: sigue usando localStorage.getItem/setItem con la misma clave y de forma
+//  instantánea; este bloque redirige solo las claves de GM_BIG_KEYS a una copia en memoria que se guarda en IndexedDB.
+//  Seguridad: la migración COPIA, verifica que la copia sea idéntica y solo entonces borra la de localStorage.
+//  Si IndexedDB no está disponible o falla, todo sigue funcionando como antes (localStorage).
+// ══════════════════════════════════════════════
+(function(){
+  const KEYS=['POS.ped'];
+  const DB_NAME='gestiomada_big', STORE='kv';
+  const ls=window.localStorage;
+  const P=Storage.prototype, oGet=P.getItem, oSet=P.setItem, oRem=P.removeItem;
+  const mem=new Map();            // copia en memoria (lo que lee la app)
+  const dirty=new Set();          // claves por guardar en IndexedDB
+  const preReady=[];              // accesos antes de estar listo (solo para diagnóstico)
+  let ready=false, usable=false, db=null, timer=null, migrated={};
+  const MARK='__gm_big_dirty_';   // marca persistente: "la copia de localStorage es la más nueva"
+  const isBig=(self,k)=> self===ls && KEYS.indexOf(k)>=0;
+
+  function reqP(r){ return new Promise((res,rej)=>{ r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); }); }
+  function txDone(tx){ return new Promise((res,rej)=>{ tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error||new Error('abort')); }); }
+
+  async function iniciar(){
+    try{
+      if(!window.indexedDB) throw new Error('sin IndexedDB');
+      db=await new Promise((res,rej)=>{
+        const r=indexedDB.open(DB_NAME,1);
+        r.onupgradeneeded=()=>{ r.result.createObjectStore(STORE); };
+        r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); r.onblocked=()=>rej(new Error('bloqueado'));
+      });
+      // 1) leer lo que ya hay en IndexedDB
+      const tx=db.transaction(STORE,'readonly'), st=tx.objectStore(STORE);
+      const [meta]=await Promise.all([reqP(st.get('__meta'))]);
+      migrated=(meta&&meta.migrated)||{};
+      for(const k of KEYS){ const v=await reqP(st.get(k)); if(typeof v==='string') mem.set(k,v); }
+      // 2) migrar lo que haya en localStorage (copiar → verificar → borrar)
+      for(const k of KEYS){
+        const legacy=oGet.call(ls,k);
+        if(legacy===null) continue;
+        const idbVal=mem.get(k);
+        // gana localStorage si nunca se migró, o si hubo escrituras en localStorage después (IndexedDB falló antes)
+        const legacyGana = idbVal===undefined || !migrated[k] || oGet.call(ls,MARK+k)==='1';
+        if(legacyGana){
+          const w=db.transaction(STORE,'readwrite'); w.objectStore(STORE).put(legacy,k); await txDone(w);
+          const back=await reqP(db.transaction(STORE,'readonly').objectStore(STORE).get(k));
+          if(back!==legacy) throw new Error('la copia no coincide');   // no se borra nada
+          mem.set(k,legacy); migrated[k]=true;
+          const m=db.transaction(STORE,'readwrite'); m.objectStore(STORE).put({migrated},'__meta'); await txDone(m);
+        }
+        oRem.call(ls,k); oRem.call(ls,MARK+k);   // ya está a salvo en IndexedDB
+      }
+      // 3) si nunca había datos, marcar migrado para que IndexedDB sea la fuente desde ahora
+      let cambiaMeta=false; for(const k of KEYS){ if(!migrated[k]){ migrated[k]=true; cambiaMeta=true; } }
+      if(cambiaMeta){ const m=db.transaction(STORE,'readwrite'); m.objectStore(STORE).put({migrated},'__meta'); await txDone(m); }
+      usable=true;
+    }catch(e){
+      usable=false; console.warn('[AlmacenGrande] IndexedDB no disponible, se usa localStorage:',e&&e.message);
+      mem.clear();
+    }
+    ready=true; api._resolve();
+  }
+
+  // Se guarda enseguida (al terminar la tarea actual), agrupando los guardados seguidos; así casi no hay ventana para perder datos al cerrar.
+  function programarGuardado(){ if(timer) return; timer=1; queueMicrotask(guardar); }
+  function guardar(){
+    timer=null; if(!usable||!db||!dirty.size) return;
+    const ks=Array.from(dirty); dirty.clear();
+    try{ if(bc) ks.forEach(k=>bc.postMessage({k:k,v:mem.has(k)?mem.get(k):null})); }catch(e){}
+    try{
+      const tx=db.transaction(STORE,'readwrite'), st=tx.objectStore(STORE);
+      ks.forEach(k=>{ if(mem.has(k)) st.put(mem.get(k),k); else st.delete(k); });
+      tx.oncomplete=()=>{ ks.forEach(k=>{ try{ oRem.call(ls,MARK+k); if(mem.has(k)) oRem.call(ls,k); }catch(e){} }); };
+      tx.onabort=tx.onerror=()=>respaldoLocal(ks);
+    }catch(e){ respaldoLocal(ks); }
+  }
+  // Si IndexedDB falla al guardar, el dato NO se pierde: se deja una copia en localStorage.
+  function respaldoLocal(ks){
+    ks.forEach(k=>{ try{ if(mem.has(k)) oSet.call(ls,k,mem.get(k)); }catch(e){ console.warn('[AlmacenGrande] sin espacio para respaldo local de',k); } });
+    ks.forEach(k=>{ try{ oSet.call(ls,MARK+k,'1'); }catch(e){} });
+    console.warn('[AlmacenGrande] falló guardar en IndexedDB; copia en localStorage');
+  }
+  function vaciar(){ timer=null; guardar(); }
+  // Varias pestañas abiertas: cuando una guarda, avisa a las otras para que no queden con datos viejos.
+  let bc=null; try{ bc=new BroadcastChannel('gm_big_store'); bc.onmessage=ev=>{ const m=ev.data; if(!m||KEYS.indexOf(m.k)<0||!usable) return; if(m.v===null) mem.delete(m.k); else mem.set(m.k,m.v); try{ window.dispatchEvent(new CustomEvent('gm-big-externo',{detail:{k:m.k}})); }catch(e){} }; }catch(e){}
+  window.addEventListener('pagehide',vaciar);
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden') vaciar(); });
+
+  P.getItem=function(k){
+    if(isBig(this,k)){
+      if(!ready){ preReady.push('get '+k); return oGet.call(this,k); }
+      if(usable) return mem.has(k)?mem.get(k):null;
+    }
+    return oGet.call(this,k);
+  };
+  P.setItem=function(k,v){
+    if(isBig(this,k)){
+      if(!ready){ preReady.push('set '+k); try{ oSet.call(this,MARK+k,'1'); }catch(e){} return oSet.call(this,k,v); }
+      if(usable){ mem.set(k,String(v)); dirty.add(k); programarGuardado(); return; }
+    }
+    return oSet.call(this,k,v);
+  };
+  P.removeItem=function(k){
+    if(isBig(this,k)){
+      if(!ready){ preReady.push('rem '+k); return oRem.call(this,k); }
+      if(usable){ mem.delete(k); dirty.add(k); programarGuardado(); oRem.call(this,k); return; }
+    }
+    return oRem.call(this,k);
+  };
+
+  const api=window.GM_BIG={
+    keys:KEYS, preReady,
+    isUsable:()=>usable, isReady:()=>ready,
+    entradas:()=>usable?Array.from(mem.entries()):[],
+    vaciar,
+    ready:null, _resolve:null
+  };
+  api.ready=new Promise(r=>{ api._resolve=r; });
+  // Ejecuta fn cuando el DOM esté listo Y el almacén grande esté cargado (evita leer datos antes de tiempo).
+  window.gmOnReady=function(fn){
+    const run=()=>api.ready.then(fn);
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',run); else run();
+  };
+  iniciar();
+})();
+
 // ══════════════════════════════════════════════
 //  SUPABASE CONFIG + REALTIME — GestioMada v13.5
 // ══════════════════════════════════════════════
@@ -1151,6 +1277,7 @@ function _iniciarVigilanciaReconexion(){
 // Se ejecuta al detectar el evento 'online' del navegador y también en el ciclo periódico
 // (el evento 'online' no siempre es confiable — wifi con portal cautivo, redes móviles, etc.)
 async function _verificarReconexion(){
+  await GM_BIG.ready; // v15.95
   if(window._supaConectado){
     if(_reconexionTimer){ clearInterval(_reconexionTimer); _reconexionTimer = null; }
     return;
@@ -1179,6 +1306,7 @@ window.addEventListener('online', _verificarReconexion);
 // Verificar conexión con la tabla 'productos' — más confiable que 'config'
 SUPA.from('productos').select('id').limit(1)
   .then(async ({data, error}) => {
+    await GM_BIG.ready; // v15.95: no sincronizar hasta que el almacén grande esté cargado
     // data puede ser [] (vacío) o tener registros — ambos son conexión válida
     window._supaConectado = !error;
     if(window._supaConectado){
@@ -6453,10 +6581,11 @@ function _lsDetalleHtml(){
   const kbDe=c=>Math.round(c*2/1024);
   const filas=[]; let fotosTot=0, total=0;
   try{
-    for(let i=0;i<localStorage.length;i++){
-      const k=localStorage.key(i), raw=localStorage.getItem(k)||'';
-      const chars=k.length+raw.length; total+=chars;
-      const f={k,kb:kbDe(chars),nombre:_LS_NOMBRES[k]||(k.startsWith('POS.')?k.slice(4):'Otros (sistema)'),regs:'',fotosKB:0,pesados:[]};
+    const _ents=[]; for(let i=0;i<localStorage.length;i++){ const kk=localStorage.key(i); _ents.push([kk,localStorage.getItem(kk)||'',false]); }
+    if(window.GM_BIG) GM_BIG.entradas().forEach(e=>_ents.push([e[0],e[1],true]));
+    for(const [k,raw,esBig] of _ents){
+      const chars=k.length+raw.length; if(!esBig) total+=chars;
+      const f={k,kb:kbDe(chars),big:esBig,nombre:(_LS_NOMBRES[k]||(k.startsWith('POS.')?k.slice(4):'Otros (sistema)'))+(esBig?' · almacén grande':''),regs:'',fotosKB:0,pesados:[]};
       if(k.startsWith('POS.')){
         try{
           const d=JSON.parse(raw);
@@ -6474,10 +6603,10 @@ function _lsDetalleHtml(){
   filas.sort((a,b)=>b.kb-a.kb);
   const totKB=kbDe(total)||1;
   const tabla=filas.map(f=>{
-    const pc=Math.round(f.kb/totKB*100);
+    const pc=f.big?0:Math.round(f.kb/totKB*100);
     const ft=f.fotosKB>0?'<span style="color:#dc3545;font-weight:600">'+f.fotosKB+' KB</span>':'—';
     return '<tr><td style="padding:5px 6px">'+esc(f.nombre)+'</td><td style="padding:5px 6px;text-align:right;white-space:nowrap"><strong>'+f.kb+' KB</strong></td>'
-      +'<td style="padding:5px 6px;min-width:70px"><div style="background:var(--border);border-radius:4px;height:6px"><div style="width:'+pc+'%;background:var(--brand);height:6px;border-radius:4px"></div></div><span style="font-size:10px;color:var(--muted)">'+pc+'%</span></td>'
+      +'<td style="padding:5px 6px;min-width:70px"><div style="background:var(--border);border-radius:4px;height:6px"><div style="width:'+pc+'%;background:var(--brand);height:6px;border-radius:4px"></div></div><span style="font-size:10px;color:var(--muted)">'+(f.big?'sin límite de 5 MB':pc+'%')+'</span></td>'
       +'<td style="padding:5px 6px;font-size:11px;color:var(--muted);white-space:nowrap">'+esc(f.regs)+'</td><td style="padding:5px 6px;text-align:right;font-size:11px">'+ft+'</td></tr>';
   }).join('');
   const pesadosHtml=filas.filter(f=>f.pesados.length && f.kb>=100).slice(0,4).map(f=>
@@ -6501,8 +6630,9 @@ function renderLsMonitor(){
   let items=[];
   try{ for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); const sz=Math.round((k.length+(localStorage.getItem(k)||'').length)*2/1024); items.push({k,sz}); } }catch(e){}
   items.sort((a,b)=>b.sz-a.sz);
+  const _big=(window.GM_BIG&&GM_BIG.isUsable())?GM_BIG.entradas().map(e=>e[0].replace('POS.','')+' ('+Math.round(e[1].length*2/1024)+' KB)').join(', '):'';
   const top3=items.slice(0,3).map(i=>i.k.replace('POS.','')+'&nbsp;('+i.sz+'&nbsp;KB)').join(', ');
-  el.innerHTML='<span style="font-size:12px;color:var(--muted)">Almacenamiento local: <strong>'+kb+' KB</strong> de ~5.120 KB ('+pct+'%)</span><div class="ls-meter"><div class="ls-meter-fill" style="width:'+pct+'%;background:'+color+'"></div></div><div style="font-size:11px;color:var(--muted);margin-top:4px">Mayor uso: '+top3+'</div>'+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-sm" style="font-size:11px" onclick="_lsToggleDetalle()">'+(_lsDetalleAbierto?'▲ Ocultar detalles':'🔍 Ver detalles')+'</button>'+(pct>60?'<button class="btn btn-sm" style="font-size:11px" onclick="_limpiarFotosBase64Manual()">Limpiar fotos base64 (catálogo + editor)</button>':'')+'</div>'+(_lsDetalleAbierto?_lsDetalleHtml():'');
+  el.innerHTML='<span style="font-size:12px;color:var(--muted)">Almacenamiento local: <strong>'+kb+' KB</strong> de ~5.120 KB ('+pct+'%)</span><div class="ls-meter"><div class="ls-meter-fill" style="width:'+pct+'%;background:'+color+'"></div></div><div style="font-size:11px;color:var(--muted);margin-top:4px">Mayor uso: '+top3+'</div>'+(_big?'<div style="font-size:11px;color:var(--muted);margin-top:2px">En el almacén grande (aparte, sin este límite): '+_big+'</div>':'')+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-sm" style="font-size:11px" onclick="_lsToggleDetalle()">'+(_lsDetalleAbierto?'▲ Ocultar detalles':'🔍 Ver detalles')+'</button>'+(pct>60?'<button class="btn btn-sm" style="font-size:11px" onclick="_limpiarFotosBase64Manual()">Limpiar fotos base64 (catálogo + editor)</button>':'')+'</div>'+(_lsDetalleAbierto?_lsDetalleHtml():'');
 }
 async function _limpiarFotosBase64Manual(){
   toast('Limpiando fotos base64…','info');
@@ -6512,7 +6642,8 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v15.94: NUEVO (Configuraci\u00f3n \u2192 Respaldo del negocio) \u2014 bot\u00f3n \ud83d\udd0d Ver detalles: muestra qu\u00e9 datos ocupan el almacenamiento local (tama\u00f1o, porcentaje, cantidad de registros, fotos guardadas dentro del tel\u00e9fono y los 5 registros m\u00e1s pesados de cada m\u00f3dulo).\n'
+  return 'v15.95: NUEVO (Almacenamiento) \u2014 los pedidos ahora se guardan en un almac\u00e9n grande (IndexedDB) fuera del l\u00edmite de ~5 MB de localStorage. La migraci\u00f3n copia, verifica y solo entonces libera el espacio; si algo falla, la app sigue como antes. El resto de la app no cambia.\n'
+    + 'v15.94: NUEVO (Configuraci\u00f3n \u2192 Respaldo del negocio) \u2014 bot\u00f3n \ud83d\udd0d Ver detalles: muestra qu\u00e9 datos ocupan el almacenamiento local (tama\u00f1o, porcentaje, cantidad de registros, fotos guardadas dentro del tel\u00e9fono y los 5 registros m\u00e1s pesados de cada m\u00f3dulo).\n'
     + 'v15.93: FIX (Almacenamiento) \u2014 las fotos ya no llenan el tel\u00e9fono: siempre se guardan como JPEG liviano (antes un PNG pesaba 1 MB o m\u00e1s), las del Editor se suben a la nube al elegirlas y solo se guarda el enlace, la limpieza ya no borra fotos (las sube o las recomprime) y el logo tambi\u00e9n se comprime.\n'
     + 'v15.92: FIX (Editor \u2192 Agregar al cat\u00e1logo) \u2014 al abrir el editor con un producto que ya est\u00e1 en el cat\u00e1logo, ahora se encuentra por ID/SKU/nombre con la misma regla con la que se guarda; antes solo buscaba por nombre exacto y, si no lo encontraba, mostraba Textil (y modo de inventario) apagados y al guardar los borraba del producto.\n'
     + 'v15.91: CAMBIO (Textiles \u00b7 tallas de adultos) \u2014 las tallas num\u00e9ricas (10, 12, 14, 16) ya no llevan sufijo C/D y salen una sola vez al inicio; luego van las de Dama (D) y despu\u00e9s las de Caballero (C).\n'
@@ -9696,7 +9827,7 @@ function sincronizarSelectorRol(){ renderCfgPins(); }
 /* ════════════════════════════════════════════
    INIT
 ════════════════════════════════════════════ */
-document.addEventListener('DOMContentLoaded',()=>{
+gmOnReady(()=>{
   loadCfg();
   initEditor();
   // Logo listener
@@ -22201,7 +22332,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_94';
+  const APP_VERSION = 'v15_95';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
