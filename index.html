@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_92">
+<html lang="es" data-app-version="GestioMada_V15_93">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -6305,12 +6305,12 @@ async function _migrarFotosBase64(){
           }catch(e){ console.warn('[Migración] No se pudo subir foto de',p.nombre,e); }
         }
       }
-      // Sin Supabase: limpiar base64 de todas formas
+      // Sin conexión: NO se borran las fotos; se recomprimen para que ocupen mucho menos
       if(!window._supaConectado){
-        cat.forEach(p=>{
-          if(p.foto && p.foto.startsWith('data:')){ p.foto=''; limpiados++; }
+        for(const p of cat){
+          if(p.foto && p.foto.startsWith('data:') && p.foto.length>120000){ p.foto=await _recomprimirDataUrl(p.foto); limpiados++; }
           if(p.calculo && typeof p.calculo==='object' && p.calculo.foto && p.calculo.foto.startsWith('data:')){ p.calculo.foto=''; limpiados++; }
-        });
+        }
       }
       if(limpiados>0||subidos>0){
         localStorage.setItem('POS.cat', JSON.stringify(cat));
@@ -6323,11 +6323,17 @@ async function _migrarFotosBase64(){
     if(rawP){
       const pers=JSON.parse(rawP);
       let persLimpiados=0;
-      pers.forEach(p=>{
+      for(const p of pers){
         if(p.foto && typeof p.foto==='string' && p.foto.startsWith('data:')){
-          p.foto=''; persLimpiados++;
+          if(p.foto_url && p.foto_url.startsWith('http')){ p.foto=''; persLimpiados++; }                 // ya está en la nube
+          else if(window._supaConectado && typeof subirFotoStorage==='function'){                       // subirla y quedarse solo con el enlace
+            try{
+              const url=await subirFotoStorage(p.foto, 'pers_'+p.id);
+              if(url){ p.foto_url=url; p.foto=''; persLimpiados++; if(typeof upsertPers==='function') upsertPers(p); }
+            }catch(e){ console.warn('[Migración] No se pudo subir foto pers', p.name, e); }
+          } else if(p.foto.length>120000){ p.foto=await _recomprimirDataUrl(p.foto); persLimpiados++; }  // sin conexión: recomprimir, no borrar
         }
-      });
+      }
       if(persLimpiados>0){
         localStorage.setItem('POS.pers', JSON.stringify(pers));
         limpiados+=persLimpiados;
@@ -6440,7 +6446,8 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v15.92: FIX (Editor \u2192 Agregar al cat\u00e1logo) \u2014 al abrir el editor con un producto que ya est\u00e1 en el cat\u00e1logo, ahora se encuentra por ID/SKU/nombre con la misma regla con la que se guarda; antes solo buscaba por nombre exacto y, si no lo encontraba, mostraba Textil (y modo de inventario) apagados y al guardar los borraba del producto.\n'
+  return 'v15.93: FIX (Almacenamiento) \u2014 las fotos ya no llenan el tel\u00e9fono: siempre se guardan como JPEG liviano (antes un PNG pesaba 1 MB o m\u00e1s), las del Editor se suben a la nube al elegirlas y solo se guarda el enlace, la limpieza ya no borra fotos (las sube o las recomprime) y el logo tambi\u00e9n se comprime.\n'
+    + 'v15.92: FIX (Editor \u2192 Agregar al cat\u00e1logo) \u2014 al abrir el editor con un producto que ya est\u00e1 en el cat\u00e1logo, ahora se encuentra por ID/SKU/nombre con la misma regla con la que se guarda; antes solo buscaba por nombre exacto y, si no lo encontraba, mostraba Textil (y modo de inventario) apagados y al guardar los borraba del producto.\n'
     + 'v15.91: CAMBIO (Textiles \u00b7 tallas de adultos) \u2014 las tallas num\u00e9ricas (10, 12, 14, 16) ya no llevan sufijo C/D y salen una sola vez al inicio; luego van las de Dama (D) y despu\u00e9s las de Caballero (C).\n'
     + 'v15.90: NUEVO (Configuraci\u00f3n \u2192 Textiles \u00b7 tallas) \u2014 las tallas se pueden ordenar con \u25c0 \u25b6 o con el bot\u00f3n \u2195 Ordenar; las tallas num\u00e9ricas (10, 12, 14, 16) se colocan solas antes de XS, S, M. El orden se refleja en POS, pedidos y cotizaciones.\n'
     + 'v15.89: NUEVO (Configuraci\u00f3n \u2192 Textiles \u00b7 tallas) \u2014 cada talla puede tener un nombre visible (ej: S \u2192 Chica) con el bot\u00f3n \u270e. Se muestra en el POS, pedidos, tickets, inventario y reportes; los datos guardados no cambian y los recargos siguen funcionando. Se sincroniza con la nube.\n'
@@ -6829,6 +6836,7 @@ function initEditor(){
       fImg2.src=dataUrl; fImg2.style.display='block'; fPh2.style.display='none'; fDel2.style.display='block';
       const kb = Math.round(dataUrl.length * 0.75 / 1024);
       toast('Foto cargada · ~'+kb+' KB','ok');
+      _subirFotoElegida(fImg2, dataUrl, 'pers');
     }).catch(()=>{ toast('Error al procesar la imagen','err'); });
   });
   if(fDel2) fDel2.addEventListener('click',()=>{ fImg2.src=''; fImg2.style.display='none'; fPh2.style.display='block'; fDel2.style.display='none'; });
@@ -8715,7 +8723,34 @@ async function eliminarFotoStorage(foto_url){
   } catch(e){ console.warn('[Storage] eliminarFotoStorage error:', e.message); }
 }
 
-function comprimirImagen(file, maxW=800, maxH=800, quality=0.75){
+// Recomprime una foto base64 ya guardada (sin perderla) a JPEG liviano.
+function _recomprimirDataUrl(dataUrl, maxW=800, maxH=800, q=0.7){
+  return new Promise(resolve=>{
+    try{
+      const img=new Image();
+      img.onerror=()=>resolve(dataUrl);
+      img.onload=()=>{
+        let w=img.width, h=img.height;
+        if(w>maxW||h>maxH){ const r=Math.min(maxW/w,maxH/h); w=Math.round(w*r); h=Math.round(h*r); }
+        const c=document.createElement('canvas'); c.width=w; c.height=h;
+        const x=c.getContext('2d'); x.fillStyle='#ffffff'; x.fillRect(0,0,w,h); x.drawImage(img,0,0,w,h);
+        const out=c.toDataURL('image/jpeg',q);
+        resolve(out.length<dataUrl.length?out:dataUrl);
+      };
+      img.src=dataUrl;
+    }catch(e){ resolve(dataUrl); }
+  });
+}
+// Foto recién elegida: se muestra ya, y si hay conexión se sube a Storage para guardar solo el enlace (no la imagen) en el teléfono.
+async function _subirFotoElegida(imgEl, dataUrl, prefijo){
+  if(!imgEl || !window._supaConectado || typeof subirFotoStorage!=='function') return;
+  try{
+    const url=await subirFotoStorage(dataUrl, prefijo+'_'+Date.now());
+    if(url && imgEl.src===dataUrl) imgEl.src=url;
+  }catch(e){ console.warn('[Foto] No se pudo subir, queda local', e); }
+}
+function comprimirImagen(file, maxW=800, maxH=800, quality=0.75, opts){
+  opts=opts||{};
   return new Promise((resolve, reject)=>{
     const reader = new FileReader();
     reader.onerror = reject;
@@ -8733,10 +8768,11 @@ function comprimirImagen(file, maxW=800, maxH=800, quality=0.75){
         const canvas = document.createElement('canvas');
         canvas.width = w; canvas.height = h;
         const ctx = canvas.getContext('2d');
+        // v15.93: siempre JPEG liviano (un PNG de producto pesaba 1 MB o más). PNG solo si se pide (logo con transparencia).
+        const mime = (opts.png && file.type === 'image/png') ? 'image/png' : 'image/jpeg';
+        const q    = mime === 'image/png' ? 1 : Math.min(quality, 0.72);
+        if(mime === 'image/jpeg'){ ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, w, h); }
         ctx.drawImage(img, 0, 0, w, h);
-        // Usar JPEG para fotos (mejor compresión). PNG solo si es transparente.
-        const mime = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-        const q    = mime === 'image/png' ? 1 : quality;
         const dataUrl = canvas.toDataURL(mime, q);
         resolve(dataUrl);
       };
@@ -9598,10 +9634,11 @@ document.addEventListener('DOMContentLoaded',()=>{
   initEditor();
   // Logo listener
   const _lInp=qs('#cfg_logo_input'), _lImg=qs('#cfg_logo_img'), _lPh=qs('#cfg_logo_ph'), _lDel=qs('#cfg_logo_del');
-  if(_lInp) _lInp.addEventListener('change',e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=ev=>{ _lImg.src=ev.target.result; _lImg.style.display='block'; if(_lPh) _lPh.style.display='none'; if(_lDel) _lDel.style.display='block'; }; r.readAsDataURL(f); e.target.value=''; });
+  if(_lInp) _lInp.addEventListener('change',e=>{ const f=e.target.files[0]; if(!f) return; e.target.value=''; comprimirImagen(f, 512, 512, 0.8, {png:true}).then(du=>{ _lImg.src=du; _lImg.style.display='block'; if(_lPh) _lPh.style.display='none'; if(_lDel) _lDel.style.display='block'; }).catch(()=>toast('Error al procesar el logo','err')); });
   if(_lDel) _lDel.addEventListener('click',()=>{ _lImg.src=''; _lImg.style.display='none'; if(_lPh) _lPh.style.display='block'; _lDel.style.display='none'; });
   // Defer badge/dash update until after full DOM paint
   _offlineInit();
+  try{ if(navigator.storage && navigator.storage.persist) navigator.storage.persist(); }catch(e){}
   _migrarFotosBase64();
   requestAnimationFrame(async ()=>{
     updateBadges();
@@ -22097,7 +22134,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_92';
+  const APP_VERSION = 'v15_93';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
