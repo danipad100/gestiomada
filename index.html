@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_98">
+<html lang="es" data-app-version="GestioMada_V16_00">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -965,6 +965,7 @@ function mapearParaSupa(tabla, d){
     textil_grupos_talla: d.textil_grupos_talla || [],
     textil_colores:      d.textil_colores || [],
     textil_recargos:     d.textil_recargos || {},
+    textil_caracteristicas: Array.isArray(d.textil_caracteristicas) ? d.textil_caracteristicas : null,
     notas:           d.notas || '',
     calculo:         d.calculo || null,
     // foto base64 omitida — se sube a Storage y se guarda en foto_url
@@ -2678,7 +2679,12 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
           <div id="mc_textil_grupos_list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
         </div>
         <div class="fg" id="mc_textil_recargos"></div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Las características especiales (Con C/B · Sin C/B) se aplican automáticamente a todos los productos textiles.</div>
+        <div class="fg">
+          <label>Características de este producto</label>
+          <div id="mc_textil_caract_list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+          <div id="mc_textil_caract_hint" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">¿Falta una? Agrégala en Configuración → Textiles · características.</div>
+        </div>
       </div>
       <div class="fg">
         <label>Colores habilitados para este producto</label>
@@ -2797,7 +2803,12 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
           <div id="mpm_textil_grupos_list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
         </div>
         <div class="fg" id="mpm_textil_recargos"></div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:10px">Las características especiales (Con C/B · Sin C/B) se aplican automáticamente a todos los productos textiles.</div>
+        <div class="fg">
+          <label>Características de este producto</label>
+          <div id="mpm_textil_caract_list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+          <div id="mpm_textil_caract_hint" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">¿Falta una? Agrégala en Configuración → Textiles · características.</div>
+        </div>
       </div>
       <div class="fg">
         <label>Colores habilitados para este producto</label>
@@ -3819,6 +3830,16 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
             <button class="btn btn-brand btn-sm" onclick="agregarColorTextilCfg()">＋ Agregar</button>
           </div>
         </div>
+        <!-- Textiles: características -->
+        <div class="card">
+          <div class="card-title">✨ Textiles · características</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Detalles especiales que se pueden elegir además de la talla y el color (por ejemplo: Con C/B, Sin C/B, Mangas rosadas, Cuello azul). Aparecen en el POS, pedidos e inventario de productos textiles.</div>
+          <div id="cfg-caract-textil-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="text" id="cfg_caract_textil_nuevo" placeholder="Nueva característica…" style="flex:1;min-width:160px;max-width:260px" onkeydown="if(event.key==='Enter')agregarCaracteristicaTextilCfg()"/>
+            <button class="btn btn-brand btn-sm" onclick="agregarCaracteristicaTextilCfg()">＋ Agregar</button>
+          </div>
+        </div>
         <div class="card">
           <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 14l6-6"/><circle cx="9.5" cy="9.5" r="1.5"/><circle cx="14.5" cy="14.5" r="1.5"/><path d="M20 12a8 8 0 1 0-16 0 8 8 0 0 0 16 0z"/></svg> Impuestos</div>
           <div class="frow" style="align-items:center;flex-wrap:wrap;gap:12px">
@@ -4029,9 +4050,6 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
                   </div>
                   <div style="flex:1;min-width:90px"><label style="font-size:11px">Característica</label>
                     <select id="pos_textil_caract" style="font-size:12px;padding:5px 6px;width:100%">
-                      <option value="">Sin especificar</option>
-                      <option value="Con C/B">Con C/B</option>
-                      <option value="Sin C/B">Sin C/B</option>
                     </select>
                   </div>
                   <button type="button" onclick="posConfirmarVariante()" style="flex-shrink:0;padding:6px 14px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">＋ Agregar</button>
@@ -5047,9 +5065,6 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
             </div>
             <div class="fg" style="min-width:100px"><label style="font-size:11px">Característica</label>
               <select id="mp_textil_caract" style="font-size:12px;padding:5px 6px">
-                <option value="">Sin especificar</option>
-                <option value="Con C/B">Con C/B</option>
-                <option value="Sin C/B">Sin C/B</option>
               </select>
             </div>
           </div>
@@ -5388,6 +5403,7 @@ function loadCfg(){
   // Aplicar categorías dinámicas
   aplicarCategorias();
   aplicarColoresTextil();
+  aplicarCaracteristicasTextil();
   aplicarTallasTextil();
   // Migración: convertir productos con moneda_prod 'bs' a 'usd' (precio ya se almacena en USD)
   (function migrateMonedaProd(){
@@ -5505,7 +5521,7 @@ async function cargarConfigNegocioDesdeNube(){
     // Todos los campos que se sincronizan via tabla config
     const camposSyncables = ['negocio','rif','rif_visible','telefono','instagram','direccion','slogan','nota_recibo','logo_url',
       'dif_bloqueado','dif_congelado','restante_usd_puro','tipos_venta_on','comision_detal','comision_mayor','caja_auto_apertura','capital_inicial','cat_order','gastos_recurrentes',
-      'tasa_auto','tasa_bcv','tasa_paralela','tasa_paralela_live','criterio_tasa_caja','criterio_tasa_finanzas','imp_on','imp_pct','metodos_activos','metodos_split_binance','categorias','textil_colores_base','textil_tallas','textil_tallas_alias','moneda','moneda2'];
+      'tasa_auto','tasa_bcv','tasa_paralela','tasa_paralela_live','criterio_tasa_caja','criterio_tasa_finanzas','imp_on','imp_pct','metodos_activos','metodos_split_binance','categorias','textil_colores_base','textil_caracteristicas','textil_tallas','textil_tallas_alias','moneda','moneda2'];
     data.forEach(row => {
       if(camposSyncables.includes(row.clave)){
         try {
@@ -5637,6 +5653,7 @@ function _aplicarConfigEnUI(){
   // Categorías
   if(typeof aplicarCategorias === 'function') aplicarCategorias();
   if(typeof aplicarColoresTextil === 'function') aplicarColoresTextil();
+  if(typeof aplicarCaracteristicasTextil === 'function') aplicarCaracteristicasTextil();
   if(typeof aplicarTallasTextil === 'function') aplicarTallasTextil();
   // Persistir tasa BCV
   if(CFG.tasa_bcv > 0) saveTasa(CFG.tasa_bcv);
@@ -5789,6 +5806,7 @@ async function _sincConfigCompletaSupa(){
       { clave:'metodos_split_binance', valor: JSON.stringify(CFG.metodos_split_binance===true) },
       { clave:'categorias',       valor: JSON.stringify(CFG.categorias||[]) },
       { clave:'textil_colores_base', valor: JSON.stringify(CFG.textil_colores_base||[]) },
+      { clave:'textil_caracteristicas', valor: JSON.stringify(CFG.textil_caracteristicas||[]) },
       { clave:'textil_tallas', valor: JSON.stringify(CFG.textil_tallas||{}) },
       { clave:'textil_tallas_alias', valor: JSON.stringify(CFG.textil_tallas_alias||{}) },
       { clave:'moneda',           valor: JSON.stringify(CFG.moneda||'$') },
@@ -5950,7 +5968,76 @@ function aplicarTallasTextil(){
   if(typeof mcRenderTextilGrupos==='function') mcRenderTextilGrupos();
   if(typeof recargosRender==='function'){ try{ recargosRender('mpm'); recargosRender('mc'); }catch(e){} }
 }
-const TEXTIL_CARACTERISTICAS=['Con C/B','Sin C/B'];
+const TEXTIL_CARACTERISTICAS=['Con C/B','Sin C/B']; // valores por defecto (editables en Configuración)
+function loadCaracteristicasTextil(){ return Array.isArray(CFG.textil_caracteristicas)&&CFG.textil_caracteristicas.length?CFG.textil_caracteristicas:TEXTIL_CARACTERISTICAS; }
+function saveCaracteristicasTextil(arr){ CFG.textil_caracteristicas=arr; _lsSet(LS_CFG, JSON.stringify(CFG)); aplicarCaracteristicasTextil(); _sincCaracteristicasTextilSupa(); }
+// Lista efectiva de un producto: la suya si la configuró (array, puede ser vacío) o la lista general si nunca la configuró (null)
+function caractsDeProducto(prod){
+  if(prod && Array.isArray(prod.textil_caracteristicas)) return prod.textil_caracteristicas;
+  return loadCaracteristicasTextil();
+}
+// Opciones <option> para un select; si el valor guardado ya no está en la lista (valor viejo) se conserva igual
+function caracteristicasOptsHtml(sel,vacio,prod){
+  const lista=caractsDeProducto(prod).slice();
+  if(sel && !lista.includes(sel)) lista.push(sel);
+  return '<option value="">'+(vacio||'Sin especificar')+'</option>'+lista.map(c=>'<option value="'+String(c).replace(/"/g,'&quot;')+'"'+(c===sel?' selected':'')+'>'+esc(c)+'</option>').join('');
+}
+function aplicarCaracteristicasTextil(){
+  renderCaracteristicasTextilCfg();
+  if(typeof caractProdRender==='function'){ caractProdRender('mc'); caractProdRender('mpm'); }
+}
+// ── Características dentro del producto (crear / editar) ──
+// null = nunca configuradas (usa la lista general) · array = lista propia (puede estar vacía)
+let _caractProdSel={mc:null,mpm:null};
+function caractProdCargar(pre,prod){
+  _caractProdSel[pre]=(prod && Array.isArray(prod.textil_caracteristicas))?prod.textil_caracteristicas.slice():null;
+  caractProdRender(pre);
+}
+function caractProdLeer(pre){ return _caractProdSel[pre]===null?null:_caractProdSel[pre].slice(); }
+function caractProdToggle(pre,c){
+  if(_caractProdSel[pre]===null) _caractProdSel[pre]=loadCaracteristicasTextil().slice();
+  const i=_caractProdSel[pre].indexOf(c);
+  if(i>=0) _caractProdSel[pre].splice(i,1); else _caractProdSel[pre].push(c);
+  caractProdRender(pre);
+}
+function caractProdReset(pre){ _caractProdSel[pre]=null; caractProdRender(pre); }
+function caractProdRender(pre){
+  const wrap=qs('#'+pre+'_textil_caract_list'); if(!wrap) return;
+  const sel=_caractProdSel[pre];
+  const base=loadCaracteristicasTextil();
+  const efectiva=sel===null?base:sel;
+  const todas=base.slice(); (sel||[]).forEach(c=>{ if(!todas.includes(c)) todas.push(c); });
+  wrap.innerHTML=todas.map(c=>{
+    const activo=efectiva.includes(c);
+    return `<span onclick="caractProdToggle('${pre}',this.dataset.c)" data-c="${esc(c)}" style="cursor:pointer;font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid ${activo?'var(--brand)':'var(--border)'};background:${activo?'var(--brand)':'transparent'};color:${activo?'#fff':'var(--text)'}">${esc(c)}</span>`;
+  }).join('') || '<span style="font-size:11px;color:var(--muted)">Aún no tienes características en Configuración → Textiles · características.</span>';
+  const hint=qs('#'+pre+'_textil_caract_hint'); if(!hint) return;
+  let txt;
+  if(sel===null) txt='Este producto usa la lista general. Marca o desmarca para personalizarlo.';
+  else if(!sel.length) txt='Sin características: el campo no aparecerá en ventas ni pedidos de este producto.';
+  else txt='Solo estas características estarán disponibles para este producto.';
+  hint.innerHTML=txt+(sel!==null?' <a href="#" onclick="caractProdReset(\''+pre+'\');return false" style="color:var(--brand)">Volver a la lista general</a>':'');
+}
+function renderCaracteristicasTextilCfg(){
+  const wrap=qs('#cfg-caract-textil-list'); if(!wrap) return;
+  wrap.innerHTML=loadCaracteristicasTextil().map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:4px 10px 4px 12px;font-size:12px">
+      <span>${esc(c)}</span>
+      <button onclick="eliminarCaracteristicaTextilCfg(${i})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;line-height:1;padding:0 2px" title="Eliminar">✕</button>
+    </div>`).join('');
+}
+function agregarCaracteristicaTextilCfg(){
+  const inp=qs('#cfg_caract_textil_nuevo'); if(!inp) return;
+  const val=inp.value.trim(); if(!val){ toast('Escribe una característica','err'); return; }
+  const lista=loadCaracteristicasTextil().slice();
+  if(lista.map(c=>c.toLowerCase()).includes(val.toLowerCase())){ toast('Ya existe','err'); return; }
+  lista.push(val); saveCaracteristicasTextil(lista); inp.value=''; toast('Característica agregada','ok');
+}
+function eliminarCaracteristicaTextilCfg(idx){
+  const lista=loadCaracteristicasTextil().slice();
+  if(!confirm(`¿Eliminar la característica "${lista[idx]}"? Los pedidos y el stock que ya la usan no se modifican.`)) return;
+  lista.splice(idx,1); saveCaracteristicasTextil(lista); toast('Característica eliminada','ok');
+}
 const COLORES_TEXTIL_DEFAULT=['Negro','Blanco','Gris','Azul','Verde','Rojo','Rosado','Beige'];
 
 function tallasAdultosCompletas(){
@@ -6044,9 +6131,14 @@ function colorOptLabel(prod, c){
 // Muestra u oculta Talla y Característica según el producto tenga tallas (si no, solo color)
 function textilAjustarPicker(pre, prod){
   const tiene=prodTieneTallas(prod);
-  ['_talla','_caract'].forEach(suf=>{
-    const el=qs('#'+pre+suf); if(el && el.parentElement) el.parentElement.style.display=tiene?'':'none';
-  });
+  const tl=qs('#'+pre+'_talla'); if(tl && tl.parentElement) tl.parentElement.style.display=tiene?'':'none';
+  const ca=qs('#'+pre+'_caract');
+  if(ca){
+    const cur=ca.value;
+    ca.innerHTML=caracteristicasOptsHtml(cur,pre==='ter'?'— Sin especificar —':'Sin especificar',prod);
+    ca.value=cur;
+    if(ca.parentElement) ca.parentElement.style.display=(tiene && (caractsDeProducto(prod).length||cur))?'':'none';
+  }
 }
 function nombreConVariante(it){
   const v=[tallaVisible(it.talla),it.color,it.caracteristica].filter(Boolean).join(' · ');
@@ -6668,7 +6760,7 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v15.98: AJUSTE (Ventas) \u2014 el filtro Detal/Mayor del punto de venta ahora queda al lado derecho del buscador (antes quedaba debajo en pantallas peque\u00f1as).\n'
+  return 'v16.00: NUEVO (Textiles) Cada producto textil puede tener sus propias caracter\u00edsticas (se eligen al crear o editar el producto). Los productos que no se tocan siguen usando la lista general; si desmarcas todas, el campo no aparece en ventas ni pedidos. Requiere la columna textil_caracteristicas en Supabase. \u00b7 v15.99: NUEVO (Textiles) Las características de los productos textiles (antes fijas: Con C/B y Sin C/B) ahora se configuran en Configuración → Textiles · características. Puedes agregar o quitar las que necesites (ej: Mangas rosadas) y se sincronizan entre dispositivos. Lo ya registrado no se modifica. \u00b7 v15.98: AJUSTE (Ventas) \u2014 el filtro Detal/Mayor del punto de venta ahora queda al lado derecho del buscador (antes quedaba debajo en pantallas peque\u00f1as).\n'
     + 'v15.97: NUEVO (Filtro Detal/Mayor) \u2014 en Cat\u00e1logo y en Ventas (Nueva Venta) hay un filtro para ver solo productos al detal o solo al mayor. Aparece cuando los tipos de venta est\u00e1n activados en Configuraci\u00f3n. El resto de la app no cambia.\n'
     + 'v15.96: FIX (Fotos) \u2014 al agregar al cat\u00e1logo desde el Editor un producto cuya foto ya estaba en la nube, el enlace quedaba solo en este dispositivo y en los dem\u00e1s no se ve\u00eda la imagen (efecto de v15.93). Ahora se guarda como foto_url y se sincroniza; adem\u00e1s, al abrir la app se reparan solos los productos que quedaron as\u00ed.\n'
     + 'v15.95: NUEVO (Almacenamiento) \u2014 los pedidos ahora se guardan en un almac\u00e9n grande (IndexedDB) fuera del l\u00edmite de ~5 MB de localStorage. La migraci\u00f3n copia, verifica y solo entonces libera el espacio; si algo falla, la app sigue como antes. El resto de la app no cambia.\n'
@@ -6753,7 +6845,7 @@ function nav(id, el){
   if(id==='finanzas'){ renderFinanzas(); }
   if(id==='dashboard') renderDash();
   if(id==='envios'){ if(typeof renderEnvios==='function') renderEnvios(); }
-  if(id==='config'){ renderCatsCfg(); renderColoresTextilCfg(); renderTallasTextilCfg(); }
+  if(id==='config'){ renderCatsCfg(); renderColoresTextilCfg(); renderCaracteristicasTextilCfg(); renderTallasTextilCfg(); }
   if(id==='config'){ renderLsMonitor(); }
   if(id==='config'){ _gmVersionCardUpdate(); }
   if(id==='config'){ if(typeof renderConflictosSync==='function') renderConflictosSync(); }
@@ -7420,6 +7512,7 @@ function abrirCatalogo(){
       _mcTextilGruposSel=[];
       _mcTextilColoresSel = _ucMc ? catExist.textil_colores.slice() : []; recargosCargar('mc', _ucMc ? catExist.textil_recargos : {});
     }
+    caractProdCargar('mc', catExist);
     mcToggleTextil();
   }
   openModal('m-catalogo');
@@ -7551,7 +7644,8 @@ function confirmarCatalogo(){
   const fotoUrlExistente = ei>=0 ? (cat[ei].foto_url||'') : '';
   const mcEsTextil=qs('#mc_es_textil')?.checked||false;
   const mcConVar = mcEsTextil || !!qs('#mc_usa_colores')?.checked;   // V15_84: textil o solo colores
-  const nuevo={ id:prodId, nombre:nom, sku:skuFinal, categoria:qs('#mc_cat').value, foto:fotoLocal, foto_url:fotoPendienteStorage?'':(_fotoEsUrl?_foto3:fotoUrlExistente), costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, tipo_venta:qs('#pers_tipo_venta')?.value||'detal', modo_inventario:modoInv, inv_loc:invLoc, inv_momento:(modoInv==='ninguno'?'entrega':(qs('#mc_inv_momento')?.value||'entrega')), moneda_prod:monedaProd, insumos_receta:receta, es_textil:mcEsTextil, textil_grupo_talla:'', textil_grupos_talla:mcEsTextil?[..._mcTextilGruposSel]:[], textil_colores:mcConVar?[..._mcTextilColoresSel]:[], textil_recargos:mcConVar?recargosLeer('mc'):{}, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
+  const nuevo={ id:prodId, nombre:nom, sku:skuFinal, categoria:qs('#mc_cat').value, foto:fotoLocal, foto_url:fotoPendienteStorage?'':(_fotoEsUrl?_foto3:fotoUrlExistente), costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, tipo_venta:qs('#pers_tipo_venta')?.value||'detal', modo_inventario:modoInv, inv_loc:invLoc, inv_momento:(modoInv==='ninguno'?'entrega':(qs('#mc_inv_momento')?.value||'entrega')), moneda_prod:monedaProd, insumos_receta:receta, es_textil:mcEsTextil, textil_grupo_talla:'', textil_grupos_talla:mcEsTextil?[..._mcTextilGruposSel]:[], textil_colores:mcConVar?[..._mcTextilColoresSel]:[], textil_recargos:mcConVar?recargosLeer('mc'):{},
+textil_caracteristicas:mcEsTextil?caractProdLeer('mc'):null, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
   // No embeber foto base64 dentro de calculo — ocupa MB redundantes en localStorage
   if(nuevo.calculo && typeof nuevo.calculo==='object' && nuevo.calculo.foto && nuevo.calculo.foto.startsWith('data:')) nuevo.calculo.foto='';
   let _prodSyncEd;
@@ -7582,6 +7676,7 @@ let _mpmIdx=null; // null=nuevo, número=editar índice
 let _mpmTextilColoresSel=[]; // colores marcados en el modal Nuevo/Editar producto
 function abrirProdManual(idx=null){
   _mpmIdx=idx;
+  caractProdCargar('mpm', null); // reinicia las características (producto nuevo); si es edición se cargan abajo
   const esEdit=idx!==null;
   qs('#mpm-title').innerHTML=`<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> ${esEdit?'Editar producto':'Nuevo producto'}`;
   // Poblar categorías en datalist
@@ -7618,6 +7713,7 @@ function abrirProdManual(idx=null){
     _mpmTextilGruposSel=gruposTallaDeProducto(p).slice();
     _mpmTextilColoresSel=(p.textil_colores||[]).slice();
     recargosCargar('mpm', p.textil_recargos);
+    caractProdCargar('mpm', p);
     mpmToggleTextil();
     if(p.modo_inventario==='insumos') mpmCargarReceta(p.insumos_receta||[]);
     const _fotoSrc=getFoto(p); if(_fotoSrc&&fImg){ fImg.src=_fotoSrc; fImg.style.display='block'; fPh.style.display='none'; fDel.style.display='block'; }
@@ -7753,6 +7849,7 @@ function guardarProdManual(){
     textil_grupos_talla:esTextil?[..._mpmTextilGruposSel]:[],
     textil_colores:mpmConVar?[..._mpmTextilColoresSel]:[],
     textil_recargos:mpmConVar?recargosLeer('mpm'):{},
+    textil_caracteristicas:esTextil?caractProdLeer('mpm'):null,
     notas:qs('#mpm_notas').value.trim(), origen:'manual' };
   if(esModoEdit){ cat[_mpmIdx]={...cat[_mpmIdx],...obj}; }
   else {
@@ -10267,6 +10364,16 @@ async function _sincTallasTextilSupa(){
     ], { onConflict:'clave' });
     console.log('[Config] Tallas textiles sincronizadas');
   } catch(e){ console.warn('[Config] Error sincronizando tallas textiles:', e.message); }
+}
+
+// Sincronizar características de textiles a Supabase
+async function _sincCaracteristicasTextilSupa(){
+  if(!window._supaConectado) return;
+  try {
+    await SUPA.from('config').upsert([
+      { clave:'textil_caracteristicas', valor: JSON.stringify(CFG.textil_caracteristicas||[]) }
+    ], { onConflict:'clave' });
+  } catch(e){ console.warn('[Config] Error sincronizando características textiles:', e.message); }
 }
 
 // Sincronizar colores base de textiles a Supabase
@@ -14150,12 +14257,12 @@ function _renderVarianteItemEdit(it, i) {
     }
     html += '<div style="flex:1;min-width:80px"><label style="font-size:10px;color:var(--muted)">Color</label>';
     html += '<select id="_pv_color_'+i+'" style="font-size:12px;padding:4px 6px;width:100%"><option value="">—</option>'+colorOpts+'</select></div>';
-    html += '<div style="flex:1;min-width:90px"><label style="font-size:10px;color:var(--muted)">Característica</label>';
-    html += '<select id="_pv_caract_'+i+'" style="font-size:12px;padding:4px 6px;width:100%">';
-    html += '<option value="">Sin especificar</option>';
-    html += '<option value="Con C/B"'+(it.caracteristica==='Con C/B'?' selected':'')+'>Con C/B</option>';
-    html += '<option value="Sin C/B"'+(it.caracteristica==='Sin C/B'?' selected':'')+'>Sin C/B</option>';
-    html += '</select></div>';
+    if (caractsDeProducto(prod).length || it.caracteristica) {
+      html += '<div style="flex:1;min-width:90px"><label style="font-size:10px;color:var(--muted)">Característica</label>';
+      html += '<select id="_pv_caract_'+i+'" style="font-size:12px;padding:4px 6px;width:100%">';
+      html += caracteristicasOptsHtml(it.caracteristica,'Sin especificar',prod);
+      html += '</select></div>';
+    }
     html += '<button type="button" onclick="pedSetVarianteItem('+i+')" style="flex-shrink:0;padding:5px 12px;background:var(--brand);color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer">Confirmar</button>';
     html += '</div></div>';
   }
@@ -14195,13 +14302,11 @@ ${it._necesita_variante ? (()=>{
       <div style="flex:1;min-width:80px"><label style="font-size:10px;color:var(--muted)">Color *</label>
         <select id="_pv_color_${i}" style="font-size:12px;padding:4px 6px;width:100%"><option value="">—</option>${colores.map(c=>`<option value="${c}">${esc(colorOptLabel(prod,c))}</option>`).join('')}</select>
       </div>
-      <div style="flex:1;min-width:90px"><label style="font-size:10px;color:var(--muted)">Característica</label>
+      ${caractsDeProducto(prod).length?`<div style="flex:1;min-width:90px"><label style="font-size:10px;color:var(--muted)">Característica</label>
         <select id="_pv_caract_${i}" style="font-size:12px;padding:4px 6px;width:100%">
-          <option value="">Sin especificar</option>
-          <option value="Con C/B">Con C/B</option>
-          <option value="Sin C/B">Sin C/B</option>
+          ${caracteristicasOptsHtml('','Sin especificar',prod)}
         </select>
-      </div>
+      </div>`:''}
       <button type="button" onclick="pedSetVarianteItem(${i})" style="flex-shrink:0;padding:5px 12px;background:var(--brand);color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer">Confirmar</button>
     </div>
   </div>`;
@@ -17053,7 +17158,7 @@ function editarTerminado(idx){
   terProdSeleccionado();
   qs('#ter_talla').value=item.talla||'';
   qs('#ter_color').value=item.color||'';
-  qs('#ter_caract').value=item.caracteristica||'';
+  { const _cs=qs('#ter_caract'); _cs.innerHTML=caracteristicasOptsHtml(item.caracteristica||'','— Sin especificar —',loadCat().find(p=>String(p.id)===String(qs('#ter_prod_sel').value))); _cs.value=item.caracteristica||''; if(_cs.parentElement && item.caracteristica) _cs.parentElement.style.display=''; }
   openModal('m-terminado');
 }
 
@@ -21655,9 +21760,6 @@ function renderDashFinanzas(){
         </div>
         <div class="fg"><label>Característica</label>
           <select id="ter_caract">
-            <option value="">— Sin especificar —</option>
-            <option value="Con C/B">Con C/B</option>
-            <option value="Sin C/B">Sin C/B</option>
           </select>
         </div>
       </div>
@@ -22366,7 +22468,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_98';
+  const APP_VERSION = 'v16_00';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
