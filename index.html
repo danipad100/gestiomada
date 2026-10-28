@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V16_00">
+<html lang="es" data-app-version="GestioMada_V16_02">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -2706,7 +2706,7 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
       <div class="fg" id="mc_loc_wrap" style="flex:1"><label>De dónde sale</label>
         <select id="mc_inv_loc">
           <option value="deposito" selected>Depósito</option>
-          <option value="local">🏪 Local</option>
+          <option value="local">Local</option>
         </select>
       </div>
     </div>
@@ -2829,7 +2829,7 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
       <div class="fg" id="mpm_loc_wrap" style="flex:1"><label>De dónde sale</label>
         <select id="mpm_inv_loc">
           <option value="deposito" selected>Depósito</option>
-          <option value="local">🏪 Local</option>
+          <option value="local">Local</option>
         </select>
       </div>
     </div>
@@ -3816,8 +3816,8 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
         </div>
         <!-- Textiles: tallas -->
         <div class="card">
-          <div class="card-title">📏 Textiles · tallas</div>
-          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Tallas que aparecen al marcar un producto como textil. Agrega o quita tallas de cada grupo. En Adultos escribe la talla base (por ejemplo M o XL): el sistema crea solo la versión D (dama) y C (caballero); los números (10, 12…) quedan sin sufijo. Con ◀ ▶ las ordenas (o usa ↕ Ordenar). Con ✎ puedes ponerle otro nombre que se verá en pantalla y tickets (ejemplo: S → Chica), sin cambiar nada de lo guardado.</div>
+          <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg> Textiles · tallas</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Tallas que aparecen al marcar un producto como textil. Agrega o quita tallas de cada grupo. En Adultos escribe la talla base (por ejemplo M o XL): el sistema crea solo la versión D (dama) y C (caballero); los números (10, 12…) quedan sin sufijo. Con las flechas de cada talla las ordenas (o usa el botón Ordenar). Con el lápiz puedes ponerle otro nombre que se verá en pantalla y tickets (ejemplo: S → Chica), sin cambiar nada de lo guardado.</div>
           <div id="cfg-tallas-textil-wrap"></div>
         </div>
         <!-- Textiles: colores base -->
@@ -3832,7 +3832,7 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
         </div>
         <!-- Textiles: características -->
         <div class="card">
-          <div class="card-title">✨ Textiles · características</div>
+          <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg> Textiles · características</div>
           <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Detalles especiales que se pueden elegir además de la talla y el color (por ejemplo: Con C/B, Sin C/B, Mangas rosadas, Cuello azul). Aparecen en el POS, pedidos e inventario de productos textiles.</div>
           <div id="cfg-caract-textil-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
@@ -3903,7 +3903,7 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
           <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Cuando publiques una nueva versión en Vercel, usa este botón para verificar e instalar la actualización sin perder tus datos.</p>
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
             <button class="btn btn-sm" id="btn_pwa_check_updates" type="button"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Buscar actualizaciones</button>
-            <button class="btn btn-sm" id="btn_pwa_apply_update" type="button" style="display:none;background:var(--ok);color:#fff;border-color:var(--ok)">⬆ Actualizar ahora</button>
+            <button class="btn btn-sm" id="btn_pwa_apply_update" type="button" style="display:none;background:var(--ok);color:#fff;border-color:var(--ok)"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:4px"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Actualizar ahora</button>
             <span style="font-size:12px;color:var(--muted)" id="pwa_update_status">—</span>
           </div>
         </div>
@@ -5521,7 +5521,7 @@ async function cargarConfigNegocioDesdeNube(){
     // Todos los campos que se sincronizan via tabla config
     const camposSyncables = ['negocio','rif','rif_visible','telefono','instagram','direccion','slogan','nota_recibo','logo_url',
       'dif_bloqueado','dif_congelado','restante_usd_puro','tipos_venta_on','comision_detal','comision_mayor','caja_auto_apertura','capital_inicial','cat_order','gastos_recurrentes',
-      'tasa_auto','tasa_bcv','tasa_paralela','tasa_paralela_live','criterio_tasa_caja','criterio_tasa_finanzas','imp_on','imp_pct','metodos_activos','metodos_split_binance','categorias','textil_colores_base','textil_caracteristicas','textil_tallas','textil_tallas_alias','moneda','moneda2'];
+      'tasa_auto','tasa_bcv','tasa_paralela','tasa_paralela_live','criterio_tasa_caja','criterio_tasa_finanzas','imp_on','imp_pct','metodos_activos','metodos_split_binance','categorias','textil_colores_base','textil_caracteristicas','textil_tallas','textil_tallas_alias','textil_grupos_custom','moneda','moneda2'];
     data.forEach(row => {
       if(camposSyncables.includes(row.clave)){
         try {
@@ -5809,6 +5809,7 @@ async function _sincConfigCompletaSupa(){
       { clave:'textil_caracteristicas', valor: JSON.stringify(CFG.textil_caracteristicas||[]) },
       { clave:'textil_tallas', valor: JSON.stringify(CFG.textil_tallas||{}) },
       { clave:'textil_tallas_alias', valor: JSON.stringify(CFG.textil_tallas_alias||{}) },
+      { clave:'textil_grupos_custom', valor: JSON.stringify(CFG.textil_grupos_custom||[]) },
       { clave:'moneda',           valor: JSON.stringify(CFG.moneda||'$') },
       { clave:'moneda2',          valor: JSON.stringify(CFG.moneda2||'') },
       { clave:'restante_usd_puro',valor: JSON.stringify(CFG.restante_usd_puro||false) },
@@ -5916,6 +5917,19 @@ function eliminarCategoriaCfg(idx){
 }
 
 /* ── TEXTILES: tallas fijas + colores dinámicos ── */
+// Iconos de línea (mismo estilo que el resto de GestioMada: trazo 1.8, extremos redondeados)
+function _gmI(n,sz,mr){
+  const P={
+    left:'<polyline points="15 18 9 12 15 6"/>', right:'<polyline points="9 18 15 12 9 6"/>',
+    edit:'<path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>',
+    sort:'<polyline points="7 15 12 20 17 15"/><polyline points="7 9 12 4 17 9"/>',
+    undo:'<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>',
+    trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>',
+    search:'<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
+    up:'<polyline points="18 15 12 9 6 15"/>'
+  };
+  return '<svg viewBox="0 0 24 24" width="'+(sz||14)+'" height="'+(sz||14)+'" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0'+(mr?';margin-right:'+mr+'px':'')+'">'+(P[n]||'')+'</svg>';
+}
 const TALLAS_NINOS_DEFAULT=['2','4','6','8'];
 const TALLAS_ADULTOS_DEFAULT=['XS','S','M','L','XL','XXL','XXXL'];
 const TALLAS_BODYS_DEFAULT=['0-3M','3-6M','6-9M','9-18M','18-24M'];
@@ -5925,9 +5939,18 @@ const TALLAS_GRUPOS_META={
   bodys:{nombre:'Bodys bebé', def:TALLAS_BODYS_DEFAULT}
 };
 // Tallas editables desde Configuración (CFG.textil_tallas). Si no hay nada guardado, usa los defaults.
+function gruposCustomTalla(){ return Array.isArray(CFG.textil_grupos_custom)?CFG.textil_grupos_custom.filter(g=>g&&g.id&&g.nombre):[]; }
+function esGrupoCustomTalla(id){ return gruposCustomTalla().some(g=>g.id===id); }
+function gruposTallaTodos(){ return ['adultos','ninos','bodys'].concat(gruposCustomTalla().map(g=>g.id)); }
+function grupoMetaTalla(id){
+  if(TALLAS_GRUPOS_META[id]) return TALLAS_GRUPOS_META[id];
+  const c=gruposCustomTalla().find(g=>g.id===id);
+  return c?{nombre:c.nombre, def:[], custom:true}:null;
+}
 function loadTallasTextil(grupo){
   const t=CFG.textil_tallas;
-  const m=TALLAS_GRUPOS_META[grupo];
+  const m=grupoMetaTalla(grupo);
+  if(m && m.custom) return (t && Array.isArray(t[grupo]))?t[grupo].slice():[];
   if(t && Array.isArray(t[grupo]) && t[grupo].length) return t[grupo].slice();
   return m ? m.def.slice() : [];
 }
@@ -6054,19 +6077,19 @@ function tallasAdultosCompletas(){
 function tallasPorGrupo(grupo){
   if(grupo==='ninos') return loadTallasTextil('ninos');
   if(grupo==='bodys') return loadTallasTextil('bodys');
+  if(esGrupoCustomTalla(grupo)) return loadTallasTextil(grupo);
   return tallasAdultosCompletas();
 }
 function labelGrupoTalla(grupo){
-  const m=TALLAS_GRUPOS_META[grupo]; if(!m) return '';
+  const m=grupoMetaTalla(grupo); if(!m) return '';
   const l=loadTallasTextil(grupo);
   if(!l.length) return m.nombre;
   return l.length===1 ? `${m.nombre} (${l[0]})` : `${m.nombre} (${l[0]} – ${l[l.length-1]})`;
 }
 // Lista dinámica: las etiquetas se calculan con las tallas guardadas en Configuración
-const TEXTIL_GRUPOS=['adultos','ninos','bodys'].map(v=>({
-  value:v,
-  get label(){ return labelGrupoTalla(v); }
-}));
+function textilGruposLista(){
+  return gruposTallaTodos().map(v=>({ value:v, label:labelGrupoTalla(v) }));
+}
 function labelGruposTalla(grupos){
   return (grupos||[]).map(labelGrupoTalla).filter(Boolean).join(' + ');
 }
@@ -6247,30 +6270,78 @@ function eliminarColorTextilCfg(idx){
 
 function renderTallasTextilCfg(){
   const wrap=qs('#cfg-tallas-textil-wrap'); if(!wrap) return;
-  wrap.innerHTML=['ninos','adultos','bodys'].map(g=>{
-    const m=TALLAS_GRUPOS_META[g], lista=loadTallasTextil(g);
+  const bloques=gruposTallaTodos().map(g=>{
+    const m=grupoMetaTalla(g), lista=loadTallasTextil(g), cust=!!m.custom;
     const chips=lista.map((t,i)=>`
       <div style="display:flex;align-items:center;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:4px 10px 4px 12px;font-size:12px">
-        <span>${t}${(CFG.textil_tallas_alias&&CFG.textil_tallas_alias[t])?` <span style="color:var(--brand);font-weight:600">→ ${esc(CFG.textil_tallas_alias[t])}</span>`:''}</span>
-        ${i>0?`<button onclick="moverTallaTextilCfg('${g}',${i},-1)" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;line-height:1;padding:0 2px" title="Mover a la izquierda">◀</button>`:''}${i<lista.length-1?`<button onclick="moverTallaTextilCfg('${g}',${i},1)" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;line-height:1;padding:0 2px" title="Mover a la derecha">▶</button>`:''}
-        <button onclick="editarAliasTallaCfg('${g}',${i})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;line-height:1;padding:0 2px" title="Ponerle otro nombre">✎</button>
+        <span>${esc(String(t))}${(CFG.textil_tallas_alias&&CFG.textil_tallas_alias[t])?` <span style="color:var(--brand);font-weight:600">→ ${esc(CFG.textil_tallas_alias[t])}</span>`:''}</span>
+        ${i>0?`<button onclick="moverTallaTextilCfg('${g}',${i},-1)" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;line-height:1;padding:0 2px" title="Mover a la izquierda">${_gmI('left',12)}</button>`:''}${i<lista.length-1?`<button onclick="moverTallaTextilCfg('${g}',${i},1)" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;line-height:1;padding:0 2px" title="Mover a la derecha">${_gmI('right',12)}</button>`:''}
+        <button onclick="editarAliasTallaCfg('${g}',${i})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:12px;line-height:1;padding:0 2px" title="Ponerle otro nombre">${_gmI('edit',12)}</button>
         <button onclick="eliminarTallaTextilCfg('${g}',${i})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;line-height:1;padding:0 2px" title="Eliminar">✕</button>
       </div>`).join('');
+    const vacio=cust?'Sin tallas todavía. Agrega la primera abajo.':'Sin tallas (se usarán las de fábrica)';
     return `<div style="margin-bottom:16px">
-      <div style="font-size:13px;font-weight:600;margin-bottom:6px">${m.nombre}</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">${chips||'<span style="font-size:12px;color:var(--muted)">Sin tallas (se usarán las de fábrica)</span>'}</div>
+      <div style="font-size:13px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">${esc(m.nombre)}${cust?`<span style="font-size:10px;font-weight:600;color:var(--brand);border:1px solid var(--brand);border-radius:999px;padding:1px 8px">Tu grupo</span><button class="btn btn-sm" onclick="renombrarGrupoTallaCfg('${g}')" title="Cambiar el nombre del grupo">${_gmI('edit',12,4)}Renombrar</button><button class="btn btn-sm" onclick="eliminarGrupoTallaCfg('${g}')" title="Borrar este grupo">${_gmI('trash',12,4)}Borrar grupo</button>`:''}</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">${chips||`<span style="font-size:12px;color:var(--muted)">${vacio}</span>`}</div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
         <input type="text" id="cfg_talla_nueva_${g}" placeholder="Nueva talla…" style="flex:1;min-width:120px;max-width:200px" onkeydown="if(event.key==='Enter')agregarTallaTextilCfg('${g}')"/>
         <button class="btn btn-brand btn-sm" onclick="agregarTallaTextilCfg('${g}')">＋ Agregar</button>
-        <button class="btn btn-sm" onclick="ordenarTallasTextilCfg('${g}')" title="Números de menor a mayor y luego las letras (XS, S, M…)">↕ Ordenar</button>
-        <button class="btn btn-sm" onclick="restaurarTallasTextilCfg('${g}')" title="Volver a las tallas de fábrica">↺ Restaurar</button>
+        <button class="btn btn-sm" onclick="ordenarTallasTextilCfg('${g}')" title="Números de menor a mayor y luego las letras (XS, S, M…)">${_gmI('sort',13,4)}Ordenar</button>
+        ${cust?'':`<button class="btn btn-sm" onclick="restaurarTallasTextilCfg('${g}')" title="Volver a las tallas de fábrica">${_gmI('undo',13,4)}Restaurar</button>`}
       </div>
     </div>`;
   }).join('');
+  const nuevo=`<div style="margin-top:6px;padding:12px;border:1px dashed var(--border);border-radius:12px">
+      <div style="font-size:13px;font-weight:600;margin-bottom:4px">＋ Nuevo grupo de tallas</div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:8px">Ej: «Mascotas» con las tallas Pequeña y Grande. Luego lo eliges al marcar un producto como textil.</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <input type="text" id="cfg_grupo_talla_nuevo" maxlength="30" placeholder="Nombre del grupo (ej: Mascotas)" style="flex:1;min-width:160px;max-width:260px" onkeydown="if(event.key==='Enter')agregarGrupoTallaCfg()"/>
+        <button class="btn btn-brand btn-sm" onclick="agregarGrupoTallaCfg()">＋ Crear grupo</button>
+      </div>
+    </div>`;
+  wrap.innerHTML=bloques+nuevo;
+}
+function saveGruposCustomTalla(arr){
+  CFG.textil_grupos_custom=arr;
+  _lsSet(LS_CFG, JSON.stringify(CFG));
+  aplicarTallasTextil();
+  _sincTallasTextilSupa();
+}
+function agregarGrupoTallaCfg(){
+  const inp=qs('#cfg_grupo_talla_nuevo'); if(!inp) return;
+  const nombre=inp.value.trim(); if(!nombre){ toast('Escribe el nombre del grupo','err'); return; }
+  const existe=gruposTallaTodos().some(g=>grupoMetaTalla(g).nombre.toLowerCase()===nombre.toLowerCase());
+  if(existe){ toast('Ya existe un grupo con ese nombre','err'); return; }
+  const id='g'+Date.now().toString(36);
+  const arr=gruposCustomTalla().concat([{id, nombre}]);
+  if(!CFG.textil_tallas || typeof CFG.textil_tallas!=='object') CFG.textil_tallas={};
+  CFG.textil_tallas[id]=[];
+  saveGruposCustomTalla(arr);
+  toast('Grupo creado. Ahora agrégale sus tallas','ok');
+  setTimeout(()=>{ const i=qs('#cfg_talla_nueva_'+id); if(i) i.focus(); },50);
+}
+function renombrarGrupoTallaCfg(id){
+  const c=gruposCustomTalla().find(g=>g.id===id); if(!c) return;
+  const v=prompt('Nuevo nombre del grupo:', c.nombre); if(v===null) return;
+  const nombre=v.trim(); if(!nombre){ toast('El nombre no puede estar vacío','err'); return; }
+  const dup=gruposTallaTodos().some(g=>g!==id && grupoMetaTalla(g).nombre.toLowerCase()===nombre.toLowerCase());
+  if(dup){ toast('Ya existe un grupo con ese nombre','err'); return; }
+  saveGruposCustomTalla(gruposCustomTalla().map(g=>g.id===id?{id:g.id,nombre}:g));
+  toast('Grupo renombrado','ok');
+}
+function eliminarGrupoTallaCfg(id){
+  const c=gruposCustomTalla().find(g=>g.id===id); if(!c) return;
+  let usados=0;
+  try{ usados=(typeof productos!=='undefined'&&Array.isArray(productos)?productos:[]).filter(p=>Array.isArray(p.textil_grupos_talla)&&p.textil_grupos_talla.includes(id)).length; }catch(e){}
+  const aviso=usados?`\n\nOjo: ${usados} producto(s) usan este grupo. No se borran, pero dejarán de mostrar estas tallas en los formularios.`:'';
+  if(!confirm(`¿Borrar el grupo "${c.nombre}" y sus tallas?${aviso}`)) return;
+  if(CFG.textil_tallas && typeof CFG.textil_tallas==='object') delete CFG.textil_tallas[id];
+  saveGruposCustomTalla(gruposCustomTalla().filter(g=>g.id!==id));
+  toast('Grupo borrado','ok');
 }
 function agregarTallaTextilCfg(grupo){
   const inp=qs('#cfg_talla_nueva_'+grupo); if(!inp) return;
-  const val=inp.value.trim().toUpperCase(); if(!val){ toast('Escribe una talla','err'); return; }
+  const raw=inp.value.trim(); const val=esGrupoCustomTalla(grupo)?raw:raw.toUpperCase(); if(!val){ toast('Escribe una talla','err'); return; }
   const lista=loadTallasTextil(grupo);
   if(lista.map(t=>t.toUpperCase()).includes(val)){ toast('Ya existe','err'); return; }
   const esNum=/^\d+(\.\d+)?$/.test(val);
@@ -6284,7 +6355,7 @@ function agregarTallaTextilCfg(grupo){
 }
 function eliminarTallaTextilCfg(grupo,idx){
   const lista=loadTallasTextil(grupo);
-  if(lista.length<=1){ toast('Debe quedar al menos una talla','err'); return; }
+  if(lista.length<=1 && !esGrupoCustomTalla(grupo)){ toast('Debe quedar al menos una talla','err'); return; }
   if(!confirm(`¿Quitar la talla "${lista[idx]}" de la lista? Los productos que ya la usan no se borran.`)) return;
   lista.splice(idx,1); saveTallasTextil(grupo,lista); toast('Talla eliminada','ok');
 }
@@ -6750,7 +6821,7 @@ function renderLsMonitor(){
   items.sort((a,b)=>b.sz-a.sz);
   const _big=(window.GM_BIG&&GM_BIG.isUsable())?GM_BIG.entradas().map(e=>e[0].replace('POS.','')+' ('+Math.round(e[1].length*2/1024)+' KB)').join(', '):'';
   const top3=items.slice(0,3).map(i=>i.k.replace('POS.','')+'&nbsp;('+i.sz+'&nbsp;KB)').join(', ');
-  el.innerHTML='<span style="font-size:12px;color:var(--muted)">Almacenamiento local: <strong>'+kb+' KB</strong> de ~5.120 KB ('+pct+'%)</span><div class="ls-meter"><div class="ls-meter-fill" style="width:'+pct+'%;background:'+color+'"></div></div><div style="font-size:11px;color:var(--muted);margin-top:4px">Mayor uso: '+top3+'</div>'+(_big?'<div style="font-size:11px;color:var(--muted);margin-top:2px">En el almacén grande (aparte, sin este límite): '+_big+'</div>':'')+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-sm" style="font-size:11px" onclick="_lsToggleDetalle()">'+(_lsDetalleAbierto?'▲ Ocultar detalles':'🔍 Ver detalles')+'</button>'+(pct>60?'<button class="btn btn-sm" style="font-size:11px" onclick="_limpiarFotosBase64Manual()">Limpiar fotos base64 (catálogo + editor)</button>':'')+'</div>'+(_lsDetalleAbierto?_lsDetalleHtml():'');
+  el.innerHTML='<span style="font-size:12px;color:var(--muted)">Almacenamiento local: <strong>'+kb+' KB</strong> de ~5.120 KB ('+pct+'%)</span><div class="ls-meter"><div class="ls-meter-fill" style="width:'+pct+'%;background:'+color+'"></div></div><div style="font-size:11px;color:var(--muted);margin-top:4px">Mayor uso: '+top3+'</div>'+(_big?'<div style="font-size:11px;color:var(--muted);margin-top:2px">En el almacén grande (aparte, sin este límite): '+_big+'</div>':'')+'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="btn btn-sm" style="font-size:11px" onclick="_lsToggleDetalle()">'+(_lsDetalleAbierto?_gmI('up',12,4)+' Ocultar detalles':_gmI('search',12,4)+' Ver detalles')+'</button>'+(pct>60?'<button class="btn btn-sm" style="font-size:11px" onclick="_limpiarFotosBase64Manual()">Limpiar fotos base64 (catálogo + editor)</button>':'')+'</div>'+(_lsDetalleAbierto?_lsDetalleHtml():'');
 }
 async function _limpiarFotosBase64Manual(){
   toast('Limpiando fotos base64…','info');
@@ -6760,7 +6831,7 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v16.00: NUEVO (Textiles) Cada producto textil puede tener sus propias caracter\u00edsticas (se eligen al crear o editar el producto). Los productos que no se tocan siguen usando la lista general; si desmarcas todas, el campo no aparece en ventas ni pedidos. Requiere la columna textil_caracteristicas en Supabase. \u00b7 v15.99: NUEVO (Textiles) Las características de los productos textiles (antes fijas: Con C/B y Sin C/B) ahora se configuran en Configuración → Textiles · características. Puedes agregar o quitar las que necesites (ej: Mangas rosadas) y se sincronizan entre dispositivos. Lo ya registrado no se modifica. \u00b7 v15.98: AJUSTE (Ventas) \u2014 el filtro Detal/Mayor del punto de venta ahora queda al lado derecho del buscador (antes quedaba debajo en pantallas peque\u00f1as).\n'
+  return 'v16.02: ICONOS (Configuraci\u00f3n y Editor de producto) \u2014 los emojis de Configuraci\u00f3n (Textiles \u00b7 tallas, Textiles \u00b7 caracter\u00edsticas, Ver detalles del almacenamiento, Actualizar ahora y los botones de tallas) se cambiaron por los iconos de l\u00ednea que usa el resto de GestioMada. En el editor de producto se quit\u00f3 el emoji de la opci\u00f3n \u00abLocal\u00bb. \nv16.01: NUEVO (Textiles · tallas) En Configuración → Textiles · tallas ya puedes crear tus propios grupos de tallas (ej: «Mascotas» con Pequeña y Grande): escribes el nombre, lo creas y le agregas sus tallas. Puedes renombrarlo, ordenarlo o borrarlo. El grupo aparece al marcar un producto como textil, junto a Niños, Adultos y Bodys. Se sincroniza entre dispositivos. \nv16.00: NUEVO (Textiles) Cada producto textil puede tener sus propias caracter\u00edsticas (se eligen al crear o editar el producto). Los productos que no se tocan siguen usando la lista general; si desmarcas todas, el campo no aparece en ventas ni pedidos. Requiere la columna textil_caracteristicas en Supabase. \u00b7 v15.99: NUEVO (Textiles) Las características de los productos textiles (antes fijas: Con C/B y Sin C/B) ahora se configuran en Configuración → Textiles · características. Puedes agregar o quitar las que necesites (ej: Mangas rosadas) y se sincronizan entre dispositivos. Lo ya registrado no se modifica. \u00b7 v15.98: AJUSTE (Ventas) \u2014 el filtro Detal/Mayor del punto de venta ahora queda al lado derecho del buscador (antes quedaba debajo en pantallas peque\u00f1as).\n'
     + 'v15.97: NUEVO (Filtro Detal/Mayor) \u2014 en Cat\u00e1logo y en Ventas (Nueva Venta) hay un filtro para ver solo productos al detal o solo al mayor. Aparece cuando los tipos de venta est\u00e1n activados en Configuraci\u00f3n. El resto de la app no cambia.\n'
     + 'v15.96: FIX (Fotos) \u2014 al agregar al cat\u00e1logo desde el Editor un producto cuya foto ya estaba en la nube, el enlace quedaba solo en este dispositivo y en los dem\u00e1s no se ve\u00eda la imagen (efecto de v15.93). Ahora se guarda como foto_url y se sincroniza; adem\u00e1s, al abrir la app se reparan solos los productos que quedaron as\u00ed.\n'
     + 'v15.95: NUEVO (Almacenamiento) \u2014 los pedidos ahora se guardan en un almac\u00e9n grande (IndexedDB) fuera del l\u00edmite de ~5 MB de localStorage. La migraci\u00f3n copia, verifica y solo entonces libera el espacio; si algo falla, la app sigue como antes. El resto de la app no cambia.\n'
@@ -7551,7 +7622,7 @@ function mcToggleTextil(){
 }
 function mcRenderTextilGrupos(){
   const wrap=qs('#mc_textil_grupos_list'); if(!wrap) return;
-  wrap.innerHTML=TEXTIL_GRUPOS.map(g=>{
+  wrap.innerHTML=textilGruposLista().map(g=>{
     const activo=_mcTextilGruposSel.includes(g.value);
     return `<span onclick="mcToggleGrupoTalla('${g.value}')" style="cursor:pointer;font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid ${activo?'var(--brand)':'var(--border)'};background:${activo?'var(--brand)':'transparent'};color:${activo?'#fff':'var(--ink)'}">${g.label}</span>`;
   }).join('');
@@ -7760,7 +7831,7 @@ function mpmToggleTextil(){
 let _mpmTextilGruposSel=[]; // grupos de tallas marcados en el modal Nuevo producto
 function mpmRenderTextilGrupos(){
   const wrap=qs('#mpm_textil_grupos_list'); if(!wrap) return;
-  wrap.innerHTML=TEXTIL_GRUPOS.map(g=>{
+  wrap.innerHTML=textilGruposLista().map(g=>{
     const activo=_mpmTextilGruposSel.includes(g.value);
     return `<span onclick="mpmToggleGrupoTalla('${g.value}')" style="cursor:pointer;font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid ${activo?'var(--brand)':'var(--border)'};background:${activo?'var(--brand)':'transparent'};color:${activo?'#fff':'var(--ink)'}">${g.label}</span>`;
   }).join('');
@@ -10360,7 +10431,8 @@ async function _sincTallasTextilSupa(){
   try {
     await SUPA.from('config').upsert([
       { clave:'textil_tallas', valor: JSON.stringify(CFG.textil_tallas||{}) },
-      { clave:'textil_tallas_alias', valor: JSON.stringify(CFG.textil_tallas_alias||{}) }
+      { clave:'textil_tallas_alias', valor: JSON.stringify(CFG.textil_tallas_alias||{}) },
+      { clave:'textil_grupos_custom', valor: JSON.stringify(CFG.textil_grupos_custom||[]) }
     ], { onConflict:'clave' });
     console.log('[Config] Tallas textiles sincronizadas');
   } catch(e){ console.warn('[Config] Error sincronizando tallas textiles:', e.message); }
@@ -22468,7 +22540,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v16_00';
+  const APP_VERSION = 'v16_02';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
