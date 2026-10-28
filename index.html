@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V15_96">
+<html lang="es" data-app-version="GestioMada_V15_98">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -2132,6 +2132,10 @@ body.dark .prod-card-actions{border-top-color:#23283a}
 }
 .search-bar input{flex:1;min-width:180px}
 .search-bar select{flex:0 0 auto;min-width:150px}
+/* POS: el filtro Detal/Mayor va al lado del buscador, también en móvil */
+.pos-left .search-bar{flex-direction:row;flex-wrap:nowrap;align-items:center;gap:8px}
+.pos-left .search-bar input{flex:1 1 auto;min-width:0;width:auto}
+.pos-left .search-bar select{flex:0 0 auto;width:auto;min-width:0;max-width:42%}
 
 /* Pedidos: panel de filtros más compacto — solo este módulo, en cualquier
    tamaño de pantalla (no toca .search-bar del resto de la app) */
@@ -3535,6 +3539,10 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
             <option value="">Todos los estados</option>
             <option value="activo" selected>Activos</option><option value="inactivo">Inactivos</option>
           </select>
+          <select id="cat_ftipo" onchange="renderCatalogo()" style="display:none" title="Filtrar por tipo de venta">
+            <option value="">Detal y Mayor</option>
+            <option value="detal">Solo al detal</option><option value="mayor">Solo al mayor</option>
+          </select>
           <button id="btn_cat_reorder" class="cat-reorder-btn" onclick="toggleModoReorden()" title="Arrastrar para cambiar el orden"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg> Reordenar</button>
           <button type="button" id="btn_cat_seleccion" class="btn btn-sm" onclick="_catToggleSeleccionMultiple()" title="Seleccionar varios productos para activar/desactivar en lote">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
@@ -4001,6 +4009,10 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
               <!-- Búsqueda de productos -->
               <div class="search-bar" style="flex-shrink:0">
                 <input type="text" id="pos_buscar" placeholder="Buscar producto por nombre o SKU…" oninput="posBuscarProducto()"/>
+                <select id="pos_ftipo" onchange="posRenderProductos()" style="display:none" title="Filtrar por tipo de venta">
+                  <option value="">Detal y Mayor</option>
+                  <option value="detal">Solo al detal</option><option value="mayor">Solo al mayor</option>
+                </select>
               </div>
               <!-- Panel de variante textil POS -->
               <div id="pos_textil_picker" style="display:none;border-left:2px solid var(--brand);padding:8px 0 4px 12px;margin:4px 0 0;background:var(--bg2);border-radius:10px;flex-shrink:0">
@@ -5633,6 +5645,12 @@ function _aplicarConfigEnUI(){
 function _aplicarTiposVentaUI(){
   const on=CFG.tipos_venta_on||false;
   const optsPanel=qs('#cfg_tipos_venta_opts'); if(optsPanel) optsPanel.style.display=on?'block':'none';
+  // Filtros Detal/Mayor (Catálogo y POS): solo visibles si los tipos de venta están activos
+  ['cat_ftipo','pos_ftipo'].forEach(id=>{
+    const f=qs('#'+id); if(!f) return;
+    f.style.display=on?'':'none';
+    if(!on && f.value){ f.value=''; if(id==='cat_ftipo'){ try{renderCatalogo();}catch(e){} } else { try{posRenderProductos();}catch(e){} } }
+  });
   // Show/hide tipo_venta selects in product modals and editor
   const pctD=CFG.comision_detal||5, pctM=CFG.comision_mayor||2;
   const lblD='Al detal ('+pctD+'% comisión)', lblM='Al mayor ('+pctM+'% comisión)';
@@ -6650,7 +6668,9 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v15.96: FIX (Fotos) \u2014 al agregar al cat\u00e1logo desde el Editor un producto cuya foto ya estaba en la nube, el enlace quedaba solo en este dispositivo y en los dem\u00e1s no se ve\u00eda la imagen (efecto de v15.93). Ahora se guarda como foto_url y se sincroniza; adem\u00e1s, al abrir la app se reparan solos los productos que quedaron as\u00ed.\n'
+  return 'v15.98: AJUSTE (Ventas) \u2014 el filtro Detal/Mayor del punto de venta ahora queda al lado derecho del buscador (antes quedaba debajo en pantallas peque\u00f1as).\n'
+    + 'v15.97: NUEVO (Filtro Detal/Mayor) \u2014 en Cat\u00e1logo y en Ventas (Nueva Venta) hay un filtro para ver solo productos al detal o solo al mayor. Aparece cuando los tipos de venta est\u00e1n activados en Configuraci\u00f3n. El resto de la app no cambia.\n'
+    + 'v15.96: FIX (Fotos) \u2014 al agregar al cat\u00e1logo desde el Editor un producto cuya foto ya estaba en la nube, el enlace quedaba solo en este dispositivo y en los dem\u00e1s no se ve\u00eda la imagen (efecto de v15.93). Ahora se guarda como foto_url y se sincroniza; adem\u00e1s, al abrir la app se reparan solos los productos que quedaron as\u00ed.\n'
     + 'v15.95: NUEVO (Almacenamiento) \u2014 los pedidos ahora se guardan en un almac\u00e9n grande (IndexedDB) fuera del l\u00edmite de ~5 MB de localStorage. La migraci\u00f3n copia, verifica y solo entonces libera el espacio; si algo falla, la app sigue como antes. El resto de la app no cambia.\n'
     + 'v15.94: NUEVO (Configuraci\u00f3n \u2192 Respaldo del negocio) \u2014 bot\u00f3n \ud83d\udd0d Ver detalles: muestra qu\u00e9 datos ocupan el almacenamiento local (tama\u00f1o, porcentaje, cantidad de registros, fotos guardadas dentro del tel\u00e9fono y los 5 registros m\u00e1s pesados de cada m\u00f3dulo).\n'
     + 'v15.93: FIX (Almacenamiento) \u2014 las fotos ya no llenan el tel\u00e9fono: siempre se guardan como JPEG liviano (antes un PNG pesaba 1 MB o m\u00e1s), las del Editor se suben a la nube al elegirlas y solo se guarda el enlace, la limpieza ya no borra fotos (las sube o las recomprime) y el logo tambi\u00e9n se comprime.\n'
@@ -8091,7 +8111,8 @@ function renderCatalogo(){
   const catRaw=loadCat();
   const catOrdenado=_applyCatOrder(catRaw);
   const q=(qs('#cat_q')?.value||'').toLowerCase(), fc=qs('#cat_fcat')?.value||'', fe=qs('#cat_fest')?.value||'';
-  const matchBase=p=>(!q||p.nombre.toLowerCase().includes(q)||(p.sku||'').toLowerCase().includes(q))&&(!fc||p.categoria===fc);
+  const ft=(CFG.tipos_venta_on&&qs('#cat_ftipo')?.value)||'';
+  const matchBase=p=>(!q||p.nombre.toLowerCase().includes(q)||(p.sku||'').toLowerCase().includes(q))&&(!fc||p.categoria===fc)&&(!ft||(p.tipo_venta||'detal')===ft);
   const activos   = fe==='inactivo' ? [] : catOrdenado.filter(p=>p.estado!=='inactivo'&&matchBase(p));
   const inactivos = fe==='activo'   ? [] : catOrdenado.filter(p=>p.estado==='inactivo'&&matchBase(p));
   window._catUltimosFiltrados = [...activos, ...inactivos];
@@ -11104,6 +11125,8 @@ function posRenderProductos(){
   // Mismo orden personalizado que el módulo Catálogo (arrastrar y soltar en "Reordenar")
   let prods = _applyCatOrder(loadCat()).filter(p => p.estado !== 'inactivo');
   if(_posCatActiva) prods = prods.filter(p => (p.categoria||'') === _posCatActiva);
+  const _posFt = (CFG.tipos_venta_on && qs('#pos_ftipo')?.value) || '';
+  if(_posFt) prods = prods.filter(p => (p.tipo_venta||'detal') === _posFt);
   if(q) prods = prods.filter(p =>
     (p.nombre||'').toLowerCase().includes(q) ||
     (p.sku||'').toLowerCase().includes(q)
@@ -22343,7 +22366,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v15_96';
+  const APP_VERSION = 'v15_98';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
