@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V16_03">
+<html lang="es" data-app-version="GestioMada_V16_04">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -966,6 +966,9 @@ function mapearParaSupa(tabla, d){
     textil_colores:      d.textil_colores || [],
     textil_recargos:     d.textil_recargos || {},
     textil_caracteristicas: Array.isArray(d.textil_caracteristicas) ? d.textil_caracteristicas : null,
+    textil_estampados:   Array.isArray(d.textil_estampados) ? d.textil_estampados : [],
+    es_pijama:           d.es_pijama === true,
+    tela_franela:        d.tela_franela || '',
     notas:           d.notas || '',
     calculo:         d.calculo || null,
     // foto base64 omitida — se sube a Storage y se guarda en foto_url
@@ -2685,6 +2688,28 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
           <div id="mc_textil_caract_hint" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
           <div style="font-size:11px;color:var(--muted);margin-top:4px">¿Falta una? Agrégala en Configuración → Textiles · características.</div>
         </div>
+        <div class="fg" id="mc_pijama_wrap">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;background:var(--bg2);border-radius:10px">
+            <div>
+              <div style="font-size:12px;font-weight:600">Es pijama (franela + mono)</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Solo reportes: separa el producto en dos listas para el proveedor, franelas y monos.</div>
+            </div>
+            <label class="gm-toggle-mini">
+              <input type="checkbox" id="mc_es_pijama"/>
+              <span class="gm-toggle-track"><span class="gm-toggle-thumb"></span></span>
+            </label>
+          </div>
+        </div>
+        <div class="fg">
+          <label>Tela de la franela <span style="font-weight:400;color:var(--muted)">(solo reportes, no se muestra al cliente)</span></label>
+          <select id="mc_tela_franela"></select>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">¿Falta una tela? Agrégala en Configuración → Textiles · telas.</div>
+        </div>
+        <div class="fg">
+          <label>Estampados de este producto <span style="font-weight:400;color:var(--muted)">(opcional, ej. diseño del mono)</span></label>
+          <div id="mc_textil_estampados_list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">¿Falta uno? Agrégalo en Configuración → Textiles · estampados.</div>
+        </div>
       </div>
       <div class="fg">
         <label>Colores habilitados para este producto</label>
@@ -2808,6 +2833,28 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
           <div id="mpm_textil_caract_list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
           <div id="mpm_textil_caract_hint" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
           <div style="font-size:11px;color:var(--muted);margin-top:4px">¿Falta una? Agrégala en Configuración → Textiles · características.</div>
+        </div>
+        <div class="fg" id="mpm_pijama_wrap">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;background:var(--bg2);border-radius:10px">
+            <div>
+              <div style="font-size:12px;font-weight:600">Es pijama (franela + mono)</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:2px">Solo reportes: separa el producto en dos listas para el proveedor, franelas y monos.</div>
+            </div>
+            <label class="gm-toggle-mini">
+              <input type="checkbox" id="mpm_es_pijama"/>
+              <span class="gm-toggle-track"><span class="gm-toggle-thumb"></span></span>
+            </label>
+          </div>
+        </div>
+        <div class="fg">
+          <label>Tela de la franela <span style="font-weight:400;color:var(--muted)">(solo reportes, no se muestra al cliente)</span></label>
+          <select id="mpm_tela_franela"></select>
+          <div style="font-size:11px;color:var(--muted);margin-top:4px">¿Falta una tela? Agrégala en Configuración → Textiles · telas.</div>
+        </div>
+        <div class="fg">
+          <label>Estampados de este producto <span style="font-weight:400;color:var(--muted)">(opcional, ej. diseño del mono)</span></label>
+          <div id="mpm_textil_estampados_list" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">¿Falta uno? Agrégalo en Configuración → Textiles · estampados.</div>
         </div>
       </div>
       <div class="fg">
@@ -3840,6 +3887,26 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
             <button class="btn btn-brand btn-sm" onclick="agregarCaracteristicaTextilCfg()">＋ Agregar</button>
           </div>
         </div>
+        <!-- Textiles: estampados -->
+        <div class="card">
+          <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg> Textiles · estampados</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Estampados o diseños (ej: Cuadros rojo/negro, Cuadros rojo/verde). En cada producto marcas cuáles están disponibles y al cotizar se elige uno (opcional).</div>
+          <div id="cfg-estampados-textil-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="text" id="cfg_estampado_textil_nuevo" placeholder="Nuevo estampado…" style="flex:1;min-width:160px;max-width:260px" onkeydown="if(event.key==='Enter')agregarEstampadoTextilCfg()"/>
+            <button class="btn btn-brand btn-sm" onclick="agregarEstampadoTextilCfg()">＋ Agregar</button>
+          </div>
+        </div>
+        <!-- Textiles: telas (solo reportes) -->
+        <div class="card">
+          <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M3 6h18M3 12h18M3 18h18"/></svg> Textiles · telas</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:10px">Tipos de tela de la franela (ej: Micro durazno, Algodón). Se elige una vez en cada producto y solo se usa en los reportes; el cliente nunca la ve.</div>
+          <div id="cfg-telas-textil-list" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"></div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <input type="text" id="cfg_tela_textil_nuevo" placeholder="Nueva tela…" style="flex:1;min-width:160px;max-width:260px" onkeydown="if(event.key==='Enter')agregarTelaTextilCfg()"/>
+            <button class="btn btn-brand btn-sm" onclick="agregarTelaTextilCfg()">＋ Agregar</button>
+          </div>
+        </div>
         <div class="card">
           <div class="card-title"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 14l6-6"/><circle cx="9.5" cy="9.5" r="1.5"/><circle cx="14.5" cy="14.5" r="1.5"/><path d="M20 12a8 8 0 1 0-16 0 8 8 0 0 0 16 0z"/></svg> Impuestos</div>
           <div class="frow" style="align-items:center;flex-wrap:wrap;gap:12px">
@@ -4050,6 +4117,10 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
                   </div>
                   <div style="flex:1;min-width:90px"><label style="font-size:11px">Característica</label>
                     <select id="pos_textil_caract" style="font-size:12px;padding:5px 6px;width:100%">
+                    </select>
+                  </div>
+                  <div style="flex:1;min-width:100px"><label style="font-size:11px">Estampado</label>
+                    <select id="pos_textil_estampado" style="font-size:12px;padding:5px 6px;width:100%">
                     </select>
                   </div>
                   <button type="button" onclick="posConfirmarVariante()" style="flex-shrink:0;padding:6px 14px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">＋ Agregar</button>
@@ -4753,6 +4824,7 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
                 </button>
               </div>
             </div>
+            <div id="rep-tex-sel" style="margin-bottom:12px"></div>
             <div style="overflow-x:auto">
               <table style="width:100%;border-collapse:collapse;font-size:12px" id="rep-tex-orden-table">
                 <thead>
@@ -4760,6 +4832,7 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
                     <th style="padding:6px 8px;font-weight:600;white-space:nowrap">Producto <button class="tex-f-btn" data-col="nombre" onclick="texAbrirFiltro(event,'nombre')" title="Filtrar">▽</button></th>
                     <th style="padding:6px 8px;font-weight:600;white-space:nowrap">Talla <button class="tex-f-btn" data-col="talla" onclick="texAbrirFiltro(event,'talla')" title="Filtrar">▽</button></th>
                     <th style="padding:6px 8px;font-weight:600;white-space:nowrap">Color <button class="tex-f-btn" data-col="color" onclick="texAbrirFiltro(event,'color')" title="Filtrar">▽</button></th>
+                    <th style="padding:6px 8px;font-weight:600;white-space:nowrap">Estampado</th>
                     <th style="padding:6px 8px;font-weight:600;white-space:nowrap">Caract. <button class="tex-f-btn" data-col="caract" onclick="texAbrirFiltro(event,'caract')" title="Filtrar">▽</button></th>
                     <th style="padding:6px 8px;font-weight:600;text-align:right">Cant.</th>
                     <th style="padding:6px 8px;font-weight:600">Pedidos / Clientes</th>
@@ -4768,6 +4841,18 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
                 <tbody id="rep-tex-orden-body"></tbody>
               </table>
             </div>
+          </div>
+
+          <!-- Listas para el proveedor (pijamas: franelas y monos) -->
+          <div class="card" style="margin-bottom:14px" id="rep-tex-prov-card">
+            <div class="card-title" style="margin-bottom:6px">Listas para el proveedor <span style="font-size:11px;font-weight:400;color:var(--muted)">(pijamas de los pedidos marcados: franelas y monos por separado)</span></div>
+            <div id="rep-tex-prov"></div>
+          </div>
+
+          <!-- Historial de producción -->
+          <div class="card" style="margin-bottom:14px" id="rep-tex-hist-card">
+            <div class="card-title" style="margin-bottom:6px">Historial de producción <span style="font-size:11px;font-weight:400;color:var(--muted)">(lo que ya enviaste a producción)</span></div>
+            <div id="rep-tex-hist"></div>
           </div>
 
           <!-- Stock actual por variante -->
@@ -5065,6 +5150,10 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
             </div>
             <div class="fg" style="min-width:100px"><label style="font-size:11px">Característica</label>
               <select id="mp_textil_caract" style="font-size:12px;padding:5px 6px">
+              </select>
+            </div>
+            <div class="fg" style="min-width:110px"><label style="font-size:11px">Estampado</label>
+              <select id="mp_textil_estampado" style="font-size:12px;padding:5px 6px">
               </select>
             </div>
           </div>
@@ -5404,6 +5493,8 @@ function loadCfg(){
   aplicarCategorias();
   aplicarColoresTextil();
   aplicarCaracteristicasTextil();
+  aplicarTelasTextil();
+  aplicarEstampadosTextil();
   aplicarTallasTextil();
   // Migración: convertir productos con moneda_prod 'bs' a 'usd' (precio ya se almacena en USD)
   (function migrateMonedaProd(){
@@ -5521,7 +5612,7 @@ async function cargarConfigNegocioDesdeNube(){
     // Todos los campos que se sincronizan via tabla config
     const camposSyncables = ['negocio','rif','rif_visible','telefono','instagram','direccion','slogan','nota_recibo','logo_url',
       'dif_bloqueado','dif_congelado','restante_usd_puro','tipos_venta_on','comision_detal','comision_mayor','caja_auto_apertura','capital_inicial','cat_order','gastos_recurrentes',
-      'tasa_auto','tasa_bcv','tasa_paralela','tasa_paralela_live','criterio_tasa_caja','criterio_tasa_finanzas','imp_on','imp_pct','metodos_activos','metodos_split_binance','categorias','textil_colores_base','textil_caracteristicas','textil_tallas','textil_tallas_alias','textil_grupos_custom','moneda','moneda2'];
+      'tasa_auto','tasa_bcv','tasa_paralela','tasa_paralela_live','criterio_tasa_caja','criterio_tasa_finanzas','imp_on','imp_pct','metodos_activos','metodos_split_binance','categorias','textil_colores_base','textil_caracteristicas','textil_telas','textil_estampados','produccion_historial','textil_tallas','textil_tallas_alias','textil_grupos_custom','moneda','moneda2'];
     data.forEach(row => {
       if(camposSyncables.includes(row.clave)){
         try {
@@ -5654,6 +5745,8 @@ function _aplicarConfigEnUI(){
   if(typeof aplicarCategorias === 'function') aplicarCategorias();
   if(typeof aplicarColoresTextil === 'function') aplicarColoresTextil();
   if(typeof aplicarCaracteristicasTextil === 'function') aplicarCaracteristicasTextil();
+  if(typeof aplicarTelasTextil === 'function') aplicarTelasTextil();
+  if(typeof aplicarEstampadosTextil === 'function') aplicarEstampadosTextil();
   if(typeof aplicarTallasTextil === 'function') aplicarTallasTextil();
   // Persistir tasa BCV
   if(CFG.tasa_bcv > 0) saveTasa(CFG.tasa_bcv);
@@ -5807,6 +5900,9 @@ async function _sincConfigCompletaSupa(){
       { clave:'categorias',       valor: JSON.stringify(CFG.categorias||[]) },
       { clave:'textil_colores_base', valor: JSON.stringify(CFG.textil_colores_base||[]) },
       { clave:'textil_caracteristicas', valor: JSON.stringify(CFG.textil_caracteristicas||[]) },
+      { clave:'textil_telas', valor: JSON.stringify(CFG.textil_telas||[]) },
+      { clave:'textil_estampados', valor: JSON.stringify(CFG.textil_estampados||[]) },
+      { clave:'produccion_historial', valor: JSON.stringify(CFG.produccion_historial||[]) },
       { clave:'textil_tallas', valor: JSON.stringify(CFG.textil_tallas||{}) },
       { clave:'textil_tallas_alias', valor: JSON.stringify(CFG.textil_tallas_alias||{}) },
       { clave:'textil_grupos_custom', valor: JSON.stringify(CFG.textil_grupos_custom||[]) },
@@ -6061,6 +6157,97 @@ function eliminarCaracteristicaTextilCfg(idx){
   if(!confirm(`¿Eliminar la característica "${lista[idx]}"? Los pedidos y el stock que ya la usan no se modifican.`)) return;
   lista.splice(idx,1); saveCaracteristicasTextil(lista); toast('Característica eliminada','ok');
 }
+// ── Telas de la franela (solo reportes) ──
+const TEXTIL_TELAS_DEFAULT=['Micro durazno','Algod\u00f3n'];
+function loadTelasTextil(){ return Array.isArray(CFG.textil_telas)&&CFG.textil_telas.length?CFG.textil_telas:TEXTIL_TELAS_DEFAULT; }
+function saveTelasTextil(arr){ CFG.textil_telas=arr; _lsSet(LS_CFG, JSON.stringify(CFG)); aplicarTelasTextil(); _sincTelasTextilSupa(); }
+function telaOptsHtml(sel){
+  const lista=loadTelasTextil().slice();
+  if(sel && !lista.includes(sel)) lista.push(sel);
+  return '<option value="">Sin especificar</option>'+lista.map(t=>'<option value="'+String(t).replace(/"/g,'&quot;')+'"'+(t===sel?' selected':'')+'>'+esc(t)+'</option>').join('');
+}
+function telaProdRender(pre,sel){
+  const el=qs('#'+pre+'_tela_franela'); if(!el) return;
+  if(sel===undefined) sel=el.value||'';
+  el.innerHTML=telaOptsHtml(sel);
+}
+function aplicarTelasTextil(){
+  renderTelasTextilCfg();
+  telaProdRender('mc'); telaProdRender('mpm');
+}
+function renderTelasTextilCfg(){
+  const wrap=qs('#cfg-telas-textil-list'); if(!wrap) return;
+  wrap.innerHTML=loadTelasTextil().map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:4px 10px 4px 12px;font-size:12px">
+      <span>${esc(c)}</span>
+      <button onclick="eliminarTelaTextilCfg(${i})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;line-height:1;padding:0 2px" title="Eliminar">\u2715</button>
+    </div>`).join('');
+}
+function agregarTelaTextilCfg(){
+  const inp=qs('#cfg_tela_textil_nuevo'); if(!inp) return;
+  const val=inp.value.trim(); if(!val){ toast('Escribe una tela','err'); return; }
+  const lista=loadTelasTextil().slice();
+  if(lista.map(c=>c.toLowerCase()).includes(val.toLowerCase())){ toast('Ya existe','err'); return; }
+  lista.push(val); saveTelasTextil(lista); inp.value=''; toast('Tela agregada','ok');
+}
+function eliminarTelaTextilCfg(idx){
+  const lista=loadTelasTextil().slice();
+  if(!confirm(`\u00bfEliminar la tela "${lista[idx]}"? Los productos que ya la usan no se modifican.`)) return;
+  lista.splice(idx,1); saveTelasTextil(lista); toast('Tela eliminada','ok');
+}
+async function _sincTelasTextilSupa(){
+  if(!window._supaConectado) return;
+  try {
+    await SUPA.from('config').upsert([
+      { clave:'textil_telas', valor: JSON.stringify(CFG.textil_telas||[]) }
+    ], { onConflict:'clave' });
+  } catch(e){ console.warn('[Config] Error sincronizando telas textiles:', e.message); }
+}
+// ── Estampados (diseño del mono) ──
+function loadEstampadosTextil(){ return Array.isArray(CFG.textil_estampados)?CFG.textil_estampados:[]; }
+function saveEstampadosTextil(arr){ CFG.textil_estampados=arr; _lsSet(LS_CFG, JSON.stringify(CFG)); aplicarEstampadosTextil(); _sincEstampadosTextilSupa(); }
+let _estampSel={mc:[],mpm:[]};
+function estampProdCargar(pre,prod){ _estampSel[pre]=(prod&&Array.isArray(prod.textil_estampados))?prod.textil_estampados.slice():[]; estampProdRender(pre); }
+function estampProdLeer(pre){ return _estampSel[pre].slice(); }
+function estampProdToggle(pre,e){ const i=_estampSel[pre].indexOf(e); if(i>=0) _estampSel[pre].splice(i,1); else _estampSel[pre].push(e); estampProdRender(pre); }
+function estampProdRender(pre){
+  const wrap=qs('#'+pre+'_textil_estampados_list'); if(!wrap) return;
+  const base=loadEstampadosTextil().slice();
+  _estampSel[pre].forEach(e=>{ if(!base.includes(e)) base.push(e); });
+  wrap.innerHTML=base.map(e=>{
+    const activo=_estampSel[pre].includes(e);
+    return `<span onclick="estampProdToggle('${pre}','${esc(e).replace(/'/g,"\\'")}')" style="cursor:pointer;font-size:12px;padding:4px 12px;border-radius:999px;border:1px solid ${activo?'var(--brand)':'var(--border)'};background:${activo?'var(--brand)':'transparent'};color:${activo?'#fff':'var(--ink)'}">${esc(e)}</span>`;
+  }).join('') || '<span style="font-size:11px;color:var(--muted)">Aún no tienes estampados en Configuración → Textiles.</span>';
+}
+function aplicarEstampadosTextil(){ renderEstampadosTextilCfg(); estampProdRender('mc'); estampProdRender('mpm'); }
+function renderEstampadosTextilCfg(){
+  const wrap=qs('#cfg-estampados-textil-list'); if(!wrap) return;
+  wrap.innerHTML=loadEstampadosTextil().map((c,i)=>`
+    <div style="display:flex;align-items:center;gap:4px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:4px 10px 4px 12px;font-size:12px">
+      <span>${esc(c)}</span>
+      <button onclick="eliminarEstampadoTextilCfg(${i})" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;line-height:1;padding:0 2px" title="Eliminar">✕</button>
+    </div>`).join('');
+}
+function agregarEstampadoTextilCfg(){
+  const inp=qs('#cfg_estampado_textil_nuevo'); if(!inp) return;
+  const val=inp.value.trim(); if(!val){ toast('Escribe un estampado','err'); return; }
+  const lista=loadEstampadosTextil().slice();
+  if(lista.map(c=>c.toLowerCase()).includes(val.toLowerCase())){ toast('Ya existe','err'); return; }
+  lista.push(val); saveEstampadosTextil(lista); inp.value=''; toast('Estampado agregado','ok');
+}
+function eliminarEstampadoTextilCfg(idx){
+  const lista=loadEstampadosTextil().slice();
+  if(!confirm(`¿Eliminar el estampado "${lista[idx]}"? Los pedidos y productos que ya lo usan no se modifican.`)) return;
+  lista.splice(idx,1); saveEstampadosTextil(lista); toast('Estampado eliminado','ok');
+}
+async function _sincEstampadosTextilSupa(){
+  if(!window._supaConectado) return;
+  try {
+    await SUPA.from('config').upsert([
+      { clave:'textil_estampados', valor: JSON.stringify(CFG.textil_estampados||[]) }
+    ], { onConflict:'clave' });
+  } catch(e){ console.warn('[Config] Error sincronizando estampados textiles:', e.message); }
+}
 const COLORES_TEXTIL_DEFAULT=['Negro','Blanco','Gris','Azul','Verde','Rojo','Rosado','Beige'];
 
 function tallasAdultosCompletas(){
@@ -6162,9 +6349,16 @@ function textilAjustarPicker(pre, prod){
     ca.value=cur;
     if(ca.parentElement) ca.parentElement.style.display=(tiene && (caractsDeProducto(prod).length||cur))?'':'none';
   }
+  const es=qs('#'+pre+'_estampado');
+  if(es){
+    const lista=(prod&&Array.isArray(prod.textil_estampados))?prod.textil_estampados:[];
+    es.innerHTML='<option value="">Sin especificar</option>'+lista.map(e=>'<option value="'+String(e).replace(/"/g,'&quot;')+'">'+esc(e)+'</option>').join('');
+    es.value='';
+    if(es.parentElement) es.parentElement.style.display=lista.length?'':'none';
+  }
 }
 function nombreConVariante(it){
-  const v=[tallaVisible(it.talla),it.color,it.caracteristica].filter(Boolean).join(' · ');
+  const v=[tallaVisible(it.talla),it.color,it.estampado,it.caracteristica].filter(Boolean).join(' · ');
   return (it.nombre||'')+(v?' ('+v+')':'');
 }
 function tallaOptLabel(prod, t){
@@ -6833,7 +7027,7 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v16.03: NUEVO (Textiles \u00b7 grupos propios) \u2014 las tallas de tus grupos de tallas (ej: Mascotas \u2192 Grande) ya pueden tener recargo de precio y de costo. En el producto, bajo \u00abRecargo por talla\u00bb, aparece cada talla de tu grupo: en Grande pones Precio final +$2 y Costo +$0,8. Funciona igual que XL/XXL: se aplica en POS, pedidos y cotizaciones. \nv16.02: ICONOS (Configuraci\u00f3n y Editor de producto) \u2014 los emojis de Configuraci\u00f3n (Textiles \u00b7 tallas, Textiles \u00b7 caracter\u00edsticas, Ver detalles del almacenamiento, Actualizar ahora y los botones de tallas) se cambiaron por los iconos de l\u00ednea que usa el resto de GestioMada. En el editor de producto se quit\u00f3 el emoji de la opci\u00f3n \u00abLocal\u00bb. \nv16.01: NUEVO (Textiles · tallas) En Configuración → Textiles · tallas ya puedes crear tus propios grupos de tallas (ej: «Mascotas» con Pequeña y Grande): escribes el nombre, lo creas y le agregas sus tallas. Puedes renombrarlo, ordenarlo o borrarlo. El grupo aparece al marcar un producto como textil, junto a Niños, Adultos y Bodys. Se sincroniza entre dispositivos. \nv16.00: NUEVO (Textiles) Cada producto textil puede tener sus propias caracter\u00edsticas (se eligen al crear o editar el producto). Los productos que no se tocan siguen usando la lista general; si desmarcas todas, el campo no aparece en ventas ni pedidos. Requiere la columna textil_caracteristicas en Supabase. \u00b7 v15.99: NUEVO (Textiles) Las características de los productos textiles (antes fijas: Con C/B y Sin C/B) ahora se configuran en Configuración → Textiles · características. Puedes agregar o quitar las que necesites (ej: Mangas rosadas) y se sincronizan entre dispositivos. Lo ya registrado no se modifica. \u00b7 v15.98: AJUSTE (Ventas) \u2014 el filtro Detal/Mayor del punto de venta ahora queda al lado derecho del buscador (antes quedaba debajo en pantallas peque\u00f1as).\n'
+  return 'v16.04: NUEVO (Textiles \u00b7 pijamas y producci\u00f3n) \u2014 1) Cada producto textil puede marcarse \u00abEs pijama\u00bb y tener una \u00abTela de la franela\u00bb (Micro durazno, Algod\u00f3n; editable en Configuraci\u00f3n \u2192 Textiles \u00b7 telas) que solo se usa en reportes. 2) Nuevo \u00abEstampado\u00bb opcional (Configuraci\u00f3n \u2192 Textiles \u00b7 estampados): se marcan por producto y se elige al cotizar o crear el pedido; aparece en pedido, cotizaci\u00f3n y WhatsApp. 3) Reportes \u2192 Textiles: listas separadas para el proveedor (Franelas por tela, color y talla; Monos por estampado, talla y bota/jogger), imprimibles. 4) Orden de Producci\u00f3n: marcas con casillas qu\u00e9 pedidos van a producci\u00f3n; queda un Historial de producci\u00f3n con fecha, con reimpresi\u00f3n y bot\u00f3n Deshacer. 5) Icono de nota en los pedidos con nota escrita a mano y el n\u00famero PED abre el pedido. \nv16.03: NUEVO (Textiles \u00b7 grupos propios) \u2014 las tallas de tus grupos de tallas (ej: Mascotas \u2192 Grande) ya pueden tener recargo de precio y de costo. En el producto, bajo \u00abRecargo por talla\u00bb, aparece cada talla de tu grupo: en Grande pones Precio final +$2 y Costo +$0,8. Funciona igual que XL/XXL: se aplica en POS, pedidos y cotizaciones. \nv16.02: ICONOS (Configuraci\u00f3n y Editor de producto) \u2014 los emojis de Configuraci\u00f3n (Textiles \u00b7 tallas, Textiles \u00b7 caracter\u00edsticas, Ver detalles del almacenamiento, Actualizar ahora y los botones de tallas) se cambiaron por los iconos de l\u00ednea que usa el resto de GestioMada. En el editor de producto se quit\u00f3 el emoji de la opci\u00f3n \u00abLocal\u00bb. \nv16.01: NUEVO (Textiles · tallas) En Configuración → Textiles · tallas ya puedes crear tus propios grupos de tallas (ej: «Mascotas» con Pequeña y Grande): escribes el nombre, lo creas y le agregas sus tallas. Puedes renombrarlo, ordenarlo o borrarlo. El grupo aparece al marcar un producto como textil, junto a Niños, Adultos y Bodys. Se sincroniza entre dispositivos. \nv16.00: NUEVO (Textiles) Cada producto textil puede tener sus propias caracter\u00edsticas (se eligen al crear o editar el producto). Los productos que no se tocan siguen usando la lista general; si desmarcas todas, el campo no aparece en ventas ni pedidos. Requiere la columna textil_caracteristicas en Supabase. \u00b7 v15.99: NUEVO (Textiles) Las características de los productos textiles (antes fijas: Con C/B y Sin C/B) ahora se configuran en Configuración → Textiles · características. Puedes agregar o quitar las que necesites (ej: Mangas rosadas) y se sincronizan entre dispositivos. Lo ya registrado no se modifica. \u00b7 v15.98: AJUSTE (Ventas) \u2014 el filtro Detal/Mayor del punto de venta ahora queda al lado derecho del buscador (antes quedaba debajo en pantallas peque\u00f1as).\n'
     + 'v15.97: NUEVO (Filtro Detal/Mayor) \u2014 en Cat\u00e1logo y en Ventas (Nueva Venta) hay un filtro para ver solo productos al detal o solo al mayor. Aparece cuando los tipos de venta est\u00e1n activados en Configuraci\u00f3n. El resto de la app no cambia.\n'
     + 'v15.96: FIX (Fotos) \u2014 al agregar al cat\u00e1logo desde el Editor un producto cuya foto ya estaba en la nube, el enlace quedaba solo en este dispositivo y en los dem\u00e1s no se ve\u00eda la imagen (efecto de v15.93). Ahora se guarda como foto_url y se sincroniza; adem\u00e1s, al abrir la app se reparan solos los productos que quedaron as\u00ed.\n'
     + 'v15.95: NUEVO (Almacenamiento) \u2014 los pedidos ahora se guardan en un almac\u00e9n grande (IndexedDB) fuera del l\u00edmite de ~5 MB de localStorage. La migraci\u00f3n copia, verifica y solo entonces libera el espacio; si algo falla, la app sigue como antes. El resto de la app no cambia.\n'
@@ -6918,7 +7112,7 @@ function nav(id, el){
   if(id==='finanzas'){ renderFinanzas(); }
   if(id==='dashboard') renderDash();
   if(id==='envios'){ if(typeof renderEnvios==='function') renderEnvios(); }
-  if(id==='config'){ renderCatsCfg(); renderColoresTextilCfg(); renderCaracteristicasTextilCfg(); renderTallasTextilCfg(); }
+  if(id==='config'){ renderCatsCfg(); renderColoresTextilCfg(); renderCaracteristicasTextilCfg(); renderTelasTextilCfg(); renderEstampadosTextilCfg(); renderTallasTextilCfg(); }
   if(id==='config'){ renderLsMonitor(); }
   if(id==='config'){ _gmVersionCardUpdate(); }
   if(id==='config'){ if(typeof renderConflictosSync==='function') renderConflictosSync(); }
@@ -7586,6 +7780,7 @@ function abrirCatalogo(){
       _mcTextilColoresSel = _ucMc ? catExist.textil_colores.slice() : []; recargosCargar('mc', _ucMc ? catExist.textil_recargos : {});
     }
     caractProdCargar('mc', catExist);
+    estampProdCargar('mc', catExist); { const _pj=qs('#mc_es_pijama'); if(_pj) _pj.checked=!!(catExist&&catExist.es_pijama); telaProdRender('mc', (catExist&&catExist.tela_franela)||''); }
     mcToggleTextil();
   }
   openModal('m-catalogo');
@@ -7718,7 +7913,7 @@ function confirmarCatalogo(){
   const mcEsTextil=qs('#mc_es_textil')?.checked||false;
   const mcConVar = mcEsTextil || !!qs('#mc_usa_colores')?.checked;   // V15_84: textil o solo colores
   const nuevo={ id:prodId, nombre:nom, sku:skuFinal, categoria:qs('#mc_cat').value, foto:fotoLocal, foto_url:fotoPendienteStorage?'':(_fotoEsUrl?_foto3:fotoUrlExistente), costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, tipo_venta:qs('#pers_tipo_venta')?.value||'detal', modo_inventario:modoInv, inv_loc:invLoc, inv_momento:(modoInv==='ninguno'?'entrega':(qs('#mc_inv_momento')?.value||'entrega')), moneda_prod:monedaProd, insumos_receta:receta, es_textil:mcEsTextil, textil_grupo_talla:'', textil_grupos_talla:mcEsTextil?[..._mcTextilGruposSel]:[], textil_colores:mcConVar?[..._mcTextilColoresSel]:[], textil_recargos:mcConVar?recargosLeer('mc'):{},
-textil_caracteristicas:mcEsTextil?caractProdLeer('mc'):null, notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
+textil_caracteristicas:mcEsTextil?caractProdLeer('mc'):null, es_pijama:mcEsTextil&&!!qs('#mc_es_pijama')?.checked, textil_estampados:mcEsTextil?estampProdLeer('mc'):[], tela_franela:mcEsTextil?(qs('#mc_tela_franela')?.value||''):'', notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
   // No embeber foto base64 dentro de calculo — ocupa MB redundantes en localStorage
   if(nuevo.calculo && typeof nuevo.calculo==='object' && nuevo.calculo.foto && nuevo.calculo.foto.startsWith('data:')) nuevo.calculo.foto='';
   let _prodSyncEd;
@@ -7742,7 +7937,7 @@ textil_caracteristicas:mcEsTextil?caractProdLeer('mc'):null, notas:qs('#mc_notas
   const rw=qs('#mc_receta_lines'); if(rw) rw.innerHTML='';
   const mcInv=qs('#mc_modo_inv'); if(mcInv){ mcInv.value='ninguno'; mcToggleReceta(); } { const _m=qs('#mc_inv_momento'); if(_m) _m.value='entrega'; }
   const mcLocRst=qs('#mc_inv_loc'); if(mcLocRst) mcLocRst.value='deposito';
-  qs('#mc_es_textil').checked=false; { const _u=qs('#mc_usa_colores'); if(_u) _u.checked=false; } _mcTextilGruposSel=[]; _mcTextilColoresSel=[]; recargosCargar('mc', {}); mcToggleTextil();
+  qs('#mc_es_textil').checked=false; { const _u=qs('#mc_usa_colores'); if(_u) _u.checked=false; } _mcTextilGruposSel=[]; _mcTextilColoresSel=[]; recargosCargar('mc', {}); estampProdCargar('mc', null); { const _pj=qs('#mc_es_pijama'); if(_pj) _pj.checked=false; telaProdRender('mc',''); } mcToggleTextil();
 }
 /* ══ PRODUCTO MANUAL ══ */
 let _mpmIdx=null; // null=nuevo, número=editar índice
@@ -7787,6 +7982,7 @@ function abrirProdManual(idx=null){
     _mpmTextilColoresSel=(p.textil_colores||[]).slice();
     recargosCargar('mpm', p.textil_recargos);
     caractProdCargar('mpm', p);
+    estampProdCargar('mpm', p); { const _pj=qs('#mpm_es_pijama'); if(_pj) _pj.checked=!!p.es_pijama; telaProdRender('mpm', p.tela_franela||''); }
     mpmToggleTextil();
     if(p.modo_inventario==='insumos') mpmCargarReceta(p.insumos_receta||[]);
     const _fotoSrc=getFoto(p); if(_fotoSrc&&fImg){ fImg.src=_fotoSrc; fImg.style.display='block'; fPh.style.display='none'; fDel.style.display='block'; }
@@ -7799,6 +7995,7 @@ function abrirProdManual(idx=null){
     mpmToggleReceta();
     qs('#mpm_es_textil').checked=false; { const _u=qs('#mpm_usa_colores'); if(_u) _u.checked=false; } _mpmTextilGruposSel=[];
     _mpmTextilColoresSel=[]; recargosCargar('mpm', {});
+    estampProdCargar('mpm', null); { const _pj=qs('#mpm_es_pijama'); if(_pj) _pj.checked=false; telaProdRender('mpm',''); }
     mpmToggleTextil();
     const rw=qs('#mpm_receta_lines'); if(rw) rw.innerHTML='';
     if(fImg){ fImg.src=''; fImg.style.display='none'; fPh.style.display='block'; if(fDel) fDel.style.display='none'; }
@@ -7923,6 +8120,9 @@ function guardarProdManual(){
     textil_colores:mpmConVar?[..._mpmTextilColoresSel]:[],
     textil_recargos:mpmConVar?recargosLeer('mpm'):{},
     textil_caracteristicas:esTextil?caractProdLeer('mpm'):null,
+    es_pijama:esTextil&&!!qs('#mpm_es_pijama')?.checked,
+    textil_estampados:esTextil?estampProdLeer('mpm'):[],
+    tela_franela:esTextil?(qs('#mpm_tela_franela')?.value||''):'',
     notas:qs('#mpm_notas').value.trim(), origen:'manual' };
   if(esModoEdit){ cat[_mpmIdx]={...cat[_mpmIdx],...obj}; }
   else {
@@ -11394,8 +11594,9 @@ function posConfirmarVariante(){
   const talla = (qs('#pos_textil_talla')?.value||'').trim();
   const color = (qs('#pos_textil_color')?.value||'').trim();
   const caract = (qs('#pos_textil_caract')?.value||'').trim();
+  const estamp = (qs('#pos_textil_estampado')?.value||'').trim();
   if((prodTieneTallas(prod)&&!talla)||!color){ toast(prodTieneTallas(prod)?'Selecciona talla y color':'Selecciona el color','warn'); return; }
-  posAgregarProdDirecto(prod, talla, color, caract);
+  posAgregarProdDirecto(prod, talla, color, caract, estamp);
   const picker = qs('#pos_textil_picker'); if(picker) picker.style.display = 'none';
   _posProdTextilPendiente = null;
 }
@@ -11405,10 +11606,11 @@ function posAgregarSinVariante(){
   const picker = qs('#pos_textil_picker'); if(picker) picker.style.display = 'none';
   _posProdTextilPendiente = null;
 }
-function posAgregarProdDirecto(prod, talla, color, caracteristica){
+function posAgregarProdDirecto(prod, talla, color, caracteristica, estampado){
+  estampado = estampado||'';
   const existe = _posItems.findIndex(it => {
     if(!it.id_prod || String(it.id_prod) !== String(prod.id)) return false;
-    if(prodConVariantes(prod) && (talla||color)) return (it.talla||'')===talla && (it.color||'')===color && (it.caracteristica||'')===caracteristica;
+    if(prodConVariantes(prod) && (talla||color)) return (it.talla||'')===talla && (it.color||'')===color && (it.caracteristica||'')===caracteristica && (it.estampado||'')===estampado;
     if(prodConVariantes(prod) && !talla && !color) return !it.talla && !it.color;
     return true;
   });
@@ -11416,7 +11618,7 @@ function posAgregarProdDirecto(prod, talla, color, caracteristica){
     _posItems[existe].cant++;
   } else {
     const item = { tipo:'catalogo', nombre:prod.nombre, precio_unit:prod.precio_venta||0, precio_usd:prod.precio_venta||0, moneda_prod:'usd', costo_unit:prod.costo||0, alq_unit:_finAlqUnitDeProd(prod), cant:1, id_prod:prod.id, tipo_venta:prod.tipo_venta||'detal' };
-    if(talla||color){ item.talla=talla; item.color=color; item.caracteristica=caracteristica; aplicarRecargoTallaItem(item, prod, talla, color); }
+    if(talla||color){ item.talla=talla; item.color=color; item.caracteristica=caracteristica; if(estampado) item.estampado=estampado; aplicarRecargoTallaItem(item, prod, talla, color); }
     _posItems.push(item);
   }
   posRenderProductos(); posRenderCarrito(); posRecalc(); posWaActualizar();
@@ -11447,7 +11649,7 @@ function posRenderCarrito(){
       : `<div style="font-size:12px;font-weight:700">${euro(puBase)}</div>`;
     return `
     <div class="pos-item">
-      <div class="pos-item-name">${esc(it.nombre)}${(it.talla||it.color||it.caracteristica)?`<span style="display:block;font-size:10px;font-weight:400;color:#be185d;margin-top:1px">${[tallaVisible(it.talla),it.color,it.caracteristica].filter(Boolean).join(' · ')}</span>`:''}</div>
+      <div class="pos-item-name">${esc(it.nombre)}${(it.talla||it.color||it.estampado||it.caracteristica)?`<span style="display:block;font-size:10px;font-weight:400;color:#be185d;margin-top:1px">${[tallaVisible(it.talla),it.color,it.estampado,it.caracteristica].filter(Boolean).join(' · ')}</span>`:''}</div>
       <div class="pos-item-qty-ctrl">
         <button class="pos-qty-btn" onclick="posCantItem(${i},-1)">−</button>
         <input type="number" class="pos-item-qty" min="1" value="${it.cant}"
@@ -11876,7 +12078,7 @@ function renderCotizaciones(){
     const fecha = c.fecha_creado ? new Date(c.fecha_creado).toLocaleDateString('es-VE',{day:'2-digit',month:'short'}) : '';
     const nItems = (c.items||[]).reduce((a,it)=>a+(it.cant||1),0);
     const itemsPrev = (c.items||[]).slice(0,3).map(it=>{
-      const _vStr = [tallaVisible(it.talla),it.color,it.caracteristica].filter(Boolean).join(' · ');
+      const _vStr = [tallaVisible(it.talla),it.color,it.estampado,it.caracteristica].filter(Boolean).join(' · ');
       const _vPart = _vStr ? ' <span style="color:#e07ab0">('+esc(_vStr)+')</span>' : '';
       return it.cant+'× '+esc(it.nombre||'')+_vPart;
     }).join(', ') + ((c.items||[]).length>3?'…':'');
@@ -12260,6 +12462,7 @@ function cotCrearPedido(id){
       talla: it.talla || '',
       color: it.color || '',
       caracteristica: it.caracteristica || '',
+      estampado: it.estampado || '',
       recargo_p: it.recargo_p || 0,
       recargo_c: it.recargo_c || 0
     };
@@ -14081,11 +14284,13 @@ function pedSetVarianteItem(idx){
   const talla = qs('#_pv_talla_'+idx)?.value || '';
   const color = qs('#_pv_color_'+idx)?.value || '';
   const caract = qs('#_pv_caract_'+idx)?.value || '';
+  const estamp = qs('#_pv_estamp_'+idx)?.value || '';
   if((prodTieneTallas(prod)&&!talla) || !color){ toast(prodTieneTallas(prod)?'Selecciona talla y color':'Selecciona el color','warn'); return; }
   aplicarRecargoTallaItem(_pedItems[idx], prod, talla, color);
   _pedItems[idx].talla = talla;
   _pedItems[idx].color = color;
   _pedItems[idx].caracteristica = caract;
+  if(estamp) _pedItems[idx].estampado = estamp; else delete _pedItems[idx].estampado;
   delete _pedItems[idx]._necesita_variante;
   delete _pedItems[idx]._prod_ref;
   _pedEditVariante.delete(idx);
@@ -14104,6 +14309,7 @@ function pedLimpiarVariante(i){
   _pedItems[i].talla = '';
   _pedItems[i].color = '';
   _pedItems[i].caracteristica = '';
+  delete _pedItems[i].estampado;
   _pedEditVariante.delete(i);
   renderItemsFormulario(); recalcPedido();
 }
@@ -14256,8 +14462,9 @@ function agregarProductoPedido(){
   if(!prodId){ toast('Busca y selecciona un producto del catálogo','warn'); return; }
   const prod = loadCat().find(p=>String(p.id)===String(prodId));
   if(!prod){ toast('Producto no encontrado en catálogo','warn'); return; }
-  let talla='', color='', caracteristica='';
+  let talla='', color='', caracteristica='', estampado='';
   if(prodConVariantes(prod)){
+    estampado=(qs('#mp_textil_estampado')?.value||'').trim();
     talla=(qs('#mp_textil_talla')?.value||'').trim();
     color=(qs('#mp_textil_color')?.value||'').trim();
     caracteristica=(qs('#mp_textil_caract')?.value||'').trim();
@@ -14271,14 +14478,14 @@ function agregarProductoPedido(){
   // Coincidencia: mismo id_prod + misma variante (textil) o solo mismo id_prod
   const existe = _pedItems.findIndex(it=>{
     if(!it.id_prod || String(it.id_prod)!==String(prodId)) return false;
-    if(prodConVariantes(prod)) return (it.talla||'')===talla && (it.color||'')===color && (it.caracteristica||'')===caracteristica;
+    if(prodConVariantes(prod)) return (it.talla||'')===talla && (it.color||'')===color && (it.caracteristica||'')===caracteristica && (it.estampado||'')===estampado;
     return true;
   });
   if(existe>=0){
     _pedItems[existe].cant++;
   } else {
     const item={ tipo:'catalogo', nombre:prod.nombre, precio_unit:prod.precio_venta, costo_unit:prod.costo||0, alq_unit:_finAlqUnitDeProd(prod), cant:1, id_prod:prod.id, moneda_prod:'usd' };
-    if(prodConVariantes(prod)){ item.talla=talla; item.color=color; item.caracteristica=caracteristica; aplicarRecargoTallaItem(item, prod, talla, color); }
+    if(prodConVariantes(prod)){ item.talla=talla; item.color=color; item.caracteristica=caracteristica; if(estampado) item.estampado=estampado; aplicarRecargoTallaItem(item, prod, talla, color); }
     _pedItems.push(item);
   }
   sel.value=''; renderItemsFormulario(); recalcPedido();
@@ -14311,7 +14518,7 @@ function _renderVarianteItemEdit(it, i) {
   const colores = prod ? (prod.textil_colores || []) : [];
   const enEdicion = _pedEditVariante.has(i);
   let html = '<div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">';
-  html += [tallaVisible(it.talla), it.color, it.caracteristica].filter(Boolean)
+  html += [tallaVisible(it.talla),it.color,it.estampado,it.caracteristica].filter(Boolean)
     .map(v => '<span style="font-size:10px;padding:1px 7px;border-radius:999px;background:#ffe3ee;color:#be185d;font-weight:600">'+esc(v)+'</span>')
     .join('');
   if (prod && prodConVariantes(prod)) {
@@ -14337,6 +14544,7 @@ function _renderVarianteItemEdit(it, i) {
       html += caracteristicasOptsHtml(it.caracteristica,'Sin especificar',prod);
       html += '</select></div>';
     }
+    { const _ests=(prod&&Array.isArray(prod.textil_estampados))?prod.textil_estampados:[]; if(_ests.length||it.estampado){ const _l=_ests.slice(); if(it.estampado&&!_l.includes(it.estampado)) _l.push(it.estampado); html += '<div style="flex:1;min-width:100px"><label style="font-size:10px;color:var(--muted)">Estampado</label><select id="_pv_estamp_'+i+'" style="font-size:12px;padding:4px 6px;width:100%"><option value="">Sin especificar</option>'+_l.map(e=>'<option value="'+esc(e)+'"'+(it.estampado===e?' selected':'')+'>'+esc(e)+'</option>').join('')+'</select></div>'; } }
     html += '<button type="button" onclick="pedSetVarianteItem('+i+')" style="flex-shrink:0;padding:5px 12px;background:var(--brand);color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer">Confirmar</button>';
     html += '</div></div>';
   }
@@ -14380,6 +14588,9 @@ ${it._necesita_variante ? (()=>{
         <select id="_pv_caract_${i}" style="font-size:12px;padding:4px 6px;width:100%">
           ${caracteristicasOptsHtml('','Sin especificar',prod)}
         </select>
+      </div>`:''}
+      ${(prod&&(prod.textil_estampados||[]).length)?`<div style="flex:1;min-width:100px"><label style="font-size:10px;color:var(--muted)">Estampado</label>
+        <select id="_pv_estamp_${i}" style="font-size:12px;padding:4px 6px;width:100%"><option value="">Sin especificar</option>${prod.textil_estampados.map(e=>`<option value="${esc(e)}">${esc(e)}</option>`).join('')}</select>
       </div>`:''}
       <button type="button" onclick="pedSetVarianteItem(${i})" style="flex-shrink:0;padding:5px 12px;background:var(--brand);color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer">Confirmar</button>
     </div>
@@ -14962,7 +15173,7 @@ function renderPedidos(){
           ${p.canal?`<span class="chip" style="font-size:10px;${CANALES_COLOR[normalizarCanalVenta(p.canal)]||CANALES_COLOR.local}">${CANALES_LABEL[normalizarCanalVenta(p.canal)]||CANALES_LABEL.local}</span>`:''}
           ${p.usuario_nom?`<span class="chip" style="font-size:10px;background:#f0f4ff;color:#3b5bdb">👤 ${esc(p.usuario_nom.split(' ')[0])}</span>`:''}
         </div>
-        ${(p.items&&p.items.length)?`<div class="ped-items-preview">${p.items.map(it=>`<span style="display:inline-block;margin-right:6px">${it.cant}× ${esc(it.nombre)}${(it.talla||it.color||it.caracteristica)?` <span style="font-size:10px;color:#be185d;font-weight:600">${esc([tallaVisible(it.talla),it.color,it.caracteristica].filter(Boolean).join(' · '))}</span>`:''}</span>`).join('')}</div>`:''}
+        ${(p.items&&p.items.length)?`<div class="ped-items-preview">${p.items.map(it=>`<span style="display:inline-block;margin-right:6px">${it.cant}× ${esc(it.nombre)}${(it.talla||it.color||it.estampado||it.caracteristica)?` <span style="font-size:10px;color:#be185d;font-weight:600">${esc([tallaVisible(it.talla),it.color,it.estampado,it.caracteristica].filter(Boolean).join(' · '))}</span>`:''}</span>`).join('')}</div>`:''}
         ${(()=>{ const notasLimpias=(p.notas||'').split(' | ').filter(s=>!s.startsWith('Delivery:')&&!s.startsWith('Envío:')&&!s.startsWith('Diseño:')&&!s.startsWith('Extras:')).join(' | ').trim(); return notasLimpias?`<div class="ped-items-preview" style="color:#e53e3e;margin-top:2px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:3px"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>${esc(notasLimpias)}</div>`:''; })()}
         ${(()=>{const _ex=[];if(_numPedido(p.delivery_usd)>0)_ex.push('Delivery');if(_numPedido(p.envio_usd)>0)_ex.push('Envío');if(_numPedido(p.diseno_usd)>0)_ex.push('Diseño');return _ex.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">${_ex.map(e=>`<span class="chip" style="font-size:9px;background:#f0eaff;color:#7c3aed">${e}</span>`).join('')}</div>`:''})()}
       </div>
@@ -15483,7 +15694,7 @@ function verPedido(idx){
   const _pedFmtTotal = n => euro(n);
   const itemsHtml=p.items.map((it,_ii)=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f3f3f8">
-      <div><div style="font-weight:600;font-size:13px">${esc(it.nombre)}</div><div style="font-size:11px;color:var(--muted)">×${it.cant} · ${_pedFmtMon(it.precio_unit)}</div>${(it.talla||it.color||it.caracteristica)?`<div style="margin-top:2px;display:flex;gap:3px;flex-wrap:wrap">${[tallaVisible(it.talla),it.color,it.caracteristica].filter(Boolean).map(v=>`<span style="font-size:10px;padding:1px 6px;border-radius:999px;background:#ffe3ee;color:#be185d;font-weight:600">${esc(v)}</span>`).join('')}</div>`:''}</div>
+      <div><div style="font-weight:600;font-size:13px">${esc(it.nombre)}</div><div style="font-size:11px;color:var(--muted)">×${it.cant} · ${_pedFmtMon(it.precio_unit)}</div>${(it.talla||it.color||it.estampado||it.caracteristica)?`<div style="margin-top:2px;display:flex;gap:3px;flex-wrap:wrap">${[tallaVisible(it.talla),it.color,it.estampado,it.caracteristica].filter(Boolean).map(v=>`<span style="font-size:10px;padding:1px 6px;border-radius:999px;background:#ffe3ee;color:#be185d;font-weight:600">${esc(v)}</span>`).join('')}</div>`:''}</div>
       <div style="text-align:right"><div style="font-weight:700">${_pedFmtMon(it.precio_unit*it.cant)}</div>${(p.estado!=='cancelado'&&it.id_prod)?`<button type="button" onclick="abrirMermaDesdePedidoItem(${_ii})" style="font-size:10px;padding:1px 8px;margin-top:2px;border-radius:999px;border:1px solid #fdba74;color:#c2410c;background:transparent;cursor:pointer">⚠ Merma</button>`:''}</div>
     </div>`).join('');
 
@@ -17195,7 +17406,7 @@ function renderTerminados(){
     el.innerHTML=`
       <div class="li-ico" style="background:${alerta?'#fee2e2':'#e8efff'}">${alerta?'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#A32D2D" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>':'<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#185FA5" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>'}</div>
       <div class="li-body">
-        <div class="li-name">${esc(item.nombre)}${(item.talla||item.color||item.caracteristica)?` <span style="font-weight:400;font-size:11px;color:var(--brand)">· ${[tallaVisible(item.talla),item.color,item.caracteristica].filter(Boolean).map(esc).join(' · ')}</span>`:''}</div>
+        <div class="li-name">${esc(item.nombre)}${(item.talla||item.color||item.estampado||item.caracteristica)?` <span style="font-weight:400;font-size:11px;color:var(--brand)">· ${[tallaVisible(item.talla),item.color,item.estampado,item.caracteristica].filter(Boolean).map(esc).join(' · ')}</span>`:''}</div>
         <div class="li-meta">
           ${prodVinculado
             ? `<span class="chip chip-ok" style="font-size:10px">Vinculado: ${esc(prodVinculado.nombre)}</span>`
@@ -17463,7 +17674,7 @@ function costoUnitMerma(tipo_item, item){
 function abrirMerma(tipo_item, id, notaExtra){
   _mermaNotaExtra = notaExtra || '';
   const sel = qs('#merma_item'); if(!sel) return;
-  const fmtV = t => [tallaVisible(t.talla),t.color,t.caracteristica].filter(Boolean).join(' / ');
+  const fmtV = t => [tallaVisible(t.talla),t.color,t.estampado,t.caracteristica].filter(Boolean).join(' / ');
   const ter = loadTer(), ins = loadIns();
   sel.innerHTML = '<optgroup label="Productos terminados">' + ter.map(t=>`<option value="terminado:${t.id}">${esc(t.nombre||'Producto')}${fmtV(t)?' — '+esc(fmtV(t)):''}</option>`).join('') + '</optgroup>'
                 + '<optgroup label="Insumos">' + ins.map(i=>`<option value="insumo:${i.id}">${esc(i.nombre||'Insumo')}</option>`).join('') + '</optgroup>';
@@ -18122,146 +18333,278 @@ function _texRedibujarOrden(){
 }
 
 /* ── Orden de Producción: pedidos pendientes con textiles ── */
-function _renderOrdenProduccion(cat, peds, filtroProd){
-  // Solo pedidos pendientes con al menos 1 ítem con variante textil
-  const pedsPend = peds.filter(p => {
-    if(p.estado !== 'pendiente') return false;
-    return (p.items||[]).some(it => it.talla || it.color);
-  });
+let _texDesel = new Set(); // ids de pedidos desmarcados (por defecto todos van a producción)
+const ICO_NOTA = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><polyline points="14 3 14 9 20 9"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="13" y2="17"/></svg>';
+// Nota escrita a mano en el pedido (sin las partes automáticas Delivery / Envío / Diseño / Extras)
+function pedNotaManual(p){
+  return String((p&&p.notas)||'').split(' | ').map(x=>x.trim()).filter(x=>x && !/^(delivery|env[ií]o|dise[nñ]o|extras)\s*:/i.test(x)).join(' | ');
+}
+function texAbrirPedido(id){
+  const idx=loadPed().findIndex(p=>String(p.id)===String(id));
+  if(idx<0){ toast('Pedido no encontrado','warn'); return; }
+  nav('pedidos', document.querySelector('[data-v=pedidos]'));
+  setTimeout(()=>verPedido(idx), 80);
+}
+function _texNumPed(p){ return p.numero||p.num||String(p.id).slice(-4); }
+function _texClientePed(p){ return p.cliente_nom||(p.cliente?(typeof p.cliente==='string'?p.cliente:((p.cliente.nombre||'')+' '+(p.cliente.apellido||'')).trim()):''); }
+function _texPedRef(p){ return { id:p.id, num:_texNumPed(p), cliente:_texClientePed(p), nota:pedNotaManual(p) }; }
+function _texTagPed(r){
+  return '<span onclick="texAbrirPedido(\''+String(r.id).replace(/'/g,"\\'")+'\')" title="Abrir pedido" style="cursor:pointer;display:inline-block;background:#EEE9FF;color:#5B21B6;font-size:10px;padding:1px 6px;border-radius:999px;font-weight:600;margin:1px 2px 1px 0;white-space:nowrap">'
+    + esc(r.num) + (r.nota?' <span title="'+esc(r.nota).replace(/"/g,'&quot;')+'" style="color:#b45309;margin-left:2px">'+ICO_NOTA+'</span>':'')
+    + (r.cliente ? ' · ' + esc(r.cliente) : '') + '</span>';
+}
+function _texPedidosPend(peds){ return peds.filter(p=>p.estado==='pendiente' && (p.items||[]).some(it=>it.talla||it.color)); }
+function _texPedidosSel(peds){ return _texPedidosPend(peds).filter(p=>!_texDesel.has(String(p.id))); }
+const _texCmp=(a,b)=>String(a||'').localeCompare(String(b||''),'es',{numeric:true});
 
-  // Agrupar por: nombre|talla|color|característica
-  const grupos = {};
-  pedsPend.forEach(p => {
-    (p.items||[]).forEach(it => {
-      if(!(it.talla || it.color)) return;
-      const prod = it.id_prod ? cat.find(c => String(c.id)===String(it.id_prod)) : null;
+// Calcula las tres listas (general, franelas, monos) a partir de los pedidos dados
+function _texCalcListas(cat, selPeds, filtroProd){
+  const gen={}, fran={}, mono={};
+  const addPed=(g,r)=>{ if(!g.pedidos.find(x=>String(x.id)===String(r.id))) g.pedidos.push(r); };
+  selPeds.forEach(p=>{
+    const ref=_texPedRef(p);
+    (p.items||[]).forEach(it=>{
+      if(!(it.talla||it.color)) return;
+      const prod = it.id_prod ? cat.find(c=>String(c.id)===String(it.id_prod)) : null;
       if(filtroProd && (!prod || String(prod.id)!==filtroProd)) return;
-      const clave = (it.id_prod||it.nombre)+'|'+(it.talla||'')+'|'+(it.color||'')+'|'+(it.caracteristica||'');
-      if(!grupos[clave]) grupos[clave]={ nombre:it.nombre, talla:it.talla||'', color:it.color||'', caract:it.caracteristica||'', cant:0, pedidos:[] };
-      grupos[clave].cant += (it.cant||1);
-      if(!grupos[clave].pedidos.find(r => r.id===p.id)){
-        grupos[clave].pedidos.push({ id:p.id, num:p.numero||p.num||String(p.id).slice(-4), cliente:p.cliente_nom||(p.cliente?(typeof p.cliente==='string'?p.cliente:((p.cliente.nombre||'')+' '+(p.cliente.apellido||'')).trim()):'') });
+      const cant=it.cant||1;
+      const kg=(it.id_prod||it.nombre)+'|'+(it.talla||'')+'|'+(it.color||'')+'|'+(it.estampado||'')+'|'+(it.caracteristica||'');
+      if(!gen[kg]) gen[kg]={nombre:it.nombre,talla:it.talla||'',color:it.color||'',estamp:it.estampado||'',caract:it.caracteristica||'',cant:0,pedidos:[]};
+      gen[kg].cant+=cant; addPed(gen[kg],ref);
+      if(prod && prod.es_pijama){
+        const tela=prod.tela_franela||'Sin tela';
+        const kf=tela+'|'+(it.color||'')+'|'+(it.talla||'');
+        if(!fran[kf]) fran[kf]={tela,color:it.color||'',talla:it.talla||'',cant:0,pedidos:[]};
+        fran[kf].cant+=cant; addPed(fran[kf],ref);
+        const km=(it.estampado||'')+'|'+(it.talla||'')+'|'+(it.caracteristica||'');
+        if(!mono[km]) mono[km]={estamp:it.estampado||'Sin estampado',talla:it.talla||'',caract:it.caracteristica||'',cant:0,pedidos:[]};
+        mono[km].cant+=cant; addPed(mono[km],ref);
       }
     });
   });
+  return {
+    gen:Object.values(gen).sort((a,b)=>_texCmp(a.nombre,b.nombre)||_texCmp(a.talla,b.talla)||_texCmp(a.color,b.color)),
+    fran:Object.values(fran).sort((a,b)=>_texCmp(a.tela,b.tela)||_texCmp(a.color,b.color)||_texCmp(a.talla,b.talla)),
+    mono:Object.values(mono).sort((a,b)=>_texCmp(a.estamp,b.estamp)||_texCmp(a.talla,b.talla)||_texCmp(a.caract,b.caract))
+  };
+}
+// Listas en formato genérico { cols, rows } (sirven para mostrar, imprimir y guardar en el historial)
+function _texListasGenericas(L){
+  const pedTxt=r=>r.pedidos.map(p=>p.num+(p.cliente?' · '+p.cliente:'')).join(', ');
+  return {
+    franelas:{ titulo:'Franelas (para el proveedor)', cols:['Tela','Color','Talla','Cant.','Pedidos'], rows:L.fran.map(r=>[r.tela,r.color||'—',String(tallaVisible(r.talla)||'—'),r.cant,pedTxt(r)]) },
+    monos:{ titulo:'Monos (micro durazno)', cols:['Estampado','Talla','Bota / Jogger','Cant.','Pedidos'], rows:L.mono.map(r=>[r.estamp,String(tallaVisible(r.talla)||'—'),r.caract||'—',r.cant,pedTxt(r)]) },
+    general:{ titulo:'Orden general', cols:['Producto','Talla','Color','Estampado','Caract.','Cant.','Pedidos'], rows:L.gen.map(r=>[r.nombre,String(tallaVisible(r.talla)||'—'),r.color||'—',r.estamp||'—',r.caract||'—',r.cant,pedTxt(r)]) }
+  };
+}
+function _texTablaGenHtml(g){
+  if(!g.rows.length) return '<div style="font-size:12px;color:var(--muted);padding:6px 0">Sin datos.</div>';
+  const iCant=g.cols.indexOf('Cant.');
+  const tot=g.rows.reduce((a,r)=>a+(parseFloat(r[iCant])||0),0);
+  return '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:12px"><thead><tr style="text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">'
+    + g.cols.map(c=>'<th style="padding:5px 8px;font-weight:600'+(c==='Cant.'?';text-align:right':'')+'">'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'
+    + g.rows.map((r,i)=>'<tr style="border-bottom:1px solid var(--border);background:'+(i%2?'var(--bg2)':'')+'">'+r.map((v,j)=>{
+        const warn=/^Sin (estampado|tela)$/.test(String(v));
+        const isC=j===iCant, last=j===r.length-1;
+        return '<td style="padding:6px 8px;'+(isC?'text-align:right;font-weight:800;color:#185FA5;font-size:14px;':'')+(last?'font-size:11px;color:var(--muted);':'')+(warn?'color:#dc2626;font-weight:700;':'')+'">'+(warn?'⚠ ':'')+esc(String(v))+'</td>';
+      }).join('')+'</tr>').join('')
+    + '</tbody><tfoot><tr><td colspan="'+iCant+'" style="padding:6px 8px;text-align:right;color:var(--muted);font-size:11px">TOTAL</td><td style="padding:6px 8px;text-align:right;font-weight:800;color:#185FA5">'+tot+'</td><td colspan="'+(g.cols.length-iCant-1)+'"></td></tr></tfoot></table></div>';
+}
 
-  const filas = Object.values(grupos).sort((a,b)=>{
-    const np = a.nombre.localeCompare(b.nombre);
-    if(np!==0) return np;
-    const nt = a.talla.localeCompare(b.talla);
-    if(nt!==0) return nt;
-    return a.color.localeCompare(b.color);
-  });
+function texToggleSel(id,chk){ if(chk) _texDesel.delete(String(id)); else _texDesel.add(String(id)); _texRedibujarOrden(); }
+function texSelTodos(v){ const pend=_texPedidosPend(loadPed()); if(v) _texDesel.clear(); else pend.forEach(p=>_texDesel.add(String(p.id))); _texRedibujarOrden(); }
 
+function _renderOrdenProduccion(cat, peds, filtroProd){
+  const pend = _texPedidosPend(peds);
+  const selPeds = _texSelPeds_(pend);
+  const L = _texCalcListas(cat, selPeds, filtroProd);
+  const filas = L.gen.map(r=>({...r}));
+
+  // Panel de selección de pedidos
+  const selWrap = qs('#rep-tex-sel');
+  if(selWrap){
+    if(!pend.length) selWrap.innerHTML='';
+    else selWrap.innerHTML = '<div style="border:1px solid var(--border);border-radius:10px;padding:8px 10px">'
+      + '<div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:6px"><div style="font-size:12px;font-weight:600">Pedidos que van a producción: '+selPeds.length+' de '+pend.length+'</div>'
+      + '<div style="display:flex;gap:6px"><button class="btn btn-sm" onclick="texSelTodos(true)">Marcar todos</button><button class="btn btn-sm" onclick="texSelTodos(false)">Quitar todos</button></div></div>'
+      + pend.map(p=>{
+          const r=_texPedRef(p), on=!_texDesel.has(String(p.id));
+          const und=(p.items||[]).filter(it=>it.talla||it.color).reduce((a,it)=>a+(it.cant||1),0);
+          return '<label style="display:flex;align-items:center;gap:8px;padding:4px 2px;border-top:1px solid var(--border);cursor:pointer;font-size:12px">'
+            + '<input type="checkbox" '+(on?'checked ':'')+'onchange="texToggleSel(\''+String(p.id).replace(/'/g,"\\'")+'\',this.checked)"/>'
+            + _texTagPed(r)
+            + '<span style="color:var(--muted);font-size:11px">'+und+' und.</span></label>';
+        }).join('')
+      + '</div>';
+  }
+
+  // Listas para el proveedor
+  const G=_texListasGenericas(L);
+  const prov=qs('#rep-tex-prov');
+  if(prov){
+    if(!L.fran.length && !L.mono.length){
+      prov.innerHTML='<div style="font-size:12px;color:var(--muted);padding:6px 0">No hay pijamas en los pedidos marcados. Para que un producto se separe en franela y mono, activa «Es pijama» en su ficha del catálogo.</div>';
+    } else {
+      prov.innerHTML = ['franelas','monos'].map(k=>'<div style="margin-top:10px"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px"><div style="font-size:13px;font-weight:700">'+G[k].titulo+'</div><button class="btn btn-sm" onclick="texImprimirOrden(\''+k+'\')">Imprimir</button></div>'+_texTablaGenHtml(G[k])+'</div>').join('');
+    }
+  }
+
+  // Tabla general (con filtros de columna)
   const tbody = qs('#rep-tex-orden-body');
   const btnImp = qs('#btn-tex-imprimir');
   const btnProd = qs('#btn-tex-produccion');
-
-  // Guardar todas las filas en caché para el dropdown de filtros
   _texFilasCache = filas;
-
-  // Aplicar todos los filtros activos
   const filasFiltradas = filas.filter(r =>
     (!_texFiltros.nombre.size || !_texFiltros.nombre.has(r.nombre||'')) &&
     (!_texFiltros.talla.size  || !_texFiltros.talla.has(r.talla||''))  &&
     (!_texFiltros.color.size  || !_texFiltros.color.has(r.color||''))  &&
     (!_texFiltros.caract.size || !_texFiltros.caract.has(r.caract||''))
   );
-
   texActualizarBotonesFiltro();
-
   if(btnImp) btnImp.style.display = filas.length ? '' : 'none';
-  if(btnProd) btnProd.style.display = filas.length ? '' : 'none';
-
+  if(btnProd){
+    btnProd.style.display = pend.length ? '' : 'none';
+    btnProd.disabled = !selPeds.length;
+    btnProd.style.opacity = selPeds.length ? '' : '.5';
+    btnProd.lastChild.textContent = ' Pasar a En Producción (' + selPeds.length + ')';
+  }
+  _renderHistorialProduccion();
   if(!tbody) return;
+  if(!pend.length){
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">No hay pedidos pendientes con ítems textiles.<br><span style="font-size:11px">Cuando registres pedidos con talla y color, aparecerán aquí agrupados.</span></td></tr>';
+    return;
+  }
   if(!filas.length){
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">No hay pedidos pendientes con ítems textiles.<br><span style="font-size:11px">Cuando registres pedidos con talla y color, aparecerán aquí agrupados.</span></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">No hay pedidos marcados para producción.</td></tr>';
     return;
   }
   if(!filasFiltradas.length){
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">Ningún resultado para el filtro de color activo. <button onclick="texLimpiarFiltroColor()" style="background:none;border:none;color:var(--brand);cursor:pointer;font-weight:600;font-size:12px">Ver todos</button></td></tr>';
+    tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">Ningún resultado para el filtro activo. <button onclick="texLimpiarFiltroColor()" style="background:none;border:none;color:var(--brand);cursor:pointer;font-weight:600;font-size:12px">Ver todos</button></td></tr>';
     return;
   }
-
   tbody.innerHTML = filasFiltradas.map((r,i) => {
-    const pedTags = r.pedidos.map(p =>
-      '<span style="display:inline-block;background:#EEE9FF;color:#5B21B6;font-size:10px;padding:1px 6px;border-radius:999px;font-weight:600;margin:1px 2px 1px 0;white-space:nowrap">'
-      + esc(p.num) + (p.cliente ? ' · ' + esc(p.cliente) : '')
-      + '</span>'
-    ).join('');
     return '<tr style="border-bottom:1px solid var(--border);background:' + (i%2?'var(--bg2)':'') + '">'
       + '<td style="padding:8px 8px;font-weight:600">' + esc(r.nombre) + '</td>'
       + '<td style="padding:8px 8px"><span style="background:#ffe3ee;color:#be185d;font-size:11px;padding:2px 8px;border-radius:999px;font-weight:700">' + (tallaVisible(r.talla)||'—') + '</span></td>'
       + '<td style="padding:8px 8px">' + esc(r.color||'—') + '</td>'
+      + '<td style="padding:8px 8px">' + esc(r.estamp||'—') + '</td>'
       + '<td style="padding:8px 8px;font-size:11px;color:var(--muted)">' + esc(r.caract||'—') + '</td>'
       + '<td style="padding:8px 8px;text-align:right;font-size:15px;font-weight:800;color:#185FA5">' + r.cant + '</td>'
-      + '<td style="padding:8px 8px;line-height:1.8">' + pedTags + '</td>'
+      + '<td style="padding:8px 8px;line-height:1.8">' + r.pedidos.map(_texTagPed).join('') + '</td>'
       + '</tr>';
   }).join('');
 }
+function _texSelPeds_(pend){ return pend.filter(p=>!_texDesel.has(String(p.id))); }
 
-/* Pasar todos los pedidos pendientes con textiles → En Producción */
+/* ── Historial de producción (se guarda en la configuración sincronizada) ── */
+function loadProdHist(){ return Array.isArray(CFG.produccion_historial)?CFG.produccion_historial:[]; }
+function saveProdHist(arr){
+  CFG.produccion_historial = arr.slice(0,100);
+  _lsSet(LS_CFG, JSON.stringify(CFG));
+  _sincProdHistSupa();
+}
+async function _sincProdHistSupa(){
+  if(!window._supaConectado) return;
+  try {
+    await SUPA.from('config').upsert([
+      { clave:'produccion_historial', valor: JSON.stringify(CFG.produccion_historial||[]) }
+    ], { onConflict:'clave' });
+  } catch(e){ console.warn('[Config] Error sincronizando historial de producción:', e.message); }
+}
+function _fmtFechaHora(iso){
+  try{ return new Date(iso).toLocaleString('es-VE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}); }catch(e){ return iso||''; }
+}
+function _renderHistorialProduccion(){
+  const wrap=qs('#rep-tex-hist'); if(!wrap) return;
+  const hist=loadProdHist();
+  if(!hist.length){ wrap.innerHTML='<div style="font-size:12px;color:var(--muted);padding:6px 0">Aún no has enviado pedidos a producción.</div>'; return; }
+  wrap.innerHTML = hist.map(h=>{
+    const peds=h.pedidos||[];
+    const badge = h.deshecho
+      ? '<span style="font-size:10px;padding:1px 8px;border-radius:999px;background:#fee2e2;color:#b91c1c;font-weight:700">Deshecho '+esc(_fmtFechaHora(h.deshecho_fecha))+'</span>'
+      : '<span style="font-size:10px;padding:1px 8px;border-radius:999px;background:#dcfce7;color:#166534;font-weight:700">Enviado</span>';
+    const det=['franelas','monos','general'].filter(k=>h.listas&&h.listas[k]&&h.listas[k].rows&&h.listas[k].rows.length)
+      .map(k=>'<div style="margin-top:8px"><div style="font-size:12px;font-weight:700">'+esc(h.listas[k].titulo)+'</div>'+_texTablaGenHtml(h.listas[k])+'</div>').join('');
+    return '<details style="border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin-top:8px">'
+      + '<summary style="cursor:pointer;display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px"><b>'+esc(_fmtFechaHora(h.fecha))+'</b><span style="color:var(--muted)">'+peds.length+' pedido'+(peds.length!==1?'s':'')+' · '+(h.unidades||0)+' und.</span>'+badge+'</summary>'
+      + '<div style="margin-top:8px;line-height:1.8">'+peds.map(_texTagPed).join('')+'</div>'
+      + det
+      + '<div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn btn-sm" onclick="texImprimirHistorial(\''+h.id+'\')">Imprimir de nuevo</button>'
+      + (h.deshecho ? '' : '<button class="btn btn-sm" style="color:var(--danger);border-color:var(--danger)" onclick="texDeshacerProduccion(\''+h.id+'\')">Deshacer</button>')
+      + '</div></details>';
+  }).join('');
+}
+
+/* Pasar los pedidos MARCADOS → En Producción y guardar historial */
 function texPasarAProduccion(){
   const all = loadPed();
-  const candidatos = all.filter(p => p.estado==='pendiente' && (p.items||[]).some(it=>it.talla||it.color));
-  if(!candidatos.length){ toast('No hay pedidos pendientes con textiles','warn'); return; }
+  const candidatos = _texPedidosSel(all);
+  if(!candidatos.length){ toast('No hay pedidos marcados para producción','warn'); return; }
   if(!confirm('¿Pasar ' + candidatos.length + ' pedido' + (candidatos.length>1?'s':'') + ' a "En producción"?')) return;
+  const L=_texCalcListas(loadCat(), candidatos, '');
+  const G=_texListasGenericas(L);
+  const unidades=L.gen.reduce((a,r)=>a+r.cant,0);
+  const entrada={ id:String(Date.now()), fecha:new Date().toISOString(), pedidos:candidatos.map(_texPedRef), unidades, listas:G, deshecho:false };
   candidatos.forEach(p => {
     const idx = all.findIndex(x => x.id===p.id);
     if(idx!==-1){ all[idx].estado='produccion'; upsertPedido(all[idx]); }
   });
   savePed(all);
+  saveProdHist([entrada, ...loadProdHist()]);
   toast(candidatos.length + ' pedido' + (candidatos.length>1?'s':'')+' → En producción','ok');
   renderRepTextiles();
   if(typeof renderPedidos==='function') renderPedidos();
   if(typeof renderDash==='function') renderDash();
 }
 
-/* Imprimir orden de producción en ventana nueva */
-function texImprimirOrden(){
-  const cat = loadCat();
-  const peds = loadPed();
-  const filtroProd = qs('#rep_tex_prod')?.value||'';
-  const pedsPend = peds.filter(p => p.estado==='pendiente' && (p.items||[]).some(it=>it.talla||it.color));
-  const grupos = {};
-  pedsPend.forEach(p => {
-    (p.items||[]).forEach(it => {
-      if(!(it.talla||it.color)) return;
-      const prod = it.id_prod?cat.find(c=>String(c.id)===String(it.id_prod)):null;
-      if(filtroProd && (!prod||String(prod.id)!==filtroProd)) return;
-      const clave=(it.id_prod||it.nombre)+'|'+(it.talla||'')+'|'+(it.color||'')+'|'+(it.caracteristica||'');
-      if(!grupos[clave]) grupos[clave]={nombre:it.nombre,talla:it.talla||'',color:it.color||'',caract:it.caracteristica||'',cant:0,pedidos:[]};
-      grupos[clave].cant+=(it.cant||1);
-      if(!grupos[clave].pedidos.find(r=>r.id===p.id))
-        grupos[clave].pedidos.push({id:p.id,num:p.numero||p.num||String(p.id).slice(-4),cliente:p.cliente_nom||(p.cliente?(typeof p.cliente==='string'?p.cliente:((p.cliente.nombre||'')+' '+(p.cliente.apellido||'')).trim()):'')});
-    });
+/* Deshacer un envío a producción: los pedidos vuelven a Pendiente */
+function texDeshacerProduccion(id){
+  const hist=loadProdHist();
+  const h=hist.find(x=>String(x.id)===String(id)); if(!h||h.deshecho) return;
+  if(!confirm('¿Deshacer este envío? Los pedidos que sigan "En producción" volverán a Pendiente.')) return;
+  const all=loadPed(); let n=0, omitidos=0;
+  (h.pedidos||[]).forEach(r=>{
+    const idx=all.findIndex(x=>String(x.id)===String(r.id));
+    if(idx===-1) return;
+    if(all[idx].estado==='produccion'){ all[idx].estado='pendiente'; upsertPedido(all[idx]); n++; }
+    else omitidos++;
   });
-  const filas=Object.values(grupos).sort((a,b)=>{const np=a.nombre.localeCompare(b.nombre);if(np)return np;const nt=a.talla.localeCompare(b.talla);if(nt)return nt;return a.color.localeCompare(b.color);});
-  const cfg=loadConfig();
-  const negocio=cfg.negocio||'GestioMada';
-  const fecha=new Date().toLocaleDateString('es-VE',{day:'2-digit',month:'2-digit',year:'numeric'});
-  const totalUnd=filas.reduce((a,r)=>a+r.cant,0);
-  const rows=filas.map((r,i)=>`<tr style="background:${i%2?'var(--bg)':'var(--card)'}">
-    <td style="padding:8px 10px;font-weight:600">${esc(r.nombre)}</td>
-    <td style="padding:8px 10px;text-align:center"><span style="background:#ffe3ee;color:#be185d;font-size:12px;padding:2px 10px;border-radius:999px;font-weight:700">${tallaVisible(r.talla)||'—'}</span></td>
-    <td style="padding:8px 10px">${r.color||'—'}</td>
-    <td style="padding:8px 10px;color:#888;font-size:12px">${r.caract||'—'}</td>
-    <td style="padding:8px 10px;text-align:center;font-size:16px;font-weight:800;color:#185FA5">${r.cant}</td>
-    <td style="padding:8px 10px;font-size:11px;line-height:1.8">${r.pedidos.map(p=>'<span style="display:inline-block;background:#EEE9FF;color:#5B21B6;padding:1px 7px;border-radius:999px;font-weight:600;margin:1px 2px 1px 0">'+p.num+(p.cliente?' · '+p.cliente:'')+'</span>').join('')}</td>
-  </tr>`).join('');
-  const html=`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Orden de Producción — ${negocio}</title>
-  <style>body{font-family:system-ui,sans-serif;padding:24px;color:#111}h1{font-size:20px;margin:0 0 4px}p.sub{color:#666;font-size:13px;margin:0 0 18px}
-  table{width:100%;border-collapse:collapse;font-size:13px}thead th{padding:8px 10px;text-align:left;border-bottom:2px solid #ddd;color:#666;font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
-  tfoot td{padding:8px 10px;border-top:2px solid #ddd;font-weight:700}
-  @media print{body{padding:12px}}</style></head><body>
-  <h1>📦 Orden de Producción — ${negocio}</h1>
-  <p class="sub">Fecha: ${fecha} &nbsp;·&nbsp; ${filas.length} variante${filas.length!==1?'s':''} &nbsp;·&nbsp; ${totalUnd} unidad${totalUnd!==1?'es':''} totales</p>
-  <table><thead><tr><th>Producto</th><th>Talla</th><th>Color</th><th>Caract.</th><th style="text-align:center">Cant.</th><th>Pedidos / Clientes</th></tr></thead>
-  <tbody>${rows}</tbody>
-  <tfoot><tr><td colspan="4" style="text-align:right;color:#666;font-size:12px">TOTAL UNIDADES</td><td style="text-align:center;color:#185FA5;font-size:16px">${totalUnd}</td><td></td></tr></tfoot>
-  </table></body></html>`;
+  savePed(all);
+  h.deshecho=true; h.deshecho_fecha=new Date().toISOString();
+  saveProdHist(hist);
+  toast(n+' pedido'+(n!==1?'s':'')+' de vuelta a Pendiente'+(omitidos?' ('+omitidos+' ya había'+(omitidos>1?'n':'')+' avanzado y no se tocó)':''),'ok');
+  renderRepTextiles();
+  if(typeof renderPedidos==='function') renderPedidos();
+  if(typeof renderDash==='function') renderDash();
+}
+
+/* Impresión */
+function _texAbrirImpresion(titulo, sub, secciones){
+  const negocio=(loadConfig().negocio)||'GestioMada';
+  const body=secciones.map(g=>{
+    if(!g.rows.length) return '';
+    const iC=g.cols.indexOf('Cant.'); const tot=g.rows.reduce((a,r)=>a+(parseFloat(r[iC])||0),0);
+    return '<h2>'+esc(g.titulo)+'</h2><table><thead><tr>'+g.cols.map(c=>'<th'+(c==='Cant.'?' style="text-align:center"':'')+'>'+esc(c)+'</th>').join('')+'</tr></thead><tbody>'
+      + g.rows.map(r=>'<tr>'+r.map((v,j)=>'<td'+(j===iC?' style="text-align:center;font-weight:800;font-size:15px"':(j===r.length-1?' style="font-size:11px;color:#555"':''))+'>'+esc(String(v))+'</td>').join('')+'</tr>').join('')
+      + '</tbody><tfoot><tr><td colspan="'+iC+'" style="text-align:right;color:#666">TOTAL</td><td style="text-align:center">'+tot+'</td><td colspan="'+(g.cols.length-iC-1)+'"></td></tr></tfoot></table>';
+  }).join('');
+  const html='<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+esc(titulo)+' — '+esc(negocio)+'</title><style>body{font-family:system-ui,sans-serif;padding:24px;color:#111}h1{font-size:20px;margin:0 0 4px}h2{font-size:15px;margin:20px 0 6px}p.sub{color:#666;font-size:13px;margin:0 0 10px}table{width:100%;border-collapse:collapse;font-size:13px}th{padding:7px 9px;text-align:left;border-bottom:2px solid #ddd;color:#666;font-size:11px;text-transform:uppercase}td{padding:7px 9px;border-bottom:1px solid #eee}tfoot td{border-top:2px solid #ddd;font-weight:700}@media print{body{padding:12px}}</style></head><body><h1>'+esc(titulo)+' — '+esc(negocio)+'</h1><p class="sub">'+esc(sub)+'</p>'+body+'</body></html>';
   const w=window.open('','_blank','width=900,height=700');
-  if(w){ w.document.write(html); w.document.close(); setTimeout(()=>w.print(),400); }
+  if(w){ w.document.write(html); w.document.close(); setTimeout(()=>w.print(),400); } else toast('El navegador bloqueó la ventana de impresión','warn');
+}
+function texImprimirOrden(tipo){
+  tipo = (typeof tipo==='string' && tipo) ? tipo : 'general';
+  const cat=loadCat(), selPeds=_texPedidosSel(loadPed());
+  if(!selPeds.length){ toast('No hay pedidos marcados','warn'); return; }
+  const G=_texListasGenericas(_texCalcListas(cat, selPeds, ''));
+  const fecha=new Date().toLocaleDateString('es-VE',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const titulo = tipo==='franelas'?'Pedido de franelas':tipo==='monos'?'Pedido de monos':'Orden de Producción';
+  _texAbrirImpresion(titulo, 'Fecha: '+fecha+' · '+selPeds.length+' pedido'+(selPeds.length!==1?'s':''), [G[tipo]||G.general]);
+}
+function texImprimirHistorial(id){
+  const h=loadProdHist().find(x=>String(x.id)===String(id)); if(!h) return;
+  const L=h.listas||{};
+  _texAbrirImpresion('Orden de Producción', 'Enviado: '+_fmtFechaHora(h.fecha)+' · '+(h.pedidos||[]).length+' pedidos', [L.franelas,L.monos,L.general].filter(Boolean));
 }
 
 /* ── Render principal ── */
@@ -22542,7 +22885,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v16_03';
+  const APP_VERSION = 'v16_04';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
