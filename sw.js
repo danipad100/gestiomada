@@ -1,4 +1,4 @@
-const VERSION = 'v16_07';
+const VERSION = 'v16_08';
 const CACHE_NAME = 'gestiomada-' + VERSION;
 
 const URLS_TO_CACHE = [
@@ -13,15 +13,25 @@ const URLS_OPTIONAL = [
   './icon-180.png'
 ];
 
+// v16.08: pedir SIEMPRE la copia más nueva al servidor (ignorar la caché HTTP del navegador)
+function fresh(url){ return new Request(url, { cache: 'reload' }); }
+
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(async cache => {
       // Critical: must succeed
-      await cache.addAll(URLS_TO_CACHE);
+      await Promise.all(URLS_TO_CACHE.map(async url => {
+        const resp = await fetch(fresh(url));
+        if (!resp || !resp.ok) throw new Error('No se pudo descargar ' + url);
+        await cache.put(url, resp);
+      }));
       // Optional: cache what we can, ignore failures
-      await Promise.allSettled(URLS_OPTIONAL.map(url =>
-        cache.add(url).catch(e => console.warn('[SW] No se pudo cachear:', url, e.message))
-      ));
+      await Promise.allSettled(URLS_OPTIONAL.map(async url => {
+        try {
+          const resp = await fetch(fresh(url));
+          if (resp && resp.ok) await cache.put(url, resp);
+        } catch (e) { console.warn('[SW] No se pudo cachear:', url, e.message); }
+      }));
     })
   );
 });
@@ -62,6 +72,28 @@ self.addEventListener('fetch', event => {
     event.respondWith(fetch(request));
     return;
   }
+
+  // v16.08: la página (HTML) va "red primero": siempre la versión más nueva; la copia guardada solo si no hay internet.
+  const esPagina = request.mode === 'navigate' || request.destination === 'document' ||
+    (url.origin === self.location.origin && (url.pathname === '/' || url.pathname.endsWith('/index.html') || url.pathname.endsWith('/')));
+  if (esPagina) {
+    event.respondWith((async () => {
+      try {
+        const resp = await fetch(request, { cache: 'no-cache' });
+        if (resp && resp.ok && url.origin === self.location.origin) {
+          const copy = resp.clone();
+          caches.open(CACHE_NAME).then(c => c.put(request, copy)).catch(() => {});
+        }
+        return resp;
+      } catch (e) {
+        const cached = await caches.match(request, { ignoreSearch: true }) || await caches.match('./index.html') || await caches.match('./');
+        if (cached) return cached;
+        throw e;
+      }
+    })());
+    return;
+  }
+
   event.respondWith(
     caches.match(request).then(cached => {
       if (cached) return cached;
