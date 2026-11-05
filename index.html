@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V16_10">
+<html lang="es" data-app-version="GestioMada_V16_11">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -2758,6 +2758,7 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
           </label>
         </div>
       </div>
+      <div class="fg" id="mc_textil_caja"></div>
     </div>
     <div id="mc_moneda_info" style="display:block;font-size:11px;padding:8px 12px;border-radius:8px;background:var(--bg);margin-bottom:8px;color:var(--muted)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> El precio se registra en <strong>USD ($)</strong>. El equivalente en <strong>Bs</strong> se calcula automáticamente con la tasa BCV al momento de vender.</div>
     <input type="hidden" id="mc_moneda_prod" value="usd"/>
@@ -2926,6 +2927,7 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
           </label>
         </div>
       </div>
+      <div class="fg" id="mpm_textil_caja"></div>
     </div>
     <div id="mpm_moneda_info" style="display:block;font-size:11px;padding:8px 12px;border-radius:8px;background:var(--bg);margin-bottom:8px;color:var(--muted)"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg> Precio en <strong>USD</strong>. El equivalente en Bs se calcula con tasa BCV.</div>
     <div style="display:flex;gap:8px">
@@ -4187,6 +4189,10 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
                     <select id="pos_textil_estampado" style="font-size:12px;padding:5px 6px;width:100%">
                     </select>
                   </div>
+                  <div style="flex:1;min-width:135px;display:none"><label style="font-size:11px">Caja</label>
+                    <select id="pos_textil_caja" style="font-size:12px;padding:5px 6px;width:100%">
+                    </select>
+                  </div>
                   <button type="button" onclick="posConfirmarVariante()" style="flex-shrink:0;padding:6px 14px;background:var(--brand);color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer">＋ Agregar</button>
                 </div>
               </div>
@@ -5218,6 +5224,10 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
             </div>
             <div class="fg" style="min-width:110px"><label style="font-size:11px">Estampado</label>
               <select id="mp_textil_estampado" style="font-size:12px;padding:5px 6px">
+              </select>
+            </div>
+            <div class="fg" style="min-width:135px;display:none"><label style="font-size:11px">Caja</label>
+              <select id="mp_textil_caja" style="font-size:12px;padding:5px 6px">
               </select>
             </div>
           </div>
@@ -6377,7 +6387,7 @@ function recargoTallaProd(prod, talla){
 }
 // Cambia la variante de una línea: quita el recargo anterior y aplica el nuevo (talla + color), así el precio queda siempre "todo junto".
 // V15_84: un producto tiene variantes si es textil o si tiene colores propios (ej. bambalinas), sin ser textil
-function prodConVariantes(p){ return !!p && (!!p.es_textil || (Array.isArray(p.textil_colores) && p.textil_colores.length>0) || prodSoloCaract(p)); }
+function prodConVariantes(p){ return !!p && (!!p.es_textil || (Array.isArray(p.textil_colores) && p.textil_colores.length>0) || prodSoloCaract(p) || prodTieneCaja(p)); }
 // v16.09: producto sin colores ni tallas pero con lista propia de características (ej. bambalina con luces: solo color de lazo)
 function prodSoloCaract(p){ return !!p && !p.es_textil && !(Array.isArray(p.textil_colores) && p.textil_colores.length>0) && Array.isArray(p.textil_caracteristicas) && p.textil_caracteristicas.length>0; }
 function prodTieneColores(p){ return !!p && (!!p.es_textil || (Array.isArray(p.textil_colores) && p.textil_colores.length>0)); }
@@ -6387,6 +6397,18 @@ function recargoColorProd(prod, color){
   if(!color || !r || typeof r!=='object' || !r._color || !r._color[color]) return {p:0,c:0};
   return {p:round2(parseFloat(r._color[color].p)||0), c:round2(parseFloat(r._color[color].c)||0)};
 }
+// ══ v16.11: Caja opcional (ej. bambalinas de 7 y 8 cm) ══
+// La configuración vive dentro de textil_recargos._caja (el mismo campo que ya se sincroniza con Supabase, sin columnas nuevas):
+// { activa, p (precio final c/dif extra), c (costo extra), desc_inv (descontar del inventario), insumo_id }
+function cajaCfg(prod){ const c=prod && prod.textil_recargos && prod.textil_recargos._caja; return (c && c.activa) ? c : null; }
+function prodTieneCaja(p){ return !!cajaCfg(p); }
+function recargoCajaProd(prod){ const c=cajaCfg(prod); return c ? {p:round2(parseFloat(c.p)||0), c:round2(parseFloat(c.c)||0)} : {p:0,c:0}; }
+function cajaInsumoId(prod){ const c=cajaCfg(prod); return (c && c.desc_inv && c.insumo_id) ? c.insumo_id : null; }
+function cajaTxt(it){ return (it && it.con_caja) ? 'Con caja' : ''; }
+function cajaOptsHtml(prod, conCaja){
+  const r=recargoCajaProd(prod);
+  return '<option value=""'+(conCaja?'':' selected')+'>Sin caja</option><option value="1"'+(conCaja?' selected':'')+'>Con caja'+(r.p>0?' (+$'+String(r.p).replace('.',',')+')':'')+'</option>';
+}
 function aplicarRecargoTallaItem(it, prod, talla, color){
   const pp=parseFloat(it.recargo_p)||0, pc=parseFloat(it.recargo_c)||0;
   if(pp||pc){
@@ -6395,7 +6417,8 @@ function aplicarRecargoTallaItem(it, prod, talla, color){
     it.costo_unit=round2((it.costo_unit||0)-pc);
   }
   const rt=recargoTallaProd(prod, talla), rc=recargoColorProd(prod, color);
-  const r={p:round2(rt.p+rc.p), c:round2(rt.c+rc.c)};
+  const rj=it.con_caja ? recargoCajaProd(prod) : {p:0,c:0};   // v16.11: caja opcional
+  const r={p:round2(rt.p+rc.p+rj.p), c:round2(rt.c+rc.c+rj.c)};
   const dif=(typeof getDiferencial==='function' && getDiferencial()>0) ? getDiferencial() : 1;
   const pBase=round2(r.p/dif);
   if(pBase||r.c){
@@ -6424,6 +6447,7 @@ function textilAjustarPicker(pre, prod){
     const _lk=ca.parentElement && ca.parentElement.querySelector('label'); if(_lk) _lk.textContent=etiqCaract(prod);
   }
   { const _cc=qs('#'+pre+'_color'); const _lc=_cc && _cc.parentElement && _cc.parentElement.querySelector('label'); if(_lc) _lc.textContent=etiqColor(prod)+' *'; if(_cc && _cc.parentElement) _cc.parentElement.style.display=prodTieneColores(prod)?'':'none'; }
+  { const cj=qs('#'+pre+'_caja'); if(cj){ const on=prodTieneCaja(prod); cj.innerHTML=cajaOptsHtml(prod,false); cj.value=''; if(cj.parentElement) cj.parentElement.style.display=on?'':'none'; } }
   const es=qs('#'+pre+'_estampado');
   if(es){
     const lista=(prod&&Array.isArray(prod.textil_estampados))?prod.textil_estampados:[];
@@ -6439,7 +6463,7 @@ function caractCuentaInv(prod){ return !(prod && prod.caract_sin_inv===true); }
 // Compara la característica de dos líneas; si el producto no la cuenta en inventario, siempre coincide
 function caractIgual(prod,a,b){ return !caractCuentaInv(prod) || (a||'')===(b||''); }
 function nombreConVariante(it){
-  const v=[tallaVisible(it.talla),it.color,it.estampado,it.caracteristica].filter(Boolean).join(' · ');
+  const v=[tallaVisible(it.talla),it.color,it.estampado,it.caracteristica,cajaTxt(it)].filter(Boolean).join(' · ');
   return (it.nombre||'')+(v?' ('+v+')':'');
 }
 function tallaOptLabel(prod, t){
@@ -6450,11 +6474,58 @@ function tallaOptLabel(prod, t){
 let _mpmRecargos={}, _mcRecargos={};
 function _recState(pre){ return pre==='mpm'?_mpmRecargos:_mcRecargos; }
 let _mpmRecargosColor={}, _mcRecargosColor={};
+function _cajaNorm(c){ return { activa:!!(c&&c.activa), p:round2(parseFloat(c&&c.p)||0), c:round2(parseFloat(c&&c.c)||0), desc_inv:!!(c&&c.desc_inv), insumo_id:(c&&c.insumo_id)?String(c.insumo_id):'' }; }
+let _mpmCaja=_cajaNorm(null), _mcCaja=_cajaNorm(null);
+function _cajaState(pre){ return pre==='mpm'?_mpmCaja:_mcCaja; }
 function _recColState(pre){ return pre==='mpm'?_mpmRecargosColor:_mcRecargosColor; }
 function recargosCargar(pre, rec){
   const copia=JSON.parse(JSON.stringify(rec||{}));
   const col=copia._color||{}; delete copia._color;
-  if(pre==='mpm'){ _mpmRecargos=copia; _mpmRecargosColor=col; } else { _mcRecargos=copia; _mcRecargosColor=col; }
+  const caja=_cajaNorm(copia._caja); delete copia._caja;   // v16.11
+  if(pre==='mpm'){ _mpmRecargos=copia; _mpmRecargosColor=col; _mpmCaja=caja; } else { _mcRecargos=copia; _mcRecargosColor=col; _mcCaja=caja; }
+}
+// v16.11: configuración de la caja en el formulario del producto (pre = 'mpm' | 'mc')
+function cajaRender(pre){
+  const wrap=qs('#'+pre+'_textil_caja'); if(!wrap) return;
+  const st=_cajaState(pre);
+  const f=v=>String(v||0).replace('.',',');
+  const tg=(id,on,fn)=>'<label class="gm-toggle-mini"><input type="checkbox" id="'+id+'"'+(on?' checked':'')+' onchange="'+fn+'"/><span class="gm-toggle-track"><span class="gm-toggle-thumb"></span></span></label>';
+  let h='<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;background:var(--bg2);border-radius:10px">'
+    +'<div><div style="font-size:12px;font-weight:600">Se puede vender con caja</div>'
+    +'<div style="font-size:11px;color:var(--muted);margin-top:2px">Al vender aparece «Sin caja / Con caja». La caja suma al precio y al costo. Ej. bambalinas de 7 y 8 cm.</div></div>'
+    +tg(pre+'_caja_act',st.activa,"cajaToggle('"+pre+"','activa',this.checked)")+'</div>';
+  if(st.activa){
+    const ins=loadIns();
+    h+='<div style="margin-top:8px;display:flex;gap:6px;align-items:center;font-size:12px;flex-wrap:wrap">'
+      +'<span style="font-weight:600">Caja</span>'
+      +'<span style="color:var(--muted)">Precio final +$</span><input type="text" inputmode="decimal" value="'+f(st.p)+'" onchange="cajaSet(\''+pre+'\',\'p\',this.value)" style="width:64px;padding:4px 6px;font-size:12px;text-align:right"/>'
+      +'<span style="color:var(--muted)">Costo +$</span><input type="text" inputmode="decimal" value="'+f(st.c)+'" onchange="cajaSet(\''+pre+'\',\'c\',this.value)" style="width:64px;padding:4px 6px;font-size:12px;text-align:right"/></div>'
+      +'<div style="font-size:11px;color:var(--muted);margin-top:6px">Es lo que se suma cuando el cliente elige «Con caja». El precio es el monto final que cobras (ya con diferencial), igual que el recargo por color.</div>'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;background:var(--bg2);border-radius:10px;margin-top:8px">'
+      +'<div><div style="font-size:12px;font-weight:600">Descontar la caja del inventario</div>'
+      +'<div style="font-size:11px;color:var(--muted);margin-top:2px">Cada venta «Con caja» resta 1 unidad del insumo que elijas. Apagado: la caja solo suma precio y costo.</div></div>'
+      +tg(pre+'_caja_inv',st.desc_inv,"cajaToggle('"+pre+"','desc_inv',this.checked)")+'</div>';
+    if(st.desc_inv){
+      h+='<div style="margin-top:8px"><label style="font-size:11px">Insumo que es la caja</label>'
+        +'<select id="'+pre+'_caja_ins" onchange="cajaSet(\''+pre+'\',\'insumo_id\',this.value)" style="width:100%">'
+        +'<option value="">— Selecciona el insumo —</option>'
+        +ins.map(i=>'<option value="'+esc(String(i.id))+'"'+(String(i.id)===String(st.insumo_id)?' selected':'')+'>'+esc(i.nombre||'Insumo')+(i.unidad?' ('+esc(i.unidad)+')':'')+'</option>').join('')
+        +'</select><div style="font-size:11px;color:var(--muted);margin-top:4px">¿No aparece? Regístrala primero en Inventario → Insumos.</div></div>';
+    }
+  }
+  wrap.innerHTML=h;
+}
+function cajaToggle(pre,campo,val){ const st=_cajaState(pre); st[campo]=!!val; cajaRender(pre); }
+function cajaSet(pre,campo,v){
+  const st=_cajaState(pre);
+  if(campo==='insumo_id') st.insumo_id=String(v||'');
+  else st[campo]=Math.max(0,round2(parseEU(v)||0));
+}
+function cajaValidar(pre, conVar){
+  if(!conVar) return true;
+  const st=_cajaState(pre);
+  if(st.activa && st.desc_inv && !st.insumo_id){ toast('Elige qué insumo es la caja, o apaga «Descontar la caja del inventario»','warn'); return false; }
+  return true;
 }
 function recargosColorRender(pre){
   const wrap=qs('#'+pre+'_textil_recargos_color'); if(!wrap) return;
@@ -6508,6 +6579,7 @@ function recargosLeer(pre){
   const cols = pre==='mpm' ? _mpmTextilColoresSel : _mcTextilColoresSel, cs=_recColState(pre), oc={};
   cols.forEach(c=>{ if(cs[c] && (cs[c].p||cs[c].c)) oc[c]={p:cs[c].p||0,c:cs[c].c||0}; });
   if(Object.keys(oc).length) out._color=oc;
+  { const cj=_cajaState(pre); if(cj.activa) out._caja={ activa:true, p:cj.p||0, c:cj.c||0, desc_inv:!!(cj.desc_inv && cj.insumo_id), insumo_id:cj.insumo_id||'' }; }   // v16.11
   return out;
 }
 
@@ -7108,7 +7180,7 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v16.10: CORREGIDO (Catálogo) Un producto que solo tiene característica (ej. bambalina con luces: solo color de lazo, sin colores ni tallas) ahora se reconoce como producto con variantes: al reabrir la ficha se ven sus características y en POS, pedidos e inventario pide solo ese campo, sin exigir color. Los demás productos quedan igual.\n' +
+  return 'v16.11: NUEVO (Cat\u00e1logo) Opci\u00f3n \u00abCon caja\u00bb para productos como las bambalinas de 7 y 8 cm. En la ficha del producto (con variantes activadas) activas \u00abSe puede vender con caja\u00bb y pones cu\u00e1nto suma la caja al precio final y al costo. Al vender (POS, pedidos y cotizaciones) aparece el campo \u00abSin caja / Con caja (+$X)\u00bb junto al color y al lazo. Adem\u00e1s, por producto puedes decidir si la caja se descuenta del inventario: eliges qu\u00e9 insumo es la caja y cada venta \u00abCon caja\u00bb resta 1 unidad (si anulas, cancelas o editas el pedido, se devuelve). Si no lo activas, la caja solo suma precio y costo. Se guarda dentro de los datos del producto que ya se sincronizan, sin tablas ni columnas nuevas. Los productos que ya tienes quedan exactamente igual.\nv16.10: CORREGIDO (Catálogo) Un producto que solo tiene característica (ej. bambalina con luces: solo color de lazo, sin colores ni tallas) ahora se reconoce como producto con variantes: al reabrir la ficha se ven sus características y en POS, pedidos e inventario pide solo ese campo, sin exigir color. Los demás productos quedan igual.\n' +
   'v16.09: NUEVO (Catálogo) Productos con dos variantes, como las bambalinas (color de bambalina + color de lazo): cada producto puede tener sus propios nombres de campo («Color de bambalina», «Color de lazo…»), la característica ya funciona también en productos solo con colores o sin colores ni tallas (solo lazo), y un interruptor «La característica no cuenta en inventario» para llevar el stock solo por color. Los productos que ya tienes quedan exactamente igual.\n' +
   'v16.08: CORREGIDO (PWA) La app ya no se queda mostrando una copia vieja de index.html: el service worker ahora busca primero la versi\u00f3n m\u00e1s nueva en internet (usa la copia guardada solo sin conexi\u00f3n), y si detecta que la p\u00e1gina y el service worker son de versiones distintas limpia la cach\u00e9 y recarga sola (una vez). No toca tus datos.\nv16.07: CAMBIO (Editor \u00b7 lista completa) El bot\u00f3n "Lista" ahora abre un panel dentro de la app (sin ventana emergente, funciona en el celular y en la app instalada).\nv16.06: NUEVO (Editor \u00b7 lista completa) Bot\u00f3n "Lista" que abre una ventana nueva con todos los productos del editor (buscador, SKU, categor\u00eda, estado, precio y si est\u00e1n en el cat\u00e1logo); clic en un producto lo carga en el editor. CORREGIDO: "Agregar al Cat\u00e1logo" ahora tambi\u00e9n guarda el producto en el editor (ya no desaparece del buscador del editor).\nv16.05: NUEVO (Textiles \u00b7 talla 16) \u2014 la talla 16 (ni\u00f1os grandes) ahora se ofrece como 16D (Dama) y 16C (Caballero), igual que las tallas de letras. Los pedidos antiguos con talla 16 no se modifican. \nv16.04: NUEVO (Textiles \u00b7 pijamas y producci\u00f3n) \u2014 1) Cada producto textil puede marcarse \u00abEs pijama\u00bb y tener una \u00abTela de la franela\u00bb (Micro durazno, Algod\u00f3n; editable en Configuraci\u00f3n \u2192 Textiles \u00b7 telas) que solo se usa en reportes. 2) Nuevo \u00abEstampado\u00bb opcional (Configuraci\u00f3n \u2192 Textiles \u00b7 estampados): se marcan por producto y se elige al cotizar o crear el pedido; aparece en pedido, cotizaci\u00f3n y WhatsApp. 3) Reportes \u2192 Textiles: listas separadas para el proveedor (Franelas por tela, color y talla; Monos por estampado, talla y bota/jogger), imprimibles. 4) Orden de Producci\u00f3n: marcas con casillas qu\u00e9 pedidos van a producci\u00f3n; queda un Historial de producci\u00f3n con fecha, con reimpresi\u00f3n y bot\u00f3n Deshacer. 5) Icono de nota en los pedidos con nota escrita a mano y el n\u00famero PED abre el pedido. \nv16.03: NUEVO (Textiles \u00b7 grupos propios) \u2014 las tallas de tus grupos de tallas (ej: Mascotas \u2192 Grande) ya pueden tener recargo de precio y de costo. En el producto, bajo \u00abRecargo por talla\u00bb, aparece cada talla de tu grupo: en Grande pones Precio final +$2 y Costo +$0,8. Funciona igual que XL/XXL: se aplica en POS, pedidos y cotizaciones. \nv16.02: ICONOS (Configuraci\u00f3n y Editor de producto) \u2014 los emojis de Configuraci\u00f3n (Textiles \u00b7 tallas, Textiles \u00b7 caracter\u00edsticas, Ver detalles del almacenamiento, Actualizar ahora y los botones de tallas) se cambiaron por los iconos de l\u00ednea que usa el resto de GestioMada. En el editor de producto se quit\u00f3 el emoji de la opci\u00f3n \u00abLocal\u00bb. \nv16.01: NUEVO (Textiles · tallas) En Configuración → Textiles · tallas ya puedes crear tus propios grupos de tallas (ej: «Mascotas» con Pequeña y Grande): escribes el nombre, lo creas y le agregas sus tallas. Puedes renombrarlo, ordenarlo o borrarlo. El grupo aparece al marcar un producto como textil, junto a Niños, Adultos y Bodys. Se sincroniza entre dispositivos. \nv16.00: NUEVO (Textiles) Cada producto textil puede tener sus propias caracter\u00edsticas (se eligen al crear o editar el producto). Los productos que no se tocan siguen usando la lista general; si desmarcas todas, el campo no aparece en ventas ni pedidos. Requiere la columna textil_caracteristicas en Supabase. \u00b7 v15.99: NUEVO (Textiles) Las características de los productos textiles (antes fijas: Con C/B y Sin C/B) ahora se configuran en Configuración → Textiles · características. Puedes agregar o quitar las que necesites (ej: Mangas rosadas) y se sincronizan entre dispositivos. Lo ya registrado no se modifica. \u00b7 v15.98: AJUSTE (Ventas) \u2014 el filtro Detal/Mayor del punto de venta ahora queda al lado derecho del buscador (antes quedaba debajo en pantallas peque\u00f1as).\n'
     + 'v15.97: NUEVO (Filtro Detal/Mayor) \u2014 en Cat\u00e1logo y en Ventas (Nueva Venta) hay un filtro para ver solo productos al detal o solo al mayor. Aparece cuando los tipos de venta est\u00e1n activados en Configuraci\u00f3n. El resto de la app no cambia.\n'
@@ -7956,7 +8028,7 @@ function mcToggleTextil(){
   const on = tx || !!(uc && uc.checked);
   const w=qs('#mc_textil_wrap'); if(w) w.style.display=on?'block':'none';
   const tp=qs('#mc_tallas_part'); if(tp) tp.style.display=tx?'':'none';
-  if(on){ mcRenderTextilColores(); recargosColorRender('mc'); }
+  if(on){ mcRenderTextilColores(); recargosColorRender('mc'); cajaRender('mc'); }
   if(tx){ mcRenderTextilGrupos(); recargosRender('mc'); }
 }
 function mcRenderTextilGrupos(){
@@ -8054,6 +8126,7 @@ function confirmarCatalogo(){
   const fotoUrlExistente = ei>=0 ? (cat[ei].foto_url||'') : '';
   const mcEsTextil=qs('#mc_es_textil')?.checked||false;
   const mcConVar = mcEsTextil || !!qs('#mc_usa_colores')?.checked;   // V15_84: textil o solo colores
+  if(!cajaValidar('mc', mcConVar)) return;
   const nuevo={ id:prodId, nombre:nom, sku:skuFinal, categoria:qs('#mc_cat').value, foto:fotoLocal, foto_url:fotoPendienteStorage?'':(_fotoEsUrl?_foto3:fotoUrlExistente), costo:parseEU(qs('#mc_costo').value), precio_venta:parseEU(qs('#mc_pv').value), precio_sugerido:parseEU(qs('#mc_sugerido').value), estado:qs('#mc_estado').value, tipo_venta:qs('#pers_tipo_venta')?.value||'detal', modo_inventario:modoInv, inv_loc:invLoc, inv_momento:(modoInv==='ninguno'?'entrega':(qs('#mc_inv_momento')?.value||'entrega')), moneda_prod:monedaProd, insumos_receta:receta, es_textil:mcEsTextil, textil_grupo_talla:'', textil_grupos_talla:mcEsTextil?[..._mcTextilGruposSel]:[], textil_colores:mcConVar?[..._mcTextilColoresSel]:[], textil_recargos:mcConVar?recargosLeer('mc'):{},
 textil_caracteristicas:mcConVar?caractProdLeer('mc'):null, etiq_color:mcConVar?(qs('#mc_etiq_color')?.value||'').trim():'', etiq_caract:mcConVar?(qs('#mc_etiq_caract')?.value||'').trim():'', caract_sin_inv:mcConVar&&!!qs('#mc_caract_sin_inv')?.checked, etiq_sync:!!(ei>=0&&(cat[ei].etiq_color||cat[ei].etiq_caract||cat[ei].caract_sin_inv)), es_pijama:mcEsTextil&&!!qs('#mc_es_pijama')?.checked, textil_estampados:mcEsTextil?estampProdLeer('mc'):[], tela_franela:mcEsTextil?(qs('#mc_tela_franela')?.value||''):'', notas:qs('#mc_notas').value.trim(), fecha:new Date().toISOString(), origen:'editor', calculo:persToJSON() };
   // No embeber foto base64 dentro de calculo — ocupa MB redundantes en localStorage
@@ -8169,7 +8242,7 @@ function mpmToggleTextil(){
   const on = tx || !!(uc && uc.checked);
   const w=qs('#mpm_textil_wrap'); if(w) w.style.display=on?'block':'none';
   const tp=qs('#mpm_tallas_part'); if(tp) tp.style.display=tx?'':'none';
-  if(on){ mpmRenderTextilColores(); recargosColorRender('mpm'); }
+  if(on){ mpmRenderTextilColores(); recargosColorRender('mpm'); cajaRender('mpm'); }
   if(tx){ mpmRenderTextilGrupos(); recargosRender('mpm'); }
 }
 let _mpmTextilGruposSel=[]; // grupos de tallas marcados en el modal Nuevo producto
@@ -8238,6 +8311,7 @@ function guardarProdManual(){
   const mpmMoneda=qs('#mpm_moneda_prod')?.value||'usd';
   const esTextil=qs('#mpm_es_textil')?.checked||false;
   const mpmConVar = esTextil || !!qs('#mpm_usa_colores')?.checked;   // V15_84: textil o solo colores
+  if(!cajaValidar('mpm', mpmConVar)) return;
   const skuNuevo=(qs('#mpm_sku').value||'').trim();
   // Verificar SKU duplicado (solo en productos nuevos o si cambia el SKU)
   if(skuNuevo){
@@ -11744,8 +11818,9 @@ function posConfirmarVariante(){
   const color = (qs('#pos_textil_color')?.value||'').trim();
   const caract = (qs('#pos_textil_caract')?.value||'').trim();
   const estamp = (qs('#pos_textil_estampado')?.value||'').trim();
+  const conCaja = prodTieneCaja(prod) && !!(qs('#pos_textil_caja')?.value);   // v16.11
   if((prodTieneTallas(prod)&&!talla)||(prodTieneColores(prod)&&!color)){ toast(prodTieneTallas(prod)?'Selecciona talla y color':'Selecciona el color','warn'); return; }
-  posAgregarProdDirecto(prod, talla, color, caract, estamp);
+  posAgregarProdDirecto(prod, talla, color, caract, estamp, conCaja);
   const picker = qs('#pos_textil_picker'); if(picker) picker.style.display = 'none';
   _posProdTextilPendiente = null;
 }
@@ -11755,19 +11830,20 @@ function posAgregarSinVariante(){
   const picker = qs('#pos_textil_picker'); if(picker) picker.style.display = 'none';
   _posProdTextilPendiente = null;
 }
-function posAgregarProdDirecto(prod, talla, color, caracteristica, estampado){
+function posAgregarProdDirecto(prod, talla, color, caracteristica, estampado, conCaja){
   estampado = estampado||'';
+  conCaja = !!conCaja;   // v16.11
   const existe = _posItems.findIndex(it => {
     if(!it.id_prod || String(it.id_prod) !== String(prod.id)) return false;
-    if(prodConVariantes(prod) && (talla||color||caracteristica)) return (it.talla||'')===talla && (it.color||'')===color && (it.caracteristica||'')===caracteristica && (it.estampado||'')===estampado;
-    if(prodConVariantes(prod) && !talla && !color && !caracteristica) return !it.talla && !it.color && !it.caracteristica;
+    if(prodConVariantes(prod) && (talla||color||caracteristica||conCaja)) return (it.talla||'')===talla && (it.color||'')===color && (it.caracteristica||'')===caracteristica && (it.estampado||'')===estampado && (!!it.con_caja)===conCaja;
+    if(prodConVariantes(prod) && !talla && !color && !caracteristica) return !it.talla && !it.color && !it.caracteristica && !it.con_caja;
     return true;
   });
   if(existe >= 0){
     _posItems[existe].cant++;
   } else {
     const item = { tipo:'catalogo', nombre:prod.nombre, precio_unit:prod.precio_venta||0, precio_usd:prod.precio_venta||0, moneda_prod:'usd', costo_unit:prod.costo||0, alq_unit:_finAlqUnitDeProd(prod), cant:1, id_prod:prod.id, tipo_venta:prod.tipo_venta||'detal' };
-    if(talla||color||caracteristica){ item.talla=talla; item.color=color; item.caracteristica=caracteristica; if(estampado) item.estampado=estampado; aplicarRecargoTallaItem(item, prod, talla, color); }
+    if(talla||color||caracteristica||conCaja){ item.talla=talla; item.color=color; item.caracteristica=caracteristica; if(estampado) item.estampado=estampado; if(conCaja) item.con_caja=true; aplicarRecargoTallaItem(item, prod, talla, color); }
     _posItems.push(item);
   }
   posRenderProductos(); posRenderCarrito(); posRecalc(); posWaActualizar();
@@ -11798,7 +11874,7 @@ function posRenderCarrito(){
       : `<div style="font-size:12px;font-weight:700">${euro(puBase)}</div>`;
     return `
     <div class="pos-item">
-      <div class="pos-item-name">${esc(it.nombre)}${(it.talla||it.color||it.estampado||it.caracteristica)?`<span style="display:block;font-size:10px;font-weight:400;color:#be185d;margin-top:1px">${[tallaVisible(it.talla),it.color,it.estampado,it.caracteristica].filter(Boolean).join(' · ')}</span>`:''}</div>
+      <div class="pos-item-name">${esc(it.nombre)}${(it.talla||it.color||it.estampado||it.caracteristica||it.con_caja)?`<span style="display:block;font-size:10px;font-weight:400;color:#be185d;margin-top:1px">${[tallaVisible(it.talla),it.color,it.estampado,it.caracteristica,cajaTxt(it)].filter(Boolean).join(' · ')}</span>`:''}</div>
       <div class="pos-item-qty-ctrl">
         <button class="pos-qty-btn" onclick="posCantItem(${i},-1)">−</button>
         <input type="number" class="pos-item-qty" min="1" value="${it.cant}"
@@ -12227,7 +12303,7 @@ function renderCotizaciones(){
     const fecha = c.fecha_creado ? new Date(c.fecha_creado).toLocaleDateString('es-VE',{day:'2-digit',month:'short'}) : '';
     const nItems = (c.items||[]).reduce((a,it)=>a+(it.cant||1),0);
     const itemsPrev = (c.items||[]).slice(0,3).map(it=>{
-      const _vStr = [tallaVisible(it.talla),it.color,it.estampado,it.caracteristica].filter(Boolean).join(' · ');
+      const _vStr = [tallaVisible(it.talla),it.color,it.estampado,it.caracteristica,cajaTxt(it)].filter(Boolean).join(' · ');
       const _vPart = _vStr ? ' <span style="color:#e07ab0">('+esc(_vStr)+')</span>' : '';
       return it.cant+'× '+esc(it.nombre||'')+_vPart;
     }).join(', ') + ((c.items||[]).length>3?'…':'');
@@ -12612,6 +12688,7 @@ function cotCrearPedido(id){
       color: it.color || '',
       caracteristica: it.caracteristica || '',
       estampado: it.estampado || '',
+      ...(it.con_caja ? { con_caja: true } : {}),
       recargo_p: it.recargo_p || 0,
       recargo_c: it.recargo_c || 0
     };
@@ -13553,7 +13630,7 @@ function anularVenta(){
 async function _revertirInventarioDeVenta(numeroVenta){
   const notaBase = 'Venta ' + numeroVenta;
   const allMov = loadIMov();
-  const movs = allMov.filter(m => m.nota === notaBase || m.nota === notaBase + ' (receta)');
+  const movs = allMov.filter(m => m.nota === notaBase || m.nota === notaBase + ' (receta)' || m.nota === notaBase + ' (caja)');
   if(!movs.length) return;
 
   const ter = loadTer();
@@ -14434,7 +14511,9 @@ function pedSetVarianteItem(idx){
   const color = qs('#_pv_color_'+idx)?.value || '';
   const caract = qs('#_pv_caract_'+idx)?.value || '';
   const estamp = qs('#_pv_estamp_'+idx)?.value || '';
+  const conCaja = !!(qs('#_pv_caja_'+idx)?.value);   // v16.11
   if((prodTieneTallas(prod)&&!talla) || (prodTieneColores(prod)&&!color)){ toast(prodTieneTallas(prod)?'Selecciona talla y color':'Selecciona el color','warn'); return; }
+  if(conCaja) _pedItems[idx].con_caja=true; else delete _pedItems[idx].con_caja;
   aplicarRecargoTallaItem(_pedItems[idx], prod, talla, color);
   _pedItems[idx].talla = talla;
   _pedItems[idx].color = color;
@@ -14454,6 +14533,7 @@ function pedToggleEditVariante(i){
 
 function pedLimpiarVariante(i){
   if(!_pedItems[i]) return;
+  delete _pedItems[i].con_caja;   // v16.11: primero se quita la caja para que el recargo se revierta
   { const _pr=_pedItems[i].id_prod ? loadCat().find(p=>String(p.id)===String(_pedItems[i].id_prod)) : null; aplicarRecargoTallaItem(_pedItems[i], _pr, '', ''); }
   _pedItems[i].talla = '';
   _pedItems[i].color = '';
@@ -14611,8 +14691,9 @@ function agregarProductoPedido(){
   if(!prodId){ toast('Busca y selecciona un producto del catálogo','warn'); return; }
   const prod = loadCat().find(p=>String(p.id)===String(prodId));
   if(!prod){ toast('Producto no encontrado en catálogo','warn'); return; }
-  let talla='', color='', caracteristica='', estampado='';
+  let talla='', color='', caracteristica='', estampado='', conCaja=false;
   if(prodConVariantes(prod)){
+    conCaja = prodTieneCaja(prod) && !!(qs('#mp_textil_caja')?.value);   // v16.11
     estampado=(qs('#mp_textil_estampado')?.value||'').trim();
     talla=(qs('#mp_textil_talla')?.value||'').trim();
     color=(qs('#mp_textil_color')?.value||'').trim();
@@ -14627,14 +14708,14 @@ function agregarProductoPedido(){
   // Coincidencia: mismo id_prod + misma variante (textil) o solo mismo id_prod
   const existe = _pedItems.findIndex(it=>{
     if(!it.id_prod || String(it.id_prod)!==String(prodId)) return false;
-    if(prodConVariantes(prod)) return (it.talla||'')===talla && (it.color||'')===color && (it.caracteristica||'')===caracteristica && (it.estampado||'')===estampado;
+    if(prodConVariantes(prod)) return (it.talla||'')===talla && (it.color||'')===color && (it.caracteristica||'')===caracteristica && (it.estampado||'')===estampado && (!!it.con_caja)===conCaja;
     return true;
   });
   if(existe>=0){
     _pedItems[existe].cant++;
   } else {
     const item={ tipo:'catalogo', nombre:prod.nombre, precio_unit:prod.precio_venta, costo_unit:prod.costo||0, alq_unit:_finAlqUnitDeProd(prod), cant:1, id_prod:prod.id, moneda_prod:'usd' };
-    if(prodConVariantes(prod)){ item.talla=talla; item.color=color; item.caracteristica=caracteristica; if(estampado) item.estampado=estampado; aplicarRecargoTallaItem(item, prod, talla, color); }
+    if(prodConVariantes(prod)){ item.talla=talla; item.color=color; item.caracteristica=caracteristica; if(estampado) item.estampado=estampado; if(conCaja) item.con_caja=true; aplicarRecargoTallaItem(item, prod, talla, color); }
     _pedItems.push(item);
   }
   sel.value=''; renderItemsFormulario(); recalcPedido();
@@ -14661,13 +14742,13 @@ function agregarItemManual(){
 
 // ── Helper: renderiza chips de variante establecida + botones Cambiar/Quitar (V15.01) ──
 function _renderVarianteItemEdit(it, i) {
-  if (!it.talla && !it.color && !it.caracteristica) return '';
+  if (!it.talla && !it.color && !it.caracteristica && !it.con_caja) return '';
   const prod = it.id_prod ? loadCat().find(p => String(p.id) === String(it.id_prod)) : null;
   const tallas = prod ? tallasParaGrupos(gruposTallaDeProducto(prod)) : [];
   const colores = prod ? (prod.textil_colores || []) : [];
   const enEdicion = _pedEditVariante.has(i);
   let html = '<div style="margin-top:3px;display:flex;gap:4px;flex-wrap:wrap;align-items:center">';
-  html += [tallaVisible(it.talla),it.color,it.estampado,it.caracteristica].filter(Boolean)
+  html += [tallaVisible(it.talla),it.color,it.estampado,it.caracteristica,cajaTxt(it)].filter(Boolean)
     .map(v => '<span style="font-size:10px;padding:1px 7px;border-radius:999px;background:#ffe3ee;color:#be185d;font-weight:600">'+esc(v)+'</span>')
     .join('');
   if (prod && prodConVariantes(prod)) {
@@ -14696,6 +14777,9 @@ function _renderVarianteItemEdit(it, i) {
       html += '</select></div>';
     }
     { const _ests=(prod&&Array.isArray(prod.textil_estampados))?prod.textil_estampados:[]; if(_ests.length||it.estampado){ const _l=_ests.slice(); if(it.estampado&&!_l.includes(it.estampado)) _l.push(it.estampado); html += '<div style="flex:1;min-width:100px"><label style="font-size:10px;color:var(--muted)">Estampado</label><select id="_pv_estamp_'+i+'" style="font-size:12px;padding:4px 6px;width:100%"><option value="">Sin especificar</option>'+_l.map(e=>'<option value="'+esc(e)+'"'+(it.estampado===e?' selected':'')+'>'+esc(e)+'</option>').join('')+'</select></div>'; } }
+    if (prod && (prodTieneCaja(prod) || it.con_caja)) {
+      html += '<div style="flex:1;min-width:100px"><label style="font-size:10px;color:var(--muted)">Caja</label><select id="_pv_caja_'+i+'" style="font-size:12px;padding:4px 6px;width:100%">'+cajaOptsHtml(prod,!!it.con_caja)+'</select></div>';
+    }
     html += '<button type="button" onclick="pedSetVarianteItem('+i+')" style="flex-shrink:0;padding:5px 12px;background:var(--brand);color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer">Confirmar</button>';
     html += '</div></div>';
   }
@@ -14742,6 +14826,9 @@ ${it._necesita_variante ? (()=>{
       </div>`:''}
       ${(prod&&(prod.textil_estampados||[]).length)?`<div style="flex:1;min-width:100px"><label style="font-size:10px;color:var(--muted)">Estampado</label>
         <select id="_pv_estamp_${i}" style="font-size:12px;padding:4px 6px;width:100%"><option value="">Sin especificar</option>${prod.textil_estampados.map(e=>`<option value="${esc(e)}">${esc(e)}</option>`).join('')}</select>
+      </div>`:''}
+      ${(prod&&prodTieneCaja(prod))?`<div style="flex:1;min-width:100px"><label style="font-size:10px;color:var(--muted)">Caja</label>
+        <select id="_pv_caja_${i}" style="font-size:12px;padding:4px 6px;width:100%">${cajaOptsHtml(prod,!!it.con_caja)}</select>
       </div>`:''}
       <button type="button" onclick="pedSetVarianteItem(${i})" style="flex-shrink:0;padding:5px 12px;background:var(--brand);color:#fff;border:none;border-radius:7px;font-size:11px;font-weight:600;cursor:pointer">Confirmar</button>
     </div>
@@ -15324,7 +15411,7 @@ function renderPedidos(){
           ${p.canal?`<span class="chip" style="font-size:10px;${CANALES_COLOR[normalizarCanalVenta(p.canal)]||CANALES_COLOR.local}">${CANALES_LABEL[normalizarCanalVenta(p.canal)]||CANALES_LABEL.local}</span>`:''}
           ${p.usuario_nom?`<span class="chip" style="font-size:10px;background:#f0f4ff;color:#3b5bdb">👤 ${esc(p.usuario_nom.split(' ')[0])}</span>`:''}
         </div>
-        ${(p.items&&p.items.length)?`<div class="ped-items-preview">${p.items.map(it=>`<span style="display:inline-block;margin-right:6px">${it.cant}× ${esc(it.nombre)}${(it.talla||it.color||it.estampado||it.caracteristica)?` <span style="font-size:10px;color:#be185d;font-weight:600">${esc([tallaVisible(it.talla),it.color,it.estampado,it.caracteristica].filter(Boolean).join(' · '))}</span>`:''}</span>`).join('')}</div>`:''}
+        ${(p.items&&p.items.length)?`<div class="ped-items-preview">${p.items.map(it=>`<span style="display:inline-block;margin-right:6px">${it.cant}× ${esc(it.nombre)}${(it.talla||it.color||it.estampado||it.caracteristica||it.con_caja)?` <span style="font-size:10px;color:#be185d;font-weight:600">${esc([tallaVisible(it.talla),it.color,it.estampado,it.caracteristica,cajaTxt(it)].filter(Boolean).join(' · '))}</span>`:''}</span>`).join('')}</div>`:''}
         ${(()=>{ const notasLimpias=(p.notas||'').split(' | ').filter(s=>!s.startsWith('Delivery:')&&!s.startsWith('Envío:')&&!s.startsWith('Diseño:')&&!s.startsWith('Extras:')).join(' | ').trim(); return notasLimpias?`<div class="ped-items-preview" style="color:#e53e3e;margin-top:2px"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:3px"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>${esc(notasLimpias)}</div>`:''; })()}
         ${(()=>{const _ex=[];if(_numPedido(p.delivery_usd)>0)_ex.push('Delivery');if(_numPedido(p.envio_usd)>0)_ex.push('Envío');if(_numPedido(p.diseno_usd)>0)_ex.push('Diseño');return _ex.length?`<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:3px">${_ex.map(e=>`<span class="chip" style="font-size:9px;background:#f0eaff;color:#7c3aed">${e}</span>`).join('')}</div>`:''})()}
       </div>
@@ -15845,7 +15932,7 @@ function verPedido(idx){
   const _pedFmtTotal = n => euro(n);
   const itemsHtml=p.items.map((it,_ii)=>`
     <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid #f3f3f8">
-      <div><div style="font-weight:600;font-size:13px">${esc(it.nombre)}</div><div style="font-size:11px;color:var(--muted)">×${it.cant} · ${_pedFmtMon(it.precio_unit)}</div>${(it.talla||it.color||it.estampado||it.caracteristica)?`<div style="margin-top:2px;display:flex;gap:3px;flex-wrap:wrap">${[tallaVisible(it.talla),it.color,it.estampado,it.caracteristica].filter(Boolean).map(v=>`<span style="font-size:10px;padding:1px 6px;border-radius:999px;background:#ffe3ee;color:#be185d;font-weight:600">${esc(v)}</span>`).join('')}</div>`:''}</div>
+      <div><div style="font-weight:600;font-size:13px">${esc(it.nombre)}</div><div style="font-size:11px;color:var(--muted)">×${it.cant} · ${_pedFmtMon(it.precio_unit)}</div>${(it.talla||it.color||it.estampado||it.caracteristica||it.con_caja)?`<div style="margin-top:2px;display:flex;gap:3px;flex-wrap:wrap">${[tallaVisible(it.talla),it.color,it.estampado,it.caracteristica,cajaTxt(it)].filter(Boolean).map(v=>`<span style="font-size:10px;padding:1px 6px;border-radius:999px;background:#ffe3ee;color:#be185d;font-weight:600">${esc(v)}</span>`).join('')}</div>`:''}</div>
       <div style="text-align:right"><div style="font-weight:700">${_pedFmtMon(it.precio_unit*it.cant)}</div>${(p.estado!=='cancelado'&&it.id_prod)?`<button type="button" onclick="abrirMermaDesdePedidoItem(${_ii})" style="font-size:10px;padding:1px 8px;margin-top:2px;border-radius:999px;border:1px solid #fdba74;color:#c2410c;background:transparent;cursor:pointer">⚠ Merma</button>`:''}</div>
     </div>`).join('');
 
@@ -17642,6 +17729,9 @@ function faltantesInventarioDeItems(items){
         sumar('i:'+i.id+':'+campo, i, i.nombre||'Insumo', campo, (parseFloat(rec.cantidad)||0)*cant);
       });
     }
+    // v16.11: caja descontada del inventario (solo líneas «Con caja» de productos que lo tienen activado)
+    { const _cjId = it.con_caja ? cajaInsumoId(prod) : null;
+      if(_cjId){ const i=ins.find(i=>String(i.id)===String(_cjId)); if(i) sumar('i:'+i.id+':'+campo, i, i.nombre||'Caja', campo, cant); } }
   });
   return Object.values(req).filter(r=>_redInv(r.necesita) > _redInv(r.hay)+0.0005)
     .map(r=>({ ...r, necesita:_redInv(r.necesita), hay:_redInv(r.hay), otra:_redInv(r.otra) }));
@@ -17674,7 +17764,7 @@ function stockNegativos(){
 }
 // Diferencia de cantidades (solo lo que aumenta) entre los ítems anteriores y los nuevos de un pedido editado
 function _itemsDeltaPedido(oldItems, newItems){
-  const key = it => [it.id_prod||it.nombre, it.talla||'', it.color||'', it.caracteristica||''].join('|');
+  const key = it => [it.id_prod||it.nombre, it.talla||'', it.color||'', it.caracteristica||'', it.con_caja?'caja':''].join('|');
   const prev = {};
   (oldItems||[]).forEach(it=>{ prev[key(it)] = (prev[key(it)]||0) + (parseFloat(it.cant)||1); });
   const out = [];
@@ -17689,7 +17779,7 @@ function _itemsDeltaPedido(oldItems, newItems){
 /* Devuelve el stock que descontaron los movimientos con esa nota exacta y borra esos movimientos */
 async function _revertirInventarioPorNota(notaBase){
   const allMov = loadIMov();
-  const movs = allMov.filter(m => m.nota === notaBase || m.nota === notaBase + ' (receta)');
+  const movs = allMov.filter(m => m.nota === notaBase || m.nota === notaBase + ' (receta)' || m.nota === notaBase + ' (caja)');
   if(!movs.length) return;
   const ter = loadTer(), ins = loadIns();
   let cambioTer = false, cambioIns = false;
@@ -17717,7 +17807,7 @@ async function _sincInventarioPedido(ped, oldItems){
     oldItems = oldItems || [];
     const cat = loadCat();
     const esReg = it => { const p = it.id_prod ? cat.find(x=>String(x.id)===String(it.id_prod)) : null; return !!p && invMomentoProd(p)==='registro'; };
-    const sig = items => (items||[]).filter(esReg).map(it=>[it.id_prod,it.talla||'',it.color||'',it.caracteristica||'',it.cant||1].join('|')).sort().join(';');
+    const sig = items => (items||[]).filter(esReg).map(it=>[it.id_prod,it.talla||'',it.color||'',it.caracteristica||'',it.con_caja?'caja':'',it.cant||1].join('|')).sort().join(';');
     const sNueva = sig(ped.items), sVieja = sig(oldItems);
     const yaMarcado = (ped.items||[]).filter(esReg).every(it=>it.inv_desc);
     if(sNueva === sVieja && yaMarcado) return;           // nada cambió en los productos que se descuentan al registrar
@@ -17806,6 +17896,21 @@ function descontarInventarioDeItems(items, nota, momento){
         }
       });
     }
+    // v16.11: caja descontada del inventario (solo líneas «Con caja» de productos que lo tienen activado)
+    { const _cjId = it.con_caja ? cajaInsumoId(prod) : null;
+      if(_cjId){
+        const iidx=ins.findIndex(i=>String(i.id)===String(_cjId));
+        if(iidx>=0){
+          migrarStock(ins[iidx]);
+          const antesC=parseFloat(ins[iidx][campo])||0;
+          ins[iidx][campo]=_redInv(antesC-cant);   // puede quedar en negativo, igual que el resto
+          ins[iidx]._modificado=true;
+          cambioIns=true;
+          if(momento==='registro') it.inv_desc=true;
+          const realC=_redInv(antesC-ins[iidx][campo]);
+          if(realC>0) _soloLogMovInv(ins[iidx].id,'insumo','salida',realC,ins[iidx].costo_ref||0,nota+' (caja)',loc);
+        }
+      } }
   });
 
   if(cambioTer){ saveTer(ter); ter.forEach(t=>{ if(t._modificado){ upsertTerminado(t); delete t._modificado; } }); }
@@ -18520,8 +18625,8 @@ function _texCalcListas(cat, selPeds, filtroProd){
       const prod = it.id_prod ? cat.find(c=>String(c.id)===String(it.id_prod)) : null;
       if(filtroProd && (!prod || String(prod.id)!==filtroProd)) return;
       const cant=it.cant||1;
-      const kg=(it.id_prod||it.nombre)+'|'+(it.talla||'')+'|'+(it.color||'')+'|'+(it.estampado||'')+'|'+(it.caracteristica||'');
-      if(!gen[kg]) gen[kg]={nombre:it.nombre,talla:it.talla||'',color:it.color||'',estamp:it.estampado||'',caract:it.caracteristica||'',cant:0,pedidos:[]};
+      const kg=(it.id_prod||it.nombre)+'|'+(it.talla||'')+'|'+(it.color||'')+'|'+(it.estampado||'')+'|'+(it.caracteristica||'')+'|'+(it.con_caja?'caja':'');
+      if(!gen[kg]) gen[kg]={nombre:it.nombre+(it.con_caja?' (con caja)':''),talla:it.talla||'',color:it.color||'',estamp:it.estampado||'',caract:it.caracteristica||'',cant:0,pedidos:[]};
       gen[kg].cant+=cant; addPed(gen[kg],ref);
       if(prod && prod.es_pijama){
         const tela=prod.tela_franela||'Sin tela';
@@ -23037,7 +23142,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v16_10';
+  const APP_VERSION = 'v16_11';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
