@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V16_11">
+<html lang="es" data-app-version="GestioMada_V16_13">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -145,6 +145,15 @@
 // ══════════════════════════════════════════════
 const SUPA_URL = 'https://tpzfihiylygibmawtngh.supabase.co';
 const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRwemZpaGl5bHlnaWJtYXd0bmdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NjQ3OTUsImV4cCI6MjA5MjA0MDc5NX0.K-W26HglGhoNF1u3Ylr6f7XLWnjjoV7S8srJy7PuFEs';
+// v16.13: ver si llegó desde el enlace de recuperación del correo. Se mira ANTES de crear el
+// cliente porque Supabase borra esos datos de la URL al leerlos.
+const _AUTH_URL_TXT = (location.hash||'') + '&' + (location.search||'');
+let _AUTH_RECOVERY_URL = /(^|[#&?])type=recovery\b/.test(_AUTH_URL_TXT);
+const _AUTH_LINK_VENCIDO = /error_code=otp_expired|error=access_denied/.test(_AUTH_URL_TXT);
+try{
+  if(_AUTH_RECOVERY_URL) sessionStorage.setItem('gm_auth_recovery','1');
+  else if(sessionStorage.getItem('gm_auth_recovery')==='1') _AUTH_RECOVERY_URL = true;
+}catch(e){}
 const SUPA = supabase.createClient(SUPA_URL, SUPA_KEY, {
   realtime: { params: { eventsPerSecond: 10 } }
 });
@@ -3098,10 +3107,34 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
     <div style="background:var(--card);border-radius:var(--r-xl);padding:26px 22px;box-shadow:var(--shadow)">
       <div id="auth-login-fields">
         <div class="fg"><label>Correo</label><input type="email" id="auth_email" placeholder="tucorreo@gmail.com" autocomplete="username" onkeydown="if(event.key==='Enter'){event.preventDefault();authLogin();}"/></div>
-        <div class="fg" style="margin-bottom:6px"><label>Contraseña</label><input type="password" id="auth_pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter'){event.preventDefault();authLogin();}"/></div>
+        <div class="fg" style="margin-bottom:6px"><label>Contraseña</label>
+          <div style="position:relative">
+            <input type="password" id="auth_pass" placeholder="••••••••" autocomplete="current-password" style="padding-right:44px" onkeydown="if(event.key==='Enter'){event.preventDefault();authLogin();}"/>
+            <button type="button" id="auth-pass-toggle" aria-label="Mostrar contraseña" aria-pressed="false" title="Mostrar contraseña" onmousedown="event.preventDefault()" onclick="authTogglePass()" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--muted);border-radius:10px;cursor:pointer;padding:0"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+        </div>
         <div style="text-align:right;margin-bottom:16px"><a href="#" style="font-size:11.5px;color:var(--muted)" onclick="authOlvidoPass();return false">¿Olvidaste tu contraseña?</a></div>
         <button class="btn btn-brand" style="width:100%;justify-content:center" onclick="authLogin()" id="auth-login-btn">Entrar</button>
         <div id="auth-error" style="font-size:12px;color:var(--danger);margin-top:12px;min-height:16px;text-align:center;font-weight:600"></div>
+      </div>
+      <div id="auth-recovery-fields" style="display:none">
+        <div style="font-size:16px;font-weight:800;color:var(--ink);margin-bottom:4px">Crea tu contraseña nueva</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.45">Escríbela dos veces (mínimo 8 caracteres) para volver a entrar.</div>
+        <div class="fg"><label>Contraseña nueva</label>
+          <div style="position:relative">
+            <input type="password" id="auth_new_pass" placeholder="••••••••" autocomplete="new-password" style="padding-right:44px" onkeydown="if(event.key==='Enter'){event.preventDefault();authGuardarNuevaPass();}"/>
+            <button type="button" id="auth-new-pass-toggle" aria-label="Mostrar contraseña" aria-pressed="false" title="Mostrar contraseña" onmousedown="event.preventDefault()" onclick="authTogglePass('auth_new_pass','auth-new-pass-toggle')" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--muted);border-radius:10px;cursor:pointer;padding:0"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+        </div>
+        <div class="fg" style="margin-bottom:16px"><label>Repite la contraseña</label>
+          <div style="position:relative">
+            <input type="password" id="auth_new_pass2" placeholder="••••••••" autocomplete="new-password" style="padding-right:44px" onkeydown="if(event.key==='Enter'){event.preventDefault();authGuardarNuevaPass();}"/>
+            <button type="button" id="auth-new-pass2-toggle" aria-label="Mostrar contraseña" aria-pressed="false" title="Mostrar contraseña" onmousedown="event.preventDefault()" onclick="authTogglePass('auth_new_pass2','auth-new-pass2-toggle')" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);width:34px;height:34px;display:flex;align-items:center;justify-content:center;border:none;background:transparent;color:var(--muted);border-radius:10px;cursor:pointer;padding:0"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          </div>
+        </div>
+        <button class="btn btn-brand" style="width:100%;justify-content:center" onclick="authGuardarNuevaPass()" id="auth-recovery-btn">Guardar contraseña</button>
+        <div id="auth-recovery-error" style="font-size:12px;color:var(--danger);margin-top:12px;min-height:16px;text-align:center;font-weight:600"></div>
+        <div style="text-align:center;margin-top:4px"><a href="#" style="font-size:11.5px;color:var(--muted)" onclick="authCancelarRecovery();return false">Cancelar</a></div>
       </div>
     </div>
     <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:16px">Acceso restringido al equipo de GestioMada</div>
@@ -7180,7 +7213,7 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v16.11: NUEVO (Cat\u00e1logo) Opci\u00f3n \u00abCon caja\u00bb para productos como las bambalinas de 7 y 8 cm. En la ficha del producto (con variantes activadas) activas \u00abSe puede vender con caja\u00bb y pones cu\u00e1nto suma la caja al precio final y al costo. Al vender (POS, pedidos y cotizaciones) aparece el campo \u00abSin caja / Con caja (+$X)\u00bb junto al color y al lazo. Adem\u00e1s, por producto puedes decidir si la caja se descuenta del inventario: eliges qu\u00e9 insumo es la caja y cada venta \u00abCon caja\u00bb resta 1 unidad (si anulas, cancelas o editas el pedido, se devuelve). Si no lo activas, la caja solo suma precio y costo. Se guarda dentro de los datos del producto que ya se sincronizan, sin tablas ni columnas nuevas. Los productos que ya tienes quedan exactamente igual.\nv16.10: CORREGIDO (Catálogo) Un producto que solo tiene característica (ej. bambalina con luces: solo color de lazo, sin colores ni tallas) ahora se reconoce como producto con variantes: al reabrir la ficha se ven sus características y en POS, pedidos e inventario pide solo ese campo, sin exigir color. Los demás productos quedan igual.\n' +
+  return 'v16.13: ARREGLADO (Inicio de sesi\u00f3n) El bot\u00f3n \u00ab\u00bfOlvidaste tu contrase\u00f1a?\u00bb ahora funciona completo. Antes enviaba el correo, pero al abrir el enlace la app te dejaba entrar sin pedirte una contrase\u00f1a nueva, y sus avisos (correo enviado o error) quedaban tapados por la pantalla de login y no se ve\u00edan. Ahora: (1) los avisos salen dentro de la tarjeta de login; (2) al abrir el enlace del correo aparece \u00abCrea tu contrase\u00f1a nueva\u00bb (con ojo para ver lo que escribes) y al guardar entras directo; (3) si el enlace venci\u00f3 o ya se us\u00f3, te lo dice; (4) si Supabase bloquea por demasiados correos, lo explica (espera 1 hora); (5) despu\u00e9s de pedir un enlace hay que esperar 60 segundos para pedir otro, as\u00ed no se gasta el l\u00edmite de correos.\nv16.12: NUEVO (Inicio de sesi\u00f3n) Ahora el campo de contrase\u00f1a tiene un ojo a la derecha: lo tocas y ves lo que escribiste, lo tocas otra vez y se oculta. Al entrar o cerrar sesi\u00f3n la contrase\u00f1a vuelve a quedar oculta sola. No cambia nada m\u00e1s del login.\nv16.11: NUEVO (Cat\u00e1logo) Opci\u00f3n \u00abCon caja\u00bb para productos como las bambalinas de 7 y 8 cm. En la ficha del producto (con variantes activadas) activas \u00abSe puede vender con caja\u00bb y pones cu\u00e1nto suma la caja al precio final y al costo. Al vender (POS, pedidos y cotizaciones) aparece el campo \u00abSin caja / Con caja (+$X)\u00bb junto al color y al lazo. Adem\u00e1s, por producto puedes decidir si la caja se descuenta del inventario: eliges qu\u00e9 insumo es la caja y cada venta \u00abCon caja\u00bb resta 1 unidad (si anulas, cancelas o editas el pedido, se devuelve). Si no lo activas, la caja solo suma precio y costo. Se guarda dentro de los datos del producto que ya se sincronizan, sin tablas ni columnas nuevas. Los productos que ya tienes quedan exactamente igual.\nv16.10: CORREGIDO (Catálogo) Un producto que solo tiene característica (ej. bambalina con luces: solo color de lazo, sin colores ni tallas) ahora se reconoce como producto con variantes: al reabrir la ficha se ven sus características y en POS, pedidos e inventario pide solo ese campo, sin exigir color. Los demás productos quedan igual.\n' +
   'v16.09: NUEVO (Catálogo) Productos con dos variantes, como las bambalinas (color de bambalina + color de lazo): cada producto puede tener sus propios nombres de campo («Color de bambalina», «Color de lazo…»), la característica ya funciona también en productos solo con colores o sin colores ni tallas (solo lazo), y un interruptor «La característica no cuenta en inventario» para llevar el stock solo por color. Los productos que ya tienes quedan exactamente igual.\n' +
   'v16.08: CORREGIDO (PWA) La app ya no se queda mostrando una copia vieja de index.html: el service worker ahora busca primero la versi\u00f3n m\u00e1s nueva en internet (usa la copia guardada solo sin conexi\u00f3n), y si detecta que la p\u00e1gina y el service worker son de versiones distintas limpia la cach\u00e9 y recarga sola (una vez). No toca tus datos.\nv16.07: CAMBIO (Editor \u00b7 lista completa) El bot\u00f3n "Lista" ahora abre un panel dentro de la app (sin ventana emergente, funciona en el celular y en la app instalada).\nv16.06: NUEVO (Editor \u00b7 lista completa) Bot\u00f3n "Lista" que abre una ventana nueva con todos los productos del editor (buscador, SKU, categor\u00eda, estado, precio y si est\u00e1n en el cat\u00e1logo); clic en un producto lo carga en el editor. CORREGIDO: "Agregar al Cat\u00e1logo" ahora tambi\u00e9n guarda el producto en el editor (ya no desaparece del buscador del editor).\nv16.05: NUEVO (Textiles \u00b7 talla 16) \u2014 la talla 16 (ni\u00f1os grandes) ahora se ofrece como 16D (Dama) y 16C (Caballero), igual que las tallas de letras. Los pedidos antiguos con talla 16 no se modifican. \nv16.04: NUEVO (Textiles \u00b7 pijamas y producci\u00f3n) \u2014 1) Cada producto textil puede marcarse \u00abEs pijama\u00bb y tener una \u00abTela de la franela\u00bb (Micro durazno, Algod\u00f3n; editable en Configuraci\u00f3n \u2192 Textiles \u00b7 telas) que solo se usa en reportes. 2) Nuevo \u00abEstampado\u00bb opcional (Configuraci\u00f3n \u2192 Textiles \u00b7 estampados): se marcan por producto y se elige al cotizar o crear el pedido; aparece en pedido, cotizaci\u00f3n y WhatsApp. 3) Reportes \u2192 Textiles: listas separadas para el proveedor (Franelas por tela, color y talla; Monos por estampado, talla y bota/jogger), imprimibles. 4) Orden de Producci\u00f3n: marcas con casillas qu\u00e9 pedidos van a producci\u00f3n; queda un Historial de producci\u00f3n con fecha, con reimpresi\u00f3n y bot\u00f3n Deshacer. 5) Icono de nota en los pedidos con nota escrita a mano y el n\u00famero PED abre el pedido. \nv16.03: NUEVO (Textiles \u00b7 grupos propios) \u2014 las tallas de tus grupos de tallas (ej: Mascotas \u2192 Grande) ya pueden tener recargo de precio y de costo. En el producto, bajo \u00abRecargo por talla\u00bb, aparece cada talla de tu grupo: en Grande pones Precio final +$2 y Costo +$0,8. Funciona igual que XL/XXL: se aplica en POS, pedidos y cotizaciones. \nv16.02: ICONOS (Configuraci\u00f3n y Editor de producto) \u2014 los emojis de Configuraci\u00f3n (Textiles \u00b7 tallas, Textiles \u00b7 caracter\u00edsticas, Ver detalles del almacenamiento, Actualizar ahora y los botones de tallas) se cambiaron por los iconos de l\u00ednea que usa el resto de GestioMada. En el editor de producto se quit\u00f3 el emoji de la opci\u00f3n \u00abLocal\u00bb. \nv16.01: NUEVO (Textiles · tallas) En Configuración → Textiles · tallas ya puedes crear tus propios grupos de tallas (ej: «Mascotas» con Pequeña y Grande): escribes el nombre, lo creas y le agregas sus tallas. Puedes renombrarlo, ordenarlo o borrarlo. El grupo aparece al marcar un producto como textil, junto a Niños, Adultos y Bodys. Se sincroniza entre dispositivos. \nv16.00: NUEVO (Textiles) Cada producto textil puede tener sus propias caracter\u00edsticas (se eligen al crear o editar el producto). Los productos que no se tocan siguen usando la lista general; si desmarcas todas, el campo no aparece en ventas ni pedidos. Requiere la columna textil_caracteristicas en Supabase. \u00b7 v15.99: NUEVO (Textiles) Las características de los productos textiles (antes fijas: Con C/B y Sin C/B) ahora se configuran en Configuración → Textiles · características. Puedes agregar o quitar las que necesites (ej: Mangas rosadas) y se sincronizan entre dispositivos. Lo ya registrado no se modifica. \u00b7 v15.98: AJUSTE (Ventas) \u2014 el filtro Detal/Mayor del punto de venta ahora queda al lado derecho del buscador (antes quedaba debajo en pantallas peque\u00f1as).\n'
     + 'v15.97: NUEVO (Filtro Detal/Mayor) \u2014 en Cat\u00e1logo y en Ventas (Nueva Venta) hay un filtro para ver solo productos al detal o solo al mayor. Aparece cuando los tipos de venta est\u00e1n activados en Configuraci\u00f3n. El resto de la app no cambia.\n'
@@ -9646,14 +9679,39 @@ function _pinLockResetear(){ _pinLockSet({ intentos:0, nivel:0, bloqueadoHasta:0
    exige sesión autenticada). El PIN de arriba sigue existiendo, pero ahora es
    solo un bloqueo rápido de pantalla para el día a día — quien entra aquí ya
    pasó por un login real con su correo y contraseña. */
-function _authMostrarPantalla(){ const el=qs('#auth-screen'); if(el) el.style.display='flex'; }
-function _authOcultarPantalla(){ const el=qs('#auth-screen'); if(el) el.style.display='none'; }
+function _authMostrarPantalla(){ _authPassOcultar(); const el=qs('#auth-screen'); if(el) el.style.display='flex'; }
+function _authOcultarPantalla(){ _authPassOcultar(); const el=qs('#auth-screen'); if(el) el.style.display='none'; }
+
+/* v16.12: ojo para mostrar/ocultar la contraseña en el inicio de sesión.
+   Los iconos usan el mismo estilo de línea que el resto de GestioMada. */
+const _AUTH_ICO_OJO     = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+const _AUTH_ICO_OJO_OFF = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+function authTogglePass(inputId, btnId){
+  inputId = inputId || 'auth_pass'; btnId = btnId || 'auth-pass-toggle';
+  const inp=qs('#'+inputId), btn=qs('#'+btnId);
+  if(!inp) return;
+  const mostrar = (inp.type==='password');
+  inp.type = mostrar ? 'text' : 'password';
+  if(btn){
+    const txt = mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña';
+    btn.innerHTML = mostrar ? _AUTH_ICO_OJO_OFF : _AUTH_ICO_OJO;
+    btn.setAttribute('aria-label', txt);
+    btn.setAttribute('title', txt);
+    btn.setAttribute('aria-pressed', mostrar ? 'true' : 'false');
+  }
+}
+// Siempre vuelve a ocultar las contraseñas al entrar o al volver a mostrar la pantalla de login.
+function _authPassOcultar(){
+  [['auth_pass','auth-pass-toggle'],['auth_new_pass','auth-new-pass-toggle'],['auth_new_pass2','auth-new-pass2-toggle']].forEach(([i,b])=>{
+    const el=qs('#'+i); if(el && el.type==='text') authTogglePass(i,b);
+  });
+}
 
 async function authLogin(){
   const email=(qs('#auth_email')?.value||'').trim();
   const pass = qs('#auth_pass')?.value||'';
   const errEl=qs('#auth-error');
-  if(errEl) errEl.textContent='';
+  if(errEl){ errEl.textContent=''; errEl.style.color='var(--danger)'; }
   if(!email || !pass){ if(errEl) errEl.textContent='Ingresa tu correo y contraseña.'; return; }
   const btn=qs('#auth-login-btn');
   if(btn){ btn.disabled=true; btn.textContent='Entrando…'; }
@@ -9699,15 +9757,84 @@ async function _authAplicarUsuarioDesdeSesion(){
   }catch(e){ return false; }
 }
 
-async function authOlvidoPass(){
-  const email=(qs('#auth_email')?.value||'').trim();
-  if(!email){ toast('Escribe tu correo primero','warn'); return; }
-  try{
-    const { error } = await SUPA.auth.resetPasswordForEmail(email);
-    if(error){ toast('No se pudo enviar el correo de recuperación','warn'); return; }
-    toast('Te enviamos un enlace a tu correo para restablecer la contraseña','ok');
-  }catch(e){ toast('No se pudo conectar','warn'); }
+/* v16.13: avisos dentro de la tarjeta de login. Los toast quedaban DETRÁS de la pantalla de
+   login (z-index 999 contra 1300), por eso «¿Olvidaste tu contraseña?» parecía no hacer nada. */
+function _authMsg(id, txt, ok){
+  const el=qs('#'+id); if(!el) return;
+  el.textContent = txt||'';
+  el.style.color = ok ? 'var(--ok)' : 'var(--danger)';
 }
+let _authOlvidoBusy=false, _authOlvidoHasta=0;
+async function authOlvidoPass(){
+  const msg=(t,ok)=>_authMsg('auth-error',t,ok);
+  if(_authOlvidoBusy) return;
+  const email=(qs('#auth_email')?.value||'').trim();
+  if(!email){ msg('Escribe tu correo arriba y vuelve a tocar «¿Olvidaste tu contraseña?».'); qs('#auth_email')?.focus(); return; }
+  const falta=Math.ceil((_authOlvidoHasta-Date.now())/1000);
+  if(falta>0){ msg('Ya te enviamos un enlace. Revisa tu correo (y spam). Podrás pedir otro en '+falta+' s.', true); return; }
+  _authOlvidoBusy=true; msg('Enviando enlace…', true);
+  try{
+    // El enlace del correo vuelve a esta misma app (si se abre como archivo local, a la versión publicada).
+    const redirectTo = (location.protocol==='http:'||location.protocol==='https:') ? (location.origin+location.pathname) : 'https://gestiomada.vercel.app/';
+    const { error } = await SUPA.auth.resetPasswordForEmail(email, { redirectTo });
+    if(error){
+      const t=((error.message||'')+' '+(error.code||'')).toLowerCase();
+      if(error.status===429 || /rate limit|over_email_send_rate_limit/.test(t)) msg('Se enviaron demasiados correos seguidos. Espera 1 hora y vuelve a intentarlo.');
+      else msg('No se pudo enviar el correo de recuperación. Revisa que el correo esté bien escrito.');
+      return;
+    }
+    _authOlvidoHasta=Date.now()+60000;
+    msg('Listo. Si ese correo tiene cuenta, te llegará un enlace en unos minutos (revisa también spam).', true);
+  }catch(e){ msg('No se pudo conectar. Revisa tu internet.'); }
+  finally{ _authOlvidoBusy=false; }
+}
+
+/* v16.13: pantalla «Crea tu contraseña nueva» (al abrir el enlace del correo de recuperación). */
+function _authMostrarRecovery(){
+  const l=qs('#auth-login-fields'), r=qs('#auth-recovery-fields');
+  if(l) l.style.display='none';
+  if(r) r.style.display='block';
+  _authMostrarPantalla();
+  setTimeout(()=>{ qs('#auth_new_pass')?.focus(); },80);
+}
+function _authMostrarLogin(){
+  const l=qs('#auth-login-fields'), r=qs('#auth-recovery-fields');
+  if(l) l.style.display='';
+  if(r) r.style.display='none';
+}
+function _authLimpiarUrl(){ try{ history.replaceState(null,'',location.pathname+location.search); }catch(e){} }
+function _authFinRecovery(){ _AUTH_RECOVERY_URL=false; try{ sessionStorage.removeItem('gm_auth_recovery'); }catch(e){} }
+
+async function authGuardarNuevaPass(){
+  const p1=qs('#auth_new_pass')?.value||'', p2=qs('#auth_new_pass2')?.value||'';
+  const msg=(t)=>_authMsg('auth-recovery-error',t,false);
+  msg('');
+  if(p1.length<8){ msg('La contraseña debe tener al menos 8 caracteres.'); return; }
+  if(p1!==p2){ msg('Las dos contraseñas no son iguales.'); return; }
+  const btn=qs('#auth-recovery-btn');
+  if(btn){ btn.disabled=true; btn.textContent='Guardando…'; }
+  try{
+    const { error } = await SUPA.auth.updateUser({ password: p1 });
+    if(error){
+      const t=((error.message||'')+' '+(error.code||'')).toLowerCase();
+      if(/same_password|different from the old/.test(t)) msg('La contraseña nueva debe ser distinta a la anterior.');
+      else if(/weak_password|weak/.test(t)) msg('Esa contraseña es muy fácil de adivinar. Prueba con otra.');
+      else msg('No se pudo guardar. Si el enlace ya venció, pide uno nuevo desde el login.');
+      return;
+    }
+    _authFinRecovery(); _authLimpiarUrl();
+    ['#auth_new_pass','#auth_new_pass2'].forEach(s=>{ const e=qs(s); if(e) e.value=''; });
+    _authMostrarLogin();
+    _authOcultarPantalla();
+    toast('Contraseña actualizada','ok');
+    await _authAplicarUsuarioDesdeSesion();
+  }catch(e){
+    msg('No se pudo conectar. Revisa tu internet.');
+  }finally{
+    if(btn){ btn.disabled=false; btn.textContent='Guardar contraseña'; }
+  }
+}
+function authCancelarRecovery(){ _authFinRecovery(); _authLimpiarUrl(); authLogout(); }
 
 async function authLogout(){
   try{ await SUPA.auth.signOut(); }catch(e){}
@@ -9719,7 +9846,17 @@ async function _authInit(){
   let haySesion=false;
   try{
     const { data:{ session } } = await SUPA.auth.getSession();
-    if(session){ haySesion=true; _authOcultarPantalla(); } else { _authMostrarPantalla(); }
+    if(session && _AUTH_RECOVERY_URL){
+      _authMostrarRecovery();            // llegó desde el correo: pedir la contraseña nueva
+    } else if(session){
+      haySesion=true; _authOcultarPantalla();
+    } else {
+      _authMostrarPantalla();
+      if(_AUTH_RECOVERY_URL || _AUTH_LINK_VENCIDO){
+        _authFinRecovery(); _authLimpiarUrl();
+        _authMsg('auth-error','El enlace venció o ya se usó. Toca «¿Olvidaste tu contraseña?» para pedir uno nuevo.');
+      }
+    }
   }catch(e){
     // Sin conexión o falla al verificar: dejamos ver el login, no asumimos acceso.
     _authMostrarPantalla();
@@ -9727,6 +9864,7 @@ async function _authInit(){
   if(haySesion) await _authAplicarUsuarioDesdeSesion();
   SUPA.auth.onAuthStateChange((event)=>{
     if(event==='SIGNED_OUT') _authMostrarPantalla();
+    else if(event==='PASSWORD_RECOVERY') _authMostrarRecovery();
   });
   _authReadyResolve();
 }
@@ -23142,7 +23280,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v16_11';
+  const APP_VERSION = 'v16_13';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
