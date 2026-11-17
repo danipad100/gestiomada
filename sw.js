@@ -1,4 +1,4 @@
-const VERSION = 'v16_16';
+const VERSION = 'v16_17';
 const CACHE_NAME = 'gestiomada-' + VERSION;
 
 const URLS_TO_CACHE = [

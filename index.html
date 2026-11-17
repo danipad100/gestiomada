@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V16_16">
+<html lang="es" data-app-version="GestioMada_V16_17">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -2730,6 +2730,117 @@ body.dark .pos-prod-img-ph{background:#23283a}
 .cs-tags{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:8px}
 .cs-tag{background:#ffe3ee;color:#be185d;border-radius:999px;padding:4px 14px;font-size:12px;font-weight:600}
 
+/* ═══════════════ v16.17 · Cuentas y Reportes — responsivo (principios Apple) ═══════════════
+   Respuesta inmediata al tocar, jerarquía clara, bordes de scroll suaves, objetivos táctiles de 44px,
+   números con ancho fijo (tabular) y movimiento reducido si el usuario lo pide. */
+.cta-card{transition:transform .14s ease-out,box-shadow .2s ease-out}
+.cta-card[onclick]:active{transform:scale(.985)}
+@media(hover:hover){.cta-card[onclick]:hover{box-shadow:0 10px 24px rgba(0,0,0,.09)}}
+.cta-saldo,.cd-saldo-num,.cd-tabla .c-monto,.cd-tabla .c-saldo,.cd-kpis div div{font-variant-numeric:tabular-nums}
+.cta-saldo,.cd-saldo-num{letter-spacing:-.02em}
+.cd-tabla{width:100%;border-collapse:collapse}
+.cd-tabla td{padding:8px 10px;font-size:12.5px;border-bottom:1px solid var(--border,#ececf2);vertical-align:top;white-space:nowrap}
+.cd-tabla td.c-conc{white-space:normal;min-width:180px}
+.cd-tabla td.r{text-align:right}
+.cd-tabla td.c-monto{font-weight:700}
+.cd-tabla td.c-saldo{font-weight:600}
+.cd-tabla td.c-nada::after{content:'\2014';color:var(--muted)}
+.cd-tabla tr.cd-vacio td{text-align:center}
+.bx-var{display:none}
+
+@media(max-width:640px){
+  /* ── Cuentas · lista ── */
+  .cuentas-bar{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:stretch}
+  .cuentas-bar #cuentas-total{grid-column:1/-1;font-size:12.5px;line-height:1.4}
+  .cuentas-bar .btn{width:100%;justify-content:center;min-height:44px;font-size:12.5px}
+  .cuentas-bar #cuentas-btn-nueva{grid-column:1/-1}
+  .cta-card{padding:14px!important}
+  .cta-saldo{font-size:22px!important}
+  .cta-foot .btn{flex:1 1 auto;justify-content:center;min-height:40px}
+  .cta-foot>span{flex:1 0 100%!important;order:-1}
+
+  /* ── Cuentas · detalle ── */
+  .cd-back{position:sticky;top:-12px;z-index:5;margin:-12px -12px 10px!important;padding:12px 14px 10px;
+    background:rgba(247,247,251,.9);-webkit-backdrop-filter:blur(16px) saturate(170%);backdrop-filter:blur(16px) saturate(170%)}
+  body.dark .cd-back{background:rgba(15,17,21,.9)}
+  .cd-back a{display:inline-block;padding:6px 2px;font-size:14px!important;font-weight:600}
+  .cd-head{flex-direction:column;align-items:stretch!important}
+  .cd-saldo-box{text-align:left!important;padding-top:10px;border-top:1px solid var(--border,#ececf2)}
+  .cd-saldo-num{font-size:30px!important}
+  .cd-acciones{display:grid!important;grid-template-columns:1fr 1fr;gap:8px!important}
+  .cd-acciones .btn{width:100%;justify-content:center;min-height:44px}
+  .cd-acciones .cd-edit{grid-column:1/-1;margin-left:0!important}
+  .cd-filtros{display:grid!important;grid-template-columns:1fr 1fr;gap:10px!important;align-items:end}
+  .cd-filtros .fg:nth-child(3){grid-column:1/-1}
+  .cd-filtros .btn{grid-column:1/-1;min-height:40px;justify-content:center}
+  .cd-filtros input,.cd-filtros select{min-height:44px}
+  .cd-filtros input[type=date],.rep-filtro>input[type=date]{width:100%;min-width:0;padding:10px 12px;border-radius:12px;border:1px solid var(--border,#e5e7eb);background:var(--card,#fff);color:var(--ink);font-family:inherit;font-size:13px;-webkit-appearance:none;appearance:none}
+  .cd-kpis{grid-template-columns:1fr 1fr!important;gap:8px!important}
+  .cd-kpis>div:last-child{grid-column:1/-1}
+
+  /* Movimientos: la tabla se vuelve una lista de tarjetas */
+  .cd-wrap{overflow:visible!important}
+  .cd-tabla,.cd-tabla tbody{display:block}
+  .cd-tabla thead{display:none}
+  .cd-tabla tr.cd-fila{display:flex;flex-wrap:wrap;align-items:baseline;column-gap:8px;row-gap:3px;padding:12px 2px;border-bottom:1px solid var(--border,#ececf2)}
+  .cd-tabla tr.cd-fila:last-child{border-bottom:0}
+  .cd-tabla td{display:block;padding:0;border:0;white-space:normal;font-size:12px;min-width:0}
+  .cd-tabla td.c-nada{display:none}
+  .cd-tabla td.c-op{order:1;flex:0 0 auto}
+  .cd-tabla td.c-fecha{order:2;flex:1 1 0;color:var(--muted);font-size:11.5px;white-space:nowrap}
+  .cd-tabla td.c-monto{order:3;flex:0 0 auto;font-size:16px;letter-spacing:-.01em;white-space:nowrap}
+  .cd-tabla td.c-acc{order:3;flex:0 0 auto}
+  .cd-tabla td.c-acc:empty{display:none}
+  .cd-tabla td.c-conc{order:4;flex:1 1 100%;min-width:0;font-size:13.5px;font-weight:600;color:var(--ink);padding-top:2px}
+  .cd-tabla td.c-usr,.cd-tabla td.c-met,.cd-tabla td.c-tasa{order:5;flex:0 0 auto;color:var(--muted);font-size:11px}
+  .cd-tabla td[data-l]::before{content:attr(data-l) ': ';font-weight:600}
+  .cd-tabla td.c-saldo{order:6;flex:1 1 100%;text-align:left;color:var(--muted)!important;font-size:11px;font-weight:500}
+  .cd-tabla tr.cd-vacio,.cd-tabla tr.cd-vacio td{display:block;text-align:center}
+
+  /* ── Reportes ── */
+  #view-reportes .grid>*{min-width:0}
+  #view-reportes [id$="-kpis"]{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+  #view-reportes [id$="-kpis"]>:last-child:nth-child(odd){grid-column:1/-1}
+  #view-reportes [id$="-kpis"] .kpi{padding:12px}
+  #view-reportes [id$="-kpis"] .kpi-ico{margin-bottom:6px}
+  #view-reportes [id$="-kpis"] .kpi-val{font-size:18px!important;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+  #view-reportes [id$="-kpis"] .kpi-sub{font-size:10.5px;line-height:1.3}
+  #view-reportes select{max-width:100%;min-height:40px}
+  #view-reportes .card-title{flex-wrap:wrap}
+  /* Período: 4 botones en una fila, fechas lado a lado, exportar en dos columnas */
+  .rep-filtro{display:grid!important;grid-template-columns:repeat(4,1fr);gap:8px!important}
+  .rep-filtro>span:first-child{grid-column:1/-1}
+  .rep-filtro>.btn{justify-content:center;min-height:40px;padding-left:4px;padding-right:4px}
+  .rep-filtro>input[type=date]{grid-column:span 2;min-width:0;width:100%;min-height:40px}
+  .rep-filtro>span:nth-of-type(2){display:none}
+  .rep-filtro>.btn:nth-last-child(-n+2){grid-column:span 2}
+  /* Pestañas: se deslizan y el borde derecho se desvanece */
+  #rep-tabs{scrollbar-width:none;padding-right:28px;scroll-snap-type:x proximity;
+    -webkit-mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent);mask-image:linear-gradient(to right,#000 calc(100% - 28px),transparent)}
+  #rep-tabs::-webkit-scrollbar{display:none}
+  #rep-tabs .tab-btn{scroll-snap-align:start;min-height:44px}
+  /* Tablas anchas: sombra suave en el borde que indica que hay más para deslizar */
+  #view-reportes table{font-size:11.5px!important}
+  #view-reportes table th,#view-reportes table td{padding:7px 5px!important}
+  .bx-hm{display:none!important}
+  .bx-var{display:block;font-size:11px;color:var(--muted);font-weight:400;margin-top:2px;line-height:1.35}
+  #view-reportes div[style*="overflow-x:auto"]{
+    background:
+      linear-gradient(to right,var(--card,#fff) 30%,transparent) left center/28px 100% no-repeat local,
+      linear-gradient(to left,var(--card,#fff) 30%,transparent) right center/28px 100% no-repeat local,
+      radial-gradient(farthest-side at 0 50%,rgba(0,0,0,.16),transparent) left center/10px 100% no-repeat scroll,
+      radial-gradient(farthest-side at 100% 50%,rgba(0,0,0,.16),transparent) right center/10px 100% no-repeat scroll;
+    -webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+  #rep-tex-sel label,#rep-bamb-sel label{flex-wrap:wrap}
+}
+@media(prefers-reduced-motion:reduce){
+  .cta-card,.cta-card[onclick]:active{transition:none;transform:none}
+}
+@media(prefers-reduced-transparency:reduce){
+  .cd-back{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;background:var(--bg,#f7f7fb)!important}
+  body.dark .cd-back{background:#0f1115!important}
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-thumb{background:#e5e7eb;border-radius:3px}
@@ -4715,7 +4826,7 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
 
       <!-- ══ CUENTAS (V15_71) ══ -->
       <div class="view" id="view-cuentas">
-        <div class="search-bar" style="align-items:center">
+        <div class="search-bar cuentas-bar" style="align-items:center">
           <div id="cuentas-total" style="flex:1;font-size:13px;color:var(--muted)"></div>
           <button class="btn btn-sm" id="cuentas-btn-transf" onclick="abrirTransferencia()">⇄ Transferir</button>
           <button class="btn btn-sm" id="cuentas-btn-retirar" onclick="abrirMovCuentaCaja('retiro')">− Retirar saldo</button>
@@ -4825,7 +4936,7 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
 
         <!-- Filtro global de período -->
         <div class="card" style="padding:14px;margin-bottom:14px">
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div class="rep-filtro" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <span style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Período</span>
             <button class="btn btn-brand btn-sm" id="rep-hoy-btn"   onclick="setRepPeriodo('hoy',this)">Hoy</button>
             <button class="btn btn-sm"           id="rep-sem-btn"   onclick="setRepPeriodo('semana',this)">7 días</button>
@@ -4843,7 +4954,7 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
         <div class="grid g4" id="rep-kpis" style="margin-bottom:14px"></div>
 
         <!-- Tabs de secciones -->
-        <div class="tabs" id="rep-tabs">
+        <div class="tabs" id="rep-tabs" role="tablist">
           <button class="tab-btn active" onclick="repTab('ventas',this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg> Ventas</button>
           <button class="tab-btn" onclick="repTab('productos',this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Productos</button>
           <button class="tab-btn" onclick="repTab('pedidos',this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg> Pedidos</button>
@@ -4852,6 +4963,7 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
           <button class="tab-btn" onclick="repTab('inventario',this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M12 2l9 4.5v11L12 22 3 17.5V6.5L12 2z"/><polyline points="3 6.5 12 11 21 6.5"/><line x1="12" y1="11" x2="12" y2="22"/></svg> Inventario</button>
           <button class="tab-btn" onclick="repTab('comisiones',this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> Comisiones</button>
           <button class="tab-btn" onclick="repTab('textiles',this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg> Textiles</button>
+          <button class="tab-btn" onclick="repTab('bambalinas',this)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7" transform="translate(0 0)"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg> Bambalinas</button>
         </div>
 
         <!-- Tab Ventas -->
@@ -5039,6 +5151,79 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
           </div>
         </div>
         <!-- ══ TEXTILES ══ -->
+        <!-- Tab Bambalinas (v16.17): sección propia, separada de Textiles -->
+        <div class="tab-panel" id="rep-tab-bambalinas">
+          <div class="grid g4" id="rep-bamb-kpis" style="margin-bottom:14px"></div>
+
+          <div class="card" style="margin-bottom:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+              <div class="card-title" style="margin:0"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7" transform="translate(0 0)"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg> Bambalinas vendidas por variante</div>
+              <select id="rep_bamb_prod" onchange="renderRepBambalinas()" style="min-width:200px;font-size:12px">
+                <option value="">Todas las bambalinas</option>
+              </select>
+            </div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:12px" id="rep-bamb-ventas-table">
+                <thead>
+                  <tr style="text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">
+                    <th style="padding:6px 8px;font-weight:600">Producto</th>
+                    <th class="bx-hm" style="padding:6px 8px;font-weight:600">Color</th>
+                    <th class="bx-hm" style="padding:6px 8px;font-weight:600">Lazo / detalle</th>
+                    <th class="bx-hm" style="padding:6px 8px;font-weight:600">Caja</th>
+                    <th style="padding:6px 8px;font-weight:600;text-align:right">Unidades</th>
+                    <th style="padding:6px 8px;font-weight:600;text-align:right">Ingresos USD</th>
+                  </tr>
+                </thead>
+                <tbody id="rep-bamb-ventas-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:14px">
+            <div class="card-title" style="margin-bottom:12px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7" transform="translate(0 0)"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg> Stock de bambalinas</div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:12px">
+                <thead>
+                  <tr style="text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">
+                    <th style="padding:6px 8px;font-weight:600">Producto</th>
+                    <th class="bx-hm" style="padding:6px 8px;font-weight:600">Color</th>
+                    <th class="bx-hm" style="padding:6px 8px;font-weight:600">Lazo / detalle</th>
+                    <th style="padding:6px 8px;font-weight:600;text-align:right">Local</th>
+                    <th style="padding:6px 8px;font-weight:600;text-align:right">Depósito</th>
+                    <th style="padding:6px 8px;font-weight:600;text-align:right">Total</th>
+                    <th style="padding:6px 8px;font-weight:600;text-align:center">Estado</th>
+                  </tr>
+                </thead>
+                <tbody id="rep-bamb-stock-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="margin-bottom:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+              <div class="card-title" style="margin:0"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13"/><path d="M19 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7" transform="translate(0 0)"/><path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.8 8 0 0 1 12 8a4.8 8 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"/></svg> Pedidos pendientes con bambalinas
+                <span style="font-size:11px;font-weight:400;color:var(--muted)">(pedidos en estado Pendiente)</span>
+              </div>
+              <button class="btn btn-sm" onclick="bambImprimirPendientes()" id="btn-bamb-imprimir" style="display:none">Imprimir lista</button>
+            </div>
+            <div style="overflow-x:auto">
+              <table style="width:100%;border-collapse:collapse;font-size:12px">
+                <thead>
+                  <tr style="text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">
+                    <th style="padding:6px 8px;font-weight:600">Producto</th>
+                    <th class="bx-hm" style="padding:6px 8px;font-weight:600">Color</th>
+                    <th class="bx-hm" style="padding:6px 8px;font-weight:600">Lazo / detalle</th>
+                    <th class="bx-hm" style="padding:6px 8px;font-weight:600">Caja</th>
+                    <th style="padding:6px 8px;font-weight:600;text-align:right">Cant.</th>
+                    <th style="padding:6px 8px;font-weight:600">Pedidos / Clientes</th>
+                  </tr>
+                </thead>
+                <tbody id="rep-bamb-pend-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <div class="tab-panel" id="rep-tab-textiles">
           <!-- KPIs -->
           <div class="grid g4" id="rep-tex-kpis" style="margin-bottom:14px"></div>
@@ -7373,7 +7558,7 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v16.16: NUEVO (Costos de materiales) Nueva secci\u00f3n \u00abCostos de materiales\u00bb en el men\u00fa, debajo del Editor de Producto. Es una lista con el precio de cada material: por unidad (un bol\u00edgrafo, una caja: precio de compra y cu\u00e1ntas unidades trae), por \u00e1rea (vinil, laminado: por cm\u00b2 o por rollo) y equipos (con su vida \u00fatil). Se sincroniza entre dispositivos y solo la ve el administrador. Bot\u00f3n \u00abTraer de mis productos\u00bb: busca en los productos del Editor las l\u00edneas que ya tienes (con su precio) y las agrega a la lista de una vez, para no escribirlas de nuevo. EDITOR: al escribir el nombre en una l\u00ednea de Costos directos, Material por \u00e1rea o Equipos, la app sugiere los materiales de la lista; al elegir uno llena sola el precio y la cantidad (la cantidad a usar la pones t\u00fa). Si el nombre que escribes no est\u00e1 en la lista, aparece \u00ab\uff0b Guardar en la lista de costos\u00bb con el formulario ya lleno. Si cambias el precio de un material en la lista, tus productos NO cambian solos: al abrir un producto, cada l\u00ednea que usa ese material muestra un aviso con el precio de antes y el de ahora, y t\u00fa eliges \u00abActualizar\u00bb o \u00abMantener el m\u00edo\u00bb. Requiere la tabla costos_materiales en Supabase. Tambi\u00e9n: los nombres con comillas en el Editor ya no se cortan al reabrir el producto. \nv16.15: NUEVO (Sincronizaci\u00f3n \u00b7 Cat\u00e1logo) Aviso antes de subir un precio viejo. Cuando este dispositivo va a subir un producto y la nube tiene un precio (o recargos por talla) distinto al que este dispositivo conoc\u00eda, aparece un aviso con los dos precios y eliges: \u00abMantener el de la nube\u00bb (este producto se actualiza con lo de la nube) o \u00abSubir el de este dispositivo\u00bb. Cerrar el aviso equivale a mantener el de la nube: no se sube nada sin que lo confirmes. Funciona igual con los productos que quedaron en espera sin conexi\u00f3n y con las importaciones por CSV. No aparece cuando el \u00fanico que cambi\u00f3 el precio eres t\u00fa en ese dispositivo. No cubre todav\u00eda el precio manual del Editor. NUEVO: el tipo de venta del Editor ahora se guarda en la nube (columna tipo_venta en productos_pers, ya creada en Supabase). \nv16.14: NUEVO (Editor \u00b7 Lista completa) El panel \u00abLista\u00bb ahora tiene filtros por categor\u00eda, por tipo de venta (detal / mayor / sin definir) y por estado, adem\u00e1s del buscador, y muestra una columna \u00abTipo de venta\u00bb. ARREGLADO: al abrir un producto desde la lista (o desde el buscador del editor) ya no queda siempre en \u00abAl detal\u00bb; ahora toma el tipo de venta del producto del cat\u00e1logo con el mismo SKU. Causa: la tabla productos_pers no guarda el tipo de venta, as\u00ed que se perd\u00eda al sincronizar y el editor lo rellenaba con detal. Los productos que no est\u00e1n en el cat\u00e1logo siguen abriendo en detal y se ven con \u00ab\u2014\u00bb en la lista. \nv16.13: ARREGLADO (Inicio de sesi\u00f3n) El bot\u00f3n \u00ab\u00bfOlvidaste tu contrase\u00f1a?\u00bb ahora funciona completo. Antes enviaba el correo, pero al abrir el enlace la app te dejaba entrar sin pedirte una contrase\u00f1a nueva, y sus avisos (correo enviado o error) quedaban tapados por la pantalla de login y no se ve\u00edan. Ahora: (1) los avisos salen dentro de la tarjeta de login; (2) al abrir el enlace del correo aparece \u00abCrea tu contrase\u00f1a nueva\u00bb (con ojo para ver lo que escribes) y al guardar entras directo; (3) si el enlace venci\u00f3 o ya se us\u00f3, te lo dice; (4) si Supabase bloquea por demasiados correos, lo explica (espera 1 hora); (5) despu\u00e9s de pedir un enlace hay que esperar 60 segundos para pedir otro, as\u00ed no se gasta el l\u00edmite de correos.\nv16.12: NUEVO (Inicio de sesi\u00f3n) Ahora el campo de contrase\u00f1a tiene un ojo a la derecha: lo tocas y ves lo que escribiste, lo tocas otra vez y se oculta. Al entrar o cerrar sesi\u00f3n la contrase\u00f1a vuelve a quedar oculta sola. No cambia nada m\u00e1s del login.\nv16.11: NUEVO (Cat\u00e1logo) Opci\u00f3n \u00abCon caja\u00bb para productos como las bambalinas de 7 y 8 cm. En la ficha del producto (con variantes activadas) activas \u00abSe puede vender con caja\u00bb y pones cu\u00e1nto suma la caja al precio final y al costo. Al vender (POS, pedidos y cotizaciones) aparece el campo \u00abSin caja / Con caja (+$X)\u00bb junto al color y al lazo. Adem\u00e1s, por producto puedes decidir si la caja se descuenta del inventario: eliges qu\u00e9 insumo es la caja y cada venta \u00abCon caja\u00bb resta 1 unidad (si anulas, cancelas o editas el pedido, se devuelve). Si no lo activas, la caja solo suma precio y costo. Se guarda dentro de los datos del producto que ya se sincronizan, sin tablas ni columnas nuevas. Los productos que ya tienes quedan exactamente igual.\nv16.10: CORREGIDO (Catálogo) Un producto que solo tiene característica (ej. bambalina con luces: solo color de lazo, sin colores ni tallas) ahora se reconoce como producto con variantes: al reabrir la ficha se ven sus características y en POS, pedidos e inventario pide solo ese campo, sin exigir color. Los demás productos quedan igual.\n' +
+  return 'v16.17: NUEVO (Reportes \u00b7 Bambalinas) Pesta\u00f1a nueva \u00abBambalinas\u00bb en Reportes, solo para ellas: ventas por color y lazo (con o sin caja), stock por color y pedidos pendientes, con bot\u00f3n para imprimir la lista. Las bambalinas YA NO aparecen en Textiles (ni en sus ventas, ni en el stock, ni en la Orden de Producci\u00f3n, ni en las listas del proveedor, ni en el PDF de Textiles). La app las reconoce porque el nombre o la categor\u00eda del producto dice \u00abbambalina\u00bb; no hace falta tocar nada en Supabase. MEJORADO (Cuentas y Reportes en celular) Cuentas: botones en cuadr\u00edcula con tama\u00f1o c\u00f3modo para el dedo, tarjetas m\u00e1s claras y, dentro de una cuenta, los movimientos se ven como una lista de tarjetas (fecha, concepto y monto a simple vista) en vez de una tabla que se desliza; el bot\u00f3n \u00abVolver\u00bb se queda arriba al bajar. Reportes: el filtro de per\u00edodo se acomoda en pantalla chica, los indicadores se ven de dos en dos, las pesta\u00f1as se deslizan con borde suave y las tablas anchas muestran una sombra en el borde cuando hay m\u00e1s para deslizar. Respeta la opci\u00f3n de movimiento reducido del tel\u00e9fono. \nv16.16: NUEVO (Costos de materiales) Nueva secci\u00f3n \u00abCostos de materiales\u00bb en el men\u00fa, debajo del Editor de Producto. Es una lista con el precio de cada material: por unidad (un bol\u00edgrafo, una caja: precio de compra y cu\u00e1ntas unidades trae), por \u00e1rea (vinil, laminado: por cm\u00b2 o por rollo) y equipos (con su vida \u00fatil). Se sincroniza entre dispositivos y solo la ve el administrador. Bot\u00f3n \u00abTraer de mis productos\u00bb: busca en los productos del Editor las l\u00edneas que ya tienes (con su precio) y las agrega a la lista de una vez, para no escribirlas de nuevo. EDITOR: al escribir el nombre en una l\u00ednea de Costos directos, Material por \u00e1rea o Equipos, la app sugiere los materiales de la lista; al elegir uno llena sola el precio y la cantidad (la cantidad a usar la pones t\u00fa). Si el nombre que escribes no est\u00e1 en la lista, aparece \u00ab\uff0b Guardar en la lista de costos\u00bb con el formulario ya lleno. Si cambias el precio de un material en la lista, tus productos NO cambian solos: al abrir un producto, cada l\u00ednea que usa ese material muestra un aviso con el precio de antes y el de ahora, y t\u00fa eliges \u00abActualizar\u00bb o \u00abMantener el m\u00edo\u00bb. Requiere la tabla costos_materiales en Supabase. Tambi\u00e9n: los nombres con comillas en el Editor ya no se cortan al reabrir el producto. \nv16.15: NUEVO (Sincronizaci\u00f3n \u00b7 Cat\u00e1logo) Aviso antes de subir un precio viejo. Cuando este dispositivo va a subir un producto y la nube tiene un precio (o recargos por talla) distinto al que este dispositivo conoc\u00eda, aparece un aviso con los dos precios y eliges: \u00abMantener el de la nube\u00bb (este producto se actualiza con lo de la nube) o \u00abSubir el de este dispositivo\u00bb. Cerrar el aviso equivale a mantener el de la nube: no se sube nada sin que lo confirmes. Funciona igual con los productos que quedaron en espera sin conexi\u00f3n y con las importaciones por CSV. No aparece cuando el \u00fanico que cambi\u00f3 el precio eres t\u00fa en ese dispositivo. No cubre todav\u00eda el precio manual del Editor. NUEVO: el tipo de venta del Editor ahora se guarda en la nube (columna tipo_venta en productos_pers, ya creada en Supabase). \nv16.14: NUEVO (Editor \u00b7 Lista completa) El panel \u00abLista\u00bb ahora tiene filtros por categor\u00eda, por tipo de venta (detal / mayor / sin definir) y por estado, adem\u00e1s del buscador, y muestra una columna \u00abTipo de venta\u00bb. ARREGLADO: al abrir un producto desde la lista (o desde el buscador del editor) ya no queda siempre en \u00abAl detal\u00bb; ahora toma el tipo de venta del producto del cat\u00e1logo con el mismo SKU. Causa: la tabla productos_pers no guarda el tipo de venta, as\u00ed que se perd\u00eda al sincronizar y el editor lo rellenaba con detal. Los productos que no est\u00e1n en el cat\u00e1logo siguen abriendo en detal y se ven con \u00ab\u2014\u00bb en la lista. \nv16.13: ARREGLADO (Inicio de sesi\u00f3n) El bot\u00f3n \u00ab\u00bfOlvidaste tu contrase\u00f1a?\u00bb ahora funciona completo. Antes enviaba el correo, pero al abrir el enlace la app te dejaba entrar sin pedirte una contrase\u00f1a nueva, y sus avisos (correo enviado o error) quedaban tapados por la pantalla de login y no se ve\u00edan. Ahora: (1) los avisos salen dentro de la tarjeta de login; (2) al abrir el enlace del correo aparece \u00abCrea tu contrase\u00f1a nueva\u00bb (con ojo para ver lo que escribes) y al guardar entras directo; (3) si el enlace venci\u00f3 o ya se us\u00f3, te lo dice; (4) si Supabase bloquea por demasiados correos, lo explica (espera 1 hora); (5) despu\u00e9s de pedir un enlace hay que esperar 60 segundos para pedir otro, as\u00ed no se gasta el l\u00edmite de correos.\nv16.12: NUEVO (Inicio de sesi\u00f3n) Ahora el campo de contrase\u00f1a tiene un ojo a la derecha: lo tocas y ves lo que escribiste, lo tocas otra vez y se oculta. Al entrar o cerrar sesi\u00f3n la contrase\u00f1a vuelve a quedar oculta sola. No cambia nada m\u00e1s del login.\nv16.11: NUEVO (Cat\u00e1logo) Opci\u00f3n \u00abCon caja\u00bb para productos como las bambalinas de 7 y 8 cm. En la ficha del producto (con variantes activadas) activas \u00abSe puede vender con caja\u00bb y pones cu\u00e1nto suma la caja al precio final y al costo. Al vender (POS, pedidos y cotizaciones) aparece el campo \u00abSin caja / Con caja (+$X)\u00bb junto al color y al lazo. Adem\u00e1s, por producto puedes decidir si la caja se descuenta del inventario: eliges qu\u00e9 insumo es la caja y cada venta \u00abCon caja\u00bb resta 1 unidad (si anulas, cancelas o editas el pedido, se devuelve). Si no lo activas, la caja solo suma precio y costo. Se guarda dentro de los datos del producto que ya se sincronizan, sin tablas ni columnas nuevas. Los productos que ya tienes quedan exactamente igual.\nv16.10: CORREGIDO (Catálogo) Un producto que solo tiene característica (ej. bambalina con luces: solo color de lazo, sin colores ni tallas) ahora se reconoce como producto con variantes: al reabrir la ficha se ven sus características y en POS, pedidos e inventario pide solo ese campo, sin exigir color. Los demás productos quedan igual.\n' +
   'v16.09: NUEVO (Catálogo) Productos con dos variantes, como las bambalinas (color de bambalina + color de lazo): cada producto puede tener sus propios nombres de campo («Color de bambalina», «Color de lazo…»), la característica ya funciona también en productos solo con colores o sin colores ni tallas (solo lazo), y un interruptor «La característica no cuenta en inventario» para llevar el stock solo por color. Los productos que ya tienes quedan exactamente igual.\n' +
   'v16.08: CORREGIDO (PWA) La app ya no se queda mostrando una copia vieja de index.html: el service worker ahora busca primero la versi\u00f3n m\u00e1s nueva en internet (usa la copia guardada solo sin conexi\u00f3n), y si detecta que la p\u00e1gina y el service worker son de versiones distintas limpia la cach\u00e9 y recarga sola (una vez). No toca tus datos.\nv16.07: CAMBIO (Editor \u00b7 lista completa) El bot\u00f3n "Lista" ahora abre un panel dentro de la app (sin ventana emergente, funciona en el celular y en la app instalada).\nv16.06: NUEVO (Editor \u00b7 lista completa) Bot\u00f3n "Lista" que abre una ventana nueva con todos los productos del editor (buscador, SKU, categor\u00eda, estado, precio y si est\u00e1n en el cat\u00e1logo); clic en un producto lo carga en el editor. CORREGIDO: "Agregar al Cat\u00e1logo" ahora tambi\u00e9n guarda el producto en el editor (ya no desaparece del buscador del editor).\nv16.05: NUEVO (Textiles \u00b7 talla 16) \u2014 la talla 16 (ni\u00f1os grandes) ahora se ofrece como 16D (Dama) y 16C (Caballero), igual que las tallas de letras. Los pedidos antiguos con talla 16 no se modifican. \nv16.04: NUEVO (Textiles \u00b7 pijamas y producci\u00f3n) \u2014 1) Cada producto textil puede marcarse \u00abEs pijama\u00bb y tener una \u00abTela de la franela\u00bb (Micro durazno, Algod\u00f3n; editable en Configuraci\u00f3n \u2192 Textiles \u00b7 telas) que solo se usa en reportes. 2) Nuevo \u00abEstampado\u00bb opcional (Configuraci\u00f3n \u2192 Textiles \u00b7 estampados): se marcan por producto y se elige al cotizar o crear el pedido; aparece en pedido, cotizaci\u00f3n y WhatsApp. 3) Reportes \u2192 Textiles: listas separadas para el proveedor (Franelas por tela, color y talla; Monos por estampado, talla y bota/jogger), imprimibles. 4) Orden de Producci\u00f3n: marcas con casillas qu\u00e9 pedidos van a producci\u00f3n; queda un Historial de producci\u00f3n con fecha, con reimpresi\u00f3n y bot\u00f3n Deshacer. 5) Icono de nota en los pedidos con nota escrita a mano y el n\u00famero PED abre el pedido. \nv16.03: NUEVO (Textiles \u00b7 grupos propios) \u2014 las tallas de tus grupos de tallas (ej: Mascotas \u2192 Grande) ya pueden tener recargo de precio y de costo. En el producto, bajo \u00abRecargo por talla\u00bb, aparece cada talla de tu grupo: en Grande pones Precio final +$2 y Costo +$0,8. Funciona igual que XL/XXL: se aplica en POS, pedidos y cotizaciones. \nv16.02: ICONOS (Configuraci\u00f3n y Editor de producto) \u2014 los emojis de Configuraci\u00f3n (Textiles \u00b7 tallas, Textiles \u00b7 caracter\u00edsticas, Ver detalles del almacenamiento, Actualizar ahora y los botones de tallas) se cambiaron por los iconos de l\u00ednea que usa el resto de GestioMada. En el editor de producto se quit\u00f3 el emoji de la opci\u00f3n \u00abLocal\u00bb. \nv16.01: NUEVO (Textiles · tallas) En Configuración → Textiles · tallas ya puedes crear tus propios grupos de tallas (ej: «Mascotas» con Pequeña y Grande): escribes el nombre, lo creas y le agregas sus tallas. Puedes renombrarlo, ordenarlo o borrarlo. El grupo aparece al marcar un producto como textil, junto a Niños, Adultos y Bodys. Se sincroniza entre dispositivos. \nv16.00: NUEVO (Textiles) Cada producto textil puede tener sus propias caracter\u00edsticas (se eligen al crear o editar el producto). Los productos que no se tocan siguen usando la lista general; si desmarcas todas, el campo no aparece en ventas ni pedidos. Requiere la columna textil_caracteristicas en Supabase. \u00b7 v15.99: NUEVO (Textiles) Las características de los productos textiles (antes fijas: Con C/B y Sin C/B) ahora se configuran en Configuración → Textiles · características. Puedes agregar o quitar las que necesites (ej: Mangas rosadas) y se sincronizan entre dispositivos. Lo ya registrado no se modifica. \u00b7 v15.98: AJUSTE (Ventas) \u2014 el filtro Detal/Mayor del punto de venta ahora queda al lado derecho del buscador (antes quedaba debajo en pantallas peque\u00f1as).\n'
     + 'v15.97: NUEVO (Filtro Detal/Mayor) \u2014 en Cat\u00e1logo y en Ventas (Nueva Venta) hay un filtro para ver solo productos al detal o solo al mayor. Aparece cuando los tipos de venta est\u00e1n activados en Configuraci\u00f3n. El resto de la app no cambia.\n'
@@ -19152,12 +19337,171 @@ function repTab(tab, btn){
   document.querySelectorAll('#view-reportes .tab-panel').forEach(p=>p.classList.remove('active'));
   if(btn) btn.classList.add('active');
   const p = qs('#rep-tab-'+tab); if(p) p.classList.add('active');
-  const renders = { ventas:renderRepVentas, productos:renderRepProductos, pedidos:renderRepPedidos, clientes:renderRepClientes, caja:renderRepCaja, inventario:renderRepInventario, comisiones:renderRepComisiones, textiles:renderRepTextiles };
+  try{ if(btn && btn.scrollIntoView) btn.scrollIntoView({inline:'center',block:'nearest',behavior:(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)?'auto':'smooth'}); }catch(e){}
+  const renders = { ventas:renderRepVentas, productos:renderRepProductos, pedidos:renderRepPedidos, clientes:renderRepClientes, caja:renderRepCaja, inventario:renderRepInventario, comisiones:renderRepComisiones, textiles:renderRepTextiles, bambalinas:renderRepBambalinas };
   if(renders[tab]) renders[tab]();
+}
+
+/* ══════════ v16.17: BAMBALINAS — sección propia (ya no se mezclan con Textiles) ══════════
+   Un producto es "bambalina" si su nombre o su categoría dice «bambalina». No hay columna
+   nueva: así funciona igual en todos los dispositivos y con los productos que ya existen. */
+function _bambTxt(s){ return /bambalin/i.test(String(s==null?'':s)); }
+function esBambalina(p){ return !!p && (_bambTxt(p.nombre) || _bambTxt(p.categoria)); }
+function _bambMapa(cat){ const m=new Map(); (cat||[]).forEach(p=>{ if(p && p.id!=null) m.set(String(p.id), esBambalina(p)); }); return m; }
+function _bambIdDe(it){
+  if(!it) return '';
+  const v = (it.id_prod!=null&&it.id_prod!=='') ? it.id_prod : ((it.prod_id!=null&&it.prod_id!=='') ? it.prod_id : it.producto_id);
+  return (v==null||v==='') ? '' : String(v);
+}
+function itemEsBambalina(it, mapa){
+  if(!it) return false;
+  const id=_bambIdDe(it);
+  if(id && mapa && mapa.has(id)) return !!mapa.get(id);
+  return _bambTxt(it.nombre);
+}
+// Línea textil de verdad: tiene talla o color y NO es bambalina
+function itemEsTextilVar(it, mapa){ return !!(it && (it.talla||it.color)) && !itemEsBambalina(it, mapa); }
+
+let _bambFilasPend = [];
+function renderRepBambalinas(){
+  const cat=loadCat(), ter=loadTer(), peds=loadPed(), ventas=loadVen();
+  const bm=_bambMapa(cat);
+  const desde=_repDesde?new Date(_repDesde):null;
+  const hasta=_repHasta?new Date(_repHasta+' 23:59:59'):null;
+
+  // Selector de productos: solo bambalinas
+  const selProd=qs('#rep_bamb_prod');
+  const curVal=selProd?selProd.value:'';
+  if(selProd){
+    selProd.innerHTML='<option value="">Todas las bambalinas</option>'+cat.filter(esBambalina).map(p=>`<option value="${esc(String(p.id))}"${String(p.id)===curVal?' selected':''}>${esc(p.nombre)}</option>`).join('');
+  }
+  const filtroProd=curVal;
+  const pasaFiltro=it=>!filtroProd || _bambIdDe(it)===filtroProd;
+  const fmtUsd=v=>'$'+round2(v).toFixed(2).replace('.',',');
+
+  // ── Ventas por variante (pedidos entregados + ventas directas) ──
+  const mapa={};
+  const acum=(it,total)=>{
+    if(!itemEsBambalina(it,bm) || !pasaFiltro(it)) return;
+    const k=[_bambIdDe(it)||it.nombre, it.color||'', it.caracteristica||'', it.con_caja?'1':''].join('|');
+    if(!mapa[k]) mapa[k]={nombre:it.nombre,color:it.color||'',caract:it.caracteristica||'',caja:!!it.con_caja,cant:0,ingresos:0};
+    mapa[k].cant+=it.cant||1;
+    mapa[k].ingresos+=total;
+  };
+  peds.filter(p=>{
+    if(p.estado!=='entregado') return false;
+    const f=new Date(p.fecha_pedido||p.fecha_creado||0);
+    if(desde&&f<desde) return false;
+    if(hasta&&f>hasta) return false;
+    return true;
+  }).forEach(p=>(p.items||[]).forEach(it=>acum(it, (it.precio_unit||0)*(it.cant||1))));
+  ventas.filter(v=>{
+    if(v.estado==='anulada') return false;
+    const f=new Date(v.fecha||0);
+    if(desde&&f<desde) return false;
+    if(hasta&&f>hasta) return false;
+    return true;
+  }).forEach(v=>(v.items||[]).forEach(it=>acum(it, (it.precio_unit||0)*(it.cant||1))));
+  const filas=Object.values(mapa).sort((a,b)=>b.cant-a.cant);
+  const totalUnids=filas.reduce((a,r)=>a+r.cant,0);
+  const totalIng=filas.reduce((a,r)=>a+r.ingresos,0);
+  const top=filas[0];
+
+  // ── Stock ──
+  const terB=ter.filter(t=>itemEsBambalina(t,bm) && pasaFiltro(t));
+  const agotadas=terB.filter(t=>((t.stock||0)+(t.stock_dep||0))===0).length;
+  const criticas=terB.filter(t=>((t.stock||0)+(t.stock_dep||0))<=(t.stock_min||0)).length;
+
+  const kpiWrap=qs('#rep-bamb-kpis');
+  if(kpiWrap) kpiWrap.innerHTML=[
+    {label:'Unidades vendidas',val:totalUnids,color:'var(--brand)'},
+    {label:'Ingresos USD',val:fmtUsd(totalIng),color:'#0F6E56'},
+    {label:'Variante más vendida',val:top?`${esc(top.color||top.nombre)}${top.caract?' · '+esc(top.caract):''}`:'-',color:'#7C3AED',small:true},
+    {label:'Stock crítico / agotado',val:`${criticas} / ${agotadas}`,color:agotadas>0?'#dc2626':'#f59e0b'}
+  ].map(k=>`<div class="card" style="text-align:center;padding:12px 8px">
+    <div style="font-size:11px;color:var(--muted);margin-bottom:4px">${k.label}</div>
+    <div style="font-size:${k.small?'13':'18'}px;font-weight:700;color:${k.color}">${k.val}</div>
+  </div>`).join('');
+
+  const pill=(txt,bg,fg)=>`<span style="background:${bg};color:${fg};font-size:11px;padding:1px 8px;border-radius:999px;font-weight:600;white-space:nowrap">${txt}</span>`;
+  const varTxt=(color,caract,caja)=>[color,caract,caja?'Con caja':''].filter(Boolean).map(esc).join(' · ');
+  const cajaTxt=r=>r.caja?pill('Con caja','#E6F1FB','#185FA5'):'<span style="color:var(--muted)">—</span>';
+
+  const tb=qs('#rep-bamb-ventas-body');
+  if(tb){
+    tb.innerHTML = !filas.length
+      ? `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">No hay ventas de bambalinas en este período.</td></tr>`
+      : filas.map((r,i)=>`<tr style="border-bottom:1px solid var(--border);background:${i%2?'var(--bg2)':''}">
+        <td style="padding:7px 8px;font-weight:500">${esc(r.nombre)}<span class="bx-var">${varTxt(r.color,r.caract,r.caja)}</span></td>
+        <td class="bx-hm" style="padding:7px 8px">${esc(r.color||'—')}</td>
+        <td class="bx-hm" style="padding:7px 8px;font-size:11px;color:var(--muted)">${esc(r.caract||'—')}</td>
+        <td class="bx-hm" style="padding:7px 8px">${cajaTxt(r)}</td>
+        <td style="padding:7px 8px;text-align:right;font-weight:700">${r.cant}</td>
+        <td style="padding:7px 8px;text-align:right;color:#0F6E56;font-weight:600">${fmtUsd(r.ingresos)}</td>
+      </tr>`).join('');
+  }
+
+  const sb=qs('#rep-bamb-stock-body');
+  if(sb){
+    const rows=terB.slice().sort((a,b)=>String(a.nombre||'').localeCompare(String(b.nombre||''),'es')||String(a.color||'').localeCompare(String(b.color||''),'es'));
+    sb.innerHTML = !rows.length
+      ? `<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">No hay stock de bambalinas registrado.<br><span style="font-size:11px">Agrega cada color en Inventario → Productos terminados.</span></td></tr>`
+      : rows.map((t,i)=>{
+        const total=(t.stock||0)+(t.stock_dep||0), min=t.stock_min||0;
+        const estado=total===0?pill('Agotado','#FCEBEB','#791F1F'):(total<=min?pill('Stock bajo','#FEF3C7','#92400E'):pill('OK','#D1FAE5','#065F46'));
+        return `<tr style="border-bottom:1px solid var(--border);background:${total===0?'#fff8f8':(total<=min?'#fffbf0':(i%2?'var(--bg2)':''))}">
+          <td style="padding:7px 8px;font-weight:500">${esc(t.nombre)}<span class="bx-var">${varTxt(t.color,t.caracteristica,false)}</span></td>
+          <td class="bx-hm" style="padding:7px 8px">${esc(t.color||'—')}</td>
+          <td class="bx-hm" style="padding:7px 8px;font-size:11px;color:var(--muted)">${esc(t.caracteristica||'—')}</td>
+          <td style="padding:7px 8px;text-align:right">${t.stock||0}</td>
+          <td style="padding:7px 8px;text-align:right">${t.stock_dep||0}</td>
+          <td style="padding:7px 8px;text-align:right;font-weight:700">${total}</td>
+          <td style="padding:7px 8px;text-align:center">${estado}</td>
+        </tr>`;
+      }).join('');
+  }
+
+  // ── Pedidos pendientes con bambalinas ──
+  const pend=peds.filter(p=>p.estado==='pendiente' && (p.items||[]).some(it=>itemEsBambalina(it,bm)&&pasaFiltro(it)));
+  const agr={};
+  pend.forEach(p=>{
+    const ref=_texPedRef(p);
+    (p.items||[]).forEach(it=>{
+      if(!itemEsBambalina(it,bm)||!pasaFiltro(it)) return;
+      const k=[_bambIdDe(it)||it.nombre, it.color||'', it.caracteristica||'', it.con_caja?'1':''].join('|');
+      if(!agr[k]) agr[k]={nombre:it.nombre,color:it.color||'',caract:it.caracteristica||'',caja:!!it.con_caja,cant:0,pedidos:[]};
+      agr[k].cant+=it.cant||1;
+      if(!agr[k].pedidos.find(x=>String(x.id)===String(ref.id))) agr[k].pedidos.push(ref);
+    });
+  });
+  _bambFilasPend=Object.values(agr).sort((a,b)=>_texCmp(a.nombre,b.nombre)||_texCmp(a.color,b.color)||_texCmp(a.caract,b.caract));
+  const pb=qs('#rep-bamb-pend-body');
+  if(pb){
+    pb.innerHTML = !_bambFilasPend.length
+      ? `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">No hay pedidos pendientes con bambalinas.</td></tr>`
+      : _bambFilasPend.map((r,i)=>`<tr style="border-bottom:1px solid var(--border);background:${i%2?'var(--bg2)':''}">
+        <td style="padding:8px;font-weight:500">${esc(r.nombre)}<span class="bx-var">${varTxt(r.color,r.caract,r.caja)}</span></td>
+        <td class="bx-hm" style="padding:8px">${esc(r.color||'—')}</td>
+        <td class="bx-hm" style="padding:8px;font-size:11px;color:var(--muted)">${esc(r.caract||'—')}</td>
+        <td class="bx-hm" style="padding:8px">${cajaTxt(r)}</td>
+        <td style="padding:8px;text-align:right;font-size:15px;font-weight:800;color:#185FA5">${r.cant}</td>
+        <td style="padding:8px;line-height:1.8">${r.pedidos.map(_texTagPed).join('')}</td>
+      </tr>`).join('');
+  }
+  const bi=qs('#btn-bamb-imprimir'); if(bi) bi.style.display=_bambFilasPend.length?'':'none';
+}
+function bambImprimirPendientes(){
+  if(!_bambFilasPend.length){ toast('No hay pedidos pendientes con bambalinas','warn'); return; }
+  const pedTxt=r=>r.pedidos.map(p=>p.num+(p.cliente?' · '+p.cliente:'')).join(', ');
+  const g={ titulo:'Bambalinas pendientes', cols:['Producto','Color','Lazo / detalle','Caja','Cant.','Pedidos'],
+    rows:_bambFilasPend.map(r=>[r.nombre,r.color||'—',r.caract||'—',r.caja?'Con caja':'—',r.cant,pedTxt(r)]) };
+  const fecha=new Date().toLocaleDateString('es-VE');
+  _texAbrirImpresion('Bambalinas pendientes','Fecha: '+fecha,[g]);
 }
 
 function renderRepTextiles(){
   const cat=loadCat(), ter=loadTer(), peds=loadPed(), ventas=loadVen();
+  const bm=_bambMapa(cat); // v16.17: las bambalinas tienen su propia pestaña
   const desde=_repDesde?new Date(_repDesde):null;
   const hasta=_repHasta?new Date(_repHasta+' 23:59:59'):null;
   const filtroProd=qs('#rep_tex_prod')?.value||'';
@@ -19165,7 +19509,7 @@ function renderRepTextiles(){
   // Poblar selector de productos textiles
   const selProd=qs('#rep_tex_prod');
   if(selProd){
-    const textiles=cat.filter(p=>p.es_textil);
+    const textiles=cat.filter(p=>p.es_textil && !esBambalina(p));
     const curVal=selProd.value;
     selProd.innerHTML='<option value="">Todos los productos textiles</option>'+textiles.map(p=>`<option value="${p.id}"${String(p.id)===curVal?' selected':''}>${esc(p.nombre)}</option>`).join('');
   }
@@ -19175,6 +19519,7 @@ function renderRepTextiles(){
   function claveVar(it){ return `${it.id_prod||it.nombre}|${it.talla||''}|${it.color||''}|${it.caracteristica||''}`; }
   function acumVar(it, totalItem){
     if(!(it.talla||it.color)) return; // solo con variante
+    if(itemEsBambalina(it,bm)) return; // v16.17: van en la pestaña Bambalinas
     const prod=it.id_prod?cat.find(p=>String(p.id)===String(it.id_prod)):null;
     if(filtroProd && (!prod||String(prod.id)!==filtroProd)) return;
     const k=claveVar(it);
@@ -19205,7 +19550,7 @@ function renderRepTextiles(){
   const totalUnids=filas.reduce((a,r)=>a+r.cant,0);
   const totalIngresos=filas.reduce((a,r)=>a+r.ingresos,0);
   const top=filas.sort((a,b)=>b.cant-a.cant)[0];
-  const terTextiles=ter.filter(t=>(t.talla||t.color)&&(!filtroProd||String(t.prod_id)===filtroProd));
+  const terTextiles=ter.filter(t=>(t.talla||t.color)&&!itemEsBambalina(t,bm)&&(!filtroProd||String(t.prod_id)===filtroProd));
   const stockCritico=terTextiles.filter(t=>(t.stock+t.stock_dep)<=t.stock_min).length;
   const stockAgotado=terTextiles.filter(t=>(t.stock+t.stock_dep)===0).length;
 
@@ -19411,18 +19756,19 @@ function _texTagPed(r){
     + esc(r.num) + (r.nota?' <span title="'+esc(r.nota).replace(/"/g,'&quot;')+'" style="color:#b45309;margin-left:2px">'+ICO_NOTA+'</span>':'')
     + (r.cliente ? ' · ' + esc(r.cliente) : '') + '</span>';
 }
-function _texPedidosPend(peds){ return peds.filter(p=>p.estado==='pendiente' && (p.items||[]).some(it=>it.talla||it.color)); }
+function _texPedidosPend(peds){ const bm=_bambMapa(loadCat()); return peds.filter(p=>p.estado==='pendiente' && (p.items||[]).some(it=>itemEsTextilVar(it,bm))); }
 function _texPedidosSel(peds){ return _texPedidosPend(peds).filter(p=>!_texDesel.has(String(p.id))); }
 const _texCmp=(a,b)=>String(a||'').localeCompare(String(b||''),'es',{numeric:true});
 
 // Calcula las tres listas (general, franelas, monos) a partir de los pedidos dados
 function _texCalcListas(cat, selPeds, filtroProd){
   const gen={}, fran={}, mono={};
+  const bm=_bambMapa(cat);
   const addPed=(g,r)=>{ if(!g.pedidos.find(x=>String(x.id)===String(r.id))) g.pedidos.push(r); };
   selPeds.forEach(p=>{
     const ref=_texPedRef(p);
     (p.items||[]).forEach(it=>{
-      if(!(it.talla||it.color)) return;
+      if(!itemEsTextilVar(it,bm)) return;
       const prod = it.id_prod ? cat.find(c=>String(c.id)===String(it.id_prod)) : null;
       if(filtroProd && (!prod || String(prod.id)!==filtroProd)) return;
       const cant=it.cant||1;
@@ -19474,6 +19820,7 @@ function texSelTodos(v){ const pend=_texPedidosPend(loadPed()); if(v) _texDesel.
 
 function _renderOrdenProduccion(cat, peds, filtroProd){
   const pend = _texPedidosPend(peds);
+  const _bmP = _bambMapa(cat);
   const selPeds = _texSelPeds_(pend);
   const L = _texCalcListas(cat, selPeds, filtroProd);
   const filas = L.gen.map(r=>({...r}));
@@ -19487,7 +19834,7 @@ function _renderOrdenProduccion(cat, peds, filtroProd){
       + '<div style="display:flex;gap:6px"><button class="btn btn-sm" onclick="texSelTodos(true)">Marcar todos</button><button class="btn btn-sm" onclick="texSelTodos(false)">Quitar todos</button></div></div>'
       + pend.map(p=>{
           const r=_texPedRef(p), on=!_texDesel.has(String(p.id));
-          const und=(p.items||[]).filter(it=>it.talla||it.color).reduce((a,it)=>a+(it.cant||1),0);
+          const und=(p.items||[]).filter(it=>itemEsTextilVar(it,_bmP)).reduce((a,it)=>a+(it.cant||1),0);
           return '<label style="display:flex;align-items:center;gap:8px;padding:4px 2px;border-top:1px solid var(--border);cursor:pointer;font-size:12px">'
             + '<input type="checkbox" '+(on?'checked ':'')+'onchange="texToggleSel(\''+String(p.id).replace(/'/g,"\\'")+'\',this.checked)"/>'
             + _texTagPed(r)
@@ -19671,8 +20018,8 @@ function renderReportes(){
   // Render tab activo
   const activeTab = qs('#rep-tabs .tab-btn.active');
   if(!activeTab) return;
-  const txt=activeTab.textContent.trim(); const tabId = txt.includes('Vent')?'ventas':txt.includes('Prod')?'productos':txt.includes('Ped')?'pedidos':txt.includes('Cli')?'clientes':txt.includes('Inv')?'inventario':txt.includes('Comis')?'comisiones':txt.includes('Tex')?'textiles':'caja';
-  const renders = { ventas:renderRepVentas, productos:renderRepProductos, pedidos:renderRepPedidos, clientes:renderRepClientes, caja:renderRepCaja, inventario:renderRepInventario, comisiones:renderRepComisiones, textiles:renderRepTextiles };
+  const txt=activeTab.textContent.trim(); const tabId = txt.includes('Vent')?'ventas':txt.includes('Prod')?'productos':txt.includes('Ped')?'pedidos':txt.includes('Cli')?'clientes':txt.includes('Inv')?'inventario':txt.includes('Comis')?'comisiones':txt.includes('Tex')?'textiles':txt.includes('Bamb')?'bambalinas':'caja';
+  const renders = { ventas:renderRepVentas, productos:renderRepProductos, pedidos:renderRepPedidos, clientes:renderRepClientes, caja:renderRepCaja, inventario:renderRepInventario, comisiones:renderRepComisiones, textiles:renderRepTextiles, bambalinas:renderRepBambalinas };
   if(renders[tabId]) renders[tabId]();
 }
 
@@ -20624,7 +20971,7 @@ function _pdfNuevaPaginaSiNecesario(doc, y, minSpace=100){
 
 function exportReportesPDF(){
   if(!window.jspdf){ toast('No se pudo cargar el generador de PDF (revisa tu conexión)','err'); return; }
-  renderRepVentas(); renderRepProductos(); renderRepClientes(); renderRepTextiles();
+  renderRepVentas(); renderRepProductos(); renderRepClientes(); renderRepTextiles(); renderRepBambalinas();
   const doc = _pdfDoc();
   const periodo = (_repDesde||_repHasta) ? `Período: ${_repDesde||'inicio'} → ${_repHasta||'hoy'}` : 'Período: todo el historial';
   let y = _pdfEncabezado(doc, 'Reporte de Negocio', periodo);
@@ -20660,12 +21007,22 @@ function exportReportesPDF(){
   y = _pdfSeccionTitulo(doc, 'Clientes sin actividad reciente', y);
   y = _pdfTabla(doc, [['Cliente','Teléfono']], _pdfFilasDiv(qs('#rep-clientes-inactivos')), y);
 
-  if(loadCat().some(p=>p.es_textil)){
+  if(loadCat().some(p=>p.es_textil && !esBambalina(p))){
     y = _pdfNuevaPaginaSiNecesario(doc, y);
     y = _pdfSeccionTitulo(doc, 'Textiles — ventas por variante', y);
     const tTex = qs('#rep-tex-ventas-body')?.closest('table');
     const d = _pdfTablaDOM(tTex);
     y = _pdfTabla(doc, [['Producto','Talla','Color','Detalle','Uds','Ingresos']], d.body, y);
+  }
+
+  if(loadCat().some(esBambalina)){
+    y = _pdfNuevaPaginaSiNecesario(doc, y);
+    y = _pdfSeccionTitulo(doc, 'Bambalinas — ventas por variante', y);
+    const tBam = qs('#rep-bamb-ventas-body')?.closest('table');
+    const tBamC = tBam ? tBam.cloneNode(true) : null;
+    if(tBamC) tBamC.querySelectorAll('.bx-var').forEach(e=>e.remove()); // el detalle ya va en sus propias columnas
+    const dB = _pdfTablaDOM(tBamC);
+    y = _pdfTabla(doc, [['Producto','Color','Lazo / detalle','Caja','Uds','Ingresos']], dB.body, y);
   }
 
   doc.save(`reporte-negocio-${_repDesde||'inicio'}-a-${_repHasta||'hoy'}.pdf`);
@@ -21056,12 +21413,12 @@ function renderCuentas(){
     const inactiva = c.activa===false;
     const v = saldos[c.id];
     const saldoHtml = inactiva ? `<span style="font-size:13px;color:var(--muted)">Inactiva</span>`
-      : verSaldos ? `<div style="font-size:20px;font-weight:700;color:${v<0?'var(--danger)':'var(--ink)'}">${_fmtSaldoCuenta(v,c.moneda)}</div>
+      : verSaldos ? `<div class="cta-saldo" style="font-size:20px;font-weight:700;color:${v<0?'var(--danger)':'var(--ink)'}">${_fmtSaldoCuenta(v,c.moneda)}</div>
           ${c.moneda!=='usd' && tasa>0 ? `<div style="font-size:11px;color:var(--muted)">\u2248 $ ${fmtBs(round2(v/tasa))}</div>` : ''}`
       : `<div style="font-size:20px;font-weight:700;color:var(--muted);letter-spacing:2px">\u2022\u2022\u2022\u2022\u2022\u2022</div>`;
     const mets = (c.metodos||[]).map(m=>`<span class="chip chip-info" style="font-size:10px">${esc(METODOS_LABEL[m]||m)}</span>`).join(' ') || '<span style="font-size:11px;color:var(--muted)">Sin m\u00e9todos</span>';
     const _clic = (verSaldos && !inactiva) ? ` onclick="abrirCuentaDetalle('${esc(String(c.id))}')" style="cursor:pointer;` : ` style="`;
-    return `<div class="card"${_clic}padding:14px;display:flex;flex-direction:column;gap:8px;${inactiva?'opacity:.6':''}">
+    return `<div class="card cta-card"${_clic}padding:14px;display:flex;flex-direction:column;gap:8px;${inactiva?'opacity:.6':''}">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
         <div style="font-weight:700;color:var(--brand2)">${esc(c.nombre)}</div>
         <span class="chip" style="font-size:10px">${esc(CUENTA_TIPOS[c.tipo]||c.tipo||'')} \u00b7 ${c.moneda==='usd'?'$':'Bs'}</span>
@@ -21071,7 +21428,7 @@ function renderCuentas(){
         <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">M\u00e9todos de pago</div>
         <div style="display:flex;flex-wrap:wrap;gap:4px">${mets}</div>
       </div>
-      <div style="display:flex;gap:6px;align-items:center;margin-top:auto">
+      <div class="cta-foot" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:auto">
         ${c.fecha_corte?`<span style="font-size:10px;color:var(--muted);flex:1">Desde ${esc(fmtFecha(c.fecha_corte))}</span>`:'<span style="flex:1"></span>'}
         ${verSaldos && !inactiva ? `<button class="btn btn-sm" onclick="event.stopPropagation();abrirCuentaDetalle('${esc(String(c.id))}')">Ver movimientos</button>` : ''}
         ${puedeEditar ? `<button class="btn btn-sm" onclick="event.stopPropagation();editarCuenta('${esc(String(c.id))}')">Editar</button>` : ''}
@@ -21267,60 +21624,61 @@ function renderCuentaDetalle(){
   const td = 'padding:8px 10px;font-size:12.5px;border-bottom:1px solid var(--border,#ececf2);vertical-align:top';
   const filasHtml = vis.slice().reverse().slice(0,500).map(x=>{
     const chip = x.opKey==='ajuste' ? 'chip-warn' : (x.opKey==='transferencia' ? 'chip-ok' : (x.delta>=0 ? 'chip-info' : ''));
-    return `<tr>
-      <td style="${td};white-space:nowrap">${esc(fmtFecha(x.fecha))}</td>
-      <td style="${td};white-space:nowrap">${x.usuario ? esc(x.usuario) : '<span style="color:var(--muted)">\u2014</span>'}</td>
-      <td style="${td};white-space:nowrap"><span class="chip ${chip}" style="font-size:10px">${esc(x.opLbl)}</span></td>
-      <td style="${td};min-width:180px">${esc(x.concepto)||'<span style="color:var(--muted)">\u2014</span>'}</td>
-      <td style="${td};white-space:nowrap">${esc(x.metodo)||'<span style="color:var(--muted)">\u2014</span>'}</td>
-      <td style="${td};white-space:nowrap;text-align:right">${x.tasa>0 ? fmtBs(x.tasa) : '<span style="color:var(--muted)">\u2014</span>'}</td>
-      <td style="${td};white-space:nowrap;text-align:right;font-weight:700;color:${x.delta>=0?'var(--ok)':'var(--danger)'}">${x.delta>=0?'+':'\u2212'} ${F(Math.abs(x.delta))}</td>
-      <td style="${td};white-space:nowrap;text-align:right;font-weight:600;color:${x.saldo<0?'var(--danger)':'var(--ink)'}">${F(x.saldo)}</td>
-      <td style="${td};white-space:nowrap">${x.ctaMovId!=null && puedeBorrar ? `<button class="btn btn-sm" title="Eliminar" style="padding:2px 7px;color:var(--danger)" onclick="eliminarCtaMov('${esc(String(x.ctaMovId))}','${idS}')">\u2715</button>` : ''}</td>
+    // Cada celda lleva su clase: en pantalla grande es una tabla; en celular cada fila se vuelve una tarjeta (ver CSS .cd-tabla)
+    return `<tr class="cd-fila">
+      <td class="c-fecha">${esc(fmtFecha(x.fecha))}</td>
+      <td class="c-usr${x.usuario?'':' c-nada'}" data-l="Por">${x.usuario ? esc(x.usuario) : ''}</td>
+      <td class="c-op"><span class="chip ${chip}" style="font-size:10px">${esc(x.opLbl)}</span></td>
+      <td class="c-conc${x.concepto?'':' c-nada'}">${esc(x.concepto)}</td>
+      <td class="c-met${x.metodo?'':' c-nada'}" data-l="Método">${esc(x.metodo)}</td>
+      <td class="c-tasa r${x.tasa>0?'':' c-nada'}" data-l="Tasa">${x.tasa>0 ? fmtBs(x.tasa) : ''}</td>
+      <td class="c-monto r" style="color:${x.delta>=0?'var(--ok)':'var(--danger)'}">${x.delta>=0?'+':'−'} ${F(Math.abs(x.delta))}</td>
+      <td class="c-saldo r" data-l="Saldo después" style="color:${x.saldo<0?'var(--danger)':'var(--ink)'}">${F(x.saldo)}</td>
+      <td class="c-acc">${x.ctaMovId!=null && puedeBorrar ? `<button class="btn btn-sm" title="Eliminar" aria-label="Eliminar movimiento" style="padding:2px 7px;color:var(--danger)" onclick="eliminarCtaMov('${esc(String(x.ctaMovId))}','${idS}')">✕</button>` : ''}</td>
     </tr>`;
   }).join('');
   det.innerHTML = `
-    <div style="margin-bottom:10px"><a href="javascript:void(0)" onclick="cerrarCuentaDetalle()" style="font-size:12.5px;color:var(--muted);text-decoration:none">\u2190 Volver a cuentas</a></div>
+    <div class="cd-back" style="margin-bottom:10px"><a href="javascript:void(0)" onclick="cerrarCuentaDetalle()" style="font-size:12.5px;color:var(--muted);text-decoration:none">\u2190 Volver a cuentas</a></div>
     <div class="card" style="padding:16px;margin-bottom:12px">
-      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:12px">
+      <div class="cd-head" style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-start;gap:12px">
         <div>
           <div style="font-size:18px;font-weight:700;color:var(--brand2)">${esc(c.nombre)}</div>
           <div style="font-size:11.5px;color:var(--muted);margin-top:2px">${esc(CUENTA_TIPOS[c.tipo]||c.tipo||'')} \u00b7 ${c.moneda==='usd'?'D\u00f3lares':'Bol\u00edvares'}${c.grupo?' \u00b7 '+esc(c.grupo):''} \u00b7 desde ${esc(fmtFecha(c.fecha_corte||''))}</div>
           <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">${(c.metodos||[]).map(m=>`<span class="chip chip-info" style="font-size:10px">${esc(METODOS_LABEL[m]||m)}</span>`).join('')}</div>
         </div>
-        <div style="text-align:right">
+        <div class="cd-saldo-box" style="text-align:right">
           <div style="font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Saldo actual</div>
-          <div style="font-size:24px;font-weight:700;color:${saldoAct<0?'var(--danger)':'var(--ink)'}">${F(saldoAct)}</div>
+          <div class="cd-saldo-num" style="font-size:24px;font-weight:700;color:${saldoAct<0?'var(--danger)':'var(--ink)'}">${F(saldoAct)}</div>
           ${c.moneda!=='usd' && tasa>0 ? `<div style="font-size:11px;color:var(--muted)">\u2248 $ ${fmtBs(round2(saldoAct/tasa))}</div>` : ''}
         </div>
       </div>
-      <div class="btn-row" style="margin-top:12px;flex-wrap:wrap;gap:6px">
+      <div class="btn-row cd-acciones" style="margin-top:12px;flex-wrap:wrap;gap:6px">
         <button class="btn btn-sm" onclick="abrirTransferencia('${idS}')">\u21c4 Transferir</button>
         <button class="btn btn-sm" onclick="abrirMovCuentaCaja('retiro','${idS}')">\u2212 Retirar saldo</button>
         <button class="btn btn-sm" onclick="abrirMovCuentaCaja('aporte','${idS}')">\uff0b Ingresar saldo</button>
         <button class="btn btn-sm" onclick="abrirAjusteCuenta('${idS}')">\u00b1 Ajustar saldo</button>
-        ${puedeEditar ? `<button class="btn btn-sm" style="margin-left:auto" onclick="editarCuenta('${idS}')">Editar cuenta</button>` : ''}
+        ${puedeEditar ? `<button class="btn btn-sm cd-edit" style="margin-left:auto" onclick="editarCuenta('${idS}')">Editar cuenta</button>` : ''}
       </div>
     </div>
     <div class="card" style="padding:14px">
-      <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:12px">
+      <div class="cd-filtros" style="display:flex;flex-wrap:wrap;gap:8px;align-items:flex-end;margin-bottom:12px">
         <div class="fg" style="margin:0"><label>Desde</label><input type="date" value="${esc(f.desde||'')}" onchange="_cdFiltro('desde',this.value)"/></div>
         <div class="fg" style="margin:0"><label>Hasta</label><input type="date" value="${esc(f.hasta||'')}" onchange="_cdFiltro('hasta',this.value)"/></div>
         <div class="fg" style="margin:0"><label>Operaci\u00f3n</label><select onchange="_cdFiltro('op',this.value)">${OPS.map(([k,l])=>`<option value="${k}" ${f.op===k?'selected':''}>${l}</option>`).join('')}</select></div>
         <button class="btn btn-sm" onclick="_cuentaDetFiltro={desde:'',hasta:'',op:''};renderCuentaDetalle()">Ver todo</button>
       </div>
-      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px">
+      <div class="cd-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:12px">
         <div style="padding:10px;border-radius:12px;background:rgba(59,109,17,.08)"><div style="font-size:10px;font-weight:700;color:var(--ok);text-transform:uppercase">Entr\u00f3</div><div style="font-size:16px;font-weight:700">${F(entro)}</div></div>
         <div style="padding:10px;border-radius:12px;background:rgba(163,45,45,.08)"><div style="font-size:10px;font-weight:700;color:var(--danger);text-transform:uppercase">Sali\u00f3</div><div style="font-size:16px;font-weight:700">${F(salio)}</div></div>
         <div style="padding:10px;border-radius:12px;background:rgba(120,120,140,.08)"><div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase">Neto del per\u00edodo</div><div style="font-size:16px;font-weight:700;color:${neto<0?'var(--danger)':'var(--ink)'}">${neto<0?'\u2212 ':''}${F(Math.abs(neto))}</div></div>
       </div>
-      <div style="overflow-x:auto">
-        <table style="width:100%;border-collapse:collapse">
+      <div class="cd-wrap" style="overflow-x:auto">
+        <table class="cd-tabla" style="width:100%;border-collapse:collapse">
           <thead><tr>
             <th style="${th}">Fecha</th><th style="${th}">Realizado por</th><th style="${th}">Operaci\u00f3n</th><th style="${th}">Concepto</th>
             <th style="${th}">M\u00e9todo</th><th style="${th};text-align:right">Tasa</th><th style="${th};text-align:right">Monto</th><th style="${th};text-align:right">Saldo despu\u00e9s</th><th style="${th}"></th>
           </tr></thead>
-          <tbody>${filasHtml || `<tr><td colspan="9" style="${td};text-align:center;color:var(--muted);padding:18px">No hay movimientos en este per\u00edodo.</td></tr>`}</tbody>
+          <tbody>${filasHtml || `<tr class="cd-vacio"><td colspan="9" style="${td};text-align:center;color:var(--muted);padding:18px">No hay movimientos en este per\u00edodo.</td></tr>`}</tbody>
         </table>
       </div>
       <div style="font-size:11px;color:var(--muted);margin-top:8px">${vis.length} movimiento(s)${vis.length>500?' \u00b7 mostrando los 500 m\u00e1s recientes':''}. Saldo inicial: ${F(parseFloat(c.saldo_inicial)||0)} al ${esc(fmtFecha(c.fecha_corte||''))}.</div>
@@ -24025,7 +24383,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v16_16';
+  const APP_VERSION = 'v16_17';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
