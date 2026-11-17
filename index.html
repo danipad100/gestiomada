@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V16_15">
+<html lang="es" data-app-version="GestioMada_V16_16">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -183,6 +183,7 @@ const SUPA_TABLAS = [
   { supa: 'cuentas_pagar',           ls: 'POS.cxp',         render: 'cxp' },
   { supa: 'cuentas',                 ls: 'POS.cuentas',     render: 'cuentas' },
   { supa: 'cuentas_movimientos',     ls: 'POS.ctamov',      render: 'cuentas' },
+  { supa: 'costos_materiales',       ls: 'POS.costmat',     render: 'costos' },
 ];
 
 // ── Lista negra de registros eliminados (evita restauración por Realtime o upsert) ──
@@ -315,6 +316,7 @@ function aplicarCambioRealtime(tabla, tipo, registro){
     clientes:  ()=>{ if(typeof renderClientes==='function') renderClientes(); },
     caja:      ()=>{ if(typeof renderCaja==='function') renderCaja(); if(typeof renderCuentas==='function') renderCuentas(); },
     cuentas:   ()=>{ if(typeof renderCuentas==='function') renderCuentas(); },
+    costos:    ()=>{ if(typeof renderCostosMat==='function') renderCostosMat(); if(typeof _cmRevisarTodasLasFilas==='function') _cmRevisarTodasLasFilas(); },
     inventario:()=>{ if(typeof renderInsumos==='function') renderInsumos(); },
     editor:    ()=>{ if(typeof persRefreshLoader==='function') persRefreshLoader(); },
     usuarios:  ()=>{ if(typeof renderCfgPins==='function') renderCfgPins(); if(typeof renderLockScreen==='function') renderLockScreen(); },
@@ -445,7 +447,7 @@ function iniciarRealtime(){
   // deben refrescar datos, no volver a abrir el listener.
   if(window._realtimeIniciado) return;
   window._realtimeIniciado = true;
-  const tablasRealtime = ['ventas','pedidos','productos','clientes','caja_movimientos','inventario_insumos','inventario_terminados','inventario_movimientos','productos_pers','usuarios','comisiones','cotizaciones','cuentas_pagar','cuentas','cuentas_movimientos'];
+  const tablasRealtime = ['ventas','pedidos','productos','clientes','caja_movimientos','inventario_insumos','inventario_terminados','inventario_movimientos','productos_pers','usuarios','comisiones','cotizaciones','cuentas_pagar','cuentas','cuentas_movimientos','costos_materiales'];
   tablasRealtime.forEach(tabla => {
     SUPA.channel('rt-' + tabla)
       .on('postgres_changes', { event: '*', schema: 'public', table: tabla },
@@ -621,6 +623,7 @@ const upsertCajaMov = r => upsertFila('caja_movimientos', r);
 const upsertCxP     = r => upsertFila('cuentas_pagar', r);
 const upsertCuenta  = r => upsertFila('cuentas', r);
 const upsertCtaMov  = r => upsertFila('cuentas_movimientos', r);
+const upsertCostMat = r => upsertFila('costos_materiales', r);
 const upsertInsumo  = r => upsertFila('inventario_insumos', r);
 const upsertTerminado = r => upsertFila('inventario_terminados', r);
 const upsertUsuario = r => upsertFila('usuarios', r);
@@ -1248,6 +1251,18 @@ function mapearParaSupa(tabla, d){
     usuario_nom:    d.usuario_nom || '',
   };
 
+  if(tabla === 'costos_materiales') return {
+    id,
+    nombre:     d.nombre || '',
+    tipo:       ['material','area','equipo'].includes(d.tipo) ? d.tipo : 'material',
+    precio:     parseFloat(d.precio) || 0,
+    cantidad:   parseFloat(d.cantidad) || 1,
+    datos:      (d.datos && typeof d.datos === 'object') ? d.datos : {},
+    proveedor:  d.proveedor || '',
+    notas:      d.notas || '',
+    updated_at: d.updated_at || new Date().toISOString(),
+  };
+
   // Fallback: solo campos seguros
   return { id };
 }
@@ -1304,7 +1319,7 @@ async function initSupabaseSync(){
     // Se agregaron clientes/cotizaciones/inventario_insumos/cuentas_pagar/envios/productos_pers
     // porque las 6 SÍ tienen función de eliminar en la app, y antes (en la ruta de "merge
     // seguro") una eliminación hecha en otro dispositivo nunca desaparecía aquí.
-    const _TABLAS_FUENTE_VERDAD = ['caja_movimientos','pedidos','productos','usuarios','ventas','clientes','cotizaciones','inventario_insumos','inventario_terminados','cuentas_pagar','envios','productos_pers','cuentas','cuentas_movimientos'];
+    const _TABLAS_FUENTE_VERDAD = ['caja_movimientos','pedidos','productos','usuarios','ventas','clientes','cotizaciones','inventario_insumos','inventario_terminados','cuentas_pagar','envios','productos_pers','cuentas','cuentas_movimientos','costos_materiales'];
     if(_TABLAS_FUENTE_VERDAD.includes(t.supa)){
       const localItems2 = JSON.parse(localStorage.getItem(t.ls)||'[]');
       const normalizado = t.supa === 'pedidos' ? remoto.map(r => normalizarPedidoImportado(r)).filter(r => !_esBorrado(t.supa, r.id)) : t.supa === 'productos' ? remoto.map(r => {
@@ -2174,6 +2189,14 @@ body.dark .dh-actcard{background:#151924;box-shadow:none;border:1px solid #23283
 #pers_load_wrap{position:relative;display:inline-flex;align-items:center;gap:4px;min-width:190px}
 #pers_search{width:100%;border-radius:12px;font-size:13px;padding:6px 10px;border:1.5px solid var(--border);background:var(--bg);color:var(--ink);display:none}
 #pers_search.visible{display:block}
+/* ── Costos de materiales (V16_16): sugerencias en el Editor de Producto ── */
+.cm-sug{display:none;position:fixed;z-index:3000;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;box-shadow:0 12px 28px rgba(0,0,0,.14);max-height:280px;overflow:auto;padding:4px}
+.cm-sug-it{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--ink)}
+.cm-sug-it:hover,.cm-sug-it.on{background:var(--brand-light,#fff0f5);color:var(--brand)}
+.cm-sug-n{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cm-sug-p{font-size:11px;color:var(--muted);flex-shrink:0}
+.cm-sug-new{margin-top:4px;border-top:1px solid var(--border);border-radius:0 0 8px 8px;font-weight:600;color:var(--brand);justify-content:flex-start}
+.cm-aviso{display:none;flex:0 0 100%;align-items:center;gap:8px;flex-wrap:wrap;background:#fef3c7;color:#92400e;border-radius:10px;padding:8px 10px;font-size:12px}
 #pers_search_results{position:absolute;top:100%;left:0;right:0;z-index:999;background:var(--bg);border:1.5px solid var(--border);border-radius:10px;max-height:220px;overflow-y:auto;box-shadow:0 8px 24px rgba(0,0,0,.12);display:none}
 #pers_search_results.visible{display:block}
 #pers_search_results div{padding:8px 12px;cursor:pointer;font-size:13px;color:var(--ink)}
@@ -3356,6 +3379,9 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
     <div class="sb-group">Productos</div>
     <a class="nav-item" data-v="editor" onclick="nav('editor',this)">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="11" y2="18"/><circle cx="17" cy="12" r="2"/><circle cx="20" cy="18" r="2"/></svg><span class="lbl">Editor de Producto</span>
+    </a>
+    <a class="nav-item" data-v="costos" onclick="nav('costos',this)">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg><span class="lbl">Costos de materiales</span>
     </a>
     <a class="nav-item" data-v="catalogo" onclick="nav('catalogo',this)">
       <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg><span class="lbl">Catálogo</span>
@@ -4773,6 +4799,26 @@ body.dark ::-webkit-scrollbar-thumb{background:#2a3147}
         </div>
       </div>
 
+
+      <!-- ══ COSTOS DE MATERIALES (V16_16) ══ -->
+      <div class="view" id="view-costos">
+        <div class="card" style="padding:14px;margin-bottom:14px">
+          <div style="font-size:13px;color:var(--muted);line-height:1.5">Aquí guardas el precio de cada material (un bolígrafo, una caja, un vinil, una máquina). En el <strong>Editor de Producto</strong>, al escribir el nombre en una línea de costos, la app te sugiere el material y llena el precio sola. Si después cambias el precio aquí, tus productos no cambian solos: el editor te avisa y tú decides.</div>
+        </div>
+        <div class="search-bar">
+          <input type="text" id="cm_q" placeholder="Buscar material…" oninput="renderCostosMat()"/>
+          <select id="cm_ftipo" onchange="renderCostosMat()">
+            <option value="">Todos</option>
+            <option value="material">Por unidad</option>
+            <option value="area">Por área</option>
+            <option value="equipo">Equipos</option>
+          </select>
+          <button class="btn btn-brand btn-sm" onclick="cmAbrirNuevo()">＋ Nuevo material</button>
+          <button class="btn btn-sm" onclick="cmAbrirImportar()" title="Busca en los productos del Editor los materiales que aún no están en la lista">Traer de mis productos</button>
+        </div>
+        <div id="cm-resumen" style="font-size:12px;color:var(--muted);margin:0 0 10px 2px"></div>
+        <div id="cm-list"></div>
+      </div>
 
       <!-- ══ REPORTES ══ -->
       <div class="view" id="view-reportes">
@@ -7245,7 +7291,7 @@ const _LS_NOMBRES={
   'POS.cli':'Clientes','POS.caja':'Caja (movimientos)','POS.cfg':'Configuración','POS.hist_costos':'Historial de costos',
   'POS.cot':'Cotizaciones','POS.insumos':'Inventario de insumos','POS.terminados':'Inventario de terminados',
   'POS.invmov':'Movimientos de inventario','POS.comisiones':'Comisiones','POS.envios':'Envíos','POS.cxp':'Cuentas por pagar',
-  'POS.cuentas':'Cuentas','POS.ctamov':'Movimientos de cuentas','POS.usuarios':'Usuarios','POS.sesiones_hist':'Historial de cierres de caja',
+  'POS.cuentas':'Cuentas','POS.ctamov':'Movimientos de cuentas','POS.costmat':'Costos de materiales','POS.usuarios':'Usuarios','POS.sesiones_hist':'Historial de cierres de caja',
   'POS.sesion':'Sesión de caja actual','POS.gastos_recurrentes':'Gastos recurrentes','POS.cat_order':'Orden del catálogo',
   'POS._borrados':'Lista de borrados (sincronización)','POS._colaUpsertsPendientes':'Pendientes por subir a la nube',
   'POS._conflictosSync':'Conflictos de sincronización','POS._pedBaseline':'Control de cambios de pedidos','POS.tasa':'Tasas de cambio'
@@ -7327,7 +7373,7 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v16.15: NUEVO (Sincronizaci\u00f3n \u00b7 Cat\u00e1logo) Aviso antes de subir un precio viejo. Cuando este dispositivo va a subir un producto y la nube tiene un precio (o recargos por talla) distinto al que este dispositivo conoc\u00eda, aparece un aviso con los dos precios y eliges: \u00abMantener el de la nube\u00bb (este producto se actualiza con lo de la nube) o \u00abSubir el de este dispositivo\u00bb. Cerrar el aviso equivale a mantener el de la nube: no se sube nada sin que lo confirmes. Funciona igual con los productos que quedaron en espera sin conexi\u00f3n y con las importaciones por CSV. No aparece cuando el \u00fanico que cambi\u00f3 el precio eres t\u00fa en ese dispositivo. No cubre todav\u00eda el precio manual del Editor. NUEVO: el tipo de venta del Editor ahora se guarda en la nube (columna tipo_venta en productos_pers, ya creada en Supabase). \nv16.14: NUEVO (Editor \u00b7 Lista completa) El panel \u00abLista\u00bb ahora tiene filtros por categor\u00eda, por tipo de venta (detal / mayor / sin definir) y por estado, adem\u00e1s del buscador, y muestra una columna \u00abTipo de venta\u00bb. ARREGLADO: al abrir un producto desde la lista (o desde el buscador del editor) ya no queda siempre en \u00abAl detal\u00bb; ahora toma el tipo de venta del producto del cat\u00e1logo con el mismo SKU. Causa: la tabla productos_pers no guarda el tipo de venta, as\u00ed que se perd\u00eda al sincronizar y el editor lo rellenaba con detal. Los productos que no est\u00e1n en el cat\u00e1logo siguen abriendo en detal y se ven con \u00ab\u2014\u00bb en la lista. \nv16.13: ARREGLADO (Inicio de sesi\u00f3n) El bot\u00f3n \u00ab\u00bfOlvidaste tu contrase\u00f1a?\u00bb ahora funciona completo. Antes enviaba el correo, pero al abrir el enlace la app te dejaba entrar sin pedirte una contrase\u00f1a nueva, y sus avisos (correo enviado o error) quedaban tapados por la pantalla de login y no se ve\u00edan. Ahora: (1) los avisos salen dentro de la tarjeta de login; (2) al abrir el enlace del correo aparece \u00abCrea tu contrase\u00f1a nueva\u00bb (con ojo para ver lo que escribes) y al guardar entras directo; (3) si el enlace venci\u00f3 o ya se us\u00f3, te lo dice; (4) si Supabase bloquea por demasiados correos, lo explica (espera 1 hora); (5) despu\u00e9s de pedir un enlace hay que esperar 60 segundos para pedir otro, as\u00ed no se gasta el l\u00edmite de correos.\nv16.12: NUEVO (Inicio de sesi\u00f3n) Ahora el campo de contrase\u00f1a tiene un ojo a la derecha: lo tocas y ves lo que escribiste, lo tocas otra vez y se oculta. Al entrar o cerrar sesi\u00f3n la contrase\u00f1a vuelve a quedar oculta sola. No cambia nada m\u00e1s del login.\nv16.11: NUEVO (Cat\u00e1logo) Opci\u00f3n \u00abCon caja\u00bb para productos como las bambalinas de 7 y 8 cm. En la ficha del producto (con variantes activadas) activas \u00abSe puede vender con caja\u00bb y pones cu\u00e1nto suma la caja al precio final y al costo. Al vender (POS, pedidos y cotizaciones) aparece el campo \u00abSin caja / Con caja (+$X)\u00bb junto al color y al lazo. Adem\u00e1s, por producto puedes decidir si la caja se descuenta del inventario: eliges qu\u00e9 insumo es la caja y cada venta \u00abCon caja\u00bb resta 1 unidad (si anulas, cancelas o editas el pedido, se devuelve). Si no lo activas, la caja solo suma precio y costo. Se guarda dentro de los datos del producto que ya se sincronizan, sin tablas ni columnas nuevas. Los productos que ya tienes quedan exactamente igual.\nv16.10: CORREGIDO (Catálogo) Un producto que solo tiene característica (ej. bambalina con luces: solo color de lazo, sin colores ni tallas) ahora se reconoce como producto con variantes: al reabrir la ficha se ven sus características y en POS, pedidos e inventario pide solo ese campo, sin exigir color. Los demás productos quedan igual.\n' +
+  return 'v16.16: NUEVO (Costos de materiales) Nueva secci\u00f3n \u00abCostos de materiales\u00bb en el men\u00fa, debajo del Editor de Producto. Es una lista con el precio de cada material: por unidad (un bol\u00edgrafo, una caja: precio de compra y cu\u00e1ntas unidades trae), por \u00e1rea (vinil, laminado: por cm\u00b2 o por rollo) y equipos (con su vida \u00fatil). Se sincroniza entre dispositivos y solo la ve el administrador. Bot\u00f3n \u00abTraer de mis productos\u00bb: busca en los productos del Editor las l\u00edneas que ya tienes (con su precio) y las agrega a la lista de una vez, para no escribirlas de nuevo. EDITOR: al escribir el nombre en una l\u00ednea de Costos directos, Material por \u00e1rea o Equipos, la app sugiere los materiales de la lista; al elegir uno llena sola el precio y la cantidad (la cantidad a usar la pones t\u00fa). Si el nombre que escribes no est\u00e1 en la lista, aparece \u00ab\uff0b Guardar en la lista de costos\u00bb con el formulario ya lleno. Si cambias el precio de un material en la lista, tus productos NO cambian solos: al abrir un producto, cada l\u00ednea que usa ese material muestra un aviso con el precio de antes y el de ahora, y t\u00fa eliges \u00abActualizar\u00bb o \u00abMantener el m\u00edo\u00bb. Requiere la tabla costos_materiales en Supabase. Tambi\u00e9n: los nombres con comillas en el Editor ya no se cortan al reabrir el producto. \nv16.15: NUEVO (Sincronizaci\u00f3n \u00b7 Cat\u00e1logo) Aviso antes de subir un precio viejo. Cuando este dispositivo va a subir un producto y la nube tiene un precio (o recargos por talla) distinto al que este dispositivo conoc\u00eda, aparece un aviso con los dos precios y eliges: \u00abMantener el de la nube\u00bb (este producto se actualiza con lo de la nube) o \u00abSubir el de este dispositivo\u00bb. Cerrar el aviso equivale a mantener el de la nube: no se sube nada sin que lo confirmes. Funciona igual con los productos que quedaron en espera sin conexi\u00f3n y con las importaciones por CSV. No aparece cuando el \u00fanico que cambi\u00f3 el precio eres t\u00fa en ese dispositivo. No cubre todav\u00eda el precio manual del Editor. NUEVO: el tipo de venta del Editor ahora se guarda en la nube (columna tipo_venta en productos_pers, ya creada en Supabase). \nv16.14: NUEVO (Editor \u00b7 Lista completa) El panel \u00abLista\u00bb ahora tiene filtros por categor\u00eda, por tipo de venta (detal / mayor / sin definir) y por estado, adem\u00e1s del buscador, y muestra una columna \u00abTipo de venta\u00bb. ARREGLADO: al abrir un producto desde la lista (o desde el buscador del editor) ya no queda siempre en \u00abAl detal\u00bb; ahora toma el tipo de venta del producto del cat\u00e1logo con el mismo SKU. Causa: la tabla productos_pers no guarda el tipo de venta, as\u00ed que se perd\u00eda al sincronizar y el editor lo rellenaba con detal. Los productos que no est\u00e1n en el cat\u00e1logo siguen abriendo en detal y se ven con \u00ab\u2014\u00bb en la lista. \nv16.13: ARREGLADO (Inicio de sesi\u00f3n) El bot\u00f3n \u00ab\u00bfOlvidaste tu contrase\u00f1a?\u00bb ahora funciona completo. Antes enviaba el correo, pero al abrir el enlace la app te dejaba entrar sin pedirte una contrase\u00f1a nueva, y sus avisos (correo enviado o error) quedaban tapados por la pantalla de login y no se ve\u00edan. Ahora: (1) los avisos salen dentro de la tarjeta de login; (2) al abrir el enlace del correo aparece \u00abCrea tu contrase\u00f1a nueva\u00bb (con ojo para ver lo que escribes) y al guardar entras directo; (3) si el enlace venci\u00f3 o ya se us\u00f3, te lo dice; (4) si Supabase bloquea por demasiados correos, lo explica (espera 1 hora); (5) despu\u00e9s de pedir un enlace hay que esperar 60 segundos para pedir otro, as\u00ed no se gasta el l\u00edmite de correos.\nv16.12: NUEVO (Inicio de sesi\u00f3n) Ahora el campo de contrase\u00f1a tiene un ojo a la derecha: lo tocas y ves lo que escribiste, lo tocas otra vez y se oculta. Al entrar o cerrar sesi\u00f3n la contrase\u00f1a vuelve a quedar oculta sola. No cambia nada m\u00e1s del login.\nv16.11: NUEVO (Cat\u00e1logo) Opci\u00f3n \u00abCon caja\u00bb para productos como las bambalinas de 7 y 8 cm. En la ficha del producto (con variantes activadas) activas \u00abSe puede vender con caja\u00bb y pones cu\u00e1nto suma la caja al precio final y al costo. Al vender (POS, pedidos y cotizaciones) aparece el campo \u00abSin caja / Con caja (+$X)\u00bb junto al color y al lazo. Adem\u00e1s, por producto puedes decidir si la caja se descuenta del inventario: eliges qu\u00e9 insumo es la caja y cada venta \u00abCon caja\u00bb resta 1 unidad (si anulas, cancelas o editas el pedido, se devuelve). Si no lo activas, la caja solo suma precio y costo. Se guarda dentro de los datos del producto que ya se sincronizan, sin tablas ni columnas nuevas. Los productos que ya tienes quedan exactamente igual.\nv16.10: CORREGIDO (Catálogo) Un producto que solo tiene característica (ej. bambalina con luces: solo color de lazo, sin colores ni tallas) ahora se reconoce como producto con variantes: al reabrir la ficha se ven sus características y en POS, pedidos e inventario pide solo ese campo, sin exigir color. Los demás productos quedan igual.\n' +
   'v16.09: NUEVO (Catálogo) Productos con dos variantes, como las bambalinas (color de bambalina + color de lazo): cada producto puede tener sus propios nombres de campo («Color de bambalina», «Color de lazo…»), la característica ya funciona también en productos solo con colores o sin colores ni tallas (solo lazo), y un interruptor «La característica no cuenta en inventario» para llevar el stock solo por color. Los productos que ya tienes quedan exactamente igual.\n' +
   'v16.08: CORREGIDO (PWA) La app ya no se queda mostrando una copia vieja de index.html: el service worker ahora busca primero la versi\u00f3n m\u00e1s nueva en internet (usa la copia guardada solo sin conexi\u00f3n), y si detecta que la p\u00e1gina y el service worker son de versiones distintas limpia la cach\u00e9 y recarga sola (una vez). No toca tus datos.\nv16.07: CAMBIO (Editor \u00b7 lista completa) El bot\u00f3n "Lista" ahora abre un panel dentro de la app (sin ventana emergente, funciona en el celular y en la app instalada).\nv16.06: NUEVO (Editor \u00b7 lista completa) Bot\u00f3n "Lista" que abre una ventana nueva con todos los productos del editor (buscador, SKU, categor\u00eda, estado, precio y si est\u00e1n en el cat\u00e1logo); clic en un producto lo carga en el editor. CORREGIDO: "Agregar al Cat\u00e1logo" ahora tambi\u00e9n guarda el producto en el editor (ya no desaparece del buscador del editor).\nv16.05: NUEVO (Textiles \u00b7 talla 16) \u2014 la talla 16 (ni\u00f1os grandes) ahora se ofrece como 16D (Dama) y 16C (Caballero), igual que las tallas de letras. Los pedidos antiguos con talla 16 no se modifican. \nv16.04: NUEVO (Textiles \u00b7 pijamas y producci\u00f3n) \u2014 1) Cada producto textil puede marcarse \u00abEs pijama\u00bb y tener una \u00abTela de la franela\u00bb (Micro durazno, Algod\u00f3n; editable en Configuraci\u00f3n \u2192 Textiles \u00b7 telas) que solo se usa en reportes. 2) Nuevo \u00abEstampado\u00bb opcional (Configuraci\u00f3n \u2192 Textiles \u00b7 estampados): se marcan por producto y se elige al cotizar o crear el pedido; aparece en pedido, cotizaci\u00f3n y WhatsApp. 3) Reportes \u2192 Textiles: listas separadas para el proveedor (Franelas por tela, color y talla; Monos por estampado, talla y bota/jogger), imprimibles. 4) Orden de Producci\u00f3n: marcas con casillas qu\u00e9 pedidos van a producci\u00f3n; queda un Historial de producci\u00f3n con fecha, con reimpresi\u00f3n y bot\u00f3n Deshacer. 5) Icono de nota en los pedidos con nota escrita a mano y el n\u00famero PED abre el pedido. \nv16.03: NUEVO (Textiles \u00b7 grupos propios) \u2014 las tallas de tus grupos de tallas (ej: Mascotas \u2192 Grande) ya pueden tener recargo de precio y de costo. En el producto, bajo \u00abRecargo por talla\u00bb, aparece cada talla de tu grupo: en Grande pones Precio final +$2 y Costo +$0,8. Funciona igual que XL/XXL: se aplica en POS, pedidos y cotizaciones. \nv16.02: ICONOS (Configuraci\u00f3n y Editor de producto) \u2014 los emojis de Configuraci\u00f3n (Textiles \u00b7 tallas, Textiles \u00b7 caracter\u00edsticas, Ver detalles del almacenamiento, Actualizar ahora y los botones de tallas) se cambiaron por los iconos de l\u00ednea que usa el resto de GestioMada. En el editor de producto se quit\u00f3 el emoji de la opci\u00f3n \u00abLocal\u00bb. \nv16.01: NUEVO (Textiles · tallas) En Configuración → Textiles · tallas ya puedes crear tus propios grupos de tallas (ej: «Mascotas» con Pequeña y Grande): escribes el nombre, lo creas y le agregas sus tallas. Puedes renombrarlo, ordenarlo o borrarlo. El grupo aparece al marcar un producto como textil, junto a Niños, Adultos y Bodys. Se sincroniza entre dispositivos. \nv16.00: NUEVO (Textiles) Cada producto textil puede tener sus propias caracter\u00edsticas (se eligen al crear o editar el producto). Los productos que no se tocan siguen usando la lista general; si desmarcas todas, el campo no aparece en ventas ni pedidos. Requiere la columna textil_caracteristicas en Supabase. \u00b7 v15.99: NUEVO (Textiles) Las características de los productos textiles (antes fijas: Con C/B y Sin C/B) ahora se configuran en Configuración → Textiles · características. Puedes agregar o quitar las que necesites (ej: Mangas rosadas) y se sincronizan entre dispositivos. Lo ya registrado no se modifica. \u00b7 v15.98: AJUSTE (Ventas) \u2014 el filtro Detal/Mayor del punto de venta ahora queda al lado derecho del buscador (antes quedaba debajo en pantallas peque\u00f1as).\n'
     + 'v15.97: NUEVO (Filtro Detal/Mayor) \u2014 en Cat\u00e1logo y en Ventas (Nueva Venta) hay un filtro para ver solo productos al detal o solo al mayor. Aparece cuando los tipos de venta est\u00e1n activados en Configuraci\u00f3n. El resto de la app no cambia.\n'
@@ -7388,7 +7434,8 @@ const VIEWS = {
   config:   { title:'Configuración', sub:'Ajustes del sistema' },
   envios:   { title:'Envíos', sub:'Registro y etiquetas de envíos' },
   cxp:      { title:'Cuentas por Pagar', sub:'Deudas con proveedores y acreedores' },
-  cuentas:  { title:'Cuentas', sub:'A dónde va el dinero del negocio' }
+  cuentas:  { title:'Cuentas', sub:'A dónde va el dinero del negocio' },
+  costos:   { title:'Costos de materiales', sub:'Precios de tus materiales para armar productos' }
 };
 function nav(id, el){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
@@ -7409,6 +7456,7 @@ function nav(id, el){
   if(id==='caja'){ setCajaPeriodo('hoy',qs('#caja-hoy-btn')); renderSesionBar(); renderSaldosMoneda(); }
   if(id==='cxp'){ renderVistaCxP(); }
   if(id==='cuentas'){ renderCuentas(); }
+  if(id==='costos'){ renderCostosMat(); }
   if(id==='inventario'){ renderInsumos(); }
   if(id==='reportes'){ if(!_repDesde) setRepPeriodo('mes',qs('#rep-mes-btn')); else renderReportes(); }
   if(id==='finanzas'){ renderFinanzas(); }
@@ -7418,7 +7466,7 @@ function nav(id, el){
   if(id==='config'){ renderLsMonitor(); }
   if(id==='config'){ _gmVersionCardUpdate(); }
   if(id==='config'){ if(typeof renderConflictosSync==='function') renderConflictosSync(); }
-  if(id==='editor'){ const dl=qs('#mc_cat_list'); if(dl){ const cats=loadCats(); dl.innerHTML=cats.map(c=>`<option value="${esc(c)}">`).join(''); } }
+  if(id==='editor'){ if(typeof _cmRevisarTodasLasFilas==='function') _cmRevisarTodasLasFilas(); const dl=qs('#mc_cat_list'); if(dl){ const cats=loadCats(); dl.innerHTML=cats.map(c=>`<option value="${esc(c)}">`).join(''); } }
 }
 
 // ── MODAL ──
@@ -7561,7 +7609,7 @@ function makeDirRow(d={}){
   const r=document.createElement('div');
   r.className='row'; r.style.cssText='display:flex;gap:8px;align-items:flex-end;margin-top:8px;flex-wrap:wrap';
   r.innerHTML=`
-    <div style="min-width:140px;flex:2"><label>Descripción</label><input type="text" class="p-dir-desc" value="${d.desc||''}"/></div>
+    <div style="min-width:140px;flex:2"><label>Descripción</label><input type="text" class="p-dir-desc" value="${esc(d.desc||'')}"/></div>
     <div style="min-width:70px;flex:1"><label>Cant.</label><input type="text" class="p-dir-cant" value="${d.cant||'1'}"/></div>
     <div style="min-width:90px;flex:1"><label>Precio</label><input type="text" class="p-dir-precio" value="${d.precio||'0,00'}"/></div>
     <div style="min-width:100px;flex:1"><label>Costo Ud.</label><input type="text" class="ud p-dir-ud" value="${CFG.moneda||'$'} 0,00" readonly/></div>
@@ -7570,6 +7618,7 @@ function makeDirRow(d={}){
     <div style="flex:0 0 auto;padding-top:20px"><button class="copy-btn" type="button">✕</button></div>`;
   qs('.copy-btn',r).addEventListener('click',()=>{ r.remove(); persUpdate(); });
   r.addEventListener('input',e=>{ if(e.target.matches('input')) persUpdate(); },true);
+  r.dataset.cmTipo='material'; r.insertAdjacentHTML('beforeend','<div class="cm-aviso"></div>'); _cmRestaurarVinculo(r,d);
   return r;
 }
 function makeDepRow(d={}){
@@ -7577,7 +7626,7 @@ function makeDepRow(d={}){
   r.className='row'; r.style.cssText='display:flex;gap:8px;align-items:flex-end;margin-top:8px;flex-wrap:wrap';
   const mv=(d.modo||'vida')==='vida';
   r.innerHTML=`
-    <div style="min-width:140px;flex:2"><label>Equipo</label><input type="text" class="p-dep-desc" value="${d.desc||''}"/></div>
+    <div style="min-width:140px;flex:2"><label>Equipo</label><input type="text" class="p-dep-desc" value="${esc(d.desc||'')}"/></div>
     <div style="min-width:90px;flex:1"><label>Precio</label><input type="text" class="p-dep-precio" value="${d.precio||'0,00'}"/></div>
     <div style="min-width:130px;flex:1"><label>Modo</label>
       <select class="p-dep-modo">
@@ -7597,6 +7646,7 @@ function makeDepRow(d={}){
   mSel.addEventListener('change',()=>{ const mv=mSel.value==='vida'; vW.style.display=mv?'block':'none'; cW.style.display=mv?'none':'flex'; persUpdate(); });
   qs('.copy-btn',r).addEventListener('click',()=>{ r.remove(); persUpdate(); });
   r.addEventListener('input',e=>{ if(e.target.matches('input,select')) persUpdate(); },true);
+  r.dataset.cmTipo='equipo'; r.insertAdjacentHTML('beforeend','<div class="cm-aviso"></div>'); _cmRestaurarVinculo(r,d);
   return r;
 }
 function makeMoRow(d={}){
@@ -7636,6 +7686,7 @@ function makeAreaRow(d={}){
     <div style="min-width:130px"><label>Área (cm²)</label><div class="pill" style="border-radius:12px"><span class="p-ar-parea">0,00</span></div></div>
     <div style="min-width:140px"><label>Costo material</label><div class="pill" style="border-radius:12px"><strong class="p-ar-pcost">${CFG.moneda||'$'} 0,00</strong></div></div>
     <div style="flex:0 0 auto;padding-top:20px"><button class="copy-btn p-ar-del" type="button">✕</button></div>`;
+  r.dataset.cmTipo='area'; r.insertAdjacentHTML('beforeend','<div class="cm-aviso"></div>'); _cmRestaurarVinculo(r,d);
   return r;
 }
 function ensureMoBase(){ if(pMoList&&!pMoList.querySelector('.p-mo-row')) pMoList.appendChild(makeMoRow({})); }
@@ -7656,6 +7707,7 @@ function initEditor(){
   if(pAreaList) pAreaList.appendChild(makeAreaRow({}));
   pDep.appendChild(makeDepRow({desc:'',precio:'0,00',modo:'vida',vida:'100'}));
   ensureMoBase();
+  _cmInitEditorHooks();
 
   pAddDir.addEventListener('click',()=>{ pDir.appendChild(makeDirRow()); persUpdate(); });
   pAddDep.addEventListener('click',()=>{ pDep.appendChild(makeDepRow()); persUpdate(); });
@@ -7827,9 +7879,9 @@ function persToJSON(){
   const fotoEl=qs('#pers_foto_img'); const _fotoRaw=fotoEl&&fotoEl.style.display!=='none'?fotoEl.src:'';
   const _fotoEsUrl=_fotoRaw.startsWith('http');
   const d={name:pName.value.trim()||'Producto sin nombre',sku:(qs('#pers_sku')?.value||'').trim(),categoria:(qs('#pers_categoria')?.value||'').trim(),estado:qs('#pers_estado')?.value||'activo',tipo_venta:qs('#pers_tipo_venta')?.value||'detal',precio_manual:(qs('#pers_precio_manual')?.value||'').trim(),notas_int:(qs('#pers_notas_int')?.value||'').trim(),foto:_fotoEsUrl?'':_fotoRaw,foto_url:_fotoEsUrl?_fotoRaw:'',directos:[],materiales_area:[],depreciacion:[],indirectos:{},mo:{},gi:{}};
-  pDir.querySelectorAll('.row').forEach(r=>d.directos.push({desc:qs('.p-dir-desc',r)?.value||'',cant:qs('.p-dir-cant',r)?.value||'',precio:qs('.p-dir-precio',r)?.value||'',utilcant:qs('.p-dir-util',r)?.value||''}));
-  if(pAreaList) pAreaList.querySelectorAll('.p-area-row').forEach(r=>d.materiales_area.push({nombre:qs('.p-ar-name',r)?.value||'',modo:qs('.p-ar-mode',r)?.value||'cm2',precio_cm2:qs('.p-ar-pcm2',r)?.value||'',precio_rollo:qs('.p-ar-prollo',r)?.value||'',ancho_rollo:qs('.p-ar-ancho',r)?.value||'',largo_rollo:qs('.p-ar-largo',r)?.value||'',ancho_uso:qs('.p-ar-ua',r)?.value||'',alto_uso:qs('.p-ar-uh',r)?.value||'',cantidad:qs('.p-ar-cant',r)?.value||'',merma:qs('.p-ar-merma',r)?.value||''}));
-  pDep.querySelectorAll('.row').forEach(r=>{ const m=qs('.p-dep-modo',r)?.value||'vida'; const item={desc:qs('.p-dep-desc',r)?.value||'',precio:qs('.p-dep-precio',r)?.value||'',modo:m,usos:qs('.p-dep-usos',r)?.value||''}; if(m==='vida') item.vida=qs('.p-dep-vida',r)?.value||''; else{ item.meses=qs('.p-dep-meses',r)?.value||''; item.capacidad=qs('.p-dep-cap',r)?.value||''; } d.depreciacion.push(item); });
+  pDir.querySelectorAll('.row').forEach(r=>d.directos.push({desc:qs('.p-dir-desc',r)?.value||'',cant:qs('.p-dir-cant',r)?.value||'',precio:qs('.p-dir-precio',r)?.value||'',utilcant:qs('.p-dir-util',r)?.value||'',..._cmVinculoDe(r)}));
+  if(pAreaList) pAreaList.querySelectorAll('.p-area-row').forEach(r=>d.materiales_area.push({nombre:qs('.p-ar-name',r)?.value||'',modo:qs('.p-ar-mode',r)?.value||'cm2',precio_cm2:qs('.p-ar-pcm2',r)?.value||'',precio_rollo:qs('.p-ar-prollo',r)?.value||'',ancho_rollo:qs('.p-ar-ancho',r)?.value||'',largo_rollo:qs('.p-ar-largo',r)?.value||'',ancho_uso:qs('.p-ar-ua',r)?.value||'',alto_uso:qs('.p-ar-uh',r)?.value||'',cantidad:qs('.p-ar-cant',r)?.value||'',merma:qs('.p-ar-merma',r)?.value||'',..._cmVinculoDe(r)}));
+  pDep.querySelectorAll('.row').forEach(r=>{ const m=qs('.p-dep-modo',r)?.value||'vida'; const item={desc:qs('.p-dep-desc',r)?.value||'',precio:qs('.p-dep-precio',r)?.value||'',modo:m,usos:qs('.p-dep-usos',r)?.value||'',..._cmVinculoDe(r)}; if(m==='vida') item.vida=qs('.p-dep-vida',r)?.value||''; else{ item.meses=qs('.p-dep-meses',r)?.value||''; item.capacidad=qs('.p-dep-cap',r)?.value||''; } d.depreciacion.push(item); });
   const IND=['alquiler','internet','suscripciones','transporte','electricidad','publicidad','otros'];
   const ind={on:!!(pIndOn&&pIndOn.checked),mensual:pIndMen?.value||'0,00',units:pIndUni?.value||'100'};
   IND.forEach(k=>{ ind[k]=qs('#pers_ind_'+k)?.value||'0,00'; }); d.indirectos=ind;
@@ -9480,7 +9532,7 @@ const _ORDEN_RESTAURAR = [
   'usuarios','clientes','productos','productos_pers',
   'inventario_insumos','inventario_terminados','inventario_movimientos',
   'pedidos','ventas','caja_movimientos',
-  'comisiones','cotizaciones','envios','cuentas_pagar','cuentas','cuentas_movimientos'
+  'comisiones','cotizaciones','envios','cuentas_pagar','cuentas','cuentas_movimientos','costos_materiales'
 ];
 
 async function exportRespaldoCompleto(){
@@ -9539,6 +9591,7 @@ function exportRespaldoLocal(){
     cuentas_pagar: cxpLocal,
     cuentas: (typeof loadCuentas==='function' ? loadCuentas() : []),
     cuentas_movimientos: (typeof loadCtaMov==='function' ? loadCtaMov() : []),
+    costos_materiales: (typeof loadCostMat==='function' ? loadCostMat() : []),
     config: Object.keys(CFG||{}).map(k => ({ clave:k, valor:JSON.stringify(CFG[k]) }))
   };
   const backup = {
@@ -9631,7 +9684,7 @@ async function ejecutarRestaurarRespaldo(){
   }
 }
 
-function limpiarTodo(){ [LS_PERS,LS_CAT,LS_CLI,LS_CFG,LS_PED,'POS.ven','POS.caja','POS.insumos','POS.terminados','POS.invmov','POS.cxp','POS.cuentas','POS.ctamov',LS_SESIONES_HIST].forEach(k=>localStorage.removeItem(k)); location.reload(); }
+function limpiarTodo(){ [LS_PERS,LS_CAT,LS_CLI,LS_CFG,LS_PED,'POS.ven','POS.caja','POS.insumos','POS.terminados','POS.invmov','POS.cxp','POS.cuentas','POS.ctamov','POS.costmat',LS_SESIONES_HIST].forEach(k=>localStorage.removeItem(k)); location.reload(); }
 
 /* ════════════════════════════════════════════
    ROLES + PIN
@@ -9663,7 +9716,7 @@ function rolIcoSvg(ico, w=18, h=18){
 }
 
 const ROLES = {
-  admin:     { label:'Admin',        ico:'user', desc:'Acceso completo al sistema.',                         vistas:['dashboard','editor','catalogo','clientes','pedidos','envios','ventas','caja','cuentas','cxp','inventario','reportes','finanzas','config'], puede:['crear','editar','eliminar','ver','exportar','config','reportes','caja','limpiar','finanzas','ver_saldos'] },
+  admin:     { label:'Admin',        ico:'user', desc:'Acceso completo al sistema.',                         vistas:['dashboard','editor','costos','catalogo','clientes','pedidos','envios','ventas','caja','cuentas','cxp','inventario','reportes','finanzas','config'], puede:['crear','editar','eliminar','ver','exportar','config','reportes','caja','limpiar','finanzas','ver_saldos'] },
   empleado:  { label:'Empleado',     ico:'users', desc:'Ventas, pedidos y clientes. Sin caja ni config.',    vistas:['dashboard','catalogo','clientes','pedidos','envios','ventas','cuentas'],                                              puede:['crear','editar','ver'] },
   produccion:{ label:'Producción',   ico:'factory', desc:'Pedidos e inventario. Sin ventas ni caja.',           vistas:['dashboard','pedidos','envios','inventario'],                                                                  puede:['ver','editar'] },
   lectura:   { label:'Solo lectura', ico:'eye', desc:'Consulta catálogo, clientes y reportes. Solo lectura.',vistas:['dashboard','catalogo','clientes','reportes'],                                                       puede:['ver'] }
@@ -10361,9 +10414,9 @@ function guardarPins(){
 /* ════════════════════════════════════════════
    GESTIÓN DE USUARIOS
 ════════════════════════════════════════════ */
-const TODAS_VISTAS   = ['dashboard','editor','catalogo','clientes','pedidos','envios','ventas','caja','cuentas','cxp','inventario','reportes','config'];
+const TODAS_VISTAS   = ['dashboard','editor','costos','catalogo','clientes','pedidos','envios','ventas','caja','cuentas','cxp','inventario','reportes','config'];
 const TODOS_PERMISOS = ['crear','editar','eliminar','ver','exportar','config','reportes','caja','limpiar','ver_saldos'];
-const VISTA_LABELS   = {dashboard:'Dashboard',editor:'Editor Producto',catalogo:'Catálogo',clientes:'Clientes',pedidos:'Pedidos',ventas:'Ventas',caja:'Caja',cuentas:'Cuentas',cxp:'Cuentas por Pagar',inventario:'Inventario',reportes:'Reportes',config:'Configuración'};
+const VISTA_LABELS   = {dashboard:'Dashboard',editor:'Editor Producto',costos:'Costos de materiales',catalogo:'Catálogo',clientes:'Clientes',pedidos:'Pedidos',ventas:'Ventas',caja:'Caja',cuentas:'Cuentas',cxp:'Cuentas por Pagar',inventario:'Inventario',reportes:'Reportes',config:'Configuración'};
 const PERMISO_LABELS = {crear:'Crear',editar:'Editar',eliminar:'Eliminar',ver:'Ver',exportar:'Exportar',config:'Configurar',reportes:'Reportes',caja:'Caja',limpiar:'Limpiar datos',ver_saldos:'Ver saldos de cuentas'};
 
 let _musrEditIdx = null; // índice del usuario que se está editando (null = nuevo)
@@ -17834,6 +17887,476 @@ function renderKpisInsumos(){
     <div class="kpi c-amber"><div class="kpi-ico"><div class="kpi-ico-pill" style="background:#FAEEDA"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="#854F0B" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg></div></div><div class="kpi-lbl">Movimientos</div><div class="kpi-val">${loadIMov().filter(m=>{const ins=loadIns().find(i=>i.id===m.item_id); return !!ins;}).length}</div><div class="kpi-sub">histórico</div></div>`;
 }
 
+/* ═══════════════════════════════════════════════════════════
+   COSTOS DE MATERIALES — V16_16
+   Lista de precios de materiales: por unidad (bolígrafo, caja), por área (vinil, laminado)
+   y equipos. El Editor de Producto la usa para sugerir por nombre y llenar el costo.
+   Regla: cada línea del editor guarda el precio con que se armó (mat_snap). Si el precio
+   de la lista cambia después, el editor AVISA y la persona decide si actualiza; nada cambia solo.
+   Datos: tabla costos_materiales (Supabase = fuente de verdad) + localStorage POS.costmat.
+═══════════════════════════════════════════════════════════ */
+const LS_CMAT = 'POS.costmat';
+const CMAT_TIPOS = { material:'Por unidad', area:'Por área', equipo:'Equipo' };
+let _cmEditId = null;      // id del material que se edita (null = nuevo)
+let _cmAlGuardar = null;   // función a ejecutar al guardar (para vincular la línea del editor)
+let _cmImpLista = [];      // candidatos de "Traer de mis productos"
+
+function loadCostMat(){ try{ return JSON.parse(localStorage.getItem(LS_CMAT)||'[]'); }catch(e){ return []; } }
+function saveCostMat(a){ _lsSet(LS_CMAT, JSON.stringify(a)); }
+
+/* ── Utilidades de formato y cálculo ── */
+function _cmStr(n, min){
+  min = (min==null) ? 2 : min; n = Number(n); if(!isFinite(n)) n = 0;
+  let s = String(Math.round(n*1e6)/1e6);
+  if(/e/i.test(s)) s = n.toFixed(6);
+  let [e,d] = s.split('.'); d = d||'';
+  while(d.length<min) d += '0';
+  return d ? e+','+d : e;
+}
+function _cmEuro(v){ v = Number(v)||0; const mon = CFG.moneda||'$'; return mon+' '+((v>0&&v<0.1) ? v.toFixed(4) : v.toFixed(2)).replace('.',','); }
+function _cmDatos(m){ return (m && m.datos && typeof m.datos==='object') ? m.datos : {}; }
+// Foto de los valores que importan según el tipo (se compara contra lo que guardó cada producto)
+function _cmSnap(m){
+  const d = _cmDatos(m), n = v => parseFloat(v)||0;
+  if(m.tipo==='area') return { modo:(d.modo==='rollo'?'rollo':'cm2'), precio_cm2:n(d.precio_cm2), precio_rollo:n(d.precio_rollo), ancho_rollo:n(d.ancho_rollo), largo_rollo:n(d.largo_rollo) };
+  if(m.tipo==='equipo') return { precio:n(m.precio), modo:(d.modo==='capacidad'?'capacidad':'vida'), vida:n(d.vida), meses:n(d.meses), capacidad:n(d.capacidad) };
+  return { precio:n(m.precio), cantidad:n(m.cantidad)||1 };
+}
+// Cifra principal: material = costo por unidad · área = $/cm² · equipo = precio
+function _cmPrincipalDe(tipo, s){
+  s = s||{};
+  if(tipo==='material') return s.cantidad>0 ? (s.precio/s.cantidad) : 0;
+  if(tipo==='area'){
+    if((s.modo||'cm2')==='cm2') return s.precio_cm2||0;
+    const ar = (s.ancho_rollo||0)*((s.largo_rollo||0)*100);
+    return ar>0 ? (s.precio_rollo/ar) : 0;
+  }
+  return s.precio||0;
+}
+function _cmTxtPrincipal(tipo, v){
+  if(tipo==='material') return _cmEuro(v)+' c/u';
+  if(tipo==='area') return (CFG.moneda||'$')+' '+(Number(v)||0).toFixed(6).replace('.',',')+'/cm²';
+  return euro(v);
+}
+function _cmUsoEquipo(s){
+  s = s||{};
+  if(s.modo==='capacidad') return (s.meses>0 && s.capacidad>0) ? (s.precio/s.meses/s.capacidad) : 0;
+  return s.vida>0 ? (s.precio/s.vida) : 0;
+}
+function _cmDifiere(a, b){
+  if(!a || typeof a!=='object' || !Object.keys(a).length) return false; // sin foto guardada: no se avisa
+  return Object.keys(b||{}).some(k => (typeof b[k]==='number') ? Math.abs((parseFloat(a[k])||0)-b[k])>1e-9 : String(a[k]||'')!==String(b[k]||''));
+}
+function _cmConteoUsos(){
+  const n = {};
+  loadPers().forEach(p=>{
+    const ids = new Set();
+    [p.directos, p.materiales_area, p.depreciacion].forEach(arr=>(arr||[]).forEach(x=>{ if(x && x.mat_id) ids.add(String(x.mat_id)); }));
+    ids.forEach(id=>{ n[id] = (n[id]||0)+1; });
+  });
+  return n;
+}
+const _CM_SVG = (paths, w) => `<svg viewBox="0 0 24 24" width="${w||18}" height="${w||18}" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0">${paths}</svg>`;
+const _CM_ICO = {
+  material: '<path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>',
+  area:     '<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+  equipo:   '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+  alerta:   '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>'
+};
+const _CM_COLOR = { material:['#ffe3ee','#be185d','chip-pink'], area:['#dbeafe','#1e40af','chip-info'], equipo:['#fef3c7','#92400e','chip-warn'] };
+
+/* ═════════ Pantalla «Costos de materiales» ═════════ */
+function renderCostosMat(){
+  const c = qs('#cm-list'); if(!c) return;
+  const all = loadCostMat(), q = (qs('#cm_q')?.value||'').trim(), ft = qs('#cm_ftipo')?.value||'';
+  const fil = all.filter(m => (!ft || m.tipo===ft) && (!q || _fuzzyMatch(q, m.nombre||'') || _fuzzyMatch(q, m.proveedor||'')))
+                 .sort((a,b)=>String(a.nombre).localeCompare(String(b.nombre),'es'));
+  const res = qs('#cm-resumen');
+  if(res) res.textContent = all.length ? (fil.length===all.length ? all.length+' material'+(all.length===1?'':'es')+' en la lista' : fil.length+' de '+all.length+' materiales') : '';
+  if(!fil.length){
+    c.innerHTML = `<div class="empty"><div class="empty-ico">${_CM_SVG(_CM_ICO.material,32)}</div><h3>${all.length?'Sin resultados':'Aún no hay materiales'}</h3><p>${all.length?'Prueba otra búsqueda.':'Agrega tus materiales con su precio, o tráelos de los productos que ya armaste.'}</p>${all.length?'':'<div class="btn-row" style="justify-content:center"><button class="btn btn-brand btn-sm" onclick="cmAbrirNuevo()">＋ Nuevo material</button><button class="btn btn-sm" onclick="cmAbrirImportar()">Traer de mis productos</button></div>'}</div>`;
+    return;
+  }
+  const usos = _cmConteoUsos();
+  const puedeEliminar = (typeof can==='function') ? can('eliminar') : true;
+  c.innerHTML = fil.map(m=>{
+    const col = _CM_COLOR[m.tipo]||_CM_COLOR.material, snap = _cmSnap(m);
+    const princ = _cmTxtPrincipal(m.tipo, _cmPrincipalDe(m.tipo, snap));
+    let det = '';
+    if(m.tipo==='material') det = _cmEuro(snap.precio)+' ÷ '+_cmStr(snap.cantidad,0)+' = ';
+    else if(m.tipo==='area') det = snap.modo==='rollo' ? 'Rollo de '+_cmEuro(snap.precio_rollo)+' · ' : '';
+    else det = snap.modo==='capacidad' ? _cmStr(snap.meses,0)+' meses × '+_cmStr(snap.capacidad,0)+'/mes · ' : _cmStr(snap.vida,0)+' usos · ';
+    const uso = usos[String(m.id)]||0;
+    return `<div class="list-item" style="margin-bottom:8px">
+      <div class="li-ico" style="background:${col[0]};color:${col[1]}">${_CM_SVG(_CM_ICO[m.tipo]||_CM_ICO.material)}</div>
+      <div class="li-body">
+        <div class="li-name">${esc(m.nombre)} <span class="chip ${col[2]}" style="margin-left:4px">${esc(CMAT_TIPOS[m.tipo]||'')}</span></div>
+        <div class="li-meta">${esc(det)}<strong>${esc(princ)}</strong>${m.proveedor?' · '+esc(m.proveedor):''}${uso?' · en '+uso+' producto'+(uso===1?'':'s'):''}</div>
+      </div>
+      <div class="inv-item-btns">
+        <button class="btn btn-sm" onclick="cmEditar('${esc(String(m.id))}')">Editar</button>
+        ${puedeEliminar?`<button class="btn btn-danger btn-sm" onclick="cmEliminar('${esc(String(m.id))}')" aria-label="Eliminar">✕</button>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* ── Modal: crear / editar ── */
+function cmAbrirNuevo(){ cmAbrirModal({ tipo:'material', nombre:'', precio:0, cantidad:1, datos:{} }, null, null); }
+function cmEditar(id){
+  const m = loadCostMat().find(x=>String(x.id)===String(id)); if(!m) return;
+  cmAbrirModal(m, null, m);
+}
+function cmAbrirModal(init, cb, editItem){
+  _cmEditId = editItem ? editItem.id : null;
+  _cmAlGuardar = cb||null;
+  const m = init||{}, d = _cmDatos(m), set = (id,v)=>{ const e=qs('#'+id); if(e) e.value=v; };
+  qs('#cm-title').textContent = editItem ? 'Editar material' : 'Nuevo material';
+  set('cm_tipo', m.tipo||'material');
+  const selT = qs('#cm_tipo'); if(selT) selT.disabled = !!editItem; // cambiar el tipo rompería los vínculos de los productos
+  set('cm_nombre', m.nombre||'');
+  set('cm_m_precio', _cmStr(m.tipo==='equipo'?0:m.precio,2)); set('cm_m_cant', _cmStr(m.cantidad||1,0));
+  set('cm_a_modo', d.modo==='rollo'?'rollo':'cm2'); set('cm_a_pcm2', _cmStr(d.precio_cm2||0,2)); set('cm_a_prollo', _cmStr(d.precio_rollo||0,2));
+  set('cm_a_ancho', _cmStr(d.ancho_rollo||0,0)); set('cm_a_largo', _cmStr(d.largo_rollo||0,0));
+  set('cm_e_precio', _cmStr(m.tipo==='equipo'?m.precio:0,2)); set('cm_e_modo', d.modo==='capacidad'?'capacidad':'vida');
+  set('cm_e_vida', _cmStr(d.vida||100,0)); set('cm_e_meses', _cmStr(d.meses||24,0)); set('cm_e_cap', _cmStr(d.capacidad||100,0));
+  set('cm_proveedor', m.proveedor||''); set('cm_notas', m.notas||'');
+  cmTipoCambio();
+  openModal('m-costmat');
+}
+function cmTipoCambio(){
+  const t = qs('#cm_tipo')?.value||'material';
+  const show = (id,on)=>{ const e=qs('#'+id); if(e) e.style.display=on?'':'none'; };
+  show('cm-sec-material', t==='material'); show('cm-sec-area', t==='area'); show('cm-sec-equipo', t==='equipo');
+  const rollo = (qs('#cm_a_modo')?.value==='rollo');
+  show('cm_a_cm2_w', !rollo); show('cm_a_rollo_w', rollo);
+  const cap = (qs('#cm_e_modo')?.value==='capacidad');
+  show('cm_e_vida_w', !cap); show('cm_e_cap_w', cap);
+  cmPreview();
+}
+function _cmLeerModal(){
+  const t = qs('#cm_tipo')?.value||'material', v = id => parseEU(qs('#'+id)?.value||'0');
+  const m = { tipo:t, precio:0, cantidad:1, datos:{} };
+  if(t==='material'){ m.precio = v('cm_m_precio'); m.cantidad = v('cm_m_cant'); }
+  else if(t==='area'){
+    const modo = qs('#cm_a_modo')?.value==='rollo' ? 'rollo' : 'cm2';
+    m.datos = { modo, precio_cm2:v('cm_a_pcm2'), precio_rollo:v('cm_a_prollo'), ancho_rollo:v('cm_a_ancho'), largo_rollo:v('cm_a_largo') };
+    m.precio = modo==='rollo' ? m.datos.precio_rollo : 0;
+  } else {
+    const modo = qs('#cm_e_modo')?.value==='capacidad' ? 'capacidad' : 'vida';
+    m.precio = v('cm_e_precio');
+    m.datos = { modo, vida:v('cm_e_vida'), meses:v('cm_e_meses'), capacidad:v('cm_e_cap') };
+  }
+  return m;
+}
+function cmPreview(){
+  const out = qs('#cm-prev'); if(!out) return;
+  const m = _cmLeerModal(), s = _cmSnap(m);
+  if(m.tipo==='material') out.textContent = 'Cada unidad sale a ' + _cmEuro(_cmPrincipalDe('material', s));
+  else if(m.tipo==='area') out.textContent = 'Cada cm² sale a ' + (CFG.moneda||'$')+' '+_cmPrincipalDe('area', s).toFixed(6).replace('.',',');
+  else out.textContent = 'Cada uso sale a ' + _cmEuro(_cmUsoEquipo(s));
+}
+function cmGuardar(){
+  const nombre = (qs('#cm_nombre')?.value||'').trim();
+  if(!nombre){ toast('El nombre es requerido','warn'); return; }
+  const lei = _cmLeerModal(), all = loadCostMat();
+  const dup = all.find(x => x.tipo===lei.tipo && _normStr(x.nombre)===_normStr(nombre) && String(x.id)!==String(_cmEditId));
+  if(dup){ toast('Ya tienes «'+dup.nombre+'» en la lista. Edítalo en vez de crear otro.','warn'); return; }
+  if(lei.tipo==='material' && !(lei.cantidad>0)){ toast('La cantidad debe ser mayor a 0','warn'); return; }
+  if(lei.tipo==='area' && lei.datos.modo==='rollo' && !(lei.datos.ancho_rollo>0 && lei.datos.largo_rollo>0)){ toast('Escribe el ancho y el largo del rollo','warn'); return; }
+  if(lei.tipo==='equipo'){
+    const e = lei.datos;
+    if(e.modo==='vida' ? !(e.vida>0) : !(e.meses>0 && e.capacidad>0)){ toast('Completa la vida útil o los meses y la capacidad','warn'); return; }
+  }
+  const base = (_cmEditId!=null) ? all.find(x=>String(x.id)===String(_cmEditId)) : null;
+  const item = {
+    id: base ? base.id : (Date.now()+Math.floor(Math.random()*1000)),
+    nombre, tipo: lei.tipo, precio: lei.precio, cantidad: lei.cantidad, datos: lei.datos,
+    proveedor: (qs('#cm_proveedor')?.value||'').trim(), notas: (qs('#cm_notas')?.value||'').trim(),
+    created_at: (base&&base.created_at) || new Date().toISOString(), updated_at: new Date().toISOString()
+  };
+  if(base) all[all.indexOf(base)] = item; else all.push(item);
+  saveCostMat(all); upsertCostMat(item);
+  const cb = _cmAlGuardar; _cmAlGuardar = null; _cmEditId = null;
+  closeModal('m-costmat'); renderCostosMat();
+  toast((base?'Actualizado: ':'Guardado en la lista: ')+nombre,'ok');
+  if(cb) cb(item);
+  _cmRevisarTodasLasFilas();
+}
+function cmEliminar(id){
+  if(typeof can==='function' && !can('eliminar')) return;
+  const all = loadCostMat(), m = all.find(x=>String(x.id)===String(id)); if(!m) return;
+  const n = _cmConteoUsos()[String(m.id)]||0;
+  if(!confirm('¿Eliminar «'+m.nombre+'» de la lista de costos?'+(n?'\n\nSe usó en '+n+' producto'+(n===1?'':'s')+'. Los productos NO cambian; solo dejan de recibir avisos de cambio de precio de este material.':''))) return;
+  saveCostMat(all.filter(x=>x!==m));
+  _addBorrado('costos_materiales', m.id);
+  deleteFromSupabase('costos_materiales', m.id);
+  renderCostosMat(); _cmRevisarTodasLasFilas();
+  toast('Eliminado de la lista','ok');
+}
+
+/* ═════════ Traer materiales de los productos que ya existen ═════════ */
+function cmAbrirImportar(){
+  const existentes = new Set(loadCostMat().map(m=>m.tipo+'|'+_normStr(m.nombre)));
+  const grupos = {};
+  const add = (tipo, nombre, item, prodKey)=>{
+    nombre = (nombre||'').trim(); if(!nombre) return;
+    const k = tipo+'|'+_normStr(nombre); if(existentes.has(k)) return;
+    const g = grupos[k] || (grupos[k] = { tipo, nombre, variantes:{}, prods:new Set() });
+    const sig = JSON.stringify(_cmSnap(item));
+    const v = g.variantes[sig] || (g.variantes[sig] = { n:0, item });
+    v.n++; g.prods.add(prodKey);
+  };
+  loadPers().forEach(p=>{
+    const key = String(p.id||p.name);
+    (p.directos||[]).forEach(x=>{
+      if(!x || x.mat_id) return;
+      const precio = parseEU(x.precio), cant = parseEU(x.cant)||1; if(precio<=0) return;
+      add('material', x.desc, { tipo:'material', precio, cantidad:cant, datos:{} }, key);
+    });
+    (p.materiales_area||[]).forEach(x=>{
+      if(!x || x.mat_id) return;
+      const modo = x.modo==='rollo' ? 'rollo' : 'cm2';
+      const datos = { modo, precio_cm2:parseEU(x.precio_cm2), precio_rollo:parseEU(x.precio_rollo), ancho_rollo:parseEU(x.ancho_rollo), largo_rollo:parseEU(x.largo_rollo) };
+      const it = { tipo:'area', precio: modo==='rollo'?datos.precio_rollo:0, cantidad:1, datos };
+      if(_cmPrincipalDe('area', _cmSnap(it))<=0) return;
+      add('area', x.nombre, it, key);
+    });
+    (p.depreciacion||[]).forEach(x=>{
+      if(!x || x.mat_id) return;
+      const precio = parseEU(x.precio); if(precio<=0) return;
+      const modo = x.modo==='capacidad' ? 'capacidad' : 'vida';
+      add('equipo', x.desc, { tipo:'equipo', precio, cantidad:1, datos:{ modo, vida:parseEU(x.vida), meses:parseEU(x.meses), capacidad:parseEU(x.capacidad) } }, key);
+    });
+  });
+  _cmImpLista = Object.values(grupos).map(g=>{
+    const vars = Object.values(g.variantes).sort((a,b)=>b.n-a.n);
+    const elegido = vars[0].item;
+    return { tipo:g.tipo, nombre:g.nombre, item:elegido, prods:g.prods.size,
+             otros: vars.slice(1).map(v=>_cmTxtPrincipal(g.tipo, _cmPrincipalDe(g.tipo,_cmSnap(v.item)))) };
+  }).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  const lista = qs('#cmi-lista'), res = qs('#cmi-resumen');
+  if(!_cmImpLista.length){
+    if(res) res.textContent = '';
+    if(lista) lista.innerHTML = '<div class="empty" style="padding:20px"><h3>No hay nada nuevo para traer</h3><p>Todos los materiales de tus productos ya están en la lista, o tus productos aún no tienen líneas con precio.</p></div>';
+  } else {
+    if(res) res.textContent = _cmImpLista.length+' material'+(_cmImpLista.length===1?'':'es')+' encontrado'+(_cmImpLista.length===1?'':'s')+' en tus productos. Marca los que quieras agregar a la lista.';
+    lista.innerHTML = _cmImpLista.map((g,i)=>{
+      const col = _CM_COLOR[g.tipo], princ = _cmTxtPrincipal(g.tipo, _cmPrincipalDe(g.tipo,_cmSnap(g.item)));
+      return `<label class="list-item" style="margin-bottom:6px;cursor:pointer;gap:10px">
+        <input type="checkbox" class="cmi-chk" data-i="${i}" checked style="flex:0 0 auto"/>
+        <div class="li-body"><div class="li-name">${esc(g.nombre)} <span class="chip ${col[2]}" style="margin-left:4px">${esc(CMAT_TIPOS[g.tipo])}</span></div>
+          <div class="li-meta"><strong>${esc(princ)}</strong> · en ${g.prods} producto${g.prods===1?'':'s'}${g.otros.length?` · <span style="color:#92400e">precios distintos: ${esc(g.otros.join(' · '))} (se usa el más repetido)</span>`:''}</div></div>
+      </label>`;
+    }).join('');
+  }
+  openModal('m-cmat-imp');
+}
+function cmImpMarcar(on){ document.querySelectorAll('#cmi-lista .cmi-chk').forEach(c=>{ c.checked = !!on; }); }
+function cmImportarAplicar(){
+  const marcados = [...document.querySelectorAll('#cmi-lista .cmi-chk')].filter(c=>c.checked).map(c=>_cmImpLista[parseInt(c.dataset.i)]).filter(Boolean);
+  if(!marcados.length){ toast('No marcaste ningún material','warn'); return; }
+  const all = loadCostMat(), usados = new Set(all.map(m=>String(m.id))), nuevos = [], ahora = new Date().toISOString();
+  marcados.forEach(g=>{
+    let id; do{ id = Date.now()+Math.floor(Math.random()*100000); }while(usados.has(String(id)));
+    usados.add(String(id));
+    nuevos.push({ id, nombre:g.nombre, tipo:g.tipo, precio:g.item.precio||0, cantidad:g.item.cantidad||1, datos:g.item.datos||{}, proveedor:'', notas:'', created_at:ahora, updated_at:ahora });
+  });
+  saveCostMat(all.concat(nuevos));
+  if(window._supaConectado) syncToSupabase('costos_materiales', nuevos); else nuevos.forEach(upsertCostMat);
+  closeModal('m-cmat-imp'); renderCostosMat();
+  toast(nuevos.length+' material'+(nuevos.length===1?'':'es')+' agregado'+(nuevos.length===1?'':'s')+' a la lista','ok');
+}
+
+/* ═════════ Editor de Producto: sugerencias por nombre y vínculo con la lista ═════════ */
+function _cmRestaurarVinculo(row, d){
+  if(!d || !d.mat_id) return;
+  row.dataset.matId = String(d.mat_id);
+  row.dataset.matSnap = JSON.stringify(d.mat_snap||{});
+  row.dataset.matNombre = _normStr(d.desc!=null ? d.desc : (d.nombre||''));
+  _cmRevisarFila(row);
+}
+function _cmVinculoDe(row){
+  if(!row || !row.dataset.matId) return {};
+  let s = {}; try{ s = JSON.parse(row.dataset.matSnap||'{}'); }catch(e){}
+  return { mat_id: row.dataset.matId, mat_snap: s };
+}
+function _cmVincular(row, m){
+  row.dataset.matId = String(m.id);
+  row.dataset.matSnap = JSON.stringify(_cmSnap(m));
+  row.dataset.matNombre = _normStr(m.nombre);
+  _cmAvisoFila(row, null);
+}
+function _cmDesvincular(row){
+  delete row.dataset.matId; delete row.dataset.matSnap; delete row.dataset.matNombre;
+  _cmAvisoFila(row, null);
+}
+function _cmAvisoFila(row, html){
+  const a = row.querySelector('.cm-aviso'); if(!a) return;
+  if(!html){ a.style.display = 'none'; a.innerHTML = ''; } else { a.innerHTML = html; a.style.display = 'flex'; }
+}
+function _cmRevisarFila(row){
+  const id = row.dataset.matId; if(!id){ _cmAvisoFila(row, null); return; }
+  const tipo = row.dataset.cmTipo, m = loadCostMat().find(x=>String(x.id)===id);
+  if(!m){ _cmDesvincular(row); return; }          // ya no está en la lista: la línea queda como está
+  let snap = {}; try{ snap = JSON.parse(row.dataset.matSnap||'{}'); }catch(e){}
+  const act = _cmSnap(m);
+  if(!_cmDifiere(snap, act)){ _cmAvisoFila(row, null); return; }
+  const antes = _cmTxtPrincipal(tipo, _cmPrincipalDe(tipo, snap)), ahora = _cmTxtPrincipal(tipo, _cmPrincipalDe(tipo, act));
+  const msg = (antes!==ahora)
+    ? `El precio de <b>${esc(m.nombre)}</b> cambió en tu lista de costos: ${esc(antes)} → <b>${esc(ahora)}</b>.`
+    : `Los datos de <b>${esc(m.nombre)}</b> cambiaron en tu lista de costos.`;
+  _cmAvisoFila(row, `${_CM_SVG(_CM_ICO.alerta,16)}<span style="flex:1;min-width:180px">${msg}</span>
+    <button type="button" class="btn btn-sm btn-brand" data-cm-act="actualizar">Actualizar</button>
+    <button type="button" class="btn btn-sm" data-cm-act="ignorar">Mantener el mío</button>`);
+}
+function _cmRevisarTodasLasFilas(){
+  document.querySelectorAll('#view-editor [data-cm-tipo][data-mat-id]').forEach(_cmRevisarFila);
+}
+function _cmAplicarEnFila(row, m){
+  const tipo = row.dataset.cmTipo, d = _cmDatos(m), set = (sel,val)=>{ const e = qs(sel,row); if(e) e.value = val; };
+  if(tipo==='material'){
+    set('.p-dir-desc', m.nombre); set('.p-dir-cant', _cmStr(m.cantidad||1,0)); set('.p-dir-precio', _cmStr(m.precio,2));
+  } else if(tipo==='area'){
+    set('.p-ar-name', m.nombre);
+    const sel = qs('.p-ar-mode',row), modo = (d.modo==='rollo') ? 'rollo' : 'cm2';
+    if(sel){ sel.value = modo; sel.dispatchEvent(new Event('change',{bubbles:true})); }
+    set('.p-ar-pcm2', _cmStr(d.precio_cm2||0,2)); set('.p-ar-prollo', _cmStr(d.precio_rollo||0,2));
+    set('.p-ar-ancho', _cmStr(d.ancho_rollo||0,0)); set('.p-ar-largo', _cmStr(d.largo_rollo||0,0));
+  } else {
+    set('.p-dep-desc', m.nombre); set('.p-dep-precio', _cmStr(m.precio,2));
+    const sel = qs('.p-dep-modo',row), modo = (d.modo==='capacidad') ? 'capacidad' : 'vida';
+    if(sel){ sel.value = modo; sel.dispatchEvent(new Event('change',{bubbles:true})); }
+    if(modo==='vida') set('.p-dep-vida', _cmStr(d.vida||0,0)); else { set('.p-dep-meses', _cmStr(d.meses||0,0)); set('.p-dep-cap', _cmStr(d.capacidad||0,0)); }
+  }
+  _cmVincular(row, m);
+  persUpdate();
+}
+// «＋ Guardar en la lista»: abre el formulario ya lleno con lo que hay en la línea y, al guardar, vincula la línea
+function _cmGuardarDesdeFila(row){
+  const tipo = row.dataset.cmTipo, g = s => qs(s,row)?.value||'';
+  const init = { tipo, nombre:'', precio:0, cantidad:1, datos:{} };
+  let selNombre = '';
+  if(tipo==='material'){ selNombre = '.p-dir-desc'; init.nombre = g(selNombre).trim(); init.precio = parseEU(g('.p-dir-precio')); init.cantidad = parseEU(g('.p-dir-cant'))||1; }
+  else if(tipo==='area'){
+    selNombre = '.p-ar-name'; init.nombre = g(selNombre).trim();
+    const modo = g('.p-ar-mode')==='rollo' ? 'rollo' : 'cm2';
+    init.datos = { modo, precio_cm2:parseEU(g('.p-ar-pcm2')), precio_rollo:parseEU(g('.p-ar-prollo')), ancho_rollo:parseEU(g('.p-ar-ancho')), largo_rollo:parseEU(g('.p-ar-largo')) };
+    init.precio = modo==='rollo' ? init.datos.precio_rollo : 0;
+  } else {
+    selNombre = '.p-dep-desc'; init.nombre = g(selNombre).trim(); init.precio = parseEU(g('.p-dep-precio'));
+    const modo = g('.p-dep-modo')==='capacidad' ? 'capacidad' : 'vida';
+    init.datos = { modo, vida:parseEU(g('.p-dep-vida')), meses:parseEU(g('.p-dep-meses')), capacidad:parseEU(g('.p-dep-cap')) };
+  }
+  cmAbrirModal(init, item=>{ const e = qs(selNombre,row); if(e) e.value = item.nombre; _cmVincular(row, item); }, null);
+}
+
+/* ── Menú de sugerencias (flota sobre la página para que ninguna tarjeta lo recorte) ── */
+const _cmSug = { el:null, inp:null, items:[], nuevo:null, idx:-1, dentro:false };
+function _cmTipoInput(inp){
+  const row = inp && inp.closest ? inp.closest('[data-cm-tipo]') : null;
+  return row ? row.dataset.cmTipo : '';
+}
+function _cmSugEl(){
+  if(_cmSug.el) return _cmSug.el;
+  const el = document.createElement('div'); el.id = 'cm-sug'; el.className = 'cm-sug';
+  document.body.appendChild(el);
+  el.addEventListener('mousedown', e=>e.preventDefault());          // no quitar el foco del campo
+  el.addEventListener('pointerdown', ()=>{ _cmSug.dentro = true; });
+  el.addEventListener('click', e=>{ const it = e.target.closest('[data-i]'); if(it) _cmSugElegir(it.dataset.i); });
+  _cmSug.el = el; return el;
+}
+function _cmSugOcultar(){
+  if(_cmSug.el) _cmSug.el.style.display = 'none';
+  _cmSug.inp = null; _cmSug.idx = -1; _cmSug.dentro = false;
+}
+function _cmSugPosicionar(){
+  const el = _cmSug.el, inp = _cmSug.inp; if(!el || !inp) return;
+  const r = inp.getBoundingClientRect();
+  el.style.minWidth = Math.max(r.width, 240)+'px';
+  el.style.left = r.left+'px'; el.style.top = (r.bottom+4)+'px';
+  const h = el.offsetHeight, w = el.offsetWidth;
+  if(r.bottom+4+h > window.innerHeight && r.top > h+8) el.style.top = (r.top-h-4)+'px';
+  if(r.left+w > window.innerWidth-8) el.style.left = Math.max(8, window.innerWidth-8-w)+'px';
+}
+function _cmSugMostrar(inp){
+  const tipo = _cmTipoInput(inp); if(!tipo){ _cmSugOcultar(); return; }
+  const q = (inp.value||'').trim(), qn = _normStr(q);
+  const todos = loadCostMat().filter(m=>m.tipo===tipo);
+  let items = qn ? todos.filter(m=>_fuzzyMatch(q, m.nombre||'')) : todos.slice();
+  const rank = m => { const n = _normStr(m.nombre); return n===qn ? 0 : n.startsWith(qn) ? 1 : n.includes(qn) ? 2 : 3; };
+  items.sort((a,b)=>rank(a)-rank(b) || String(a.nombre).localeCompare(String(b.nombre),'es'));
+  items = items.slice(0,8);
+  const exacto = todos.some(m=>_normStr(m.nombre)===qn);
+  const nuevo = (q.length>=2 && !exacto) ? q : null;
+  if(!items.length && !nuevo){ _cmSugOcultar(); return; }
+  _cmSug.inp = inp; _cmSug.items = items; _cmSug.nuevo = nuevo; _cmSug.idx = -1;
+  const el = _cmSugEl();
+  el.innerHTML = items.map((m,i)=>`<div class="cm-sug-it" data-i="${i}"><span class="cm-sug-n">${esc(m.nombre)}</span><span class="cm-sug-p">${esc(_cmTxtPrincipal(tipo, _cmPrincipalDe(tipo,_cmSnap(m))))}</span></div>`).join('')
+    + (nuevo ? `<div class="cm-sug-it cm-sug-new" data-i="nuevo">＋ Guardar «${esc(nuevo)}» en la lista de costos</div>` : '');
+  el.style.display = 'block';
+  _cmSugPosicionar();
+}
+function _cmSugElegir(i){
+  const inp = _cmSug.inp; if(!inp) return;
+  const row = inp.closest('[data-cm-tipo]'); if(!row){ _cmSugOcultar(); return; }
+  if(i==='nuevo'){ _cmSugOcultar(); _cmGuardarDesdeFila(row); return; }
+  const m = _cmSug.items[parseInt(i)]; if(!m){ _cmSugOcultar(); return; }
+  _cmSugOcultar();
+  _cmAplicarEnFila(row, m);
+  if(document.activeElement && document.activeElement.blur) document.activeElement.blur();
+}
+function _cmSugMarcar(delta){
+  const el = _cmSug.el; if(!el) return;
+  const its = [...el.querySelectorAll('.cm-sug-it')]; if(!its.length) return;
+  _cmSug.idx = (_cmSug.idx + delta + its.length) % its.length;
+  its.forEach((x,k)=>x.classList.toggle('on', k===_cmSug.idx));
+  its[_cmSug.idx].scrollIntoView({ block:'nearest' });
+}
+function _cmInitEditorHooks(){
+  if(window._cmHooks) return;
+  const ed = qs('#view-editor'); if(!ed) return;
+  window._cmHooks = true;
+  const esNombre = t => !!(t && t.matches && t.matches('.p-dir-desc,.p-ar-name,.p-dep-desc'));
+  ed.addEventListener('focusin', e=>{ if(esNombre(e.target)) _cmSugMostrar(e.target); });
+  ed.addEventListener('input', e=>{
+    if(!esNombre(e.target)) return;
+    const row = e.target.closest('[data-cm-tipo]');
+    // si cambia el nombre a mano, la línea deja de estar vinculada a la lista
+    if(row && row.dataset.matId && _normStr(e.target.value)!==row.dataset.matNombre) _cmDesvincular(row);
+    _cmSugMostrar(e.target);
+  });
+  ed.addEventListener('keydown', e=>{
+    if(!esNombre(e.target) || _cmSug.inp!==e.target || !_cmSug.el || _cmSug.el.style.display!=='block') return;
+    if(e.key==='ArrowDown'){ e.preventDefault(); _cmSugMarcar(1); }
+    else if(e.key==='ArrowUp'){ e.preventDefault(); _cmSugMarcar(-1); }
+    else if(e.key==='Enter' && _cmSug.idx>=0){
+      e.preventDefault();
+      const it = _cmSug.el.querySelectorAll('.cm-sug-it')[_cmSug.idx];
+      if(it) _cmSugElegir(it.dataset.i);
+    }
+    else if(e.key==='Escape'){ _cmSugOcultar(); }
+  });
+  ed.addEventListener('focusout', e=>{
+    if(!esNombre(e.target)) return;
+    setTimeout(()=>{ if(!_cmSug.dentro && document.activeElement!==_cmSug.inp) _cmSugOcultar(); }, 150);
+  });
+  ed.addEventListener('click', e=>{
+    const b = e.target.closest('[data-cm-act]'); if(!b) return;
+    const row = b.closest('[data-cm-tipo]'); if(!row) return;
+    const m = loadCostMat().find(x=>String(x.id)===String(row.dataset.matId)); if(!m){ _cmDesvincular(row); return; }
+    if(b.dataset.cmAct==='actualizar'){ _cmAplicarEnFila(row, m); toast('Precio actualizado: '+m.nombre,'ok'); }
+    else { row.dataset.matSnap = JSON.stringify(_cmSnap(m)); _cmAvisoFila(row, null); }
+  });
+  document.addEventListener('pointerdown', e=>{
+    if(!_cmSug.inp) return;
+    if(e.target.closest && (e.target.closest('#cm-sug') || esNombre(e.target))) return;
+    _cmSugOcultar();
+  }, true);
+  window.addEventListener('resize', ()=>{ if(_cmSug.inp) _cmSugPosicionar(); });
+  document.addEventListener('scroll', ()=>{ if(_cmSug.inp && _cmSug.el && _cmSug.el.style.display==='block') _cmSugPosicionar(); }, true);
+}
+
 /* ══════════ PRODUCTOS TERMINADOS ══════════ */
 function abrirNuevoTerminado(){
   _terIdx=null;
@@ -22527,6 +23050,88 @@ function renderDashFinanzas(){
   </div>
 </div>
 
+<!-- ══ MODAL: Costo de material (V16_16) ══ -->
+<div class="modal-bg" id="m-costmat" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:520px">
+    <button class="modal-close" onclick="closeModal('m-costmat')">✕</button>
+    <div class="modal-title" id="cm-title">Nuevo material</div>
+    <div class="frow">
+      <div class="fg" style="flex:2"><label>Nombre *</label><input type="text" id="cm_nombre" placeholder="Ej. Bolígrafo azul"/></div>
+      <div class="fg"><label>Tipo</label>
+        <select id="cm_tipo" onchange="cmTipoCambio()">
+          <option value="material">Material por unidad</option>
+          <option value="area">Material por área (vinil, laminado…)</option>
+          <option value="equipo">Equipo (depreciación)</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="cm-sec-material">
+      <div class="frow">
+        <div class="fg"><label>Precio de compra ($)</label><input type="text" id="cm_m_precio" value="0,00" oninput="cmPreview()"/></div>
+        <div class="fg"><label>Cantidad que trae</label><input type="text" id="cm_m_cant" value="1" oninput="cmPreview()"/></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">Ej.: si un paquete de 50 bolígrafos cuesta $10, escribe precio 10 y cantidad 50. Si lo compras de a uno, deja la cantidad en 1.</div>
+    </div>
+
+    <div id="cm-sec-area" style="display:none">
+      <div class="frow">
+        <div class="fg"><label>Se compra por</label>
+          <select id="cm_a_modo" onchange="cmTipoCambio()"><option value="cm2">Precio por cm²</option><option value="rollo">Precio por rollo</option></select>
+        </div>
+        <div class="fg" id="cm_a_cm2_w"><label>Precio por cm² ($)</label><input type="text" id="cm_a_pcm2" value="0,00" oninput="cmPreview()"/></div>
+      </div>
+      <div class="frow" id="cm_a_rollo_w" style="display:none">
+        <div class="fg"><label>Precio del rollo ($)</label><input type="text" id="cm_a_prollo" value="0,00" oninput="cmPreview()"/></div>
+        <div class="fg"><label>Ancho (cm)</label><input type="text" id="cm_a_ancho" value="0" oninput="cmPreview()"/></div>
+        <div class="fg"><label>Largo (m)</label><input type="text" id="cm_a_largo" value="0" oninput="cmPreview()"/></div>
+      </div>
+    </div>
+
+    <div id="cm-sec-equipo" style="display:none">
+      <div class="frow">
+        <div class="fg"><label>Precio del equipo ($)</label><input type="text" id="cm_e_precio" value="0,00" oninput="cmPreview()"/></div>
+        <div class="fg"><label>Se reparte por</label>
+          <select id="cm_e_modo" onchange="cmTipoCambio()"><option value="vida">Vida útil (usos)</option><option value="capacidad">Cap./mes + meses</option></select>
+        </div>
+      </div>
+      <div class="frow" id="cm_e_vida_w"><div class="fg"><label>Vida útil (usos)</label><input type="text" id="cm_e_vida" value="100" oninput="cmPreview()"/></div></div>
+      <div class="frow" id="cm_e_cap_w" style="display:none">
+        <div class="fg"><label>Meses</label><input type="text" id="cm_e_meses" value="24" oninput="cmPreview()"/></div>
+        <div class="fg"><label>Capacidad por mes</label><input type="text" id="cm_e_cap" value="100" oninput="cmPreview()"/></div>
+      </div>
+    </div>
+
+    <div class="pill" style="margin:6px 0 10px"><span id="cm-prev">—</span></div>
+    <div class="frow">
+      <div class="fg"><label>Proveedor</label><input type="text" id="cm_proveedor" placeholder="Opcional"/></div>
+    </div>
+    <div class="fg"><label>Notas</label><textarea id="cm_notas" rows="2" placeholder="Marca, medida, dónde lo compras…"></textarea></div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-brand" onclick="cmGuardar()"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar</button>
+      <button class="btn" onclick="closeModal('m-costmat')">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MODAL: Traer materiales de mis productos (V16_16) ══ -->
+<div class="modal-bg" id="m-cmat-imp" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:680px">
+    <button class="modal-close" onclick="closeModal('m-cmat-imp')">✕</button>
+    <div class="modal-title">Traer materiales de mis productos</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:8px">Busca en los productos del Editor las líneas que aún no están en la lista y las agrupa por nombre. Tus productos no se modifican.</p>
+    <div id="cmi-resumen" style="font-size:12px;font-weight:600;margin-bottom:8px"></div>
+    <div id="cmi-lista" style="max-height:50vh;overflow:auto"></div>
+    <div class="btn-row" style="margin-top:12px">
+      <button class="btn btn-brand" onclick="cmImportarAplicar()">Agregar a la lista</button>
+      <button class="btn" onclick="closeModal('m-cmat-imp')">Cancelar</button>
+      <span style="flex:1"></span>
+      <button class="btn btn-sm" onclick="cmImpMarcar(true)">Marcar todos</button>
+      <button class="btn btn-sm" onclick="cmImpMarcar(false)">Quitar todos</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ MODAL: Cuenta por Pagar ══ -->
 <!-- ══ MODAL: Cuenta (V15_71) ══ -->
 <div class="modal-bg" id="m-cuenta" role="dialog" aria-modal="true">
@@ -23420,7 +24025,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v16_15';
+  const APP_VERSION = 'v16_16';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
