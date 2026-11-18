@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V16_17">
+<html lang="es" data-app-version="GestioMada_V16_18">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -7558,7 +7558,7 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v16.17: NUEVO (Reportes \u00b7 Bambalinas) Pesta\u00f1a nueva \u00abBambalinas\u00bb en Reportes, solo para ellas: ventas por color y lazo (con o sin caja), stock por color y pedidos pendientes, con bot\u00f3n para imprimir la lista. Las bambalinas YA NO aparecen en Textiles (ni en sus ventas, ni en el stock, ni en la Orden de Producci\u00f3n, ni en las listas del proveedor, ni en el PDF de Textiles). La app las reconoce porque el nombre o la categor\u00eda del producto dice \u00abbambalina\u00bb; no hace falta tocar nada en Supabase. MEJORADO (Cuentas y Reportes en celular) Cuentas: botones en cuadr\u00edcula con tama\u00f1o c\u00f3modo para el dedo, tarjetas m\u00e1s claras y, dentro de una cuenta, los movimientos se ven como una lista de tarjetas (fecha, concepto y monto a simple vista) en vez de una tabla que se desliza; el bot\u00f3n \u00abVolver\u00bb se queda arriba al bajar. Reportes: el filtro de per\u00edodo se acomoda en pantalla chica, los indicadores se ven de dos en dos, las pesta\u00f1as se deslizan con borde suave y las tablas anchas muestran una sombra en el borde cuando hay m\u00e1s para deslizar. Respeta la opci\u00f3n de movimiento reducido del tel\u00e9fono. \nv16.16: NUEVO (Costos de materiales) Nueva secci\u00f3n \u00abCostos de materiales\u00bb en el men\u00fa, debajo del Editor de Producto. Es una lista con el precio de cada material: por unidad (un bol\u00edgrafo, una caja: precio de compra y cu\u00e1ntas unidades trae), por \u00e1rea (vinil, laminado: por cm\u00b2 o por rollo) y equipos (con su vida \u00fatil). Se sincroniza entre dispositivos y solo la ve el administrador. Bot\u00f3n \u00abTraer de mis productos\u00bb: busca en los productos del Editor las l\u00edneas que ya tienes (con su precio) y las agrega a la lista de una vez, para no escribirlas de nuevo. EDITOR: al escribir el nombre en una l\u00ednea de Costos directos, Material por \u00e1rea o Equipos, la app sugiere los materiales de la lista; al elegir uno llena sola el precio y la cantidad (la cantidad a usar la pones t\u00fa). Si el nombre que escribes no est\u00e1 en la lista, aparece \u00ab\uff0b Guardar en la lista de costos\u00bb con el formulario ya lleno. Si cambias el precio de un material en la lista, tus productos NO cambian solos: al abrir un producto, cada l\u00ednea que usa ese material muestra un aviso con el precio de antes y el de ahora, y t\u00fa eliges \u00abActualizar\u00bb o \u00abMantener el m\u00edo\u00bb. Requiere la tabla costos_materiales en Supabase. Tambi\u00e9n: los nombres con comillas en el Editor ya no se cortan al reabrir el producto. \nv16.15: NUEVO (Sincronizaci\u00f3n \u00b7 Cat\u00e1logo) Aviso antes de subir un precio viejo. Cuando este dispositivo va a subir un producto y la nube tiene un precio (o recargos por talla) distinto al que este dispositivo conoc\u00eda, aparece un aviso con los dos precios y eliges: \u00abMantener el de la nube\u00bb (este producto se actualiza con lo de la nube) o \u00abSubir el de este dispositivo\u00bb. Cerrar el aviso equivale a mantener el de la nube: no se sube nada sin que lo confirmes. Funciona igual con los productos que quedaron en espera sin conexi\u00f3n y con las importaciones por CSV. No aparece cuando el \u00fanico que cambi\u00f3 el precio eres t\u00fa en ese dispositivo. No cubre todav\u00eda el precio manual del Editor. NUEVO: el tipo de venta del Editor ahora se guarda en la nube (columna tipo_venta en productos_pers, ya creada en Supabase). \nv16.14: NUEVO (Editor \u00b7 Lista completa) El panel \u00abLista\u00bb ahora tiene filtros por categor\u00eda, por tipo de venta (detal / mayor / sin definir) y por estado, adem\u00e1s del buscador, y muestra una columna \u00abTipo de venta\u00bb. ARREGLADO: al abrir un producto desde la lista (o desde el buscador del editor) ya no queda siempre en \u00abAl detal\u00bb; ahora toma el tipo de venta del producto del cat\u00e1logo con el mismo SKU. Causa: la tabla productos_pers no guarda el tipo de venta, as\u00ed que se perd\u00eda al sincronizar y el editor lo rellenaba con detal. Los productos que no est\u00e1n en el cat\u00e1logo siguen abriendo en detal y se ven con \u00ab\u2014\u00bb en la lista. \nv16.13: ARREGLADO (Inicio de sesi\u00f3n) El bot\u00f3n \u00ab\u00bfOlvidaste tu contrase\u00f1a?\u00bb ahora funciona completo. Antes enviaba el correo, pero al abrir el enlace la app te dejaba entrar sin pedirte una contrase\u00f1a nueva, y sus avisos (correo enviado o error) quedaban tapados por la pantalla de login y no se ve\u00edan. Ahora: (1) los avisos salen dentro de la tarjeta de login; (2) al abrir el enlace del correo aparece \u00abCrea tu contrase\u00f1a nueva\u00bb (con ojo para ver lo que escribes) y al guardar entras directo; (3) si el enlace venci\u00f3 o ya se us\u00f3, te lo dice; (4) si Supabase bloquea por demasiados correos, lo explica (espera 1 hora); (5) despu\u00e9s de pedir un enlace hay que esperar 60 segundos para pedir otro, as\u00ed no se gasta el l\u00edmite de correos.\nv16.12: NUEVO (Inicio de sesi\u00f3n) Ahora el campo de contrase\u00f1a tiene un ojo a la derecha: lo tocas y ves lo que escribiste, lo tocas otra vez y se oculta. Al entrar o cerrar sesi\u00f3n la contrase\u00f1a vuelve a quedar oculta sola. No cambia nada m\u00e1s del login.\nv16.11: NUEVO (Cat\u00e1logo) Opci\u00f3n \u00abCon caja\u00bb para productos como las bambalinas de 7 y 8 cm. En la ficha del producto (con variantes activadas) activas \u00abSe puede vender con caja\u00bb y pones cu\u00e1nto suma la caja al precio final y al costo. Al vender (POS, pedidos y cotizaciones) aparece el campo \u00abSin caja / Con caja (+$X)\u00bb junto al color y al lazo. Adem\u00e1s, por producto puedes decidir si la caja se descuenta del inventario: eliges qu\u00e9 insumo es la caja y cada venta \u00abCon caja\u00bb resta 1 unidad (si anulas, cancelas o editas el pedido, se devuelve). Si no lo activas, la caja solo suma precio y costo. Se guarda dentro de los datos del producto que ya se sincronizan, sin tablas ni columnas nuevas. Los productos que ya tienes quedan exactamente igual.\nv16.10: CORREGIDO (Catálogo) Un producto que solo tiene característica (ej. bambalina con luces: solo color de lazo, sin colores ni tallas) ahora se reconoce como producto con variantes: al reabrir la ficha se ven sus características y en POS, pedidos e inventario pide solo ese campo, sin exigir color. Los demás productos quedan igual.\n' +
+  return 'v16.18: MEJORA (Ventas · Cobrar pedido) La ventana «Nueva Venta» ahora cambia cuando cobras un pedido (Pago restante o Abono). (1) Aparece una tarjeta «Pedido a cobrar» justo debajo del Cliente, con el selector del pedido y su detalle de solo lectura: número, fecha de entrega, estado, los productos con cantidad y monto, delivery, envío, diseño y extras y descuento si los hay, los pagos anteriores (fecha, método y monto), Total, Pagado, Saldo y Saldo en Bs. (2) La tarjeta de Productos (catálogo, ítem manual y Subtotal) y el campo Descuento se ocultan en ese modo porque no se usan para cobrar un pedido; si había productos en el carrito al cambiar de tipo, se vacían. (3) El método de pago queda en Pago Móvil por defecto, y en USD Efectivo si todos los pagos anteriores del pedido fueron en USD Efectivo; se puede cambiar. (4) La etiqueta del monto dice «Monto recibido (Bs)» o «(USD)» según el método, y al cambiar el método en Pago restante el monto se recalcula en la moneda correcta. (5) Nuevo indicador «Queda por cobrar»: cuánto saldo quedaría después de este pago (en este modo reemplaza al Vuelto, que siempre era 0). FIX: al elegir un pedido desde el selector, ahora sí aparece el cliente del pedido en la tarjeta de Cliente. No cambia ningún cálculo de cobro, caja ni sincronización. La venta rápida del POS no se tocó. \nv16.17: NUEVO (Reportes \u00b7 Bambalinas) Pesta\u00f1a nueva \u00abBambalinas\u00bb en Reportes, solo para ellas: ventas por color y lazo (con o sin caja), stock por color y pedidos pendientes, con bot\u00f3n para imprimir la lista. Las bambalinas YA NO aparecen en Textiles (ni en sus ventas, ni en el stock, ni en la Orden de Producci\u00f3n, ni en las listas del proveedor, ni en el PDF de Textiles). La app las reconoce porque el nombre o la categor\u00eda del producto dice \u00abbambalina\u00bb; no hace falta tocar nada en Supabase. MEJORADO (Cuentas y Reportes en celular) Cuentas: botones en cuadr\u00edcula con tama\u00f1o c\u00f3modo para el dedo, tarjetas m\u00e1s claras y, dentro de una cuenta, los movimientos se ven como una lista de tarjetas (fecha, concepto y monto a simple vista) en vez de una tabla que se desliza; el bot\u00f3n \u00abVolver\u00bb se queda arriba al bajar. Reportes: el filtro de per\u00edodo se acomoda en pantalla chica, los indicadores se ven de dos en dos, las pesta\u00f1as se deslizan con borde suave y las tablas anchas muestran una sombra en el borde cuando hay m\u00e1s para deslizar. Respeta la opci\u00f3n de movimiento reducido del tel\u00e9fono. \nv16.16: NUEVO (Costos de materiales) Nueva secci\u00f3n \u00abCostos de materiales\u00bb en el men\u00fa, debajo del Editor de Producto. Es una lista con el precio de cada material: por unidad (un bol\u00edgrafo, una caja: precio de compra y cu\u00e1ntas unidades trae), por \u00e1rea (vinil, laminado: por cm\u00b2 o por rollo) y equipos (con su vida \u00fatil). Se sincroniza entre dispositivos y solo la ve el administrador. Bot\u00f3n \u00abTraer de mis productos\u00bb: busca en los productos del Editor las l\u00edneas que ya tienes (con su precio) y las agrega a la lista de una vez, para no escribirlas de nuevo. EDITOR: al escribir el nombre en una l\u00ednea de Costos directos, Material por \u00e1rea o Equipos, la app sugiere los materiales de la lista; al elegir uno llena sola el precio y la cantidad (la cantidad a usar la pones t\u00fa). Si el nombre que escribes no est\u00e1 en la lista, aparece \u00ab\uff0b Guardar en la lista de costos\u00bb con el formulario ya lleno. Si cambias el precio de un material en la lista, tus productos NO cambian solos: al abrir un producto, cada l\u00ednea que usa ese material muestra un aviso con el precio de antes y el de ahora, y t\u00fa eliges \u00abActualizar\u00bb o \u00abMantener el m\u00edo\u00bb. Requiere la tabla costos_materiales en Supabase. Tambi\u00e9n: los nombres con comillas en el Editor ya no se cortan al reabrir el producto. \nv16.15: NUEVO (Sincronizaci\u00f3n \u00b7 Cat\u00e1logo) Aviso antes de subir un precio viejo. Cuando este dispositivo va a subir un producto y la nube tiene un precio (o recargos por talla) distinto al que este dispositivo conoc\u00eda, aparece un aviso con los dos precios y eliges: \u00abMantener el de la nube\u00bb (este producto se actualiza con lo de la nube) o \u00abSubir el de este dispositivo\u00bb. Cerrar el aviso equivale a mantener el de la nube: no se sube nada sin que lo confirmes. Funciona igual con los productos que quedaron en espera sin conexi\u00f3n y con las importaciones por CSV. No aparece cuando el \u00fanico que cambi\u00f3 el precio eres t\u00fa en ese dispositivo. No cubre todav\u00eda el precio manual del Editor. NUEVO: el tipo de venta del Editor ahora se guarda en la nube (columna tipo_venta en productos_pers, ya creada en Supabase). \nv16.14: NUEVO (Editor \u00b7 Lista completa) El panel \u00abLista\u00bb ahora tiene filtros por categor\u00eda, por tipo de venta (detal / mayor / sin definir) y por estado, adem\u00e1s del buscador, y muestra una columna \u00abTipo de venta\u00bb. ARREGLADO: al abrir un producto desde la lista (o desde el buscador del editor) ya no queda siempre en \u00abAl detal\u00bb; ahora toma el tipo de venta del producto del cat\u00e1logo con el mismo SKU. Causa: la tabla productos_pers no guarda el tipo de venta, as\u00ed que se perd\u00eda al sincronizar y el editor lo rellenaba con detal. Los productos que no est\u00e1n en el cat\u00e1logo siguen abriendo en detal y se ven con \u00ab\u2014\u00bb en la lista. \nv16.13: ARREGLADO (Inicio de sesi\u00f3n) El bot\u00f3n \u00ab\u00bfOlvidaste tu contrase\u00f1a?\u00bb ahora funciona completo. Antes enviaba el correo, pero al abrir el enlace la app te dejaba entrar sin pedirte una contrase\u00f1a nueva, y sus avisos (correo enviado o error) quedaban tapados por la pantalla de login y no se ve\u00edan. Ahora: (1) los avisos salen dentro de la tarjeta de login; (2) al abrir el enlace del correo aparece \u00abCrea tu contrase\u00f1a nueva\u00bb (con ojo para ver lo que escribes) y al guardar entras directo; (3) si el enlace venci\u00f3 o ya se us\u00f3, te lo dice; (4) si Supabase bloquea por demasiados correos, lo explica (espera 1 hora); (5) despu\u00e9s de pedir un enlace hay que esperar 60 segundos para pedir otro, as\u00ed no se gasta el l\u00edmite de correos.\nv16.12: NUEVO (Inicio de sesi\u00f3n) Ahora el campo de contrase\u00f1a tiene un ojo a la derecha: lo tocas y ves lo que escribiste, lo tocas otra vez y se oculta. Al entrar o cerrar sesi\u00f3n la contrase\u00f1a vuelve a quedar oculta sola. No cambia nada m\u00e1s del login.\nv16.11: NUEVO (Cat\u00e1logo) Opci\u00f3n \u00abCon caja\u00bb para productos como las bambalinas de 7 y 8 cm. En la ficha del producto (con variantes activadas) activas \u00abSe puede vender con caja\u00bb y pones cu\u00e1nto suma la caja al precio final y al costo. Al vender (POS, pedidos y cotizaciones) aparece el campo \u00abSin caja / Con caja (+$X)\u00bb junto al color y al lazo. Adem\u00e1s, por producto puedes decidir si la caja se descuenta del inventario: eliges qu\u00e9 insumo es la caja y cada venta \u00abCon caja\u00bb resta 1 unidad (si anulas, cancelas o editas el pedido, se devuelve). Si no lo activas, la caja solo suma precio y costo. Se guarda dentro de los datos del producto que ya se sincronizan, sin tablas ni columnas nuevas. Los productos que ya tienes quedan exactamente igual.\nv16.10: CORREGIDO (Catálogo) Un producto que solo tiene característica (ej. bambalina con luces: solo color de lazo, sin colores ni tallas) ahora se reconoce como producto con variantes: al reabrir la ficha se ven sus características y en POS, pedidos e inventario pide solo ese campo, sin exigir color. Los demás productos quedan igual.\n' +
   'v16.09: NUEVO (Catálogo) Productos con dos variantes, como las bambalinas (color de bambalina + color de lazo): cada producto puede tener sus propios nombres de campo («Color de bambalina», «Color de lazo…»), la característica ya funciona también en productos solo con colores o sin colores ni tallas (solo lazo), y un interruptor «La característica no cuenta en inventario» para llevar el stock solo por color. Los productos que ya tienes quedan exactamente igual.\n' +
   'v16.08: CORREGIDO (PWA) La app ya no se queda mostrando una copia vieja de index.html: el service worker ahora busca primero la versi\u00f3n m\u00e1s nueva en internet (usa la copia guardada solo sin conexi\u00f3n), y si detecta que la p\u00e1gina y el service worker son de versiones distintas limpia la cach\u00e9 y recarga sola (una vez). No toca tus datos.\nv16.07: CAMBIO (Editor \u00b7 lista completa) El bot\u00f3n "Lista" ahora abre un panel dentro de la app (sin ventana emergente, funciona en el celular y en la app instalada).\nv16.06: NUEVO (Editor \u00b7 lista completa) Bot\u00f3n "Lista" que abre una ventana nueva con todos los productos del editor (buscador, SKU, categor\u00eda, estado, precio y si est\u00e1n en el cat\u00e1logo); clic en un producto lo carga en el editor. CORREGIDO: "Agregar al Cat\u00e1logo" ahora tambi\u00e9n guarda el producto en el editor (ya no desaparece del buscador del editor).\nv16.05: NUEVO (Textiles \u00b7 talla 16) \u2014 la talla 16 (ni\u00f1os grandes) ahora se ofrece como 16D (Dama) y 16C (Caballero), igual que las tallas de letras. Los pedidos antiguos con talla 16 no se modifican. \nv16.04: NUEVO (Textiles \u00b7 pijamas y producci\u00f3n) \u2014 1) Cada producto textil puede marcarse \u00abEs pijama\u00bb y tener una \u00abTela de la franela\u00bb (Micro durazno, Algod\u00f3n; editable en Configuraci\u00f3n \u2192 Textiles \u00b7 telas) que solo se usa en reportes. 2) Nuevo \u00abEstampado\u00bb opcional (Configuraci\u00f3n \u2192 Textiles \u00b7 estampados): se marcan por producto y se elige al cotizar o crear el pedido; aparece en pedido, cotizaci\u00f3n y WhatsApp. 3) Reportes \u2192 Textiles: listas separadas para el proveedor (Franelas por tela, color y talla; Monos por estampado, talla y bota/jogger), imprimibles. 4) Orden de Producci\u00f3n: marcas con casillas qu\u00e9 pedidos van a producci\u00f3n; queda un Historial de producci\u00f3n con fecha, con reimpresi\u00f3n y bot\u00f3n Deshacer. 5) Icono de nota en los pedidos con nota escrita a mano y el n\u00famero PED abre el pedido. \nv16.03: NUEVO (Textiles \u00b7 grupos propios) \u2014 las tallas de tus grupos de tallas (ej: Mascotas \u2192 Grande) ya pueden tener recargo de precio y de costo. En el producto, bajo \u00abRecargo por talla\u00bb, aparece cada talla de tu grupo: en Grande pones Precio final +$2 y Costo +$0,8. Funciona igual que XL/XXL: se aplica en POS, pedidos y cotizaciones. \nv16.02: ICONOS (Configuraci\u00f3n y Editor de producto) \u2014 los emojis de Configuraci\u00f3n (Textiles \u00b7 tallas, Textiles \u00b7 caracter\u00edsticas, Ver detalles del almacenamiento, Actualizar ahora y los botones de tallas) se cambiaron por los iconos de l\u00ednea que usa el resto de GestioMada. En el editor de producto se quit\u00f3 el emoji de la opci\u00f3n \u00abLocal\u00bb. \nv16.01: NUEVO (Textiles · tallas) En Configuración → Textiles · tallas ya puedes crear tus propios grupos de tallas (ej: «Mascotas» con Pequeña y Grande): escribes el nombre, lo creas y le agregas sus tallas. Puedes renombrarlo, ordenarlo o borrarlo. El grupo aparece al marcar un producto como textil, junto a Niños, Adultos y Bodys. Se sincroniza entre dispositivos. \nv16.00: NUEVO (Textiles) Cada producto textil puede tener sus propias caracter\u00edsticas (se eligen al crear o editar el producto). Los productos que no se tocan siguen usando la lista general; si desmarcas todas, el campo no aparece en ventas ni pedidos. Requiere la columna textil_caracteristicas en Supabase. \u00b7 v15.99: NUEVO (Textiles) Las características de los productos textiles (antes fijas: Con C/B y Sin C/B) ahora se configuran en Configuración → Textiles · características. Puedes agregar o quitar las que necesites (ej: Mangas rosadas) y se sincronizan entre dispositivos. Lo ya registrado no se modifica. \u00b7 v15.98: AJUSTE (Ventas) \u2014 el filtro Detal/Mayor del punto de venta ahora queda al lado derecho del buscador (antes quedaba debajo en pantallas peque\u00f1as).\n'
     + 'v15.97: NUEVO (Filtro Detal/Mayor) \u2014 en Cat\u00e1logo y en Ventas (Nueva Venta) hay un filtro para ver solo productos al detal o solo al mayor. Aparece cuando los tipos de venta est\u00e1n activados en Configuraci\u00f3n. El resto de la app no cambia.\n'
@@ -12069,8 +12069,109 @@ function mvTipoChange(){
   if(necesitaPedido){
     poblarSelectPedidos('mv_pedido_sel');
     qs('#mv_pedido_info').style.display = 'none';
+    // V16_18: cobrar un pedido no usa carrito; se vacía para que no quede nada oculto
+    if(_venItems.length){ _venItems = []; renderItemsVenta(); }
+    const rec = qs('#mv_recibido'); if(rec) rec.value = '';
+    mvSetMetodo('pago_movil'); // por defecto; al elegir el pedido se afina según sus pagos
   }
   _mvPedidoVinculado = null;
+  mvAplicarModoPedido();
+  mvActualizarEtiquetaMonto();
+  recalcVenta();
+}
+
+/* V16_18: en modo pedido (Abono / Pago restante) se ocultan Productos y Descuento */
+function mvAplicarModoPedido(){
+  const tipo = qs('#mv_tipo')?.value || 'venta_rapida';
+  const modoPedido = ['abono','pago_restante'].includes(tipo);
+  const pc = qs('#mv_prod_card'); if(pc) pc.style.display = modoPedido ? 'none' : '';
+  const df = qs('#mv_desc_fg');   if(df) df.style.display = modoPedido ? 'none' : '';
+  if(modoPedido){ const d = qs('#mv_descuento'); if(d) d.value = ''; }
+}
+
+/* V16_18: la etiqueta del monto dice en qué moneda se escribe (Bs o USD) */
+function mvActualizarEtiquetaMonto(){
+  const esBs = ['efectivo_bs','pago_movil','transferencia'].includes(qs('#mv_metodo')?.value || '');
+  const l = qs('#mv_recibido_lbl'); if(l) l.textContent = 'Monto recibido (' + (esBs ? 'Bs' : 'USD') + ')';
+}
+
+/* V16_18: elegir un método solo si está activo en Configuración */
+function mvSetMetodo(m){
+  const el = qs('#mv_metodo'); if(!el) return false;
+  if(![...el.options].some(o => o.value === m)) return false;
+  el.value = m; return true;
+}
+
+/* V16_18: método por defecto al cobrar un pedido:
+   USD Efectivo si TODOS sus pagos anteriores fueron en USD Efectivo; si no, Pago Móvil. */
+function mvMetodoPorDefectoPedido(ped){
+  const pagos = (ped && ped.pagos) || [];
+  const todoUsdEfectivo = pagos.length > 0 && pagos.every(pg => pg.metodo === 'efectivo_usd');
+  return todoUsdEfectivo ? 'efectivo_usd' : 'pago_movil';
+}
+
+/* V16_18: al cambiar el método, en Pago restante se recalcula el monto en la moneda correcta */
+function mvMetodoChange(){
+  const tipo = qs('#mv_tipo')?.value || '';
+  if(tipo === 'pago_restante' && _mvPedidoVinculado) mvLlenarMontoRestante();
+  mvActualizarEtiquetaMonto();
+  recalcVenta();
+}
+
+/* Pone en "Monto recibido" el saldo del pedido en la moneda del método elegido */
+function mvLlenarMontoRestante(){
+  if(!_mvPedidoVinculado) return;
+  const recEl = qs('#mv_recibido'); if(!recEl) return;
+  const saldo = pedidoMontoCliente(_mvPedidoVinculado).saldo;
+  const esBs = ['efectivo_bs','pago_movil','transferencia'].includes(qs('#mv_metodo')?.value || '');
+  recEl.value = esBs ? fmtBs(usdToBs(saldo, getTasaBCV())) : Number(saldo||0).toFixed(2).replace('.',',');
+}
+
+/* V16_18: detalle de solo lectura del pedido que se está cobrando */
+function mvRenderDetallePedido(ped, mc){
+  const box = qs('#mv_ped_detalle'); if(!box) return;
+  const multI = mc.usdPuro ? 1 : (mc.dif > 0 ? mc.dif : 1);   // productos: c/dif (igual que el total del pedido)
+  const multP = mc.usdPuro ? 1 : (mc.dif > 1 ? mc.dif : 1);   // pagos históricos sin monto_cdif
+  const row = (l, r, st) => `<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0;${st||''}"><div style="min-width:0">${l}</div><div style="font-weight:600;white-space:nowrap">${r}</div></div>`;
+  const sec = t => `<div style="font-size:10px;font-weight:700;color:var(--muted);letter-spacing:.04em;text-transform:uppercase;margin:10px 0 3px">${t}</div>`;
+  const fe = String(ped.fecha_entrega || '').slice(0,10);
+  const entrega = /^\d{4}-\d{2}-\d{2}$/.test(fe) ? fmtFecha(fe) : 'sin fecha';
+  const est = PED_ESTADOS[ped.estado] || ped.estado || '';
+  let html = `<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><strong style="font-size:13px">${esc(ped.numero||'')}</strong><span style="color:var(--muted)">Entrega: ${esc(entrega)}${est ? ' · ' + esc(est) : ''}</span></div>`;
+
+  html += sec('Productos');
+  const items = ped.items || [];
+  if(items.length){
+    html += items.map(it => {
+      const vari = [tallaVisible(it.talla), it.color, it.estampado, it.caracteristica, cajaTxt(it)].filter(Boolean).join(' · ');
+      const cant = Number(it.cant) || 1;
+      const monto = round2((Number(it.precio_unit) || 0) * cant * multI);
+      return row(`${cant}× ${esc(it.nombre||'')}${vari ? ` <span style="font-size:10px;color:var(--brand);font-weight:600">${esc(vari)}</span>` : ''}`, euro(monto));
+    }).join('');
+  } else {
+    html += `<div style="color:var(--muted)">Sin productos registrados</div>`;
+  }
+  [['Delivery',ped.delivery_usd],['Envío',ped.envio_usd],['Diseño',ped.diseno_usd],['Extras',ped.extras_usd]].forEach(([n,v]) => {
+    if(_numPedido(v) > 0) html += row(n, euro(_numPedido(v)));
+  });
+  if(_numPedido(ped.descuento) > 0) html += row('Descuento', '− ' + euro(round2(_numPedido(ped.descuento) * multI)), 'color:var(--ok)');
+
+  html += sec('Pagos anteriores');
+  const pagos = ped.pagos || [];
+  const ab = parseFloat(ped.abono) || 0;
+  if(pagos.length || ab > 0){
+    html += pagos.map(pg => {
+      const mcd = parseFloat(pg.monto_cdif) || 0;
+      const m = mc.usdPuro ? (parseFloat(pg.monto) || 0) : (mcd > 0 ? mcd : (parseFloat(pg.monto) || 0) * multP);
+      const d = pg.fecha ? new Date(pg.fecha) : null;
+      const f = (d && !isNaN(d)) ? d.toLocaleDateString('es-ES', {day:'2-digit', month:'2-digit'}) : '';
+      return row(esc([f, METODOS_LABEL[pg.metodo] || pg.metodo || ''].filter(Boolean).join(' · ')), euro(m));
+    }).join('');
+    if(ab > 0) html += row('Abono inicial', euro(round2(ab * multP)));
+  } else {
+    html += `<div style="color:var(--muted)">Sin pagos registrados</div>`;
+  }
+  box.innerHTML = html;
 }
 
 /* Al seleccionar un pedido en el POS: muestra info y pre-rellena monto */
@@ -12125,13 +12226,12 @@ function posSeleccionarPedido(){
 function mvSeleccionarPedido(){
   const selId = qs('#mv_pedido_sel')?.value;
   const tipo  = qs('#mv_tipo')?.value || '';
-  if(!selId){ _mvPedidoVinculado = null; qs('#mv_pedido_info').style.display='none'; return; }
+  if(!selId){ _mvPedidoVinculado = null; qs('#mv_pedido_info').style.display='none'; mvActualizarEtiquetaMonto(); recalcVenta(); return; }
   const ped = loadPed().find(p => String(p.id) === String(selId));
   if(!ped){ _mvPedidoVinculado = null; return; }
   _mvPedidoVinculado = ped;
   const mc = pedidoMontoCliente(ped);
   const saldo = mc.saldo;
-  const fmt = n => Number(n||0).toFixed(2).replace('.',',');
   qs('#mv_ped_total').textContent  = euro(mc.total);
   qs('#mv_ped_pagado').textContent = euro(mc.pagado);
   qs('#mv_ped_saldo').textContent  = euro(mc.saldo);
@@ -12142,32 +12242,27 @@ function mvSeleccionarPedido(){
     _saldoBsMvEl.querySelector('strong').textContent = 'Bs ' + fmtBs(usdToBs(saldo, _bcvMvSel));
     _saldoBsMvEl.style.display = '';
   } else if(_saldoBsMvEl){ _saldoBsMvEl.style.display = 'none'; }
+  mvRenderDetallePedido(ped, mc); // V16_18: detalle de solo lectura (productos, pagos, extras)
   qs('#mv_pedido_info').style.display = '';
-  // Pre-llenar cliente
+  // Pre-llenar cliente (V16_18: usa los campos reales de la tarjeta Cliente)
   if(ped.cliente && !_venCliSel){
-    _venCliSel = ped.cliente;
-    const csel = qs('#mv_cli_sel');
-    if(csel){
-      csel.style.display = '';
-      const cn = csel.querySelector('.cli-nombre');
-      if(cn) cn.textContent = ped.cliente.nombre + (ped.cliente.apellido?' '+ped.cliente.apellido:'');
+    const ci = loadCli().findIndex(c => String(c.id) === String(ped.cliente.id));
+    if(ci >= 0){ seleccionarClienteVenta(ci); }
+    else {
+      _venCliSel = ped.cliente;
+      const ap = ped.cliente.apellido || '';
+      qs('#mv_cli_ini').textContent = ((ped.cliente.nombre||'?')[0]||'?').toUpperCase() + (ap ? ap[0].toUpperCase() : '');
+      qs('#mv_cli_nombre').textContent = (ped.cliente.nombre||'') + (ap ? ' '+ap : '');
+      qs('#mv_cli_meta').textContent = (ped.cliente.cedula||'') + ' ' + (ped.cliente.telefono ? '· '+ped.cliente.telefono : '');
+      qs('#mv_cli_sel').style.display = 'block';
     }
   }
+  // V16_18: método por defecto (Pago Móvil, o USD Efectivo si ya pagó así) antes de calcular el monto
+  mvSetMetodo(mvMetodoPorDefectoPedido(ped));
+  mvActualizarEtiquetaMonto();
   // Pre-llenar monto para pago_restante en la moneda correcta
-  if(tipo === 'pago_restante'){
-    const recEl = qs('#mv_recibido');
-    if(recEl){
-      const metodoBsMv = ['efectivo_bs','pago_movil','transferencia'].includes(qs('#mv_metodo')?.value||'');
-      if(metodoBsMv){
-        const bcvMv = getTasaBCV(), difMv = getDiferencial();
-        const saldoBsMv = usdToBs(saldo, bcvMv);
-        recEl.value = fmtBs(saldoBsMv);
-      } else {
-        recEl.value = fmt(saldo);
-      }
-    }
-    recalcVenta();
-  }
+  if(tipo === 'pago_restante') mvLlenarMontoRestante();
+  recalcVenta();
 }
 
 /* Registrar pago en el pedido vinculado al guardar una venta.
@@ -13586,6 +13681,7 @@ function abrirNuevaVenta(){
   qs('#mv_metodo').value='efectivo_bs';
   const mvTipo=qs('#mv_tipo'); if(mvTipo) mvTipo.value='venta_rapida';
   const mp=qs('#mv_pedido_panel'); if(mp) mp.style.display='none';
+  mvAplicarModoPedido(); mvActualizarEtiquetaMonto(); // V16_18: vuelve a la vista normal de venta
   poblarSelectCatalogoVenta();
   recalcVenta();
   openModal('m-venta');
@@ -13697,7 +13793,25 @@ function recalcVenta(){
   const mr=qs('#mv_pill_rec'); if(mr) mr.textContent = metodoBsV ? 'Bs '+fmtBs(rec) : euro(rec);
   const mv=qs('#mv_pill_vuelto'); if(mv) mv.textContent = metodoBsV ? 'Bs '+fmtBs(vuelto>0?vuelto:-falta) : euro(vuelto>0?vuelto:-falta);
   const vw=qs('#mv_pill_vuelto_wrap');
-  if(vw){ vw.style.background=vuelto>0?'rgba(34,197,94,.15)':(falta>0?'rgba(239,68,68,.15)':'var(--bg)'); }
+  const modoPedV = ['abono','pago_restante'].includes(tipoV) && !!_mvPedidoVinculado;
+  if(vw){
+    vw.style.background=vuelto>0?'rgba(34,197,94,.15)':(falta>0?'rgba(239,68,68,.15)':'var(--bg)');
+    vw.style.display = modoPedV ? 'none' : ''; // en modo pedido el monto no puede superar el saldo: no hay vuelto
+  }
+  // V16_18: cuánto saldo queda después de este pago
+  const qw=qs('#mv_pill_queda_wrap');
+  if(qw){
+    qw.style.display = modoPedV ? '' : 'none';
+    if(modoPedV){
+      const saldoQ = pedidoMontoCliente(_mvPedidoVinculado).saldo;
+      const recUsdQ = (metodoBsV && bcvV>0) ? rec/bcvV : rec;
+      let quedaQ = round2(saldoQ - recUsdQ);
+      if(quedaQ <= PED_SALDO_TOLERANCIA) quedaQ = 0;
+      const mq = qs('#mv_pill_queda');
+      if(mq) mq.textContent = (metodoBsV && bcvV>0) ? 'Bs '+fmtBs(usdToBs(quedaQ,bcvV)) : euro(quedaQ);
+      qw.style.background = quedaQ>0 ? 'rgba(245,158,11,.15)' : 'rgba(34,197,94,.15)';
+    }
+  }
 }
 
 // ── Guardar venta ──
@@ -17067,11 +17181,7 @@ function cobrarPedidoDesdeModal(){
   _mvPedidoVinculado = p;
   const tipoEl = qs('#mv_tipo');
   if(tipoEl){ tipoEl.value='pago_restante'; mvTipoChange(); }
-  // Pre-seleccionar método de pago según historial del pedido (USD si todos los pagos fueron en USD)
-  if(typeof pedidoPagoEnUsd==='function' && pedidoPagoEnUsd(p)){
-    const metEl = qs('#mv_metodo');
-    if(metEl){ metEl.value='efectivo_usd'; }
-  }
+  // V16_18: el método por defecto (Pago Móvil, o USD Efectivo si ya pagó así) lo decide mvSeleccionarPedido()
   // Pre-seleccionar el pedido en el select
   const selPed = qs('#mv_pedido_sel');
   if(selPed){ selPed.value = String(p.id); mvSeleccionarPedido(); }
@@ -23811,8 +23921,27 @@ function renderDashFinanzas(){
       </div>
     </div>
 
+    <!-- Pedido a cobrar (solo Abono / Pago restante) -->
+    <div id="mv_pedido_panel" class="card" style="display:none;margin-bottom:12px;padding:14px">
+      <div class="card-title" style="margin-bottom:10px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/></svg> Pedido a cobrar</div>
+      <select id="mv_pedido_sel" onchange="mvSeleccionarPedido()" style="width:100%;margin-bottom:8px"><option value="">— Seleccionar pedido pendiente —</option></select>
+      <div id="mv_pedido_info" style="display:none;font-size:12px;padding:10px;background:var(--bg);border-radius:10px;border:1px solid var(--border)">
+        <div id="mv_ped_detalle"></div>
+        <div style="border-top:1px solid var(--border);margin-top:8px;padding-top:8px">
+          <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px">
+            <span style="color:var(--muted)">Total pedido:</span><strong id="mv_ped_total">—</strong>
+            <span style="color:var(--muted)">Pagado:</span><strong id="mv_ped_pagado" style="color:var(--ok)">—</strong>
+            <span style="color:var(--muted)">Saldo:</span><strong id="mv_ped_saldo" style="color:var(--warn)">—</strong>
+          </div>
+          <div id="mv_ped_saldo_bs" style="display:none;text-align:right;margin-top:4px;font-size:11px">
+            <span style="color:var(--muted)">Saldo Bs:</span> <strong style="color:var(--danger)">—</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- Productos -->
-    <div class="card" style="margin-bottom:12px;padding:14px">
+    <div class="card" id="mv_prod_card" style="margin-bottom:12px;padding:14px">
       <div class="card-title" style="margin-bottom:10px"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0"><path d="M21 8l-9-5-9 5v8l9 5 9-5V8z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg> Productos</div>
       <div class="frow" style="margin-bottom:8px">
         <div class="fg" style="flex:2"><label>Desde catálogo</label>
@@ -23844,9 +23973,9 @@ function renderDashFinanzas(){
             <option value="pago_restante">Pago restante</option>
           </select>
         </div>
-        <div class="fg"><label>Descuento ($)</label><input type="text" id="mv_descuento" placeholder="0,00" oninput="recalcVenta()"/></div>
+        <div class="fg" id="mv_desc_fg"><label>Descuento ($)</label><input type="text" id="mv_descuento" placeholder="0,00" oninput="recalcVenta()"/></div>
         <div class="fg"><label>Método de pago</label>
-          <select id="mv_metodo" class="metodo-pago-sel">
+          <select id="mv_metodo" class="metodo-pago-sel" onchange="mvMetodoChange()">
             <option value="efectivo_bs">Efectivo Bs</option>
             <option value="efectivo_usd">Efectivo USD</option>
             <option value="pago_movil">Pago Móvil</option>
@@ -23855,27 +23984,13 @@ function renderDashFinanzas(){
             <option value="zelle">Zelle</option>
           </select>
         </div>
-        <div class="fg"><label>Monto recibido ($)</label><input type="text" id="mv_recibido" placeholder="0,00" oninput="recalcVenta()"/></div>
-      </div>
-      <!-- Panel pedido vinculado en modal -->
-      <div id="mv_pedido_panel" style="display:none;background:var(--bg);border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;margin-top:8px">
-        <div style="font-size:11px;font-weight:700;color:var(--muted);margin-bottom:6px">PEDIDO A COBRAR</div>
-        <select id="mv_pedido_sel" onchange="mvSeleccionarPedido()" style="width:100%;margin-bottom:6px"><option value="">— Seleccionar pedido pendiente —</option></select>
-        <div id="mv_pedido_info" style="display:none;font-size:12px;padding:8px;background:var(--card);border-radius:8px;border:1px solid var(--border)">
-          <div style="display:flex;justify-content:space-between;flex-wrap:wrap;gap:4px">
-            <span style="color:var(--muted)">Total pedido:</span><strong id="mv_ped_total">—</strong>
-            <span style="color:var(--muted)">Pagado:</span><strong id="mv_ped_pagado" style="color:var(--ok)">—</strong>
-            <span style="color:var(--muted)">Saldo:</span><strong id="mv_ped_saldo" style="color:var(--warn)">—</strong>
-          </div>
-          <div id="mv_ped_saldo_bs" style="display:none;text-align:right;margin-top:4px;font-size:11px">
-            <span style="color:var(--muted)">Saldo Bs:</span> <strong style="color:var(--danger)">—</strong>
-          </div>
-        </div>
+        <div class="fg"><label id="mv_recibido_lbl">Monto recibido ($)</label><input type="text" id="mv_recibido" placeholder="0,00" oninput="recalcVenta()"/></div>
       </div>
       <div class="sep"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:flex-end;align-items:center">
         <div class="pill">Recibido <strong id="mv_pill_rec">$ 0,00</strong></div>
         <div class="pill" id="mv_pill_vuelto_wrap">Vuelto <strong id="mv_pill_vuelto">$ 0,00</strong></div>
+        <div class="pill" id="mv_pill_queda_wrap" style="display:none">Queda por cobrar <strong id="mv_pill_queda">$ 0,00</strong></div>
       </div>
     </div>
 
@@ -24383,7 +24498,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v16_17';
+  const APP_VERSION = 'v16_18';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
