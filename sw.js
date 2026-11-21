@@ -1,4 +1,4 @@
-const VERSION = 'v16_18';
+const VERSION = 'v16_33';
 const CACHE_NAME = 'gestiomada-' + VERSION;
 
 const URLS_TO_CACHE = [
@@ -70,6 +70,20 @@ self.addEventListener('fetch', event => {
     url.hostname.includes('ve.dolarapi.com')
   ) {
     event.respondWith(fetch(request));
+    return;
+  }
+
+  // v16.25: fuente Poppins (Google Fonts): se guarda en caché para que se vea igual sin internet.
+  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
+    event.respondWith(
+      caches.match(request).then(cached => cached || fetch(request).then(resp => {
+        if (resp && (resp.ok || resp.type === 'opaque')) {
+          const copy = resp.clone();
+          caches.open(CACHE_NAME).then(c => c.put(request, copy)).catch(() => {});
+        }
+        return resp;
+      }))
+    );
     return;
   }
 
