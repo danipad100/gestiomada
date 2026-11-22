@@ -3874,6 +3874,45 @@ body.dark #ped-container .ped-btns .btn:not(.btn-brand){background:var(--fill)}
   .pers-io #btn_add_cat,.pers-io #btn_reg_insumo1{grid-column:1/-1}
   .pers-io .btn,.pers-io select{width:100%!important;min-width:0!important;justify-content:center;white-space:normal;text-align:center}
 }
+/* v16.36 · Barra fija inferior del Editor: Precio de Venta.
+   Hueco de altura 0 con position:sticky → no ocupa espacio y respeta el menú lateral y la barra del celular. */
+.pv-bar-slot{position:sticky;bottom:0;height:0;z-index:40;display:flex;justify-content:center;pointer-events:none}
+.pv-bar{
+  position:absolute;bottom:0;display:flex;align-items:center;justify-content:space-between;gap:16px;
+  width:min(560px,100%);min-height:60px;padding:10px 12px 10px 18px;border:0;border-radius:18px;
+  font-family:inherit;color:var(--ink);text-align:left;cursor:pointer;pointer-events:auto;
+  background:rgba(255,255,255,.72);-webkit-backdrop-filter:blur(20px) saturate(180%);backdrop-filter:blur(20px) saturate(180%);
+  box-shadow:0 10px 30px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.08);
+  transform:translateY(0);opacity:1;
+  transition:transform 380ms cubic-bezier(.32,.72,0,1),opacity 220ms ease-out;
+}
+body.dark .pv-bar{background:rgba(44,44,46,.72);box-shadow:0 10px 30px rgba(0,0,0,.5),0 0 0 .5px rgba(255,255,255,.1)}
+.pv-bar.oculta{transform:translateY(calc(100% + 28px));opacity:0;pointer-events:none}
+.pv-bar:active{transform:scale(.98);transition:transform 100ms ease-out}
+.pv-bar:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.pv-bar-txt{display:flex;flex-direction:column;min-width:0}
+.pv-bar-lbl{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.pv-bar-val{font-size:22px;font-weight:700;line-height:1.15;letter-spacing:-.01em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.pv-bar-val.cambio{animation:pv-pulso 360ms cubic-bezier(.32,.72,0,1)}
+@keyframes pv-pulso{0%{transform:scale(1)}35%{transform:scale(1.06)}100%{transform:scale(1)}}
+.pv-bar-go{display:inline-flex;align-items:center;gap:4px;flex-shrink:0;height:36px;padding:0 12px;border-radius:999px;background:var(--brand);color:var(--on-brand);font-size:13px;font-weight:600}
+.tot-block.pv-destello{animation:pv-destello 900ms ease-out}
+@keyframes pv-destello{0%{box-shadow:0 0 0 0 rgba(233,138,176,.0)}25%{box-shadow:0 0 0 6px rgba(233,138,176,.45)}100%{box-shadow:0 0 0 0 rgba(233,138,176,0)}}
+@media(max-width:640px){
+  /* El contenido ya deja 72px de espacio para la barra de navegación: la barra queda ~8px encima de ella */
+  .pv-bar-slot{bottom:env(safe-area-inset-bottom,0px)}
+  .pv-bar{min-height:56px;border-radius:16px}
+  .pv-bar-val{font-size:20px}
+  .pv-bar-go{padding:0 10px;font-size:12.5px}
+}
+@media(prefers-reduced-motion:reduce){
+  .pv-bar{transition:opacity 200ms ease!important}
+  .pv-bar.oculta{transform:none}
+  .pv-bar-val.cambio,.tot-block.pv-destello{animation:none!important}
+}
+@media(prefers-reduced-transparency:reduce){
+  .pv-bar{background:var(--card);-webkit-backdrop-filter:none;backdrop-filter:none}
+}
 @keyframes gm-pop-in{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){#view-pedidos .ped-panel.open{animation:none!important}}
 /* ═══ v16.29 · Dashboard: Productos más vendidos (podio + lista) ═══ */
@@ -4981,6 +5020,18 @@ body.dark .dtp-spark rect{fill:rgba(234,141,185,.55)}
           </div>
         </div>
 
+        <!-- v16.36 · Barra fija inferior con el Precio de Venta -->
+        <div class="pv-bar-slot" aria-hidden="false">
+          <button type="button" class="pv-bar" id="pers_pv_bar" aria-label="Precio de venta. Ir al resumen" tabindex="-1">
+            <span class="pv-bar-txt">
+              <span class="pv-bar-lbl">Precio de venta</span>
+              <span class="pv-bar-val" id="pers_pv_bar_val">$ 0,00</span>
+            </span>
+            <span class="pv-bar-go">Ver resumen
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </span>
+          </button>
+        </div>
       </div><!-- /editor -->
 
       <!-- ══════════════════════════════════════
@@ -8702,7 +8753,8 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v16.35: AJUSTE (Pedidos) Los botones \u22ee ya no muestran un c\u00edrculo fijo: el c\u00edrculo aparece al pasar el puntero, al presionarlos o mientras su men\u00fa est\u00e1 abierto. AJUSTE (Editor de producto) El buscador usa un \u00edcono de lupa de l\u00ednea como el resto de la app (antes era un emoji). En pantallas peque\u00f1as la barra queda: buscador a lo ancho y debajo Guardar, Lista y Eliminar; la fila de Agregar al Cat\u00e1logo, Inventario, exportar e importar pasa a dos columnas, sin botones que se salgan de la pantalla. NUEVO (Editor de producto) Las tarjetas Costos directos y Depreciaci\u00f3n de equipos muestran el total de sus l\u00edneas a la derecha del t\u00edtulo.\n' +
+  return 'v16.36: NUEVO (Editor de producto) Barra fija inferior con el Precio de Venta, en celular y en pantalla grande. Se oculta mientras el total del Resumen est\u00e1 a la vista, se actualiza sola cada vez que cambia el precio (con un peque\u00f1o pulso) y al tocarla lleva hasta el total y lo resalta. En celular queda justo encima de la barra de navegaci\u00f3n. No aparece cuando el precio es $ 0,00. Respeta reducir movimiento y reducir transparencia.\n' +
+  'v16.35: AJUSTE (Pedidos) Los botones \u22ee ya no muestran un c\u00edrculo fijo: el c\u00edrculo aparece al pasar el puntero, al presionarlos o mientras su men\u00fa est\u00e1 abierto. AJUSTE (Editor de producto) El buscador usa un \u00edcono de lupa de l\u00ednea como el resto de la app (antes era un emoji). En pantallas peque\u00f1as la barra queda: buscador a lo ancho y debajo Guardar, Lista y Eliminar; la fila de Agregar al Cat\u00e1logo, Inventario, exportar e importar pasa a dos columnas, sin botones que se salgan de la pantalla. NUEVO (Editor de producto) Las tarjetas Costos directos y Depreciaci\u00f3n de equipos muestran el total de sus l\u00edneas a la derecha del t\u00edtulo.\n' +
   'v16.34: NUEVO (Detalle de pedido y de venta) Al final de la lista de productos aparece \u00abTotal de items\u00bb (suma de cantidades; si difiere, tambi\u00e9n cu\u00e1ntos productos distintos). NUEVO (Pedidos) El men\u00fa \u22ef de cada pedido tiene \u00abCopiar restante\u00bb, que copia por ejemplo \u00abRestante: $19,00 en Bs. 18.000,00\u00bb con la tasa BCV de hoy (los mismos montos que muestra la tarjeta); en pedidos pagados en d\u00f3lares copia solo el monto en $, y si no hay saldo la opci\u00f3n no aparece. AJUSTE: los botones \u22ef ahora tienen los puntos en vertical.\n' +
   'v16.33: NUEVO (Pedidos) El men\u00fa \u22ef de cada pedido tiene la opci\u00f3n \u00abSeleccionar varios\u00bb: activa la selecci\u00f3n m\u00faltiple y deja ese pedido ya marcado, para seguir marcando otros. Con la selecci\u00f3n activa, la opci\u00f3n cambia a \u00abAgregar a la selecci\u00f3n\u00bb o \u00abQuitar de la selecci\u00f3n\u00bb seg\u00fan el pedido.\n' +
   'v16.32: AJUSTE (celular) Las hojas que suben desde abajo \u2014el men\u00fa \u22ef de cada pedido, el \u22ef de la lista de Pedidos, Filtros (Pedidos, Cat\u00e1logo y Ventas) y Acciones de la selecci\u00f3n m\u00faltiple\u2014 ahora se cierran desliz\u00e1ndolas hacia abajo, igual que la ventana de Ver pedido. Se puede arrastrar desde cualquier parte, tambi\u00e9n desde las opciones; si se suelta antes de bajar lo suficiente, vuelve a su lugar.\n' +
@@ -8936,6 +8988,49 @@ function closeModal(id){
   }
   document.addEventListener('touchend',fin,{passive:true});
   document.addEventListener('touchcancel',fin,{passive:true});
+})();
+/* v16.36 · Barra fija del Precio de Venta (Editor de producto)
+   - IntersectionObserver: se oculta mientras la línea «Precio de Venta» del Resumen está a la vista.
+   - MutationObserver: copia el valor de #pers_pv cada vez que cambia.
+   - Al tocarla: lleva hasta el Resumen y resalta el total. */
+(function(){
+  function init(){
+    const fuente=document.getElementById('pers_pv');
+    const bar=document.getElementById('pers_pv_bar');
+    const val=document.getElementById('pers_pv_bar_val');
+    if(!fuente||!bar||!val) return;
+    const bloque=fuente.closest('.tot-block')||fuente;
+    let totalVisible=false;
+    const esCero=t=>!/[1-9]/.test(String(t||''));
+    function actualizar(){
+      const ocultar = totalVisible || esCero(fuente.textContent);
+      bar.classList.toggle('oculta', ocultar);
+      bar.tabIndex = ocultar ? -1 : 0;
+      bar.setAttribute('aria-hidden', ocultar ? 'true' : 'false');
+    }
+    function copiar(){
+      const t=(fuente.textContent||'').trim();
+      if(val.textContent===t) return;
+      val.textContent=t;
+      val.classList.remove('cambio'); void val.offsetWidth; val.classList.add('cambio');
+      bar.setAttribute('aria-label','Precio de venta '+t+'. Ir al resumen');
+      actualizar();
+    }
+    new MutationObserver(copiar).observe(fuente,{childList:true,characterData:true,subtree:true});
+    if('IntersectionObserver' in window){
+      new IntersectionObserver(ents=>{
+        ents.forEach(e=>{ totalVisible = e.isIntersecting; });
+        actualizar();
+      },{threshold:0.6}).observe(bloque);
+    }
+    bar.addEventListener('click',()=>{
+      const reducir=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      bloque.scrollIntoView({behavior:reducir?'auto':'smooth',block:'center'});
+      bloque.classList.remove('pv-destello'); void bloque.offsetWidth; bloque.classList.add('pv-destello');
+    });
+    copiar(); actualizar();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
 function closeTopModal(){
   if(_modalStack.length===0) return;
@@ -26475,7 +26570,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v16_35';
+  const APP_VERSION = 'v16_36';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -26484,7 +26579,7 @@ window.addEventListener('popstate',e=>{
   let _regPromise = null;
   function registerSW(){
     if(!hasSW()) return;
-    _regPromise = navigator.serviceWorker.register('./sw.js?v=v16_35', { updateViaCache: 'none' })
+    _regPromise = navigator.serviceWorker.register('./sw.js?v=v16_36', { updateViaCache: 'none' })
       .then(function(reg){
         console.log('[PWA] SW registrado scope:', reg.scope);
         return reg;
