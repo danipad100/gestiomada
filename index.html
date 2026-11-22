@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V16_29">
+<html lang="es" data-app-version="GestioMada_V16_37">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -9,7 +9,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap"/>
 <link rel="manifest" href="manifest.json"/>
-<meta content="#ea8db9" name="theme-color"/>
+<meta content="#f5f5fa" name="theme-color"/>
+<script>/* v16.37: barra de notificaciones de Android con el fondo de la app desde el primer instante */
+try{if(localStorage.getItem('dark_on')==='1'){document.querySelector('meta[name="theme-color"]').setAttribute('content','#0b0b0e');document.documentElement.style.backgroundColor='#0b0b0e';}}catch(e){}</script>
 <meta name="apple-mobile-web-app-title" content="GestioMada"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="default" name="apple-mobile-web-app-status-bar-style"/>
@@ -8753,7 +8755,8 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v16.36: NUEVO (Editor de producto) Barra fija inferior con el Precio de Venta, en celular y en pantalla grande. Se oculta mientras el total del Resumen est\u00e1 a la vista, se actualiza sola cada vez que cambia el precio (con un peque\u00f1o pulso) y al tocarla lleva hasta el total y lo resalta. En celular queda justo encima de la barra de navegaci\u00f3n. No aparece cuando el precio es $ 0,00. Respeta reducir movimiento y reducir transparencia.\n' +
+  return 'v16.37: AJUSTE (Android) La barra de notificaciones de arriba ahora tiene el color de fondo de la app: claro en modo claro y oscuro en modo oscuro, y cambia al instante al tocar el bot\u00f3n. La barra de navegaci\u00f3n de abajo usa un color fijo (el del manifest). En modo oscuro ya no aparece una franja clara abajo en pantallas cortas.\n' +
+  'v16.36: NUEVO (Editor de producto) Barra fija inferior con el Precio de Venta, en celular y en pantalla grande. Se oculta mientras el total del Resumen est\u00e1 a la vista, se actualiza sola cada vez que cambia el precio (con un peque\u00f1o pulso) y al tocarla lleva hasta el total y lo resalta. En celular queda justo encima de la barra de navegaci\u00f3n. No aparece cuando el precio es $ 0,00. Respeta reducir movimiento y reducir transparencia.\n' +
   'v16.35: AJUSTE (Pedidos) Los botones \u22ee ya no muestran un c\u00edrculo fijo: el c\u00edrculo aparece al pasar el puntero, al presionarlos o mientras su men\u00fa est\u00e1 abierto. AJUSTE (Editor de producto) El buscador usa un \u00edcono de lupa de l\u00ednea como el resto de la app (antes era un emoji). En pantallas peque\u00f1as la barra queda: buscador a lo ancho y debajo Guardar, Lista y Eliminar; la fila de Agregar al Cat\u00e1logo, Inventario, exportar e importar pasa a dos columnas, sin botones que se salgan de la pantalla. NUEVO (Editor de producto) Las tarjetas Costos directos y Depreciaci\u00f3n de equipos muestran el total de sus l\u00edneas a la derecha del t\u00edtulo.\n' +
   'v16.34: NUEVO (Detalle de pedido y de venta) Al final de la lista de productos aparece \u00abTotal de items\u00bb (suma de cantidades; si difiere, tambi\u00e9n cu\u00e1ntos productos distintos). NUEVO (Pedidos) El men\u00fa \u22ef de cada pedido tiene \u00abCopiar restante\u00bb, que copia por ejemplo \u00abRestante: $19,00 en Bs. 18.000,00\u00bb con la tasa BCV de hoy (los mismos montos que muestra la tarjeta); en pedidos pagados en d\u00f3lares copia solo el monto en $, y si no hay saldo la opci\u00f3n no aparece. AJUSTE: los botones \u22ef ahora tienen los puntos en vertical.\n' +
   'v16.33: NUEVO (Pedidos) El men\u00fa \u22ef de cada pedido tiene la opci\u00f3n \u00abSeleccionar varios\u00bb: activa la selecci\u00f3n m\u00faltiple y deja ese pedido ya marcado, para seguir marcando otros. Con la selecci\u00f3n activa, la opci\u00f3n cambia a \u00abAgregar a la selecci\u00f3n\u00bb o \u00abQuitar de la selecci\u00f3n\u00bb seg\u00fan el pedido.\n' +
@@ -12476,12 +12479,20 @@ gmOnReady(()=>{
   // Dark mode
   (function initDark(){
     const t=document.getElementById('dark_toggle');
+    // v16.37: la barra de notificaciones (meta theme-color) y el fondo de <html> siguen el fondo de la app
+    const pintarBarras=on=>{
+      const bg=(getComputedStyle(document.body).getPropertyValue('--bg')||'').trim()||(on?'#0b0b0e':'#f5f5fa');
+      const m=document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute('content',bg);
+      document.documentElement.style.backgroundColor=on?bg:'';
+    };
     const on=localStorage.getItem('dark_on')==='1';
     document.body.classList.toggle('dark',on);
+    pintarBarras(on);
     if(t) t.checked=on;
     t&&t.addEventListener('change',()=>{
       const on=t.checked;
       document.body.classList.toggle('dark',on);
+      pintarBarras(on);
       _lsSet('dark_on',on?'1':'0');
     });
   })();
@@ -26570,7 +26581,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v16_36';
+  const APP_VERSION = 'v16_37';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -26579,7 +26590,7 @@ window.addEventListener('popstate',e=>{
   let _regPromise = null;
   function registerSW(){
     if(!hasSW()) return;
-    _regPromise = navigator.serviceWorker.register('./sw.js?v=v16_36', { updateViaCache: 'none' })
+    _regPromise = navigator.serviceWorker.register('./sw.js?v=v16_37', { updateViaCache: 'none' })
       .then(function(reg){
         console.log('[PWA] SW registrado scope:', reg.scope);
         return reg;
