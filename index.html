@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V16_37">
+<html lang="es" data-app-version="GestioMada_V16_38">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -3307,6 +3307,8 @@ body.dark #view-ventas #pos_total_ref{color:#f4a3c4!important}
 .pos-seg-btn{flex:1 1 0;min-width:0;height:40px;border:0;border-radius:10px;background:transparent;color:var(--ink);font-family:inherit;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;transition:background .25s var(--spring),box-shadow .25s,color .2s}
 .pos-seg-btn.active{background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.12)}
 body.dark .pos-seg-btn.active{background:#636366;color:#fff;box-shadow:none}
+/* v16.38 · selector «Agrupar por» de bambalinas: en celular los tres textos caben sin cortarse */
+@media(max-width:480px){#rep_bamb_agr_seg .pos-seg-btn{font-size:12px;padding:0 4px;white-space:normal;line-height:1.15}}
 #view-ventas #pos_pedido_panel{background:var(--fill)!important;border:0!important;border-radius:16px!important}
 #view-ventas #pos_pedido_info{background:var(--card)!important;border:0!important;border-radius:12px!important}
 /* Métodos de pago: rejilla de píldoras */
@@ -6394,10 +6396,18 @@ body.dark .dtp-spark rect{fill:rgba(234,141,185,.55)}
               </div>
               <button class="btn btn-sm" onclick="bambImprimirPendientes()" id="btn-bamb-imprimir" style="display:none">Imprimir lista</button>
             </div>
+            <!-- v16.38 · Agrupar la lista de pendientes -->
+            <div id="rep-bamb-agr-wrap" style="max-width:460px;margin-bottom:12px;display:none">
+              <select id="rep_bamb_agr" aria-label="Agrupar por" onchange="bambCambiarAgrupacion(this.value)">
+                <option value="det">Detallado</option>
+                <option value="color">Producto + color</option>
+                <option value="prod">Solo producto</option>
+              </select>
+            </div>
             <div style="overflow-x:auto">
               <table style="width:100%;border-collapse:collapse;font-size:12px">
                 <thead>
-                  <tr style="text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">
+                  <tr id="rep-bamb-pend-head" style="text-align:left;color:var(--muted);border-bottom:1px solid var(--border)">
                     <th style="padding:6px 8px;font-weight:600">Producto</th>
                     <th class="bx-hm" style="padding:6px 8px;font-weight:600">Color</th>
                     <th class="bx-hm" style="padding:6px 8px;font-weight:600">Lazo / detalle</th>
@@ -8755,7 +8765,8 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v16.37: AJUSTE (Android) La barra de notificaciones de arriba ahora tiene el color de fondo de la app: claro en modo claro y oscuro en modo oscuro, y cambia al instante al tocar el bot\u00f3n. La barra de navegaci\u00f3n de abajo usa un color fijo (el del manifest). En modo oscuro ya no aparece una franja clara abajo en pantallas cortas.\n' +
+  return 'v16.38: NUEVO (Reportes \u2192 Bambalinas) En \u00abPedidos pendientes con bambalinas\u00bb hay un selector para agrupar la lista: Detallado (como antes), Producto + color (suma sin importar el lazo ni la caja) y Solo producto (suma sin importar el color). En las vistas agrupadas la D (detal) y la M (mayor) del final del nombre se suman, y se muestra cu\u00e1ntas son de cada una, de cada lazo y cu\u00e1ntas llevan caja. Fila de Total al final. \u00abImprimir lista\u00bb imprime la vista elegida, y la app recuerda la \u00faltima vista. FIX \u00abImprimir lista\u00bb de bambalinas y la Orden de Producci\u00f3n de textiles daban error y no abr\u00edan la impresi\u00f3n.\n' +
+  'v16.37: AJUSTE (Android) La barra de notificaciones de arriba ahora tiene el color de fondo de la app: claro en modo claro y oscuro en modo oscuro, y cambia al instante al tocar el bot\u00f3n. La barra de navegaci\u00f3n de abajo usa un color fijo (el del manifest). En modo oscuro ya no aparece una franja clara abajo en pantallas cortas.\n' +
   'v16.36: NUEVO (Editor de producto) Barra fija inferior con el Precio de Venta, en celular y en pantalla grande. Se oculta mientras el total del Resumen est\u00e1 a la vista, se actualiza sola cada vez que cambia el precio (con un peque\u00f1o pulso) y al tocarla lleva hasta el total y lo resalta. En celular queda justo encima de la barra de navegaci\u00f3n. No aparece cuando el precio es $ 0,00. Respeta reducir movimiento y reducir transparencia.\n' +
   'v16.35: AJUSTE (Pedidos) Los botones \u22ee ya no muestran un c\u00edrculo fijo: el c\u00edrculo aparece al pasar el puntero, al presionarlos o mientras su men\u00fa est\u00e1 abierto. AJUSTE (Editor de producto) El buscador usa un \u00edcono de lupa de l\u00ednea como el resto de la app (antes era un emoji). En pantallas peque\u00f1as la barra queda: buscador a lo ancho y debajo Guardar, Lista y Eliminar; la fila de Agregar al Cat\u00e1logo, Inventario, exportar e importar pasa a dos columnas, sin botones que se salgan de la pantalla. NUEVO (Editor de producto) Las tarjetas Costos directos y Depreciaci\u00f3n de equipos muestran el total de sus l\u00edneas a la derecha del t\u00edtulo.\n' +
   'v16.34: NUEVO (Detalle de pedido y de venta) Al final de la lista de productos aparece \u00abTotal de items\u00bb (suma de cantidades; si difiere, tambi\u00e9n cu\u00e1ntos productos distintos). NUEVO (Pedidos) El men\u00fa \u22ef de cada pedido tiene \u00abCopiar restante\u00bb, que copia por ejemplo \u00abRestante: $19,00 en Bs. 18.000,00\u00bb con la tasa BCV de hoy (los mismos montos que muestra la tarjeta); en pedidos pagados en d\u00f3lares copia solo el monto en $, y si no hay saldo la opci\u00f3n no aparece. AJUSTE: los botones \u22ef ahora tienen los puntos en vertical.\n' +
@@ -21634,28 +21645,100 @@ function renderRepBambalinas(){
     });
   });
   _bambFilasPend=Object.values(agr).sort((a,b)=>_texCmp(a.nombre,b.nombre)||_texCmp(a.color,b.color)||_texCmp(a.caract,b.caract));
+  // v16.38: agrupar por producto + color o solo producto (D y M se suman)
+  const modo=_bambAgr();
+  _bambFilasPendVista = modo==='det' ? _bambFilasPend : _bambAgruparPend(_bambFilasPend, modo);
+  const selAgr=qs('#rep_bamb_agr');
+  if(selAgr){ selAgr.value=modo; posSegInit('rep_bamb_agr'); _posSegSync(); }
+  const wAgr=qs('#rep-bamb-agr-wrap'); if(wAgr) wAgr.style.display=_bambFilasPend.length?'':'none';
+  const th=(t,hm,al)=>`<th${hm?' class="bx-hm"':''} style="padding:6px 8px;font-weight:600${al?';text-align:'+al:''}">${t}</th>`;
+  const ph=qs('#rep-bamb-pend-head');
+  if(ph) ph.innerHTML = modo==='det'
+    ? th('Producto')+th('Color',1)+th('Lazo / detalle',1)+th('Caja',1)+th('Cant.',0,'right')+th('Pedidos / Clientes')
+    : th('Producto')+th(modo==='prod'?'Colores':'Color',1)+th('Detal / Mayor',1)+th('Lazos',1)+th('Caja',1)+th('Cant.',0,'right')+th('Pedidos / Clientes');
+  const nCols = modo==='det' ? 6 : 7;
+  const cantTd=n=>`<td style="padding:8px;text-align:right;font-size:15px;font-weight:800;color:#185FA5">${n}</td>`;
+  const partes=t=>t?String(t).split(' · ').map(x=>'<span style="white-space:nowrap">'+esc(x)+'</span>').join(' · '):'—'; // cada «Rojo 24» queda junto
   const pb=qs('#rep-bamb-pend-body');
   if(pb){
-    pb.innerHTML = !_bambFilasPend.length
-      ? `<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">No hay pedidos pendientes con bambalinas.</td></tr>`
-      : _bambFilasPend.map((r,i)=>`<tr style="border-bottom:1px solid var(--border);background:${i%2?'var(--bg2)':''}">
+    const totalPend=_bambFilasPendVista.reduce((a,r)=>a+r.cant,0);
+    const filaTotal = `<tr style="border-top:2px solid var(--border)">
+        <td style="padding:8px;font-weight:700">Total</td>${'<td class="bx-hm"></td>'.repeat(nCols-3)}
+        ${cantTd(totalPend)}<td></td></tr>`;
+    pb.innerHTML = !_bambFilasPendVista.length
+      ? `<tr><td colspan="${nCols}" style="text-align:center;color:var(--muted);padding:20px;font-size:12px">No hay pedidos pendientes con bambalinas.</td></tr>`
+      : modo==='det'
+      ? _bambFilasPendVista.map((r,i)=>`<tr style="border-bottom:1px solid var(--border);background:${i%2?'var(--bg2)':''}">
         <td style="padding:8px;font-weight:500">${esc(r.nombre)}<span class="bx-var">${varTxt(r.color,r.caract,r.caja)}</span></td>
         <td class="bx-hm" style="padding:8px">${esc(r.color||'—')}</td>
         <td class="bx-hm" style="padding:8px;font-size:11px;color:var(--muted)">${esc(r.caract||'—')}</td>
         <td class="bx-hm" style="padding:8px">${cajaTxt(r)}</td>
-        <td style="padding:8px;text-align:right;font-size:15px;font-weight:800;color:#185FA5">${r.cant}</td>
+        ${cantTd(r.cant)}
         <td style="padding:8px;line-height:1.8">${r.pedidos.map(_texTagPed).join('')}</td>
-      </tr>`).join('');
+      </tr>`).join('') + filaTotal
+      : _bambFilasPendVista.map((r,i)=>{
+        const colTxt = modo==='prod' ? (r.coloresTxt||'—') : (r.color||'—');
+        const resumen=[modo==='prod'?r.coloresTxt:r.color, r.tipoTxt, r.lazosTxt?'Lazos: '+r.lazosTxt.replace(/ · /g,', '):'', r.cajaN?r.cajaN+' con caja':''].filter(Boolean).map(esc).join(' · ');
+        return `<tr style="border-bottom:1px solid var(--border);background:${i%2?'var(--bg2)':''}">
+        <td style="padding:8px;font-weight:500">${esc(r.nombre)}<span class="bx-var">${resumen}</span></td>
+        <td class="bx-hm" style="padding:8px">${partes(colTxt)}</td>
+        <td class="bx-hm" style="padding:8px;font-size:11px;color:var(--muted)">${partes(r.tipoTxt)}</td>
+        <td class="bx-hm" style="padding:8px;font-size:11px;color:var(--muted)">${partes(r.lazosTxt)}</td>
+        <td class="bx-hm" style="padding:8px">${r.cajaN?pill(r.cajaN+' con caja','#E6F1FB','#185FA5'):'<span style="color:var(--muted)">—</span>'}</td>
+        ${cantTd(r.cant)}
+        <td style="padding:8px;line-height:1.8">${r.pedidos.map(_texTagPed).join('')}</td>
+      </tr>`; }).join('') + filaTotal;
   }
   const bi=qs('#btn-bamb-imprimir'); if(bi) bi.style.display=_bambFilasPend.length?'':'none';
+}
+/* v16.38 · Agrupación de «Pedidos pendientes con bambalinas».
+   det   = como antes (producto, color, lazo y caja por separado)
+   color = mismo producto y color, sin importar lazo ni caja
+   prod  = mismo producto, sin importar color, lazo ni caja
+   En las vistas agrupadas, la D (detal) y la M (mayor) del final del nombre se quitan y se suman,
+   porque son la misma bambalina. Solo se quita si es la última letra sola: «… Colores D». */
+let _bambFilasPendVista = [];
+const LS_BAMB_AGR = 'gm_bamb_agr';
+function _bambAgr(){ const v=localStorage.getItem(LS_BAMB_AGR); return (v==='color'||v==='prod')?v:'det'; }
+function bambCambiarAgrupacion(v){ _lsSet(LS_BAMB_AGR, (v==='color'||v==='prod')?v:'det'); renderRepBambalinas(); }
+function _bambTipoDM(nombre){ const m=String(nombre||'').match(/\s+([DM])\s*$/); return m?m[1]:''; }
+function _bambNombreBase(nombre){ return String(nombre||'').replace(/\s+[DM]\s*$/,'').trim(); }
+function _bambAgruparPend(filas, modo){
+  const g={};
+  const sumar=(obj,k,n)=>{ obj[k]=(obj[k]||0)+n; };
+  const txt=(obj,limpiar)=>Object.keys(obj).sort((a,b)=>obj[b]-obj[a]||_texCmp(a,b)).map(k=>(limpiar?limpiar(k):k)+' '+obj[k]).join(' · ');
+  filas.forEach(r=>{
+    const base=_bambNombreBase(r.nombre);
+    const k = modo==='prod' ? base.toLowerCase() : base.toLowerCase()+'|'+String(r.color||'').toLowerCase();
+    if(!g[k]) g[k]={nombre:base,color:modo==='prod'?'':(r.color||''),cant:0,tipos:{},lazos:{},colores:{},cajaN:0,pedidos:[]};
+    const x=g[k], n=r.cant||0;
+    x.cant+=n;
+    const t=_bambTipoDM(r.nombre); if(t) sumar(x.tipos,t,n);
+    if(r.caract) sumar(x.lazos,r.caract,n);
+    if(r.color) sumar(x.colores,r.color,n);
+    if(r.caja) x.cajaN+=n;
+    r.pedidos.forEach(p=>{ if(!x.pedidos.find(y=>String(y.id)===String(p.id))) x.pedidos.push(p); });
+  });
+  return Object.values(g).map(x=>{
+    x.tipoTxt=[x.tipos.D?'Detal '+x.tipos.D:'', x.tipos.M?'Mayor '+x.tipos.M:''].filter(Boolean).join(' · ');
+    x.lazosTxt=txt(x.lazos, k=>k.replace(/^lazo\s+/i,''));
+    x.coloresTxt=txt(x.colores);
+    return x;
+  }).sort((a,b)=>_texCmp(a.nombre,b.nombre)||_texCmp(a.color,b.color));
 }
 function bambImprimirPendientes(){
   if(!_bambFilasPend.length){ toast('No hay pedidos pendientes con bambalinas','warn'); return; }
   const pedTxt=r=>r.pedidos.map(p=>p.num+(p.cliente?' · '+p.cliente:'')).join(', ');
-  const g={ titulo:'Bambalinas pendientes', cols:['Producto','Color','Lazo / detalle','Caja','Cant.','Pedidos'],
-    rows:_bambFilasPend.map(r=>[r.nombre,r.color||'—',r.caract||'—',r.caja?'Con caja':'—',r.cant,pedTxt(r)]) };
+  const modo=_bambAgr(); // v16.38: se imprime la vista que está en pantalla
+  const filas=(modo==='det'||!_bambFilasPendVista.length)?_bambFilasPend:_bambFilasPendVista;
+  const g = modo==='det'
+    ? { titulo:'Bambalinas pendientes', cols:['Producto','Color','Lazo / detalle','Caja','Cant.','Pedidos'],
+        rows:filas.map(r=>[r.nombre,r.color||'—',r.caract||'—',r.caja?'Con caja':'—',r.cant,pedTxt(r)]) }
+    : { titulo:'Bambalinas pendientes', cols:['Producto',modo==='prod'?'Colores':'Color','Detal / Mayor','Lazos','Caja','Cant.','Pedidos'],
+        rows:filas.map(r=>[r.nombre,(modo==='prod'?r.coloresTxt:r.color)||'—',r.tipoTxt||'—',r.lazosTxt||'—',r.cajaN?r.cajaN+' con caja':'—',r.cant,pedTxt(r)]) };
   const fecha=new Date().toLocaleDateString('es-VE');
-  _texAbrirImpresion('Bambalinas pendientes','Fecha: '+fecha,[g]);
+  const vista = modo==='color'?' · Agrupado por producto y color':modo==='prod'?' · Agrupado por producto':'';
+  _texAbrirImpresion('Bambalinas pendientes','Fecha: '+fecha+vista,[g]);
 }
 
 function renderRepTextiles(){
@@ -22144,7 +22227,7 @@ function texDeshacerProduccion(id){
 
 /* Impresión */
 function _texAbrirImpresion(titulo, sub, secciones){
-  const negocio=(loadConfig().negocio)||'GestioMada';
+  const negocio=((typeof CFG!=='undefined'&&CFG&&CFG.negocio)||'GestioMada'); // v16.38: loadConfig() no existía y la impresión fallaba
   const body=secciones.map(g=>{
     if(!g.rows.length) return '';
     const iC=g.cols.indexOf('Cant.'); const tot=g.rows.reduce((a,r)=>a+(parseFloat(r[iC])||0),0);
@@ -26581,7 +26664,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v16_37';
+  const APP_VERSION = 'v16_38';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -26590,7 +26673,7 @@ window.addEventListener('popstate',e=>{
   let _regPromise = null;
   function registerSW(){
     if(!hasSW()) return;
-    _regPromise = navigator.serviceWorker.register('./sw.js?v=v16_37', { updateViaCache: 'none' })
+    _regPromise = navigator.serviceWorker.register('./sw.js?v=v16_38', { updateViaCache: 'none' })
       .then(function(reg){
         console.log('[PWA] SW registrado scope:', reg.scope);
         return reg;
