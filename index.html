@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V16_38">
+<html lang="es" data-app-version="GestioMada_V16_39">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -3919,6 +3919,29 @@ body.dark .pv-bar{background:rgba(44,44,46,.72);box-shadow:0 10px 30px rgba(0,0,
 }
 @keyframes gm-pop-in{from{opacity:0;transform:translateY(-6px) scale(.98)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){#view-pedidos .ped-panel.open{animation:none!important}}
+/* v16.39 · Filtros: las listas que se abren dentro del panel (Envíos, Canales, Productos) ya no se recortan.
+   Pantalla grande: mientras una lista está abierta, el panel deja que se vea completa por fuera.
+   Celular: dentro de la hoja, la lista se abre debajo de su botón y empuja el resto hacia abajo. */
+@media(min-width:641px){
+  #view-pedidos #ped-panel:has(.gm-select.open,.ped-fprod-panel:not([hidden])){overflow:visible}
+  #view-pedidos #ped-panel .ped-fprod-panel{z-index:130}
+}
+@media(max-width:640px){
+  .ped-panel .ped-filtros .gm-select-menu{position:static;max-width:none;margin-top:6px;box-shadow:none;max-height:44vh}
+}
+/* v16.39 · Selección múltiple: barra siempre visible mientras está activa, con botón para salir */
+.pbk-x{display:inline-flex;align-items:center;justify-content:center;gap:5px;white-space:nowrap;border:0;background:var(--card);color:var(--brand-ink);font-family:inherit;font-size:12.5px;font-weight:700;height:32px;padding:0 12px;border-radius:999px;cursor:pointer}
+body.dark .pbk-x{background:#2c2c2e;color:#f4a3c4}
+.pbk-x:active{transform:scale(.96)}
+#ped-bulk-bar.pbk-vacia .pbk-lim,#ped-bulk-bar.pbk-vacia .pbk-acc-btn,#ped-bulk-bar.pbk-vacia .pbk-acts{display:none!important}
+@media(max-width:640px){
+  .pbk-x{width:36px;height:36px;padding:0;flex-shrink:0}
+  .pbk-x .pbk-xt{display:none}
+  #ped-bulk-bar.pbk-vacia .pbk-x{margin-left:auto}
+}
+/* v16.39 · Menú ⋯ de cada pedido: opción de cobrar en verde */
+.pim-it.pim-ok{color:#0F6E56}
+body.dark .pim-it.pim-ok{color:#6fd38a}
 /* ═══ v16.29 · Dashboard: Productos más vendidos (podio + lista) ═══ */
 .dtp-ctrl{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
 .dtp-chips{display:flex;gap:6px;flex-wrap:wrap}
@@ -5566,13 +5589,14 @@ body.dark .dtp-spark rect{fill:rgba(234,141,185,.55)}
         <div class="grid g5" style="margin-bottom:14px" id="ped-kpis"></div>
         <div id="ped-bulk-bar" style="display:none">
           <div class="pbk-info">
-            <strong><span id="ped-bulk-count">0</span> seleccionados</strong>
+            <strong id="ped-bulk-lbl"><span id="ped-bulk-count">0</span> seleccionados</strong>
             <span class="pbk-tot" id="ped-bulk-tot"></span>
           </div>
           <div class="pbk-sel">
             <button type="button" class="pbk-lnk" onclick="_pedSeleccionarTodosVisibles()" aria-label="Seleccionar todos"><span class="pbk-long">Seleccionar todos</span><span class="pbk-short">Todos</span></button>
-            <button type="button" class="pbk-lnk" onclick="_pedLimpiarSeleccion()">Limpiar</button>
+            <button type="button" class="pbk-lnk pbk-lim" onclick="_pedLimpiarSeleccion()">Limpiar</button>
             <button type="button" class="pbk-acc-btn" onclick="_pbkAcciones(true)" aria-haspopup="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="5" r="1.6" fill="currentColor"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/><circle cx="12" cy="19" r="1.6" fill="currentColor"/></svg>Acciones</button>
+            <button type="button" class="pbk-x" onclick="_pedSalirSeleccion()" title="Salir de la selección (Esc)" aria-label="Salir de la selección"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg><span class="pbk-xt">Salir</span></button>
           </div>
           <div class="pbk-bg" id="pbk-bg" onclick="_pbkAcciones(false)"></div>
           <div class="pbk-acts" id="pbk-acts">
@@ -8765,7 +8789,8 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v16.38: NUEVO (Reportes \u2192 Bambalinas) En \u00abPedidos pendientes con bambalinas\u00bb hay un selector para agrupar la lista: Detallado (como antes), Producto + color (suma sin importar el lazo ni la caja) y Solo producto (suma sin importar el color). En las vistas agrupadas la D (detal) y la M (mayor) del final del nombre se suman, y se muestra cu\u00e1ntas son de cada una, de cada lazo y cu\u00e1ntas llevan caja. Fila de Total al final. \u00abImprimir lista\u00bb imprime la vista elegida, y la app recuerda la \u00faltima vista. FIX \u00abImprimir lista\u00bb de bambalinas y la Orden de Producci\u00f3n de textiles daban error y no abr\u00edan la impresi\u00f3n.\n' +
+  return 'v16.39: FIX (Pedidos \u2192 Filtros) Las listas de Env\u00edos, Canales y Productos ya no quedan recortadas dentro del panel de filtros: se ven completas en pantalla grande y en celular. En Productos se pueden marcar varios a la vez. NUEVO (Pedidos) El men\u00fa \u22ee de cada pedido tiene \u00abCobrar restante\u00bb y \u00abCobrar y entregar\u00bb (con las mismas condiciones que en el detalle). AJUSTE (Selecci\u00f3n m\u00faltiple) La barra se queda visible mientras la selecci\u00f3n est\u00e1 activa y tiene un bot\u00f3n \u00abSalir\u00bb; tambi\u00e9n se sale con Esc (pantalla grande) o con el gesto Atr\u00e1s de Android.\n' +
+  'v16.38: NUEVO (Reportes \u2192 Bambalinas) En \u00abPedidos pendientes con bambalinas\u00bb hay un selector para agrupar la lista: Detallado (como antes), Producto + color (suma sin importar el lazo ni la caja) y Solo producto (suma sin importar el color). En las vistas agrupadas la D (detal) y la M (mayor) del final del nombre se suman, y se muestra cu\u00e1ntas son de cada una, de cada lazo y cu\u00e1ntas llevan caja. Fila de Total al final. \u00abImprimir lista\u00bb imprime la vista elegida, y la app recuerda la \u00faltima vista. FIX \u00abImprimir lista\u00bb de bambalinas y la Orden de Producci\u00f3n de textiles daban error y no abr\u00edan la impresi\u00f3n.\n' +
   'v16.37: AJUSTE (Android) La barra de notificaciones de arriba ahora tiene el color de fondo de la app: claro en modo claro y oscuro en modo oscuro, y cambia al instante al tocar el bot\u00f3n. La barra de navegaci\u00f3n de abajo usa un color fijo (el del manifest). En modo oscuro ya no aparece una franja clara abajo en pantallas cortas.\n' +
   'v16.36: NUEVO (Editor de producto) Barra fija inferior con el Precio de Venta, en celular y en pantalla grande. Se oculta mientras el total del Resumen est\u00e1 a la vista, se actualiza sola cada vez que cambia el precio (con un peque\u00f1o pulso) y al tocarla lleva hasta el total y lo resalta. En celular queda justo encima de la barra de navegaci\u00f3n. No aparece cuando el precio es $ 0,00. Respeta reducir movimiento y reducir transparencia.\n' +
   'v16.35: AJUSTE (Pedidos) Los botones \u22ee ya no muestran un c\u00edrculo fijo: el c\u00edrculo aparece al pasar el puntero, al presionarlos o mientras su men\u00fa est\u00e1 abierto. AJUSTE (Editor de producto) El buscador usa un \u00edcono de lupa de l\u00ednea como el resto de la app (antes era un emoji). En pantallas peque\u00f1as la barra queda: buscador a lo ancho y debajo Guardar, Lista y Eliminar; la fila de Agregar al Cat\u00e1logo, Inventario, exportar e importar pasa a dos columnas, sin botones que se salgan de la pantalla. NUEVO (Editor de producto) Las tarjetas Costos directos y Depreciaci\u00f3n de equipos muestran el total de sus l\u00edneas a la derecha del t\u00edtulo.\n' +
@@ -17763,6 +17788,8 @@ const _PIM_ICO={
   print:'<polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
   wa:'<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
   money:'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/>',
+  card:'<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>',
+  ok:'<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>',
   sel:'<polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>',
   cancel:'<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>',
   trash:'<polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>'
@@ -17792,6 +17819,15 @@ function pedItemMenu(ev, ri){
       it('imprimir','print','Imprimir')+
       (tel?it('whatsapp','wa','Escribir por WhatsApp'):'')+
     `</div>`+
+    // v16.39: cobrar desde el menú (mismas condiciones que los botones del detalle)
+    (()=>{
+      const cobRest = Math.max(0,(p.total||0)-totalPagado(p))>0 && p.estado!=='cancelado';
+      const cobEnt  = pedidoSaldoCDif(p)>0 && p.estado!=='cancelado' && p.estado!=='entregado';
+      return (cobRest||cobEnt) ? `<div class="pim-grp">`+
+        (cobRest?it('cobrar','card','Cobrar restante'):'')+
+        (cobEnt?it('cobrar_entregar','ok','Cobrar y entregar','pim-ok'):'')+
+      `</div>` : '';
+    })()+
     (activo?`<div class="pim-grp"><div class="pim-lbl">Cambiar estado</div><div class="pim-est">${estados.map(e=>`<button type="button" class="pim-chip" onclick="pedItemAccion('estado:${e}',${ri})">${PED_ESTADOS[e]}</button>`).join('')}</div></div>`:'')+
     `<div class="pim-grp">`+
       (activo?it('cancelar','cancel','Cancelar pedido','pim-warn'):'')+
@@ -17833,10 +17869,7 @@ function pedItemAccion(acc, ri){
   if(acc==='editar') return abrirEditarPedido(ri);
   if(acc==='seleccionar'){
     // Activa la selección múltiple (si no estaba) y marca/desmarca este pedido
-    if(!_pedSeleccionMultiple){
-      _pedSeleccionMultiple=true;
-      const btn=qs('#ped-bulk-toggle-btn'); if(btn) btn.classList.add('btn-brand');
-    }
+    _pedEntrarSeleccion(); // v16.39
     return _pedToggleSeleccion(p.id);
   }
   if(acc==='copiar') return _pbkCopiarTexto(textoResumenPedido(p), 'Resumen del pedido copiado');
@@ -17846,6 +17879,14 @@ function pedItemAccion(acc, ri){
     return _pbkCopiarTexto(txt,'Restante copiado');
   }
   if(acc==='imprimir') return imprimirPedido();
+  // v16.39: cobrar desde el menú
+  if(acc==='cobrar') return cobrarPedidoDesdeModal();
+  if(acc==='cobrar_entregar'){
+    // Abre el detalle (ahí se elige el método de pago) y pide la misma confirmación que su botón
+    verPedido(ri);
+    setTimeout(()=>{ if(_pedIdx===ri) cobrarYEntregar(); }, 250);
+    return;
+  }
   if(acc==='whatsapp'){
     let t=String(p.cliente?.telefono||'').replace(/[\s\-\(\)]/g,'');
     if(t.startsWith('04')) t='58'+t.slice(1); else if(t.startsWith('+')) t=t.slice(1);
@@ -17863,12 +17904,37 @@ document.addEventListener('scroll', ()=>{ if(window.innerWidth>640) pedItemMenuC
 
 /* ── Selección múltiple de pedidos (V14_90) ── */
 function _pedToggleSeleccionMultiple(){
-  _pedSeleccionMultiple = !_pedSeleccionMultiple;
-  if(!_pedSeleccionMultiple) _pedSeleccionados.clear();
-  const btn = qs('#ped-bulk-toggle-btn');
-  if(btn) btn.classList.toggle('btn-brand', _pedSeleccionMultiple);
+  if(_pedSeleccionMultiple) return _pedSalirSeleccion();
+  _pedEntrarSeleccion();
   renderPedidos();
 }
+/* v16.39: una sola forma de entrar y salir. Al entrar se agrega un paso al historial
+   para que el gesto/botón «Atrás» de Android salga de la selección en vez de cerrar la app. */
+function _pedEntrarSeleccion(){
+  if(_pedSeleccionMultiple) return;
+  _pedSeleccionMultiple = true;
+  const btn = qs('#ped-bulk-toggle-btn'); if(btn) btn.classList.add('btn-brand');
+  try{ history.pushState({pedSel:true},''); }catch(e){}
+}
+function _pedSalirSeleccion(desdeAtras){
+  if(!_pedSeleccionMultiple) return;
+  _pedSeleccionMultiple = false;
+  _pedSeleccionados.clear();
+  const btn = qs('#ped-bulk-toggle-btn'); if(btn) btn.classList.remove('btn-brand');
+  _pbkAcciones(false);
+  if(!desdeAtras && history.state && history.state.pedSel){ try{ history.back(); }catch(e){} }
+  renderPedidos();
+}
+window.addEventListener('popstate', ()=>{
+  if(_pedSeleccionMultiple && !(history.state && history.state.pedSel)) _pedSalirSeleccion(true);
+});
+// Esc en pantalla grande: sale de la selección si no hay una ventana o menú abierto encima
+window.addEventListener('keydown', e=>{
+  if(e.key!=='Escape' || !_pedSeleccionMultiple) return;
+  if(document.querySelector('.modal-bg.open,#ped-item-menu.open,#pbk-acts.open,.ped-panel.open,.gm-select.open')) return;
+  if(e.target && e.target.closest && e.target.closest('input,textarea,select')) return;
+  _pedSalirSeleccion();
+}, true);
 function _pedToggleSeleccion(id){
   const key = String(id);
   if(_pedSeleccionados.has(key)) _pedSeleccionados.delete(key);
@@ -17889,7 +17955,10 @@ function _pedActualizarBarraBulk(){
   const n = _pedSeleccionados.size;
   if(cnt) cnt.textContent = n;
   const an = qs('#pbk-acts-n'); if(an) an.textContent = n;
-  if(bar) bar.style.display = (_pedSeleccionMultiple && n>0) ? 'grid' : 'none';
+  // v16.39: la barra se ve mientras la selección esté activa (aunque no haya ninguno marcado), con «Salir»
+  const lbl = qs('#ped-bulk-lbl');
+  if(lbl) lbl.innerHTML = n===0 ? 'Toca los pedidos para marcarlos' : '<span id="ped-bulk-count">'+n+'</span> '+(n===1?'seleccionado':'seleccionados');
+  if(bar){ bar.style.display = _pedSeleccionMultiple ? 'grid' : 'none'; bar.classList.toggle('pbk-vacia', n===0); }
   if(!(_pedSeleccionMultiple && n>0)) _pbkAcciones(false);
   // v16.29: totales de lo seleccionado (los cancelados no cuentan)
   const tot = qs('#ped-bulk-tot');
@@ -19218,9 +19287,7 @@ function ejecutarCambioEstadoMasivo(){
     toast(`✓ ${actualizados} pedidos actualizados a "${PED_ESTADOS[nuevoEstado]||nuevoEstado}"`,'ok');
   }
 
-  _pedSeleccionados.clear();
-  _pedSeleccionMultiple = false;
-  const toggleBtn = qs('#ped-bulk-toggle-btn'); if(toggleBtn) toggleBtn.classList.remove('btn-brand');
+  _pedSalirSeleccion(); // v16.39
   closeModal('m-ped-bulk-estado');
   renderPedidos(); renderDash();
 }
@@ -26664,7 +26731,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v16_38';
+  const APP_VERSION = 'v16_39';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -26673,7 +26740,7 @@ window.addEventListener('popstate',e=>{
   let _regPromise = null;
   function registerSW(){
     if(!hasSW()) return;
-    _regPromise = navigator.serviceWorker.register('./sw.js?v=v16_38', { updateViaCache: 'none' })
+    _regPromise = navigator.serviceWorker.register('./sw.js?v=v16_39', { updateViaCache: 'none' })
       .then(function(reg){
         console.log('[PWA] SW registrado scope:', reg.scope);
         return reg;
@@ -26973,9 +27040,7 @@ async function ejecutarReprogramacion(){
   closeModal('m-reprog');
 
   if(criterioActual === 'seleccion'){
-    _pedSeleccionados.clear();
-    _pedSeleccionMultiple = false;
-    const toggleBtn = qs('#ped-bulk-toggle-btn'); if(toggleBtn) toggleBtn.classList.remove('btn-brand');
+    _pedSalirSeleccion(); // v16.39
     const critWrap = qs('#rp_criterio_wrap'); if(critWrap) critWrap.style.display = '';
   }
 
