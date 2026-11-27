@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es" data-app-version="GestioMada_V16_39">
+<html lang="es" data-app-version="GestioMada_V16_40">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
@@ -523,7 +523,7 @@ function _pedBaselineDe(id){
 // ── Conflictos pendientes de resolución manual ──
 const LS_CONFLICTOS = 'POS._conflictosSync';
 function _cargarConflictos(){ try{ return JSON.parse(localStorage.getItem(LS_CONFLICTOS)||'[]'); }catch(e){ return []; } }
-function _guardarConflictos(arr){ try{ localStorage.setItem(LS_CONFLICTOS, JSON.stringify(arr)); }catch(e){} if(typeof updateBadges==='function') updateBadges(); }
+function _guardarConflictos(arr){ try{ localStorage.setItem(LS_CONFLICTOS, JSON.stringify(arr)); }catch(e){} if(typeof updateBadges==='function') updateBadges(); if(typeof _avisarConflictosNuevos==='function') setTimeout(_avisarConflictosNuevos, 0); }
 function _agregarConflicto(conf){
   const arr = _cargarConflictos();
   const idx = arr.findIndex(c => c.tabla===conf.tabla && String(c.id)===String(conf.id));
@@ -5204,7 +5204,7 @@ body.dark .dtp-spark rect{fill:rgba(234,141,185,.55)}
                 <span style="position:absolute;left:3px;top:3px;width:16px;height:16px;background:#fff;border-radius:50%;transition:.3s;box-shadow:0 1px 3px rgba(0,0,0,.2)" id="cfg_tasa_auto_thumb"></span>
               </label>
               <span style="font-size:11px;color:var(--muted)">Auto</span>
-              <button class="btn btn-sm" id="btn_fetch_tasas" onclick="fetchTasasGM()" style="display:none;padding:5px 10px">
+              <button class="btn btn-sm" id="btn_fetch_tasas" onclick="fetchTasasGM(false,true)" style="display:none;padding:5px 10px">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:3px"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>Actualizar
               </button>
             </div>
@@ -8063,6 +8063,11 @@ function etiqCaract(prod){ return (prod && prod.etiq_caract) ? String(prod.etiq_
 function caractCuentaInv(prod){ return !(prod && prod.caract_sin_inv===true); }
 // Compara la característica de dos líneas; si el producto no la cuenta en inventario, siempre coincide
 function caractIgual(prod,a,b){ return !caractCuentaInv(prod) || (a||'')===(b||''); }
+// v16.40: nombre + variante (talla · color · estampado…) en rosa, como en la tarjeta del pedido. Devuelve HTML ya escapado.
+function _itemConVarianteHtml(it){
+  const v=[tallaVisible(it.talla),it.color,it.estampado,it.caracteristica,cajaTxt(it)].filter(Boolean).join(' · ');
+  return esc(it.nombre||'')+(v?' <span style="color:#be185d;font-weight:600">'+esc(v)+'</span>':'');
+}
 function nombreConVariante(it){
   const v=[tallaVisible(it.talla),it.color,it.estampado,it.caracteristica,cajaTxt(it)].filter(Boolean).join(' · ');
   return (it.nombre||'')+(v?' ('+v+')':'');
@@ -8629,6 +8634,43 @@ function _lsUsageKB(){
   return Math.round(total*2/1024); // UTF-16 = 2 bytes/char → KB
 }
 function _lsUsagePct(){ return Math.min(100,Math.round(_lsUsageKB()/5120*100)); } // 5MB typical limit
+// v16.40: alerta en pantalla cuando aparece un conflicto de sincronización nuevo.
+// Sale una sola vez por conflicto (se recuerda en este dispositivo cuáles ya se avisaron);
+// si ese pedido se resuelve y luego vuelve a tener conflicto, se avisa de nuevo.
+const LS_CONFLICTOS_AVISADOS='POS._conflictosAvisados';
+const _confClave=c=>c.tabla+'|'+c.id;
+function _avisarConflictosNuevos(){
+  const conflictos=_cargarConflictos();
+  let avisados=[]; try{ avisados=JSON.parse(localStorage.getItem(LS_CONFLICTOS_AVISADOS)||'[]'); }catch(e){}
+  // Olvidar los ya resueltos, para volver a avisar si ese pedido tiene otro conflicto más adelante
+  const vigentes=new Set(conflictos.map(_confClave));
+  const limpios=avisados.filter(k=>vigentes.has(k));
+  if(limpios.length!==avisados.length){ try{ localStorage.setItem(LS_CONFLICTOS_AVISADOS, JSON.stringify(limpios)); }catch(e){} }
+  const nuevos=conflictos.filter(c=>!limpios.includes(_confClave(c)));
+  if(!nuevos.length) return;
+  // Si está la pantalla de inicio de sesión o de PIN, esperar a que se entre a la app
+  const lock=qs('#lock-screen'), auth=qs('#auth-screen');
+  const tapado=(lock && lock.classList.contains('visible')) || (auth && getComputedStyle(auth).display!=='none');
+  if(tapado){ clearTimeout(window._confAvisoTimer); window._confAvisoTimer=setTimeout(_avisarConflictosNuevos,3000); return; }
+  const body=qs('#conf-aviso-body'); if(!body) return;
+  const n=conflictos.length;
+  const nums=conflictos.map(c=>'#'+String(c.numero||c.id).replace('PED-','')).join(', ');
+  const puedeVer=(typeof canView!=='function') || canView('config');
+  body.innerHTML='<p style="margin-bottom:8px">'+(n===1
+      ? 'Hay <strong>1 pedido</strong> con datos distintos entre este dispositivo y la nube (Supabase).'
+      : 'Hay <strong>'+n+' pedidos</strong> con datos distintos entre este dispositivo y la nube (Supabase).')+'</p>'
+    +'<p style="margin-bottom:8px"><strong>'+esc(nums)+'</strong></p>'
+    +'<p style="color:var(--muted);font-size:12px">Se editaron en más de un dispositivo mientras alguno estaba sin conexión. No se cambió nada solo: '
+    +(puedeVer ? 'elige qué versión conservar en Configuración → Conflictos de sincronización.' : 'pídele al administrador que lo revise en Configuración.')+'</p>';
+  const btn=qs('#conf-aviso-revisar'); if(btn) btn.style.display=puedeVer?'':'none';
+  try{ localStorage.setItem(LS_CONFLICTOS_AVISADOS, JSON.stringify(limpios.concat(nuevos.map(_confClave)))); }catch(e){}
+  openModal('m-conf-aviso');
+}
+function _irAConflictos(){
+  closeModal('m-conf-aviso');
+  nav('config', document.querySelector('[data-v=config]'));
+  setTimeout(()=>{ const c=qs('#cfg-conflictos-card'); if(c && c.style.display!=='none') c.scrollIntoView({behavior:'smooth',block:'start'}); }, 150);
+}
 // ── Conflictos de sincronización — UI en Configuración ──
 function renderConflictosSync(){
   const card = qs('#cfg-conflictos-card');
@@ -8789,7 +8831,8 @@ async function _limpiarFotosBase64Manual(){
 }
 
 function _gmChangelogRaw(){
-  return 'v16.39: FIX (Pedidos \u2192 Filtros) Las listas de Env\u00edos, Canales y Productos ya no quedan recortadas dentro del panel de filtros: se ven completas en pantalla grande y en celular. En Productos se pueden marcar varios a la vez. NUEVO (Pedidos) El men\u00fa \u22ee de cada pedido tiene \u00abCobrar restante\u00bb y \u00abCobrar y entregar\u00bb (con las mismas condiciones que en el detalle). AJUSTE (Selecci\u00f3n m\u00faltiple) La barra se queda visible mientras la selecci\u00f3n est\u00e1 activa y tiene un bot\u00f3n \u00abSalir\u00bb; tambi\u00e9n se sale con Esc (pantalla grande) o con el gesto Atr\u00e1s de Android.\n' +
+  return 'v16.40: AJUSTE (Pedidos \u2192 Imprimir) En la lista impresa de pedidos (seleccionados, filtrados, por rango o por estado) y en el detalle de los KPI de Pedidos, la talla, color, estampado y caracter\u00edstica de cada producto se ven en rosa, igual que en la tarjeta del pedido. NUEVO (Conflictos de sincronizaci\u00f3n) Cuando un pedido queda con datos distintos entre el dispositivo y Supabase, ahora sale una alerta en pantalla (en cualquier m\u00f3dulo) con los n\u00fameros de pedido y un bot\u00f3n \u00abRevisar\u00bb que lleva a la tarjeta Conflictos de sincronizaci\u00f3n de Configuraci\u00f3n. Sale una vez por cada conflicto nuevo; si se resuelve y el pedido vuelve a tener conflicto, avisa otra vez. Quien no tiene acceso a Configuraci\u00f3n ve el aviso sin el bot\u00f3n, con la indicaci\u00f3n de avisar al administrador. AJUSTE (Configuraci\u00f3n \u2192 Tasas) Al tocar \u00abActualizar ahora\u00bb el resultado tambi\u00e9n sale como aviso en pantalla.\n' +
+  'v16.39: FIX (Pedidos \u2192 Filtros) Las listas de Env\u00edos, Canales y Productos ya no quedan recortadas dentro del panel de filtros: se ven completas en pantalla grande y en celular. En Productos se pueden marcar varios a la vez. NUEVO (Pedidos) El men\u00fa \u22ee de cada pedido tiene \u00abCobrar restante\u00bb y \u00abCobrar y entregar\u00bb (con las mismas condiciones que en el detalle). AJUSTE (Selecci\u00f3n m\u00faltiple) La barra se queda visible mientras la selecci\u00f3n est\u00e1 activa y tiene un bot\u00f3n \u00abSalir\u00bb; tambi\u00e9n se sale con Esc (pantalla grande) o con el gesto Atr\u00e1s de Android.\n' +
   'v16.38: NUEVO (Reportes \u2192 Bambalinas) En \u00abPedidos pendientes con bambalinas\u00bb hay un selector para agrupar la lista: Detallado (como antes), Producto + color (suma sin importar el lazo ni la caja) y Solo producto (suma sin importar el color). En las vistas agrupadas la D (detal) y la M (mayor) del final del nombre se suman, y se muestra cu\u00e1ntas son de cada una, de cada lazo y cu\u00e1ntas llevan caja. Fila de Total al final. \u00abImprimir lista\u00bb imprime la vista elegida, y la app recuerda la \u00faltima vista. FIX \u00abImprimir lista\u00bb de bambalinas y la Orden de Producci\u00f3n de textiles daban error y no abr\u00edan la impresi\u00f3n.\n' +
   'v16.37: AJUSTE (Android) La barra de notificaciones de arriba ahora tiene el color de fondo de la app: claro en modo claro y oscuro en modo oscuro, y cambia al instante al tocar el bot\u00f3n. La barra de navegaci\u00f3n de abajo usa un color fijo (el del manifest). En modo oscuro ya no aparece una franja clara abajo en pantallas cortas.\n' +
   'v16.36: NUEVO (Editor de producto) Barra fija inferior con el Precio de Venta, en celular y en pantalla grande. Se oculta mientras el total del Resumen est\u00e1 a la vista, se actualiza sola cada vez que cambia el precio (con un peque\u00f1o pulso) y al tocarla lleva hasta el total y lo resalta. En celular queda justo encima de la barra de navegaci\u00f3n. No aparece cuando el precio es $ 0,00. Respeta reducir movimiento y reducir transparencia.\n' +
@@ -8832,7 +8875,7 @@ function _gmChangelogRaw(){
 
 function _gmVersionCardUpdate(){
   const lbl = qs('#cfg_version_lbl');
-  if(lbl) lbl.textContent = (typeof APP_VERSION==='string' ? APP_VERSION.replace(/^v/,'v').replace(/_/g,'.') : '—');
+  if(lbl) lbl.textContent = (typeof APP_VERSION==='string' ? APP_VERSION.replace(/^v/,'v').replace(/_/g,'.') : ((_gmChangelogRaw().match(/^v\d+\.\d+/)||['—'])[0]));
   const prev = qs('#cfg_version_preview');
   if(prev){
     const raw = _gmChangelogRaw();
@@ -8851,11 +8894,11 @@ function abrirChangelog(){
 }
 
 // ── TOAST ──
-function toast(msg, type=''){
+function toast(msg, type='', ms=2600){
   const w=qs('#toastWrap');
   const t=document.createElement('div');
   t.className='toast '+(type||''); t.textContent=msg; w.appendChild(t);
-  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); },2600);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); },ms);
 }
 
 // ── NAVIGATION ──
@@ -12489,6 +12532,7 @@ gmOnReady(()=>{
     // Esperar a que se resuelva el login real (Supabase Auth) antes de decidir
     // si hace falta pedir rol/PIN — evita el parpadeo de la pantalla de selección.
     await _authReadyPromise;
+    setTimeout(()=>{ try{ _avisarConflictosNuevos(); }catch(e){ console.warn('[Conflictos]',e); } }, 2000); // v16.40
     // Verificar sesión activa (válida y no expirada)
     const sesion = sesionValida();
     if(sesion && ROLES[sesion.rol]){
@@ -12917,7 +12961,8 @@ function _aplicarEstiloToggle(auto){
   if(thumb) thumb.style.left=auto?'21px':'3px';
 }
 
-async function fetchTasasGM(force=false){
+async function fetchTasasGM(force=false, avisar=false){
+  // v16.40: avisar=true (botón) → el resultado también sale en pantalla como aviso
   const btn=qs('#btn_fetch_tasas');
   const st=qs('#cfg_tasa_status');
   if(st){ st.style.display='block'; st.textContent='⏳ Consultando tasas…'; st.style.color='var(--muted)'; }
@@ -12928,6 +12973,7 @@ async function fetchTasasGM(force=false){
     const lastOk=parseInt(localStorage.getItem(LS_TASA_LAST_OK)||'0');
     if(lastOk && (Date.now()-lastOk)<3600000){
       if(st){ st.textContent='✓ Tasas actualizadas recientemente.'; st.style.color='var(--ok)'; }
+      if(avisar) toast('Las tasas ya se actualizaron hace menos de 1 hora.','ok',4000);
       if(btn){ btn.disabled=false; }
       return;
     }
@@ -13040,12 +13086,14 @@ async function fetchTasasGM(force=false){
     _lsSet(LS_CFG, JSON.stringify(CFG));
     const hora=new Date().toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
     if(st){ st.textContent=`✓ BCV: ${isFinite(usdBcv)?usdBcv.toFixed(2).replace('.',','):'—'} Bs/$  ·  Paralela: ${isFinite(parRate)?parRate.toFixed(2).replace('.',','):'—'} Bs/$  ·  ${hora}`; st.style.color='var(--ok)'; }
+    if(avisar) toast(`Tasas actualizadas · BCV ${isFinite(usdBcv)?usdBcv.toFixed(2).replace('.',','):'—'} · Paralela ${isFinite(parRate)?parRate.toFixed(2).replace('.',','):'—'}`,'ok',4500);
     const tasaLive=qs('#tasa_live'); if(tasaLive&&isFinite(usdBcv)) tasaLive.value=usdBcv.toFixed(2).replace('.',',');
     renderSaldosMoneda();
     // Sincronizar tasas actualizadas a Supabase para todos los dispositivos
     _sincTasasAutoSupa();
   } else {
     if(st){ st.textContent='⚠ No se pudo obtener tasas. Revisa la conexión o usa Modo Manual.'; st.style.color='var(--danger)'; }
+    if(avisar) toast('No se pudieron obtener las tasas. Revisa la conexión o usa Modo Manual.','err',5000);
   }
 
   if(btn){ btn.disabled=false; }
@@ -18210,7 +18258,7 @@ function mostrarKpiDetalle(grupo, titulo){
   // Detalle por pedido
   const pedList=pedidos.map(p=>{
     const cli=esc(p.cliente?(p.cliente.nombre+(p.cliente.apellido?' '+p.cliente.apellido:'')).trim():'Sin cliente');
-    const items=esc((p.items||[]).map(it=>`${it.cant}× ${nombreConVariante(it)}`).join(', '));
+    const items=(p.items||[]).map(it=>`${it.cant}× ${_itemConVarianteHtml(it)}`).join(', ');
     const _extKpi=[];if(_numPedido(p.delivery_usd)>0)_extKpi.push('Delivery');if(_numPedido(p.envio_usd)>0)_extKpi.push('Envío');if(_numPedido(p.diseno_usd)>0)_extKpi.push('Diseño');
     const extKpiTag=_extKpi.length?' · <span style="color:#7c3aed;font-weight:600">'+_extKpi.join(' · ')+'</span>':'';
     const fecha=p.fecha_entrega?` · Entrega: ${fmtFecha(p.fecha_entrega)}`:'';
@@ -18269,6 +18317,7 @@ td.center,th.center{text-align:center}
 .b-pagado{background:#d1fae5;color:#065f46}.b-abonado{background:#fef3c7;color:#92400e}.b-sinpago{background:#fee2e2;color:#991b1b}
 .footer{text-align:center;font-size:9px;color:#999;margin-top:12px;padding-top:8px;border-top:1px solid #eee}
 .productos{font-size:10px;color:#555;max-width:250px}
+body{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .check-col{width:28px;text-align:center}
 .check-box{width:14px;height:14px;border:1.5px solid #ccc;border-radius:3px;display:inline-block}
 @media print{body{padding:8px}@page{margin:8mm;size:landscape}}
@@ -18296,7 +18345,7 @@ td.center,th.center{text-align:center}
     const ep=estadoPago(p);
     const totalCDif=(typeof pedidoTotalCDifCalc==='function')?pedidoTotalCDifCalc(p,dif):(p.total_cdif||(p.total*(dif>0?dif:1)));
     const cli=esc(p.cliente?(p.cliente.nombre+' '+(p.cliente.apellido||'')).trim():'—');
-    const items=esc((p.items||[]).map(it=>`${it.cant}× ${nombreConVariante(it)}`).join(', '));
+    const items=(p.items||[]).map(it=>`${it.cant}× ${_itemConVarianteHtml(it)}`).join(', ');
     const _notasPrint=(p.notas||'').split(' | ').filter(s=>!s.startsWith('Delivery:')&&!s.startsWith('Envío:')&&!s.startsWith('Diseño:')&&!s.startsWith('Extras:')).join(' | ').trim();
     const notasHtml=_notasPrint?'<br><span style="font-size:10px;color:#c0392b;font-weight:600"><svg viewBox=\"0 0 24 24\" width=\"11\" height=\"11\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" style=\"display:inline-block;vertical-align:middle;margin-right:2px\"><path d=\"M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2\"/><rect x=\"9\" y=\"3\" width=\"6\" height=\"4\" rx=\"1\"/><line x1=\"9\" y1=\"12\" x2=\"15\" y2=\"12\"/><line x1=\"9\" y1=\"16\" x2=\"13\" y2=\"16\"/></svg>'+esc(_notasPrint)+'</span>':'';
     const _extPrint=[];if(_numPedido(p.delivery_usd)>0)_extPrint.push('Delivery');if(_numPedido(p.envio_usd)>0)_extPrint.push('Envío');if(_numPedido(p.diseno_usd)>0)_extPrint.push('Diseño');
@@ -26731,7 +26780,7 @@ window.addEventListener('popstate',e=>{
   const btnCheck = document.getElementById('btn_pwa_check_updates');
   const btnApply = document.getElementById('btn_pwa_apply_update');
   const statusEl = document.getElementById('pwa_update_status');
-  const APP_VERSION = 'v16_39';
+  const APP_VERSION = 'v16_40';
 
   function setStatus(t){ if(statusEl) statusEl.textContent = t; }
   function hasSW(){ return ('serviceWorker' in navigator); }
@@ -26740,7 +26789,7 @@ window.addEventListener('popstate',e=>{
   let _regPromise = null;
   function registerSW(){
     if(!hasSW()) return;
-    _regPromise = navigator.serviceWorker.register('./sw.js?v=v16_39', { updateViaCache: 'none' })
+    _regPromise = navigator.serviceWorker.register('./sw.js?v=v16_40', { updateViaCache: 'none' })
       .then(function(reg){
         console.log('[PWA] SW registrado scope:', reg.scope);
         return reg;
@@ -27477,12 +27526,22 @@ if(location.search.includes('test') || localStorage.getItem('_gm_tests')==='1'){
 
 <!-- Modal Changelog (lazy) -->
 <div class="modal-bg" id="m-changelog" onclick="if(event.target===this)closeModal('m-changelog')" role="dialog" aria-modal="true">
-  <div class="modal" tabindex="-1" style="max-width:680px;max-height:80vh;overflow-y:auto">
-    <div class="modal-hd">
-      <h3 style="font-size:16px;font-weight:600">Historial de cambios</h3>
-      <button class="modal-x" onclick="closeModal('m-changelog')" aria-label="Cerrar">&times;</button>
+  <div class="modal" tabindex="-1" style="max-width:680px;max-height:80vh;overflow-y:auto;padding:18px">
+    <button class="modal-close" onclick="closeModal('m-changelog')" aria-label="Cerrar">✕</button>
+    <div class="modal-title">Historial de cambios</div>
+    <div id="changelog-body" style="padding:4px 0;font-size:12px;color:var(--muted);line-height:1.7;white-space:pre-line"></div>
+  </div>
+</div>
+<!-- v16.40: alerta de conflictos de sincronización -->
+<div class="modal-bg" id="m-conf-aviso" onclick="if(event.target===this)closeModal('m-conf-aviso')" role="dialog" aria-modal="true">
+  <div class="modal" tabindex="-1" style="max-width:460px;padding:18px;border:1.5px solid var(--danger)">
+    <button class="modal-close" onclick="closeModal('m-conf-aviso')" aria-label="Cerrar">✕</button>
+    <div class="modal-title" style="color:var(--danger)"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;flex-shrink:0;margin-right:4px"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> Conflictos de sincronización</div>
+    <div id="conf-aviso-body" style="font-size:13px;color:var(--ink);line-height:1.5;padding:4px 0 14px"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="closeModal('m-conf-aviso')">Más tarde</button>
+      <button class="btn btn-brand" id="conf-aviso-revisar" onclick="_irAConflictos()">Revisar</button>
     </div>
-    <div id="changelog-body" style="padding:16px;font-size:12px;color:var(--muted);line-height:1.7;white-space:pre-line"></div>
   </div>
 </div>
 <!-- Panel flotante filtro Orden de Producción -->
